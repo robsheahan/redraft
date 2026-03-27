@@ -489,12 +489,12 @@
           <div class="criteria-list" id="criteriaList">
             <div class="criterion-row">
               <input type="text" class="criterion-name" placeholder="e.g. Knowledge and understanding of key concepts">
-              <input type="text" class="criterion-marks" placeholder="e.g. 2 or 6-7">
+              <input type="text" class="criterion-marks" placeholder="Marks">
               <button class="remove-btn" onclick="removeCriterion(this)">×</button>
             </div>
             <div class="criterion-row">
               <input type="text" class="criterion-name" placeholder="e.g. Analysis and critical thinking">
-              <input type="text" class="criterion-marks" placeholder="e.g. 3 or 8-10">
+              <input type="text" class="criterion-marks" placeholder="Marks">
               <button class="remove-btn" onclick="removeCriterion(this)">×</button>
             </div>
           </div>
@@ -551,7 +551,7 @@
       row.className = 'criterion-row';
       row.innerHTML = `
         <input type="text" class="criterion-name" placeholder="Criterion">
-        <input type="text" class="criterion-marks" placeholder="e.g. 2 or 6-7">
+        <input type="text" class="criterion-marks" placeholder="Marks">
         <button class="remove-btn" onclick="removeCriterion(this)">×</button>
       `;
       document.getElementById('criteriaList').appendChild(row);
