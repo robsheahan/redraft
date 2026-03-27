@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { buildSystemPrompt, buildUserPrompt } from '../prompts/feedback-system.js';
+import { getSupabase, verifyAuth } from '../lib/auth.js';
 
 const TASK_VERBS = [
   'critically analyse', 'critically evaluate',
@@ -14,13 +15,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { question, course, criteria, outcomes, draft, notes } = req.body;
+  const user = await verifyAuth(req);
+  const { question, course, criteria, outcomes, draft, notes, task_code } = req.body;
 
   if (!question || !draft) {
     return res.status(400).json({ error: 'Question and draft are required' });
   }
 
-  // Extract task verb from question
   const questionLower = (question as string).toLowerCase();
   const taskVerb = TASK_VERBS.find(v => questionLower.includes(v)) || 'explain';
 
@@ -28,15 +29,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ? `${course}\n\nQuestion:\n${question}`
     : `Question:\n${question}`;
 
-  // Map criteria — teachers enter { name, marks } with marks as string (e.g. "3" or "6-7")
   const mappedCriteria = (criteria || []).map((c: any) => {
     const marksStr = String(c.marks || '0');
     const maxMarks = parseInt(marksStr.includes('-') ? marksStr.split('-')[1] : marksStr) || 0;
-    return {
-      name: c.name || '',
-      description: c.name || '',
-      maxMarks,
-    };
+    return { name: c.name || '', description: c.name || '', maxMarks };
   });
 
   const outcomesList = (outcomes || []).map((o: any) =>
@@ -72,6 +68,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const feedback = JSON.parse(jsonMatch[0]);
+
+    // Save submission if user is authenticated
+    if (user) {
+      const supabase = getSupabase();
+      await supabase.from('submissions').insert({
+        student_id: user.id,
+        task_code: task_code || null,
+        question,
+        course: course || null,
+        draft_text: draft,
+        feedback,
+      });
+    }
 
     return res.status(200).json({
       feedback,

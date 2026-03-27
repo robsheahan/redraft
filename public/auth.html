@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in — Redraft</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #fafafa;
+      color: #111827;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+    .nav { padding: 20px 32px; }
+    .nav-brand {
+      font-size: 22px; font-weight: 800; text-decoration: none;
+      color: #111827; letter-spacing: -0.5px;
+    }
+    .nav-brand .re { color: #2563eb; }
+
+    .page {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      padding: 40px 20px;
+    }
+    .auth-card {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 40px 32px; width: 100%; max-width: 400px;
+    }
+    .auth-card h1 {
+      font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+      margin-bottom: 4px; text-align: center;
+    }
+    .auth-card .sub {
+      font-size: 14px; color: #6b7280; text-align: center; margin-bottom: 28px;
+    }
+
+    .tabs {
+      display: flex; gap: 8px; background: #f3f4f6; border-radius: 10px;
+      padding: 4px; margin-bottom: 28px;
+    }
+    .tab {
+      flex: 1; padding: 8px; background: transparent; border: none;
+      border-radius: 8px; font-size: 14px; font-weight: 600; color: #6b7280;
+      cursor: pointer; font-family: inherit; transition: all 0.15s;
+    }
+    .tab.active {
+      background: #fff; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #374151;
+    }
+    .form-group input {
+      width: 100%; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 8px;
+      font-size: 15px; font-family: inherit; outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .form-group input:focus {
+      border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+
+    .role-toggle {
+      display: flex; gap: 8px; margin-bottom: 20px;
+    }
+    .role-btn {
+      flex: 1; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px;
+      background: #fff; font-size: 14px; font-weight: 600; color: #6b7280;
+      cursor: pointer; font-family: inherit; transition: all 0.15s; text-align: center;
+    }
+    .role-btn:hover { border-color: #d1d5db; }
+    .role-btn.selected { border-color: #2563eb; background: #f0f6ff; color: #2563eb; }
+
+    .submit-btn {
+      width: 100%; padding: 12px; background: #111827; color: #fff; border: none;
+      border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: background 0.15s;
+    }
+    .submit-btn:hover { background: #1f2937; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .error-msg {
+      background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; color: #dc2626; margin-bottom: 16px;
+      display: none;
+    }
+    .error-msg.visible { display: block; }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
+  </nav>
+
+  <div class="page">
+    <div class="auth-card">
+      <h1 id="heading">Welcome back</h1>
+      <p class="sub" id="subheading">Sign in to your account</p>
+
+      <div class="tabs">
+        <button class="tab active" onclick="showLogin()">Log in</button>
+        <button class="tab" onclick="showSignup()">Sign up</button>
+      </div>
+
+      <div class="error-msg" id="error"></div>
+
+      <!-- Login form -->
+      <div id="loginForm">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="loginEmail" placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="Your password">
+        </div>
+        <button class="submit-btn" id="loginBtn" onclick="login()">Log in</button>
+      </div>
+
+      <!-- Signup form -->
+      <div id="signupForm" style="display:none">
+        <div class="form-group">
+          <label>Display name</label>
+          <input type="text" id="signupName" placeholder="e.g. Ms Taylor">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="signupEmail" placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="signupPassword" placeholder="At least 6 characters">
+        </div>
+        <div class="form-group">
+          <label>I am a...</label>
+          <div class="role-toggle">
+            <button class="role-btn" id="roleTeacher" onclick="selectRole('teacher')">Teacher</button>
+            <button class="role-btn" id="roleStudent" onclick="selectRole('student')">Student</button>
+          </div>
+        </div>
+        <button class="submit-btn" id="signupBtn" onclick="signup()">Create account</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    let selectedRole = null;
+
+    // Pre-select role from URL param
+    const params = new URLSearchParams(window.location.search);
+    const urlRole = params.get('role');
+    if (urlRole) {
+      selectRole(urlRole);
+      // Default to signup tab if coming from landing page
+      showSignup();
+    }
+
+    // If already logged in, redirect
+    getCurrentUser().then(user => {
+      if (user) {
+        const role = user.user_metadata?.role;
+        window.location.href = role === 'teacher' ? '/teacher.html' : '/student.html';
+      }
+    });
+
+    function showLogin() {
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('signupForm').style.display = 'none';
+      document.querySelectorAll('.tab')[0].classList.add('active');
+      document.querySelectorAll('.tab')[1].classList.remove('active');
+      document.getElementById('heading').textContent = 'Welcome back';
+      document.getElementById('subheading').textContent = 'Sign in to your account';
+      hideError();
+    }
+    function showSignup() {
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('signupForm').style.display = 'block';
+      document.querySelectorAll('.tab')[1].classList.add('active');
+      document.querySelectorAll('.tab')[0].classList.remove('active');
+      document.getElementById('heading').textContent = 'Create an account';
+      document.getElementById('subheading').textContent = 'Get started with Redraft';
+      hideError();
+    }
+
+    function selectRole(role) {
+      selectedRole = role;
+      document.getElementById('roleTeacher').classList.toggle('selected', role === 'teacher');
+      document.getElementById('roleStudent').classList.toggle('selected', role === 'student');
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.classList.add('visible');
+    }
+    function hideError() {
+      document.getElementById('error').classList.remove('visible');
+    }
+
+    async function login() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if (!email || !password) { showError('Enter your email and password.'); return; }
+
+      const btn = document.getElementById('loginBtn');
+      btn.textContent = 'Signing in...';
+      btn.disabled = true;
+      hideError();
+
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) {
+        showError(error.message);
+        btn.textContent = 'Log in';
+        btn.disabled = false;
+        return;
+      }
+
+      const role = data.user.user_metadata?.role;
+      window.location.href = role === 'teacher' ? '/teacher.html' : '/student.html';
+    }
+
+    async function signup() {
+      const display_name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const password = document.getElementById('signupPassword').value;
+      if (!display_name || !email || !password) { showError('Fill in all fields.'); return; }
+      if (!selectedRole) { showError('Select whether you are a teacher or student.'); return; }
+      if (password.length < 6) { showError('Password must be at least 6 characters.'); return; }
+
+      const btn = document.getElementById('signupBtn');
+      btn.textContent = 'Creating account...';
+      btn.disabled = true;
+      hideError();
+
+      try {
+        // Create account via server (bypasses email confirmation)
+        const res = await fetch('/api/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, display_name, role: selectedRole }),
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Signup failed');
+
+        // Sign in to get session
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) throw new Error(error.message);
+
+        window.location.href = selectedRole === 'teacher' ? '/teacher.html' : '/student.html';
+      } catch (err) {
+        showError(err.message);
+        btn.textContent = 'Create account';
+        btn.disabled = false;
+      }
+    }
+
+    // Enter key submits
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Enter') return;
+      if (document.getElementById('loginForm').style.display !== 'none') login();
+      else signup();
+    });
+  </script>
+
+</body>
+</html>

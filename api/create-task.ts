@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase, verifyAuth } from '../lib/auth.js';
 
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -13,14 +13,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const supabase = createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_KEY!
-  );
+  const user = await verifyAuth(req);
+  if (!user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
 
+  const supabase = getSupabase();
   const { course, title, question, task_type, total_marks, due_date, outcomes, criteria, notes } = req.body;
 
-  // Generate unique code (retry on collision)
+  // Generate unique code
   let code = generateCode();
   for (let i = 0; i < 5; i++) {
     const { data: existing } = await supabase.from('tasks').select('code').eq('code', code).single();
@@ -30,6 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { data, error } = await supabase.from('tasks').insert({
     code,
+    teacher_id: user.id,
     course: course || null,
     title: title || null,
     question: question || null,

@@ -619,9 +619,8 @@
       const notes = document.querySelector('.step:nth-child(4) textarea').value || null;
 
       try {
-        const res = await fetch('/api/create-task', {
+        const res = await authFetch('/api/create-task', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ course, title, question, task_type, total_marks, due_date, outcomes, criteria, notes }),
         });
         const data = await res.json();
@@ -645,6 +644,9 @@
       setTimeout(() => { event.target.textContent = 'Copy code'; }, 2000);
     }
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>requireAuth('teacher');</script>
 
 </body>
 </html>

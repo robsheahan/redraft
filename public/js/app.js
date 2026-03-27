@@ -1,0 +1,47 @@
+const SUPABASE_URL = 'https://jcxcbqsxshlwwvxlyyfd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjeGNicXN4c2hsd3d2eGx5eWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1OTI1OTAsImV4cCI6MjA5MDE2ODU5MH0.v-jfhkGiknFQylRnX94c4yFYL2qd3Th_nVq8u8b5GsM';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function getCurrentUser() {
+  const { data: { session } } = await sb.auth.getSession();
+  return session?.user || null;
+}
+
+async function getAccessToken() {
+  const { data: { session } } = await sb.auth.getSession();
+  return session?.access_token || null;
+}
+
+async function authFetch(url, options = {}) {
+  const token = await getAccessToken();
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  return fetch(url, { ...options, headers });
+}
+
+async function requireAuth(expectedRole) {
+  const user = await getCurrentUser();
+  if (!user) {
+    window.location.href = '/auth.html' + (expectedRole ? '?role=' + expectedRole : '');
+    return null;
+  }
+  const role = user.user_metadata?.role;
+  if (expectedRole && role !== expectedRole) {
+    window.location.href = '/';
+    return null;
+  }
+  return user;
+}
+
+function getUserMeta(user) {
+  return {
+    displayName: user.user_metadata?.display_name || user.email,
+    role: user.user_metadata?.role || 'student',
+  };
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  window.location.href = '/';
+}

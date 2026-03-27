@@ -9,184 +9,140 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', -apple-system, sans-serif;
-      background: #fafafa;
-      color: #111827;
-      line-height: 1.5;
+      background: #fafafa; color: #111827; line-height: 1.5;
       -webkit-font-smoothing: antialiased;
     }
-
     .nav {
-      background: #fff;
-      border-bottom: 1px solid #f0f0f0;
-      padding: 16px 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      background: #fff; border-bottom: 1px solid #f0f0f0;
+      padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
     }
     .nav-brand {
-      font-size: 22px;
-      font-weight: 800;
-      text-decoration: none;
-      color: #111827;
-      letter-spacing: -0.5px;
+      font-size: 22px; font-weight: 800; text-decoration: none;
+      color: #111827; letter-spacing: -0.5px;
     }
     .nav-brand .re { color: #2563eb; }
-
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 48px 20px 80px;
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .nav-user { font-size: 14px; color: #6b7280; }
+    .nav-logout {
+      font-size: 13px; color: #9ca3af; cursor: pointer; background: none;
+      border: none; font-family: inherit; transition: color 0.15s;
     }
+    .nav-logout:hover { color: #111827; }
 
+    .container { max-width: 800px; margin: 0 auto; padding: 48px 20px 80px; }
     .page-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 32px;
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px;
     }
-    .page-header h1 {
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: -0.8px;
-    }
+    .page-header h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.8px; }
     .btn-primary {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 20px;
-      background: #111827;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      font-family: inherit;
-      transition: background 0.15s;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 20px; background: #111827; color: #fff; border: none;
+      border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+      text-decoration: none; font-family: inherit;
     }
     .btn-primary:hover { background: #1f2937; }
 
-    /* Empty state */
     .empty-state {
-      text-align: center;
-      padding: 80px 24px;
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
+      text-align: center; padding: 80px 24px; background: #fff;
+      border: 1px solid #e5e7eb; border-radius: 12px;
     }
     .empty-icon {
-      width: 56px;
-      height: 56px;
-      background: #f3f4f6;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      margin: 0 auto 20px;
+      width: 56px; height: 56px; background: #f3f4f6; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin: 0 auto 20px;
     }
-    .empty-state h3 {
-      font-size: 17px;
-      font-weight: 700;
-      margin-bottom: 6px;
-      letter-spacing: -0.2px;
-    }
+    .empty-state h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
     .empty-state p {
-      font-size: 14px;
-      color: #6b7280;
-      margin-bottom: 24px;
-      max-width: 320px;
-      margin-left: auto;
-      margin-right: auto;
+      font-size: 14px; color: #6b7280; margin-bottom: 24px;
+      max-width: 320px; margin-left: auto; margin-right: auto;
     }
 
-    /* Task cards (shown when tasks exist) */
-    .tasks-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+    .tasks-grid { display: flex; flex-direction: column; gap: 12px; }
     .task-card {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 24px;
-      transition: border-color 0.15s;
-      cursor: pointer;
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 24px; transition: border-color 0.15s;
     }
     .task-card:hover { border-color: #d1d5db; }
     .task-card-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      margin-bottom: 12px;
+      display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px;
     }
-    .task-card h3 {
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: -0.2px;
-    }
-    .task-card .task-course {
-      font-size: 13px;
-      color: #6b7280;
-      margin-top: 2px;
-    }
+    .task-card h3 { font-size: 16px; font-weight: 700; letter-spacing: -0.2px; }
+    .task-card .task-course { font-size: 13px; color: #6b7280; margin-top: 2px; }
     .task-code {
-      padding: 4px 12px;
-      background: #f0f6ff;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 700;
-      color: #2563eb;
-      letter-spacing: 1px;
-      flex-shrink: 0;
+      padding: 4px 12px; background: #f0f6ff; border-radius: 6px;
+      font-size: 13px; font-weight: 700; color: #2563eb; letter-spacing: 1px; flex-shrink: 0;
     }
-    .task-stats {
-      display: flex;
-      gap: 20px;
-      align-items: center;
-    }
-    .stat {
-      font-size: 13px;
-      color: #6b7280;
-    }
-    .stat-value {
-      font-weight: 700;
-      color: #111827;
-    }
-    .status-badge {
-      display: inline-block;
-      padding: 2px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .status-active { background: #dcfce7; color: #15803d; }
-    .status-closed { background: #f3f4f6; color: #6b7280; }
+    .task-stats { display: flex; gap: 16px; margin-top: 8px; }
+    .stat { font-size: 13px; color: #6b7280; }
+    .stat strong { color: #111827; }
+
+    .loading { text-align: center; padding: 60px; color: #9ca3af; font-size: 14px; }
   </style>
 </head>
 <body>
 
   <nav class="nav">
     <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
+    <div class="nav-right">
+      <span class="nav-user" id="navUser"></span>
+      <button class="nav-logout" onclick="logout()">Log out</button>
+    </div>
   </nav>
 
   <div class="container">
-
     <div class="page-header">
       <h1>Your tasks</h1>
       <a href="new-task.html" class="btn-primary">+ New task</a>
     </div>
-
-    <div class="empty-state">
-      <div class="empty-icon">📋</div>
-      <h3>No tasks yet</h3>
-      <p>Create your first assessment task and share a code with your students.</p>
-      <a href="new-task.html" class="btn-primary">+ Create a task</a>
-    </div>
-
+    <div id="content"><div class="loading">Loading...</div></div>
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    (async () => {
+      const user = await requireAuth('teacher');
+      if (!user) return;
+
+      const { displayName } = getUserMeta(user);
+      document.getElementById('navUser').textContent = displayName;
+
+      const res = await authFetch('/api/my-tasks');
+      const tasks = await res.json();
+      const container = document.getElementById('content');
+
+      if (!Array.isArray(tasks) || tasks.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <h3>No tasks yet</h3>
+            <p>Create your first assessment task and share a code with your students.</p>
+            <a href="new-task.html" class="btn-primary">+ Create a task</a>
+          </div>`;
+        return;
+      }
+
+      const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+      let html = '<div class="tasks-grid">';
+      tasks.forEach(t => {
+        html += `<div class="task-card">
+          <div class="task-card-header">
+            <div>
+              <h3>${e(t.title || t.question || 'Untitled task')}</h3>
+              ${t.course ? '<div class="task-course">' + e(t.course) + '</div>' : ''}
+            </div>
+            <div class="task-code">${e(t.code)}</div>
+          </div>
+          <div class="task-stats">
+            <span class="stat"><strong>${t.submission_count}</strong> submissions</span>
+            ${t.total_marks ? '<span class="stat"><strong>' + e(t.total_marks) + '</strong> marks</span>' : ''}
+          </div>
+        </div>`;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    })();
+  </script>
 
 </body>
 </html>

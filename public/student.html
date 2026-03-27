@@ -19,7 +19,15 @@
       background: #fff;
       border-bottom: 1px solid #f0f0f0;
       padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between;
     }
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .nav-user { font-size: 14px; color: #6b7280; }
+    .nav-logout {
+      font-size: 13px; color: #9ca3af; cursor: pointer; background: none;
+      border: none; font-family: inherit;
+    }
+    .nav-logout:hover { color: #111827; }
     .nav-brand {
       font-size: 22px;
       font-weight: 800;
@@ -343,12 +351,32 @@
       font-size: 13px;
       color: #9ca3af;
     }
+
+    /* Previous submissions */
+    .previous { margin-top: 40px; }
+    .previous h3 {
+      font-size: 13px; font-weight: 600; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 12px;
+    }
+    .prev-card {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+      padding: 14px 18px; margin-bottom: 8px; cursor: pointer;
+      transition: border-color 0.15s; display: flex; justify-content: space-between; align-items: center;
+    }
+    .prev-card:hover { border-color: #d1d5db; }
+    .prev-card h4 { font-size: 14px; font-weight: 600; }
+    .prev-card p { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+    .prev-card-arrow { color: #d1d5db; font-size: 18px; }
   </style>
 </head>
 <body>
 
   <nav class="nav">
     <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
+    <div class="nav-right">
+      <span class="nav-user" id="navUser"></span>
+      <button class="nav-logout" onclick="logout()">Log out</button>
+    </div>
   </nav>
 
   <div class="container">
@@ -443,10 +471,48 @@
       </div>
     </div>
 
+    <div class="previous" id="previousSection" style="display:none">
+      <h3>Your previous feedback</h3>
+      <div id="previousList"></div>
+    </div>
+
     <div class="footer">Formative feedback only — not a final mark.</div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
   <script>
+    // Auth check + load previous submissions
+    (async () => {
+      const user = await requireAuth('student');
+      if (!user) return;
+      const { displayName } = getUserMeta(user);
+      document.getElementById('navUser').textContent = displayName;
+
+      // Load previous submissions
+      try {
+        const res = await authFetch('/api/my-submissions');
+        const subs = await res.json();
+        if (Array.isArray(subs) && subs.length > 0) {
+          const section = document.getElementById('previousSection');
+          const list = document.getElementById('previousList');
+          section.style.display = 'block';
+          subs.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'prev-card';
+            const q = s.question || 'Untitled';
+            const date = new Date(s.created_at).toLocaleDateString();
+            card.innerHTML = '<div><h4>' + escapeHtml(q.substring(0, 60) + (q.length > 60 ? '...' : '')) + '</h4><p>' + date + '</p></div><span class="prev-card-arrow">›</span>';
+            card.onclick = () => {
+              sessionStorage.setItem('redraft_feedback', JSON.stringify({ feedback: s.feedback, meta: { taskVerb: '', question: s.question, course: s.course } }));
+              window.location.href = 'feedback.html';
+            };
+            list.appendChild(card);
+          });
+        }
+      } catch (e) {}
+    })();
+
     // Current task data (populated after joining)
     let currentTask = null;
 
@@ -541,6 +607,7 @@
         outcomes: currentTask.outcomes,
         draft,
         notes: currentTask.notes,
+        task_code: currentTask.code,
       }, document.querySelector('#taskDetail .submit-btn'));
     }
 
@@ -569,9 +636,8 @@
       btn.disabled = true;
 
       try {
-        const res = await fetch('/api/generate-feedback', {
+        const res = await authFetch('/api/generate-feedback', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
         const data = await res.json();
