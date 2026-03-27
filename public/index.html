@@ -73,6 +73,9 @@
       text-decoration: none;
       color: inherit;
       transition: border-color 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     .card:hover {
       border-color: #2563eb;
@@ -104,10 +107,11 @@
       font-size: 14px;
       color: #6b7280;
       line-height: 1.6;
-      margin-bottom: 24px;
+      flex: 1;
     }
     .card-btn {
       display: inline-block;
+      margin-top: 24px;
       padding: 10px 24px;
       background: #111827;
       color: #fff;
