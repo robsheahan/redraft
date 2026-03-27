@@ -139,6 +139,64 @@
     }
     .btn-primary:hover { background: #1f2937; }
 
+    /* Task detail (shown after joining) */
+    .task-detail {
+      display: none;
+    }
+    .task-detail.visible { display: block; }
+    .task-detail .task-question {
+      padding: 16px;
+      background: #f9fafb;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .task-detail .task-meta {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+    .task-verb {
+      display: inline-block;
+      padding: 4px 12px;
+      background: #f0f6ff;
+      color: #2563eb;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .criteria-display {
+      margin-bottom: 8px;
+    }
+    .criteria-display h4 {
+      font-size: 12px;
+      font-weight: 600;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: 8px;
+    }
+    .criteria-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: #f9fafb;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    .criteria-item .marks {
+      font-weight: 700;
+      color: #2563eb;
+      font-size: 13px;
+      flex-shrink: 0;
+      margin-left: 16px;
+    }
+
     /* Own task form */
     .own-task { display: none; }
     .own-task.visible { display: block; }
@@ -220,7 +278,7 @@
       display: flex;
       align-items: center;
       gap: 16px;
-      margin: 36px 0;
+      margin: 28px 0;
       color: #9ca3af;
       font-size: 12px;
       font-weight: 600;
@@ -235,6 +293,9 @@
     }
 
     /* Draft submission */
+    .draft-section { display: none; }
+    .draft-section.visible { display: block; }
+
     .draft-textarea {
       width: 100%;
       min-height: 220px;
@@ -292,67 +353,94 @@
 
   <div class="container">
 
-    <h1>Get feedback on your draft</h1>
-    <p class="subtitle">Paste your draft and get detailed, criteria-based feedback before you submit.</p>
+    <!-- Initial entry screen -->
+    <div id="entryScreen">
+      <h1>Get feedback on your draft</h1>
+      <p class="subtitle">Paste your draft and get detailed, criteria-based feedback before you submit.</p>
 
-    <div class="entry-options">
-      <button class="entry-tab active" onclick="showCode()">Join with a task code</button>
-      <button class="entry-tab" onclick="showOwn()">Enter my own task</button>
-    </div>
+      <div class="entry-options">
+        <button class="entry-tab active" onclick="showCode()">Join with a task code</button>
+        <button class="entry-tab" onclick="showOwn()">Enter my own task</button>
+      </div>
 
-    <!-- Class code entry -->
-    <div class="card" id="codeEntry">
-      <h3>Enter your task code</h3>
-      <p>Your teacher will give you a 6-character code for the task.</p>
-      <div class="code-input-row">
-        <input type="text" class="code-input" placeholder="e.g. XK7M2P" maxlength="6">
-        <button class="btn-primary">Join</button>
+      <!-- Class code entry -->
+      <div class="card" id="codeEntry">
+        <h3>Enter your task code</h3>
+        <p>Your teacher will give you a 6-character code for the task.</p>
+        <div class="code-input-row">
+          <input type="text" class="code-input" id="codeInput" placeholder="e.g. XK7M2P" maxlength="6">
+          <button class="btn-primary" onclick="joinTask()">Join</button>
+        </div>
       </div>
-    </div>
 
-    <!-- Own task entry -->
-    <div class="own-task card" id="ownTask">
-      <div class="form-group">
-        <label>Course</label>
-        <select>
-          <option value="" selected>Select your course...</option>
-          <option>HSC PDHPE</option>
-          <option>HSC Biology</option>
-          <option>HSC English Advanced</option>
-          <option>HSC Modern History</option>
-          <option>HSC Business Studies</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Task question</label>
-        <div class="hint">Paste the full question from your task notification</div>
-        <textarea placeholder="e.g. Analyse how the Ottawa Charter can be used to address cardiovascular disease as a health priority in Australia."></textarea>
-      </div>
-      <div class="form-group">
-        <label>Marking criteria</label>
-        <div class="hint">Add each criterion and its marks from your task notification sheet</div>
-        <div class="criteria-inputs">
-          <div class="criterion-row">
-            <input type="text" placeholder="Criterion name">
-            <input type="number" placeholder="Marks">
+      <!-- Own task entry -->
+      <div class="own-task card" id="ownTask">
+        <div class="form-group">
+          <label>Course</label>
+          <select>
+            <option value="" selected>Select your course...</option>
+            <option>HSC PDHPE</option>
+            <option>HSC Biology</option>
+            <option>HSC English Advanced</option>
+            <option>HSC Modern History</option>
+            <option>HSC Business Studies</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Task question</label>
+          <div class="hint">Paste the full question from your task notification</div>
+          <textarea placeholder="e.g. Analyse how the Ottawa Charter can be used to address cardiovascular disease as a health priority in Australia."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Marking criteria</label>
+          <div class="hint">Add each criterion and its marks from your task notification sheet</div>
+          <div class="criteria-inputs">
+            <div class="criterion-row">
+              <input type="text" placeholder="Criterion name">
+              <input type="text" placeholder="Marks">
+            </div>
+            <div class="criterion-row">
+              <input type="text" placeholder="Criterion name">
+              <input type="text" placeholder="Marks">
+            </div>
+            <button class="add-criterion" onclick="addCriterion(this)">+ Add another criterion</button>
           </div>
-          <div class="criterion-row">
-            <input type="text" placeholder="Criterion name">
-            <input type="number" placeholder="Marks">
-          </div>
-          <button class="add-criterion" onclick="addCriterion()">+ Add another criterion</button>
+        </div>
+
+        <div class="divider">Your draft</div>
+
+        <div>
+          <h3 style="font-size:16px;font-weight:700;margin-bottom:4px;">Paste your draft response</h3>
+          <p style="font-size:14px;color:#6b7280;margin-bottom:20px;">Paste your draft below exactly as you've written it.</p>
+          <textarea class="draft-textarea" id="ownDraftTextarea" placeholder="Paste your draft response here..."></textarea>
+          <div class="word-count" id="ownWordCount">0 words</div>
+          <button class="submit-btn">Get feedback</button>
         </div>
       </div>
     </div>
 
-    <div class="divider">Your draft</div>
+    <!-- Task detail screen (shown after joining with code) -->
+    <div class="task-detail" id="taskDetail">
+      <h1 id="taskTitle">Task</h1>
+      <div class="task-meta" id="taskMeta"></div>
 
-    <div class="card">
-      <h3>Paste your draft response</h3>
-      <p>Paste your draft below exactly as you've written it.</p>
-      <textarea class="draft-textarea" placeholder="Paste your draft response here..."></textarea>
-      <div class="word-count">0 words</div>
-      <button class="submit-btn">Get feedback</button>
+      <div class="card">
+        <div class="task-question" id="taskQuestion"></div>
+        <span class="task-verb" id="taskVerb"></span>
+        <div class="criteria-display" id="criteriaDisplay">
+          <h4>Marking criteria</h4>
+        </div>
+      </div>
+
+      <div class="divider">Your draft</div>
+
+      <div class="card">
+        <h3>Paste your draft response</h3>
+        <p>Paste your draft below exactly as you've written it.</p>
+        <textarea class="draft-textarea" id="codeDraftTextarea" placeholder="Paste your draft response here..."></textarea>
+        <div class="word-count" id="codeWordCount">0 words</div>
+        <button class="submit-btn">Get feedback</button>
+      </div>
     </div>
 
     <div class="footer">Formative feedback only — not a final mark.</div>
@@ -371,15 +459,40 @@
       document.querySelectorAll('.entry-tab')[1].classList.add('active');
       document.querySelectorAll('.entry-tab')[0].classList.remove('active');
     }
-    function addCriterion() {
+
+    function addCriterion(btn) {
       const row = document.createElement('div');
       row.className = 'criterion-row';
-      row.innerHTML = '<input type="text" placeholder="Criterion name"><input type="number" placeholder="Marks">';
-      this.event.target.before(row);
+      row.innerHTML = '<input type="text" placeholder="Criterion name"><input type="text" placeholder="Marks">';
+      btn.before(row);
     }
-    document.querySelector('.draft-textarea').addEventListener('input', function() {
-      const words = this.value.trim() ? this.value.trim().split(/\s+/).length : 0;
-      document.querySelector('.word-count').textContent = words + ' words';
+
+    function joinTask() {
+      const code = document.getElementById('codeInput').value.trim().toUpperCase();
+      if (!code) return;
+
+      // Hide entry screen, show task detail
+      document.getElementById('entryScreen').style.display = 'none';
+      document.getElementById('taskDetail').classList.add('visible');
+
+      // Placeholder task data — in production this would come from the backend
+      document.getElementById('taskTitle').textContent = 'Task — ' + code;
+      document.getElementById('taskMeta').textContent = 'Joined with code ' + code;
+      document.getElementById('taskQuestion').textContent = 'Loading task details...';
+      document.getElementById('taskVerb').style.display = 'none';
+      document.getElementById('criteriaDisplay').style.display = 'none';
+    }
+
+    // Word counts
+    document.addEventListener('input', function(e) {
+      if (e.target.id === 'codeDraftTextarea') {
+        const words = e.target.value.trim() ? e.target.value.trim().split(/\s+/).length : 0;
+        document.getElementById('codeWordCount').textContent = words + ' words';
+      }
+      if (e.target.id === 'ownDraftTextarea') {
+        const words = e.target.value.trim() ? e.target.value.trim().split(/\s+/).length : 0;
+        document.getElementById('ownWordCount').textContent = words + ' words';
+      }
     });
   </script>
 
