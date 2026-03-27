@@ -414,7 +414,7 @@
           <p style="font-size:14px;color:#6b7280;margin-bottom:20px;">Paste your draft below exactly as you've written it.</p>
           <textarea class="draft-textarea" id="ownDraftTextarea" placeholder="Paste your draft response here..."></textarea>
           <div class="word-count" id="ownWordCount">0 words</div>
-          <button class="submit-btn">Get feedback</button>
+          <button class="submit-btn" onclick="submitOwn()">Get feedback</button>
         </div>
       </div>
     </div>
@@ -439,7 +439,7 @@
         <p>Paste your draft below exactly as you've written it.</p>
         <textarea class="draft-textarea" id="codeDraftTextarea" placeholder="Paste your draft response here..."></textarea>
         <div class="word-count" id="codeWordCount">0 words</div>
-        <button class="submit-btn">Get feedback</button>
+        <button class="submit-btn" onclick="submitCode()">Get feedback</button>
       </div>
     </div>
 
@@ -447,6 +447,9 @@
   </div>
 
   <script>
+    // Current task data (populated after joining)
+    let currentTask = null;
+
     function showCode() {
       document.getElementById('codeEntry').style.display = 'block';
       document.getElementById('ownTask').classList.remove('visible');
@@ -467,20 +470,132 @@
       btn.before(row);
     }
 
-    function joinTask() {
+    // --- Join with task code ---
+    async function joinTask() {
       const code = document.getElementById('codeInput').value.trim().toUpperCase();
       if (!code) return;
 
-      // Hide entry screen, show task detail
-      document.getElementById('entryScreen').style.display = 'none';
-      document.getElementById('taskDetail').classList.add('visible');
+      const btn = document.querySelector('#codeEntry .btn-primary');
+      btn.textContent = 'Joining...';
+      btn.disabled = true;
 
-      // Placeholder task data — in production this would come from the backend
-      document.getElementById('taskTitle').textContent = 'Task — ' + code;
-      document.getElementById('taskMeta').textContent = 'Joined with code ' + code;
-      document.getElementById('taskQuestion').textContent = 'Loading task details...';
-      document.getElementById('taskVerb').style.display = 'none';
-      document.getElementById('criteriaDisplay').style.display = 'none';
+      try {
+        const res = await fetch('/api/get-task?code=' + encodeURIComponent(code));
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Task not found');
+
+        currentTask = data;
+
+        // Populate task detail
+        document.getElementById('taskTitle').textContent = data.title || 'Task';
+        document.getElementById('taskMeta').textContent = [data.course, data.total_marks ? data.total_marks + ' marks' : ''].filter(Boolean).join(' — ');
+
+        document.getElementById('taskQuestion').textContent = data.question || '';
+
+        // Task verb
+        const verbs = ['critically analyse', 'critically evaluate', 'analyse', 'analyze', 'assess', 'compare', 'contrast', 'describe', 'discuss', 'distinguish', 'evaluate', 'examine', 'explain', 'identify', 'justify', 'outline', 'propose'];
+        const qLower = (data.question || '').toLowerCase();
+        const verb = verbs.find(v => qLower.includes(v));
+        if (verb) {
+          document.getElementById('taskVerb').textContent = 'Task verb: ' + verb;
+          document.getElementById('taskVerb').style.display = 'inline-block';
+        } else {
+          document.getElementById('taskVerb').style.display = 'none';
+        }
+
+        // Criteria
+        const criteriaDiv = document.getElementById('criteriaDisplay');
+        if (data.criteria && data.criteria.length > 0) {
+          let html = '<h4>Marking criteria</h4>';
+          data.criteria.forEach(c => {
+            html += '<div class="criteria-item"><span>' + escapeHtml(c.name) + '</span>';
+            if (c.marks) html += '<span class="marks">' + escapeHtml(c.marks) + '</span>';
+            html += '</div>';
+          });
+          criteriaDiv.innerHTML = html;
+          criteriaDiv.style.display = 'block';
+        } else {
+          criteriaDiv.style.display = 'none';
+        }
+
+        // Show task detail screen
+        document.getElementById('entryScreen').style.display = 'none';
+        document.getElementById('taskDetail').classList.add('visible');
+      } catch (err) {
+        alert(err.message);
+        btn.textContent = 'Join';
+        btn.disabled = false;
+      }
+    }
+
+    // --- Submit draft (code flow) ---
+    async function submitCode() {
+      if (!currentTask) return;
+      const draft = document.getElementById('codeDraftTextarea').value.trim();
+      if (!draft) { alert('Paste your draft first.'); return; }
+
+      await generateFeedback({
+        question: currentTask.question,
+        course: currentTask.course,
+        criteria: currentTask.criteria,
+        outcomes: currentTask.outcomes,
+        draft,
+        notes: currentTask.notes,
+      }, document.querySelector('#taskDetail .submit-btn'));
+    }
+
+    // --- Submit draft (own task flow) ---
+    async function submitOwn() {
+      const question = document.querySelector('#ownTask .form-group textarea').value.trim();
+      const course = document.querySelector('#ownTask select').value;
+      const draft = document.getElementById('ownDraftTextarea').value.trim();
+      if (!draft) { alert('Paste your draft first.'); return; }
+
+      const criteria = [];
+      document.querySelectorAll('#ownTask .criterion-row').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        const name = inputs[0].value.trim();
+        const marks = inputs[1].value.trim();
+        if (name || marks) criteria.push({ name, marks });
+      });
+
+      await generateFeedback({ question, course, criteria, outcomes: [], draft, notes: null },
+        document.querySelector('#ownTask .submit-btn'));
+    }
+
+    // --- Call feedback API ---
+    async function generateFeedback(payload, btn) {
+      btn.textContent = 'Generating feedback...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/generate-feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to generate feedback');
+
+        // Store feedback and redirect
+        sessionStorage.setItem('redraft_feedback', JSON.stringify(data));
+        sessionStorage.setItem('redraft_task', JSON.stringify({
+          question: payload.question,
+          course: payload.course,
+          criteria: payload.criteria,
+        }));
+        window.location.href = 'feedback.html';
+      } catch (err) {
+        alert(err.message);
+        btn.textContent = 'Get feedback';
+        btn.disabled = false;
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
     }
 
     // Word counts

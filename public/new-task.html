@@ -586,19 +586,56 @@
       if (e.target.classList.contains('criterion-marks')) updateTotal();
     });
 
-    function generateCode() {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      let code = '';
-      for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-      return code;
-    }
+    async function createTask() {
+      const btn = document.querySelector('.btn-create');
+      btn.textContent = 'Creating...';
+      btn.disabled = true;
 
-    function createTask() {
-      const code = generateCode();
-      document.getElementById('taskCode').textContent = code;
-      document.getElementById('formSection').style.display = 'none';
-      document.getElementById('codeReveal').classList.add('visible');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Gather form data
+      const course = document.querySelector('.step:nth-child(1) select').value;
+      const title = document.querySelector('.step:nth-child(1) input[type="text"]').value;
+      const question = document.querySelector('.step:nth-child(1) textarea').value;
+      const selectedType = document.querySelector('.task-type.selected');
+      const task_type = selectedType ? selectedType.textContent : null;
+      const total_marks = document.querySelector('.step:nth-child(1) input[type="number"]').value || null;
+      const due_date = document.querySelector('.step:nth-child(1) input[type="date"]').value || null;
+
+      // Outcomes
+      const outcomes = [];
+      document.querySelectorAll('.outcome-item input[type="checkbox"]:checked').forEach(cb => {
+        const code = cb.closest('.outcome-item').querySelector('.outcome-code').textContent;
+        outcomes.push(code);
+      });
+
+      // Criteria
+      const criteria = [];
+      document.querySelectorAll('#criteriaList .criterion-row').forEach(row => {
+        const name = row.querySelector('.criterion-name').value.trim();
+        const marks = row.querySelector('.criterion-marks').value.trim();
+        if (name || marks) criteria.push({ name, marks });
+      });
+
+      // Notes
+      const notes = document.querySelector('.step:nth-child(4) textarea').value || null;
+
+      try {
+        const res = await fetch('/api/create-task', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ course, title, question, task_type, total_marks, due_date, outcomes, criteria, notes }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to create task');
+
+        document.getElementById('taskCode').textContent = data.code;
+        document.getElementById('formSection').style.display = 'none';
+        document.getElementById('codeReveal').classList.add('visible');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (err) {
+        alert(err.message);
+        btn.textContent = 'Create task';
+        btn.disabled = false;
+      }
     }
 
     function copyCode() {

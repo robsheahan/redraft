@@ -60,17 +60,6 @@
       margin-bottom: 4px;
       letter-spacing: -0.3px;
     }
-    .draft-badge {
-      display: inline-block;
-      padding: 2px 10px;
-      background: #f0f6ff;
-      color: #2563eb;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-left: 8px;
-      vertical-align: middle;
-    }
     .task-meta {
       font-size: 13px;
       color: #6b7280;
@@ -118,37 +107,24 @@
       border-radius: 50%;
       flex-shrink: 0;
     }
-
-    /* Done well */
-    .done-well .section-dot { background: #22c55e; }
-    .done-well .section-title { color: #15803d; }
-
-    /* Verb check */
-    .verb-check .section-dot { background: #8b5cf6; }
-    .verb-check .section-title { color: #6d28d9; }
     .section-text {
       font-size: 14px;
       line-height: 1.8;
       color: #374151;
     }
 
-    /* Top priority */
-    .top-priority {
-      background: #fefce8;
-      border-color: #fef08a;
-    }
+    /* Color variants */
+    .done-well .section-dot { background: #22c55e; }
+    .done-well .section-title { color: #15803d; }
+    .verb-check .section-dot { background: #8b5cf6; }
+    .verb-check .section-title { color: #6d28d9; }
+    .top-priority { background: #fefce8; border-color: #fef08a; }
     .top-priority .section-dot { background: #eab308; }
     .top-priority .section-title { color: #a16207; }
-
-    /* Improvements */
     .improvements .section-dot { background: #f59e0b; }
     .improvements .section-title { color: #b45309; }
-
-    /* Overall */
     .overall .section-dot { background: #3b82f6; }
     .overall .section-title { color: #1d4ed8; }
-
-    /* Strong response */
     .strong-response .section-dot { background: #8b5cf6; }
     .strong-response .section-title { color: #6d28d9; }
 
@@ -166,10 +142,7 @@
       font-size: 14px;
       line-height: 1.6;
     }
-    .done-well .feedback-list li {
-      background: #f0fdf4;
-      color: #166534;
-    }
+    .done-well .feedback-list li { background: #f0fdf4; color: #166534; }
     .improvements .feedback-list li {
       background: #fffbeb;
       color: #78350f;
@@ -191,118 +164,33 @@
       align-items: center;
       justify-content: center;
     }
-    .strong-response .feedback-list li {
-      background: #f5f3ff;
-      color: #4c1d95;
-    }
+    .strong-response .feedback-list li { background: #f5f3ff; color: #4c1d95; }
 
-    /* Teacher review */
-    .teacher-review {
-      background: #f9fafb;
-      border-color: #e5e7eb;
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 80px 24px;
     }
-    .teacher-review .section-dot { background: #6b7280; }
-    .review-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .teacher-only-badge {
-      font-size: 12px;
-      color: #9ca3af;
-    }
-    .review-prompt {
-      font-size: 14px;
-      color: #374151;
-      margin-bottom: 16px;
-    }
-    .review-buttons {
-      display: flex;
-      gap: 10px;
-    }
-    .review-btn {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 12px 16px;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      background: #fff;
-      font-size: 14px;
-      font-weight: 600;
-      color: #374151;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.15s;
-    }
-    .review-btn:hover { border-color: #d1d5db; }
-    .review-btn.thumbs-up.selected {
-      border-color: #22c55e;
-      background: #f0fdf4;
-      color: #15803d;
-    }
-    .review-btn.thumbs-down.selected {
-      border-color: #ef4444;
-      background: #fef2f2;
-      color: #dc2626;
-    }
-
-    .correction-area {
-      display: none;
-      margin-top: 16px;
-    }
-    .correction-area.visible { display: block; }
-    .correction-area label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
+    .empty-state h2 {
+      font-size: 20px;
+      font-weight: 700;
       margin-bottom: 8px;
-      color: #374151;
     }
-    .correction-area textarea {
-      width: 100%;
-      min-height: 100px;
-      padding: 12px 16px;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
+    .empty-state p {
       font-size: 14px;
-      font-family: inherit;
-      line-height: 1.6;
-      outline: none;
-      resize: vertical;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      color: #6b7280;
+      margin-bottom: 24px;
     }
-    .correction-area textarea:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
-    }
-    .submit-correction {
-      margin-top: 10px;
-      padding: 10px 20px;
+    .empty-state a {
+      display: inline-block;
+      padding: 10px 24px;
       background: #111827;
       color: #fff;
-      border: none;
       border-radius: 8px;
       font-size: 14px;
       font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
+      text-decoration: none;
     }
-
-    .review-submitted {
-      display: none;
-      align-items: center;
-      gap: 10px;
-      padding: 14px 16px;
-      background: #f0fdf4;
-      border-radius: 8px;
-      font-size: 14px;
-      color: #15803d;
-      font-weight: 500;
-    }
-    .review-submitted.visible { display: flex; }
 
     .footer {
       text-align: center;
@@ -316,168 +204,85 @@
 
   <nav class="nav">
     <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
-    <a href="student.html" class="back-link">Back</a>
+    <a href="student.html" class="back-link">Submit another draft</a>
   </nav>
 
-  <div class="container">
-
-    <!-- Header -->
-    <div class="header">
-      <h1>Feedback on your draft <span class="draft-badge">Draft 1</span></h1>
-      <div class="task-meta">HSC PDHPE — Core 1: Health Priorities in Australia</div>
-      <div class="task-question">
-        Analyse how the Ottawa Charter can be used to address cardiovascular disease (CVD) as a health priority in Australia. (8 marks)
-      </div>
-      <span class="task-verb">Task verb: analyse</span>
-    </div>
-
-    <!-- What you've done well -->
-    <div class="section done-well">
-      <div class="section-title">
-        <span class="section-dot"></span>
-        What you've done well
-      </div>
-      <ul class="feedback-list">
-        <li>You've correctly identified all five Ottawa Charter action areas and attempted to apply each one to CVD — this shows you understand the basic framework</li>
-        <li>Your writing is clear and easy to follow, with good paragraph structure that addresses each action area systematically</li>
-        <li>You've made some relevant connections, like linking healthy eating education to developing personal skills</li>
-      </ul>
-    </div>
-
-    <!-- Task verb check -->
-    <div class="section verb-check">
-      <div class="section-title">
-        <span class="section-dot"></span>
-        Task verb check — "analyse"
-      </div>
-      <p class="section-text">
-        The question asks you to <strong>analyse</strong>, which means you need to identify components and relationships between the Ottawa Charter and CVD, then draw out implications about how effective these strategies could be.
-        <br><br>
-        Looking at your response, you've mostly <strong>described</strong> what each action area could do rather than analysed it. You need to dig deeper into the <strong>"how" and "why"</strong> rather than just the "what".
-      </p>
-    </div>
-
-    <!-- Top priority -->
-    <div class="section top-priority">
-      <div class="section-title">
-        <span class="section-dot"></span>
-        Top priority — focus on this first
-      </div>
-      <p class="section-text">
-        Transform your descriptive statements into analytical ones by exploring relationships and implications. For each action area, don't just say what it could do — analyse <strong>how</strong> it works, <strong>why</strong> it's effective for CVD specifically, and what this means for different population groups.
-      </p>
-    </div>
-
-    <!-- Improvements -->
-    <div class="section improvements">
-      <div class="section-title">
-        <span class="section-dot"></span>
-        Things to improve
-      </div>
-      <ul class="feedback-list">
-        <li>
-          <span class="improvement-number">1</span>
-          Add specific Australian statistics about CVD — mortality rates, prevalence, economic burden, and which groups are most affected.
-        </li>
-        <li>
-          <span class="improvement-number">2</span>
-          Analyse relationships and implications, not just describe. Explore HOW health education leads to behaviour change and what barriers exist.
-        </li>
-        <li>
-          <span class="improvement-number">3</span>
-          Don't just list examples — analyse how environmental changes remove barriers to healthy choices.
-        </li>
-        <li>
-          <span class="improvement-number">4</span>
-          Analyse how community-led initiatives create social support networks and reach populations that formal health services might miss.
-        </li>
-        <li>
-          <span class="improvement-number">5</span>
-          Explore the shift from acute care to prevention and analyse the effectiveness of screening programs versus treatment approaches.
-        </li>
-      </ul>
-    </div>
-
-    <!-- Overall -->
-    <div class="section overall">
-      <div class="section-title">
-        <span class="section-dot"></span>
-        Overall
-      </div>
-      <p class="section-text">
-        This response demonstrates basic understanding of the Ottawa Charter framework but sits in the <strong>Band 3–4 range</strong> because it describes rather than analyses. You've covered the content but haven't shown the deeper thinking that analysis requires.
-      </p>
-    </div>
-
-    <!-- Strong response -->
-    <div class="section strong-response">
-      <div class="section-title">
-        <span class="section-dot"></span>
-        What a strong response includes
-      </div>
-      <ul class="feedback-list">
-        <li>Current Australian CVD statistics showing mortality, morbidity, economic burden, and affected groups</li>
-        <li>Analysis of how each Ottawa Charter action area specifically targets CVD risk factors</li>
-        <li>Examination of how strategies work differently for high-risk populations and why</li>
-        <li>Specific Australian examples of policies, programs, or initiatives in practice</li>
-        <li>Analysis of the interconnected nature of the five action areas</li>
-      </ul>
-    </div>
-
-    <!-- Teacher review -->
-    <div class="section teacher-review">
-      <div class="review-header">
-        <div class="section-title">
-          <span class="section-dot"></span>
-          Teacher review
-        </div>
-        <span class="teacher-only-badge">Only you can see this</span>
-      </div>
-      <p class="review-prompt">Does this feedback match what you'd tell this student?</p>
-      <div class="review-buttons">
-        <button class="review-btn thumbs-up" onclick="selectReview('up', this)">
-          👍 Yes, accurate
-        </button>
-        <button class="review-btn thumbs-down" onclick="selectReview('down', this)">
-          👎 Not quite right
-        </button>
-      </div>
-      <div class="correction-area" id="correctionArea">
-        <label for="correction">What would you have said differently?</label>
-        <textarea id="correction" placeholder="e.g. It should have flagged that the student didn't reference any specific AIHW data..."></textarea>
-        <button class="submit-correction" onclick="submitCorrection()">Submit correction</button>
-      </div>
-      <div class="review-submitted" id="reviewSubmitted">
-        <span>Thanks — this helps improve feedback accuracy.</span>
-      </div>
-    </div>
-
-    <div class="footer">
-      This is formative feedback on a draft — not a final mark.
-    </div>
-
-  </div>
+  <div class="container" id="content"></div>
 
   <script>
-    function selectReview(type, btn) {
-      document.querySelectorAll('.review-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      if (type === 'down') {
-        document.getElementById('correctionArea').classList.add('visible');
-      } else {
-        document.getElementById('correctionArea').classList.remove('visible');
-        setTimeout(() => {
-          document.querySelector('.review-buttons').style.display = 'none';
-          document.querySelector('.review-prompt').style.display = 'none';
-          document.getElementById('reviewSubmitted').classList.add('visible');
-        }, 300);
+    const feedbackData = sessionStorage.getItem('redraft_feedback');
+    const taskData = sessionStorage.getItem('redraft_task');
+    const container = document.getElementById('content');
+
+    if (!feedbackData) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <h2>No feedback to show</h2>
+          <p>Submit a draft first to see your feedback here.</p>
+          <a href="student.html">Go to student page</a>
+        </div>`;
+    } else {
+      const { feedback, meta } = JSON.parse(feedbackData);
+      const task = taskData ? JSON.parse(taskData) : {};
+      const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+      let html = '';
+
+      // Header
+      html += '<div class="header">';
+      html += '<h1>Feedback on your draft</h1>';
+      if (meta.course) html += '<div class="task-meta">' + e(meta.course) + '</div>';
+      if (meta.question) html += '<div class="task-question">' + e(meta.question) + '</div>';
+      if (meta.taskVerb) html += '<span class="task-verb">Task verb: ' + e(meta.taskVerb) + '</span>';
+      html += '</div>';
+
+      // What you've done well
+      if (feedback.what_youve_done_well && feedback.what_youve_done_well.length) {
+        html += '<div class="section done-well"><div class="section-title"><span class="section-dot"></span>What you\'ve done well</div>';
+        html += '<ul class="feedback-list">';
+        feedback.what_youve_done_well.forEach(p => { html += '<li>' + e(p) + '</li>'; });
+        html += '</ul></div>';
       }
-    }
-    function submitCorrection() {
-      document.querySelector('.review-buttons').style.display = 'none';
-      document.querySelector('.review-prompt').style.display = 'none';
-      document.getElementById('correctionArea').classList.remove('visible');
-      document.getElementById('reviewSubmitted').classList.add('visible');
+
+      // Task verb check
+      if (feedback.task_verb_check) {
+        html += '<div class="section verb-check"><div class="section-title"><span class="section-dot"></span>Task verb check — "' + e(meta.taskVerb || '') + '"</div>';
+        html += '<p class="section-text">' + e(feedback.task_verb_check) + '</p></div>';
+      }
+
+      // Top priority
+      if (feedback.top_priority) {
+        html += '<div class="section top-priority"><div class="section-title"><span class="section-dot"></span>Top priority — focus on this first</div>';
+        html += '<p class="section-text">' + e(feedback.top_priority) + '</p></div>';
+      }
+
+      // Improvements
+      if (feedback.improvements && feedback.improvements.length) {
+        html += '<div class="section improvements"><div class="section-title"><span class="section-dot"></span>Things to improve</div>';
+        html += '<ul class="feedback-list">';
+        feedback.improvements.forEach((p, i) => {
+          html += '<li><span class="improvement-number">' + (i + 1) + '</span>' + e(p) + '</li>';
+        });
+        html += '</ul></div>';
+      }
+
+      // Overall
+      if (feedback.overall) {
+        html += '<div class="section overall"><div class="section-title"><span class="section-dot"></span>Overall</div>';
+        html += '<p class="section-text">' + e(feedback.overall) + '</p></div>';
+      }
+
+      // What a strong response includes
+      if (feedback.what_a_strong_response_includes && feedback.what_a_strong_response_includes.length) {
+        html += '<div class="section strong-response"><div class="section-title"><span class="section-dot"></span>What a strong response includes</div>';
+        html += '<ul class="feedback-list">';
+        feedback.what_a_strong_response_includes.forEach(p => { html += '<li>' + e(p) + '</li>'; });
+        html += '</ul></div>';
+      }
+
+      html += '<div class="footer">This is formative feedback on a draft — not a final mark.</div>';
+
+      container.innerHTML = html;
     }
   </script>
 
