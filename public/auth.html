@@ -68,17 +68,6 @@
       border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
     }
 
-    .role-toggle {
-      display: flex; gap: 8px; margin-bottom: 20px;
-    }
-    .role-btn {
-      flex: 1; padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px;
-      background: #fff; font-size: 14px; font-weight: 600; color: #6b7280;
-      cursor: pointer; font-family: inherit; transition: all 0.15s; text-align: center;
-    }
-    .role-btn:hover { border-color: #d1d5db; }
-    .role-btn.selected { border-color: #2563eb; background: #f0f6ff; color: #2563eb; }
-
     .submit-btn {
       width: 100%; padding: 12px; background: #111827; color: #fff; border: none;
       border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer;
@@ -140,13 +129,6 @@
           <label>Password</label>
           <input type="password" id="signupPassword" placeholder="At least 6 characters">
         </div>
-        <div class="form-group">
-          <label>I am a...</label>
-          <div class="role-toggle">
-            <button class="role-btn" id="roleTeacher" onclick="selectRole('teacher')">Teacher</button>
-            <button class="role-btn" id="roleStudent" onclick="selectRole('student')">Student</button>
-          </div>
-        </div>
         <button class="submit-btn" id="signupBtn" onclick="signup()">Create account</button>
       </div>
     </div>
@@ -155,24 +137,14 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/app.js"></script>
   <script>
-    let selectedRole = null;
-
-    // Pre-select role from URL param
-    const params = new URLSearchParams(window.location.search);
-    const urlRole = params.get('role');
-    if (urlRole) {
-      selectRole(urlRole);
-      // Default to signup tab if coming from landing page
-      showSignup();
+    function redirectUser(user) {
+      const role = user.user_metadata?.role;
+      if (!role) window.location.href = '/choose-role.html';
+      else window.location.href = role === 'teacher' ? '/teacher.html' : '/student.html';
     }
 
     // If already logged in, redirect
-    getCurrentUser().then(user => {
-      if (user) {
-        const role = user.user_metadata?.role;
-        window.location.href = role === 'teacher' ? '/teacher.html' : '/student.html';
-      }
-    });
+    getCurrentUser().then(user => { if (user) redirectUser(user); });
 
     function showLogin() {
       document.getElementById('loginForm').style.display = 'block';
@@ -191,12 +163,6 @@
       document.getElementById('heading').textContent = 'Create an account';
       document.getElementById('subheading').textContent = 'Get started with Redraft';
       hideError();
-    }
-
-    function selectRole(role) {
-      selectedRole = role;
-      document.getElementById('roleTeacher').classList.toggle('selected', role === 'teacher');
-      document.getElementById('roleStudent').classList.toggle('selected', role === 'student');
     }
 
     function showError(msg) {
@@ -226,8 +192,7 @@
         return;
       }
 
-      const role = data.user.user_metadata?.role;
-      window.location.href = role === 'teacher' ? '/teacher.html' : '/student.html';
+      redirectUser(data.user);
     }
 
     async function signup() {
@@ -235,7 +200,6 @@
       const email = document.getElementById('signupEmail').value.trim();
       const password = document.getElementById('signupPassword').value;
       if (!display_name || !email || !password) { showError('Fill in all fields.'); return; }
-      if (!selectedRole) { showError('Select whether you are a teacher or student.'); return; }
       if (password.length < 6) { showError('Password must be at least 6 characters.'); return; }
 
       const btn = document.getElementById('signupBtn');
@@ -248,7 +212,7 @@
         const res = await fetch('/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, display_name, role: selectedRole }),
+          body: JSON.stringify({ email, password, display_name }),
         });
         const result = await res.json();
         if (!res.ok) throw new Error(result.error || 'Signup failed');
@@ -257,7 +221,7 @@
         const { error } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw new Error(error.message);
 
-        window.location.href = selectedRole === 'teacher' ? '/teacher.html' : '/student.html';
+        window.location.href = '/choose-role.html';
       } catch (err) {
         showError(err.message);
         btn.textContent = 'Create account';
