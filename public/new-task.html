@@ -565,25 +565,22 @@
       }
     }
 
-    function parseMarks(val) {
+    function getHighest(val) {
       val = val.trim();
       if (val.includes('-')) {
         const parts = val.split('-');
-        return { low: parseInt(parts[0]) || 0, high: parseInt(parts[1]) || 0 };
+        return parseInt(parts[1]) || 0;
       }
-      const n = parseInt(val) || 0;
-      return { low: n, high: n };
+      return parseInt(val) || 0;
     }
     function updateTotal() {
       const marks = document.querySelectorAll('.criterion-marks');
-      let low = 0, high = 0;
+      let max = 0;
       marks.forEach(m => {
-        const p = parseMarks(m.value);
-        low += p.low;
-        high += p.high;
+        const h = getHighest(m.value);
+        if (h > max) max = h;
       });
-      const display = low === high ? low + ' marks' : low + '–' + high + ' marks';
-      document.getElementById('totalMarks').innerHTML = '&nbsp;' + display;
+      document.getElementById('totalMarks').innerHTML = '&nbsp;' + max + ' marks';
     }
     document.addEventListener('input', function(e) {
       if (e.target.classList.contains('criterion-marks')) updateTotal();
