@@ -208,9 +208,8 @@
       gap: 8px;
       align-items: flex-start;
     }
-    .criterion-row .criterion-name { flex: 3; }
-    .criterion-row .criterion-desc { flex: 4; }
-    .criterion-row .criterion-marks { flex: 0 0 80px; }
+    .criterion-row .criterion-name { flex: 1; }
+    .criterion-row .criterion-marks { flex: 0 0 90px; }
     .criterion-row .remove-btn {
       flex: 0 0 36px;
       height: 44px;
@@ -240,10 +239,9 @@
       text-transform: uppercase;
       letter-spacing: 0.3px;
     }
-    .criterion-labels span:nth-child(1) { flex: 3; }
-    .criterion-labels span:nth-child(2) { flex: 4; }
-    .criterion-labels span:nth-child(3) { flex: 0 0 80px; }
-    .criterion-labels span:nth-child(4) { flex: 0 0 36px; }
+    .criterion-labels span:nth-child(1) { flex: 1; }
+    .criterion-labels span:nth-child(2) { flex: 0 0 90px; }
+    .criterion-labels span:nth-child(3) { flex: 0 0 36px; }
 
     .add-criterion {
       width: 100%;
@@ -485,21 +483,18 @@
           <div class="hint">Define the criteria students will be assessed on. Feedback will address each criterion individually.</div>
           <div class="criterion-labels">
             <span>Criterion</span>
-            <span>Description</span>
             <span>Marks</span>
             <span></span>
           </div>
           <div class="criteria-list" id="criteriaList">
             <div class="criterion-row">
-              <input type="text" class="criterion-name" placeholder="e.g. Knowledge">
-              <input type="text" class="criterion-desc" placeholder="e.g. Understanding of key concepts">
-              <input type="number" class="criterion-marks" placeholder="0">
+              <input type="text" class="criterion-name" placeholder="e.g. Knowledge and understanding of key concepts">
+              <input type="text" class="criterion-marks" placeholder="e.g. 2 or 6-7">
               <button class="remove-btn" onclick="removeCriterion(this)">×</button>
             </div>
             <div class="criterion-row">
-              <input type="text" class="criterion-name" placeholder="e.g. Analysis">
-              <input type="text" class="criterion-desc" placeholder="e.g. Identifies relationships and implications">
-              <input type="number" class="criterion-marks" placeholder="0">
+              <input type="text" class="criterion-name" placeholder="e.g. Analysis and critical thinking">
+              <input type="text" class="criterion-marks" placeholder="e.g. 3 or 8-10">
               <button class="remove-btn" onclick="removeCriterion(this)">×</button>
             </div>
           </div>
@@ -555,13 +550,11 @@
       const row = document.createElement('div');
       row.className = 'criterion-row';
       row.innerHTML = `
-        <input type="text" class="criterion-name" placeholder="Criterion name">
-        <input type="text" class="criterion-desc" placeholder="Description">
-        <input type="number" class="criterion-marks" placeholder="0">
+        <input type="text" class="criterion-name" placeholder="Criterion">
+        <input type="text" class="criterion-marks" placeholder="e.g. 2 or 6-7">
         <button class="remove-btn" onclick="removeCriterion(this)">×</button>
       `;
       document.getElementById('criteriaList').appendChild(row);
-      updateTotal();
     }
 
     function removeCriterion(btn) {
@@ -572,10 +565,18 @@
       }
     }
 
+    function parseMarks(val) {
+      val = val.trim();
+      if (val.includes('-')) {
+        const parts = val.split('-');
+        return parseInt(parts[1]) || 0;
+      }
+      return parseInt(val) || 0;
+    }
     function updateTotal() {
       const marks = document.querySelectorAll('.criterion-marks');
       let total = 0;
-      marks.forEach(m => { total += parseInt(m.value) || 0; });
+      marks.forEach(m => { total += parseMarks(m.value); });
       document.getElementById('totalMarks').innerHTML = '&nbsp;' + total + ' marks';
     }
     document.addEventListener('input', function(e) {
