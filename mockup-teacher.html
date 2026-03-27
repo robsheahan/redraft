@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Dashboard — NESA Feedback</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      line-height: 1.6;
+    }
+
+    /* Nav */
+    .nav {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 20px;
+      font-weight: 800;
+      color: #1d1d1f;
+      letter-spacing: -0.5px;
+    }
+    .nav-brand span { color: #6b21a8; }
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #6e6e73;
+    }
+    .nav-avatar {
+      width: 32px;
+      height: 32px;
+      background: #f3e8ff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #6b21a8;
+      font-weight: 700;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
+
+    /* Page header */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .page-header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .btn-primary {
+      padding: 10px 22px;
+      background: #6b21a8;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: #581c87; }
+
+    /* Task cards */
+    .tasks-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .task-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px 28px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid transparent;
+    }
+    .task-card:hover {
+      border-color: #e5e7eb;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .task-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .task-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+    }
+    .task-card .task-course {
+      font-size: 13px;
+      color: #6e6e73;
+      margin-top: 2px;
+    }
+    .task-code {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: #f3e8ff;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #6b21a8;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .task-code:hover { background: #e8d5f5; }
+    .task-code-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #9333ea;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .task-stats {
+      display: flex;
+      gap: 24px;
+      margin-top: 4px;
+    }
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      color: #6e6e73;
+    }
+    .stat-value {
+      font-weight: 700;
+      color: #1d1d1f;
+    }
+    .stat-icon {
+      font-size: 16px;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-active { background: #dcfce7; color: #15803d; }
+    .status-draft { background: #f3f4f6; color: #6b7280; }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #9ca3af;
+    }
+    .empty-state h3 {
+      font-size: 18px;
+      color: #6e6e73;
+      margin-bottom: 8px;
+    }
+
+    /* Task detail modal / expanded view */
+    .task-detail {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px;
+      margin-top: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .task-detail h2 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .task-detail .task-course {
+      font-size: 14px;
+      color: #6e6e73;
+      margin-bottom: 20px;
+    }
+
+    .detail-section {
+      margin-bottom: 20px;
+    }
+    .detail-section h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #6e6e73;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .criteria-list {
+      list-style: none;
+    }
+    .criteria-list li {
+      padding: 10px 14px;
+      background: #f9fafb;
+      border-radius: 10px;
+      margin-bottom: 6px;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .criteria-marks {
+      font-weight: 700;
+      color: #6b21a8;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    /* Activity table */
+    .activity-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .activity-table th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #6e6e73;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #f3f4f6;
+    }
+    .activity-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .activity-table tr:hover td {
+      background: #faf5ff;
+    }
+    .draft-num {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #f3f4f6;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #f3f4f6;
+    }
+    .tab {
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #9ca3af;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.15s;
+    }
+    .tab.active {
+      color: #6b21a8;
+      border-bottom-color: #6b21a8;
+    }
+    .tab:hover { color: #6b21a8; }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-brand"><span>nesa</span>feedback</div>
+    <div class="nav-user">
+      <span>Mr Sheahan</span>
+      <div class="nav-avatar">RS</div>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <h1>Your tasks</h1>
+      <button class="btn-primary">+ New task</button>
+    </div>
+
+    <!-- Task list -->
+    <div class="tasks-grid">
+
+      <div class="task-card">
+        <div class="task-card-header">
+          <div>
+            <h3>Analyse how the Ottawa Charter addresses CVD</h3>
+            <div class="task-course">HSC PDHPE — Core 1: Health Priorities in Australia</div>
+          </div>
+          <div class="task-code">
+            <span class="task-code-label">Code</span>
+            XK7M2P
+          </div>
+        </div>
+        <div class="task-stats">
+          <div class="stat">
+            <span class="stat-icon">👥</span>
+            <span class="stat-value">24</span> students joined
+          </div>
+          <div class="stat">
+            <span class="stat-icon">📄</span>
+            <span class="stat-value">18</span> submissions
+          </div>
+          <div class="stat">
+            <span class="stat-icon">🔄</span>
+            <span class="stat-value">7</span> resubmissions
+          </div>
+          <span class="status-badge status-active">Active</span>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="task-card-header">
+          <div>
+            <h3>Evaluate the role of governments in health promotion</h3>
+            <div class="task-course">HSC PDHPE — Core 1: Health Priorities in Australia</div>
+          </div>
+          <div class="task-code">
+            <span class="task-code-label">Code</span>
+            BN4R8W
+          </div>
+        </div>
+        <div class="task-stats">
+          <div class="stat">
+            <span class="stat-icon">👥</span>
+            <span class="stat-value">24</span> students joined
+          </div>
+          <div class="stat">
+            <span class="stat-icon">📄</span>
+            <span class="stat-value">3</span> submissions
+          </div>
+          <div class="stat">
+            <span class="stat-icon">🔄</span>
+            <span class="stat-value">0</span> resubmissions
+          </div>
+          <span class="status-badge status-active">Active</span>
+        </div>
+      </div>
+
+      <div class="task-card">
+        <div class="task-card-header">
+          <div>
+            <h3>Explain how psychology affects performance</h3>
+            <div class="task-course">HSC PDHPE — Core 2: Factors Affecting Performance</div>
+          </div>
+          <div class="task-code">
+            <span class="task-code-label">Code</span>
+            TQ9L5J
+          </div>
+        </div>
+        <div class="task-stats">
+          <div class="stat">
+            <span class="stat-icon">👥</span>
+            <span class="stat-value">22</span> students joined
+          </div>
+          <div class="stat">
+            <span class="stat-icon">📄</span>
+            <span class="stat-value">22</span> submissions
+          </div>
+          <div class="stat">
+            <span class="stat-icon">🔄</span>
+            <span class="stat-value">14</span> resubmissions
+          </div>
+          <span class="status-badge status-draft">Closed</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Task detail (expanded view of first task) -->
+    <div class="task-detail">
+      <h2>Analyse how the Ottawa Charter addresses CVD</h2>
+      <div class="task-course">HSC PDHPE — Core 1: Health Priorities in Australia &nbsp;·&nbsp; 8 marks &nbsp;·&nbsp; Due 4 Apr 2026</div>
+
+      <div class="tab-bar">
+        <div class="tab active">Activity (18)</div>
+        <div class="tab">Criteria</div>
+        <div class="tab">Settings</div>
+      </div>
+
+      <div class="detail-section">
+        <table class="activity-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Drafts</th>
+              <th>Last submitted</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Emily T.</td>
+              <td><span class="draft-num">Draft 3</span></td>
+              <td>2 hours ago</td>
+              <td style="color: #15803d; font-weight: 600;">Improving</td>
+            </tr>
+            <tr>
+              <td>Jayden M.</td>
+              <td><span class="draft-num">Draft 2</span></td>
+              <td>5 hours ago</td>
+              <td style="color: #15803d; font-weight: 600;">Improving</td>
+            </tr>
+            <tr>
+              <td>Sarah K.</td>
+              <td><span class="draft-num">Draft 1</span></td>
+              <td>Yesterday</td>
+              <td style="color: #6e6e73;">Awaiting revision</td>
+            </tr>
+            <tr>
+              <td>Liam R.</td>
+              <td><span class="draft-num">Draft 2</span></td>
+              <td>Yesterday</td>
+              <td style="color: #b45309; font-weight: 600;">Similar to draft 1</td>
+            </tr>
+            <tr>
+              <td>Anika P.</td>
+              <td><span class="draft-num">Draft 1</span></td>
+              <td>2 days ago</td>
+              <td style="color: #6e6e73;">Awaiting revision</td>
+            </tr>
+            <tr>
+              <td>Marcus W.</td>
+              <td><span class="draft-num">Draft 1</span></td>
+              <td>2 days ago</td>
+              <td style="color: #6e6e73;">Awaiting revision</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

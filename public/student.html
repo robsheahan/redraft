@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student — Redraft</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #fafafa;
+      color: #111827;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .nav {
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+      padding: 16px 32px;
+    }
+    .nav-brand {
+      font-size: 18px;
+      font-weight: 700;
+      text-decoration: none;
+      color: #111827;
+      letter-spacing: -0.3px;
+    }
+    .nav-brand .re { color: #2563eb; }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 48px 20px 80px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #6b7280;
+      font-size: 15px;
+      margin-bottom: 40px;
+    }
+
+    /* Entry method toggle */
+    .entry-options {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+      background: #f3f4f6;
+      border-radius: 10px;
+      padding: 4px;
+    }
+    .entry-tab {
+      flex: 1;
+      padding: 10px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: #6b7280;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .entry-tab.active {
+      background: #fff;
+      color: #111827;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    /* Cards */
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 16px;
+    }
+    .card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      letter-spacing: -0.2px;
+    }
+    .card > p {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 20px;
+    }
+
+    /* Code input */
+    .code-input-row {
+      display: flex;
+      gap: 10px;
+    }
+    .code-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      text-align: center;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .code-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+    .code-input::placeholder {
+      color: #d1d5db;
+      letter-spacing: 2px;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      padding: 12px 24px;
+      background: #111827;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: #1f2937; }
+
+    /* Own task form */
+    .own-task { display: none; }
+    .own-task.visible { display: block; }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+    .form-group .hint {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+    .form-group select,
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      background: #fff;
+      color: #111827;
+    }
+    .form-group select:focus,
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+    .form-group textarea {
+      min-height: 80px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+    .form-group select { color: #111827; }
+
+    .criteria-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .criterion-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .criterion-row input:first-child { flex: 3; }
+    .criterion-row input:last-child { flex: 1; max-width: 80px; }
+    .add-criterion {
+      background: none;
+      border: 1px dashed #d1d5db;
+      border-radius: 8px;
+      padding: 10px;
+      color: #9ca3af;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .add-criterion:hover {
+      border-color: #2563eb;
+      color: #2563eb;
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 36px 0;
+      color: #9ca3af;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .divider::before, .divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: #e5e7eb;
+    }
+
+    /* Draft submission */
+    .draft-textarea {
+      width: 100%;
+      min-height: 220px;
+      padding: 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      line-height: 1.7;
+      outline: none;
+      resize: vertical;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      color: #111827;
+    }
+    .draft-textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+    .draft-textarea::placeholder { color: #d1d5db; }
+    .word-count {
+      text-align: right;
+      font-size: 13px;
+      color: #9ca3af;
+      margin-top: 8px;
+      margin-bottom: 20px;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .submit-btn:hover { background: #1d4ed8; }
+
+    .footer {
+      text-align: center;
+      padding: 32px 20px;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
+  </nav>
+
+  <div class="container">
+
+    <h1>Get feedback on your draft</h1>
+    <p class="subtitle">Paste your draft and get detailed, criteria-based feedback before you submit.</p>
+
+    <div class="entry-options">
+      <button class="entry-tab active" onclick="showCode()">Join with a task code</button>
+      <button class="entry-tab" onclick="showOwn()">Enter my own task</button>
+    </div>
+
+    <!-- Class code entry -->
+    <div class="card" id="codeEntry">
+      <h3>Enter your task code</h3>
+      <p>Your teacher will give you a 6-character code for the task.</p>
+      <div class="code-input-row">
+        <input type="text" class="code-input" placeholder="e.g. XK7M2P" maxlength="6">
+        <button class="btn-primary">Join</button>
+      </div>
+    </div>
+
+    <!-- Own task entry -->
+    <div class="own-task card" id="ownTask">
+      <div class="form-group">
+        <label>Course</label>
+        <select>
+          <option value="" selected>Select your course...</option>
+          <option>HSC PDHPE</option>
+          <option>HSC Biology</option>
+          <option>HSC English Advanced</option>
+          <option>HSC Modern History</option>
+          <option>HSC Business Studies</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Task question</label>
+        <div class="hint">Paste the full question from your task notification</div>
+        <textarea placeholder="e.g. Analyse how the Ottawa Charter can be used to address cardiovascular disease as a health priority in Australia."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Marking criteria</label>
+        <div class="hint">Add each criterion and its marks from your task notification sheet</div>
+        <div class="criteria-inputs">
+          <div class="criterion-row">
+            <input type="text" placeholder="Criterion name">
+            <input type="number" placeholder="Marks">
+          </div>
+          <div class="criterion-row">
+            <input type="text" placeholder="Criterion name">
+            <input type="number" placeholder="Marks">
+          </div>
+          <button class="add-criterion" onclick="addCriterion()">+ Add another criterion</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider">Your draft</div>
+
+    <div class="card">
+      <h3>Paste your draft response</h3>
+      <p>Paste your draft below exactly as you've written it.</p>
+      <textarea class="draft-textarea" placeholder="Paste your draft response here..."></textarea>
+      <div class="word-count">0 words</div>
+      <button class="submit-btn">Get feedback</button>
+    </div>
+
+    <div class="footer">Formative feedback only — not a final mark.</div>
+  </div>
+
+  <script>
+    function showCode() {
+      document.getElementById('codeEntry').style.display = 'block';
+      document.getElementById('ownTask').classList.remove('visible');
+      document.querySelectorAll('.entry-tab')[0].classList.add('active');
+      document.querySelectorAll('.entry-tab')[1].classList.remove('active');
+    }
+    function showOwn() {
+      document.getElementById('codeEntry').style.display = 'none';
+      document.getElementById('ownTask').classList.add('visible');
+      document.querySelectorAll('.entry-tab')[1].classList.add('active');
+      document.querySelectorAll('.entry-tab')[0].classList.remove('active');
+    }
+    function addCriterion() {
+      const row = document.createElement('div');
+      row.className = 'criterion-row';
+      row.innerHTML = '<input type="text" placeholder="Criterion name"><input type="number" placeholder="Marks">';
+      this.event.target.before(row);
+    }
+    document.querySelector('.draft-textarea').addEventListener('input', function() {
+      const words = this.value.trim() ? this.value.trim().split(/\s+/).length : 0;
+      document.querySelector('.word-count').textContent = words + ' words';
+    });
+  </script>
+
+</body>
+</html>

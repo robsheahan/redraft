@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Task — Redraft</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #fafafa;
+      color: #111827;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .nav {
+      background: #fff;
+      border-bottom: 1px solid #f0f0f0;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 18px;
+      font-weight: 700;
+      text-decoration: none;
+      color: #111827;
+      letter-spacing: -0.3px;
+    }
+    .nav-brand .re { color: #2563eb; }
+    .back-link {
+      font-size: 14px;
+      font-weight: 500;
+      color: #6b7280;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: #111827; }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 48px 20px 80px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 15px;
+      color: #6b7280;
+      margin-bottom: 40px;
+    }
+
+    /* Steps */
+    .step {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 16px;
+    }
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .step-number {
+      width: 28px;
+      height: 28px;
+      background: #111827;
+      color: #fff;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .step-header h2 {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+    .form-group .hint {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+    }
+    .form-group select,
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group input[type="date"],
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      background: #fff;
+      color: #111827;
+    }
+    .form-group select:focus,
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+    .form-group textarea {
+      min-height: 80px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+    .form-row .form-group { flex: 1; }
+
+    /* Task type pills */
+    .task-types {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .task-type {
+      padding: 8px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: #fff;
+      font-family: inherit;
+    }
+    .task-type:hover { border-color: #d1d5db; color: #111827; }
+    .task-type.selected {
+      border-color: #2563eb;
+      background: #f0f6ff;
+      color: #2563eb;
+    }
+
+    /* Outcomes checkboxes */
+    .outcomes-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    @media (max-width: 500px) {
+      .outcomes-grid { grid-template-columns: 1fr; }
+    }
+    .outcome-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.15s;
+      line-height: 1.5;
+    }
+    .outcome-item:hover { background: #f0f6ff; }
+    .outcome-item input[type="checkbox"] {
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+    .outcome-code {
+      font-weight: 700;
+      color: #2563eb;
+      white-space: nowrap;
+    }
+
+    /* Criteria builder */
+    .criteria-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .criterion-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .criterion-row .criterion-name { flex: 3; }
+    .criterion-row .criterion-desc { flex: 4; }
+    .criterion-row .criterion-marks { flex: 0 0 80px; }
+    .criterion-row .remove-btn {
+      flex: 0 0 36px;
+      height: 44px;
+      background: none;
+      border: 1px solid #fee2e2;
+      border-radius: 8px;
+      color: #ef4444;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .criterion-row .remove-btn:hover {
+      background: #fef2f2;
+      border-color: #fca5a5;
+    }
+    .criterion-labels {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .criterion-labels span:nth-child(1) { flex: 3; }
+    .criterion-labels span:nth-child(2) { flex: 4; }
+    .criterion-labels span:nth-child(3) { flex: 0 0 80px; }
+    .criterion-labels span:nth-child(4) { flex: 0 0 36px; }
+
+    .add-criterion {
+      width: 100%;
+      padding: 10px;
+      background: none;
+      border: 1px dashed #d1d5db;
+      border-radius: 8px;
+      color: #9ca3af;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+      margin-top: 4px;
+    }
+    .add-criterion:hover {
+      border-color: #2563eb;
+      color: #2563eb;
+    }
+
+    .total-marks {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #111827;
+    }
+    .total-marks span { color: #2563eb; }
+
+    /* Submit */
+    .submit-section {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 24px 28px;
+    }
+    .submit-info {
+      font-size: 14px;
+      color: #6b7280;
+    }
+    .submit-info strong { color: #111827; }
+    .btn-create {
+      padding: 12px 28px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn-create:hover { background: #1d4ed8; }
+
+    /* Code reveal */
+    .code-reveal {
+      display: none;
+      text-align: center;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 48px 28px;
+    }
+    .code-reveal.visible { display: block; }
+    .code-reveal h2 {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    .code-reveal > p {
+      font-size: 15px;
+      color: #6b7280;
+      margin-bottom: 28px;
+    }
+    .code-display {
+      display: inline-block;
+      padding: 16px 40px;
+      background: #f0f6ff;
+      border: 2px solid #2563eb;
+      border-radius: 12px;
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: 6px;
+      color: #2563eb;
+      margin-bottom: 24px;
+    }
+    .code-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    .btn-copy {
+      padding: 10px 20px;
+      background: #111827;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-secondary {
+      padding: 10px 20px;
+      background: #fff;
+      color: #111827;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    .btn-secondary:hover { border-color: #d1d5db; }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
+    <a href="teacher.html" class="back-link">Back to dashboard</a>
+  </nav>
+
+  <div class="container">
+
+    <h1>Create a new task</h1>
+    <p class="subtitle">Set up the assessment task and marking criteria. Students will get feedback aligned to these.</p>
+
+    <div id="formSection">
+
+      <!-- Step 1: Task details -->
+      <div class="step">
+        <div class="step-header">
+          <div class="step-number">1</div>
+          <h2>Task details</h2>
+        </div>
+        <div class="form-group">
+          <label>Course</label>
+          <select>
+            <option value="" selected>Select course...</option>
+            <option>HSC PDHPE</option>
+            <option>Preliminary PDHPE</option>
+            <option>HSC English Advanced</option>
+            <option>HSC Biology</option>
+            <option>HSC Modern History</option>
+            <option>HSC Business Studies</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Task title</label>
+          <input type="text" placeholder="e.g. Task 2 — Health Priorities Essay">
+        </div>
+        <div class="form-group">
+          <label>Task question</label>
+          <div class="hint">The full question students need to respond to</div>
+          <textarea placeholder="e.g. Analyse how the Ottawa Charter can be used to address cardiovascular disease (CVD) as a health priority in Australia."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Task type</label>
+          <div class="task-types">
+            <button class="task-type" onclick="selectType(this)">Essay</button>
+            <button class="task-type" onclick="selectType(this)">Short answer</button>
+            <button class="task-type" onclick="selectType(this)">Report</button>
+            <button class="task-type" onclick="selectType(this)">Case study</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Total marks</label>
+            <input type="number" placeholder="e.g. 8">
+          </div>
+          <div class="form-group">
+            <label>Due date</label>
+            <input type="date">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Outcomes -->
+      <div class="step">
+        <div class="step-header">
+          <div class="step-number">2</div>
+          <h2>Syllabus outcomes</h2>
+        </div>
+        <div class="form-group">
+          <div class="hint">Select the outcomes this task assesses. These help the feedback engine understand what the student needs to demonstrate.</div>
+          <div class="outcomes-grid">
+            <label class="outcome-item">
+              <input type="checkbox">
+              <span><span class="outcome-code">H1</span> — describes the nature and justifies the choice of Australia's health priorities</span>
+            </label>
+            <label class="outcome-item">
+              <input type="checkbox">
+              <span><span class="outcome-code">H2</span> — analyses and explains the health status of Australians</span>
+            </label>
+            <label class="outcome-item">
+              <input type="checkbox">
+              <span><span class="outcome-code">H3</span> — analyses the determinants of health and health inequities</span>
+            </label>
+            <label class="outcome-item">
+              <input type="checkbox">
+              <span><span class="outcome-code">H4</span> — argues the case for health promotion based on the Ottawa Charter</span>
+            </label>
+            <label class="outcome-item">
+              <input type="checkbox">
+              <span><span class="outcome-code">H5</span> — explains the roles and responsibilities of individuals, communities and governments</span>
+            </label>
+            <label class="outcome-item">
+              <input type="checkbox">
+              <span><span class="outcome-code">H14</span> — argues the benefits of health-promoting actions and social justice</span>
+            </label>
+            <label class="outcome-item">
+              <input type="checkbox">
+              <span><span class="outcome-code">H15</span> — critically analyses key issues affecting the health of Australians</span>
+            </label>
+            <label class="outcome-item">
+              <input type="checkbox">
+              <span><span class="outcome-code">H16</span> — devises methods of gathering, interpreting and communicating information</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Criteria -->
+      <div class="step">
+        <div class="step-header">
+          <div class="step-number">3</div>
+          <h2>Marking criteria</h2>
+        </div>
+        <div class="form-group">
+          <div class="hint">Define the criteria students will be assessed on. Feedback will address each criterion individually.</div>
+          <div class="criterion-labels">
+            <span>Criterion</span>
+            <span>Description</span>
+            <span>Marks</span>
+            <span></span>
+          </div>
+          <div class="criteria-list" id="criteriaList">
+            <div class="criterion-row">
+              <input type="text" class="criterion-name" placeholder="e.g. Knowledge">
+              <input type="text" class="criterion-desc" placeholder="e.g. Understanding of key concepts">
+              <input type="number" class="criterion-marks" placeholder="0">
+              <button class="remove-btn" onclick="removeCriterion(this)">×</button>
+            </div>
+            <div class="criterion-row">
+              <input type="text" class="criterion-name" placeholder="e.g. Analysis">
+              <input type="text" class="criterion-desc" placeholder="e.g. Identifies relationships and implications">
+              <input type="number" class="criterion-marks" placeholder="0">
+              <button class="remove-btn" onclick="removeCriterion(this)">×</button>
+            </div>
+          </div>
+          <button class="add-criterion" onclick="addCriterion()">+ Add criterion</button>
+          <div class="total-marks">Total: <span id="totalMarks">&nbsp;0 marks</span></div>
+        </div>
+      </div>
+
+      <!-- Step 4: Optional -->
+      <div class="step">
+        <div class="step-header">
+          <div class="step-number">4</div>
+          <h2>Optional notes</h2>
+        </div>
+        <div class="form-group">
+          <label>Notes for the feedback engine</label>
+          <div class="hint">Anything specific you want the feedback to watch for — common mistakes, focus areas, things students tend to miss</div>
+          <textarea placeholder="e.g. Students often forget to use specific data when explaining why this is a health priority. Watch for students who list points without connecting them to the question."></textarea>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="submit-section">
+        <div class="submit-info">
+          Students will receive a <strong>task code</strong> to submit drafts.
+        </div>
+        <button class="btn-create" onclick="createTask()">Create task</button>
+      </div>
+
+    </div>
+
+    <!-- Code reveal -->
+    <div class="code-reveal" id="codeReveal">
+      <h2>Task created</h2>
+      <p>Share this code with your students so they can submit drafts and get feedback.</p>
+      <div class="code-display" id="taskCode"></div>
+      <br>
+      <div class="code-actions">
+        <button class="btn-copy" onclick="copyCode()">Copy code</button>
+        <a href="teacher.html" class="btn-secondary">Go to dashboard</a>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function selectType(el) {
+      document.querySelectorAll('.task-type').forEach(t => t.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+
+    function addCriterion() {
+      const row = document.createElement('div');
+      row.className = 'criterion-row';
+      row.innerHTML = `
+        <input type="text" class="criterion-name" placeholder="Criterion name">
+        <input type="text" class="criterion-desc" placeholder="Description">
+        <input type="number" class="criterion-marks" placeholder="0">
+        <button class="remove-btn" onclick="removeCriterion(this)">×</button>
+      `;
+      document.getElementById('criteriaList').appendChild(row);
+      updateTotal();
+    }
+
+    function removeCriterion(btn) {
+      const list = document.getElementById('criteriaList');
+      if (list.children.length > 1) {
+        btn.closest('.criterion-row').remove();
+        updateTotal();
+      }
+    }
+
+    function updateTotal() {
+      const marks = document.querySelectorAll('.criterion-marks');
+      let total = 0;
+      marks.forEach(m => { total += parseInt(m.value) || 0; });
+      document.getElementById('totalMarks').innerHTML = '&nbsp;' + total + ' marks';
+    }
+    document.addEventListener('input', function(e) {
+      if (e.target.classList.contains('criterion-marks')) updateTotal();
+    });
+
+    function generateCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+      return code;
+    }
+
+    function createTask() {
+      const code = generateCode();
+      document.getElementById('taskCode').textContent = code;
+      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('codeReveal').classList.add('visible');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function copyCode() {
+      const code = document.getElementById('taskCode').textContent;
+      navigator.clipboard.writeText(code);
+      event.target.textContent = 'Copied!';
+      setTimeout(() => { event.target.textContent = 'Copy code'; }, 2000);
+    }
+  </script>
+
+</body>
+</html>

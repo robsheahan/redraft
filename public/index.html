@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redraft — Get feedback on your draft</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #fafafa;
+      color: #111827;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+    .nav {
+      padding: 20px 32px;
+    }
+    .nav-brand {
+      font-size: 18px;
+      font-weight: 700;
+      text-decoration: none;
+      color: #111827;
+      letter-spacing: -0.3px;
+    }
+    .nav-brand .re { color: #2563eb; }
+
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px 80px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: 52px;
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1.05;
+      margin-bottom: 16px;
+      max-width: 560px;
+    }
+    .hero p {
+      font-size: 17px;
+      color: #6b7280;
+      max-width: 420px;
+      line-height: 1.6;
+      margin-bottom: 56px;
+    }
+    .cards {
+      display: flex;
+      gap: 16px;
+      max-width: 600px;
+      width: 100%;
+    }
+    @media (max-width: 600px) {
+      .cards { flex-direction: column; }
+      .hero h1 { font-size: 36px; letter-spacing: -1px; }
+    }
+    .card {
+      flex: 1;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 32px 24px;
+      text-align: center;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      border-color: #2563eb;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.08);
+    }
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      background: #f0f6ff;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      margin: 0 auto 20px;
+    }
+    .card h2 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.2px;
+    }
+    .card p {
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .card-btn {
+      display: inline-block;
+      padding: 10px 24px;
+      background: #111827;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
+  </nav>
+
+  <div class="hero">
+    <h1>Get feedback on your draft</h1>
+    <p>Rubric-aligned feedback on your assessment drafts, powered by NESA syllabus standards.</p>
+    <div class="cards">
+      <a class="card" href="teacher.html">
+        <div class="card-icon">📋</div>
+        <h2>I'm a teacher</h2>
+        <p>Set up tasks with marking criteria and share a code with your class.</p>
+        <span class="card-btn">Set up a task</span>
+      </a>
+      <a class="card" href="student.html">
+        <div class="card-icon">✏️</div>
+        <h2>I'm a student</h2>
+        <p>Join with a task code or enter your own task. Paste your draft and get feedback.</p>
+        <span class="card-btn">Get feedback</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="footer">Formative feedback only — not a final mark.</div>
+
+</body>
+</html>

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student — NESA Feedback</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      line-height: 1.6;
+    }
+
+    .nav {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 20px;
+      font-weight: 800;
+      color: #1d1d1f;
+      letter-spacing: -0.5px;
+    }
+    .nav-brand span { color: #6b21a8; }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 32px 16px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #6e6e73;
+      font-size: 15px;
+      margin-bottom: 32px;
+    }
+
+    /* Entry options */
+    .entry-options {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .entry-tab {
+      flex: 1;
+      padding: 14px 20px;
+      background: #fff;
+      border: 2px solid #e5e7eb;
+      border-radius: 14px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .entry-tab.active {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+    .entry-tab:hover { border-color: #93c5fd; }
+
+    /* Code entry */
+    .code-entry {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+    .code-entry h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .code-entry p {
+      font-size: 14px;
+      color: #6e6e73;
+      margin-bottom: 16px;
+    }
+    .code-input-row {
+      display: flex;
+      gap: 10px;
+    }
+    .code-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .code-input:focus { border-color: #3b82f6; }
+    .code-input::placeholder {
+      color: #d1d5db;
+      letter-spacing: 2px;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      padding: 12px 28px;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: #2563eb; }
+
+    /* Own task form */
+    .own-task {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+      display: none;
+    }
+    .own-task.visible { display: block; }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .form-group .hint {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 6px;
+    }
+    .form-group select,
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-group select:focus,
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: #3b82f6;
+    }
+    .form-group textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .criteria-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .criterion-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .criterion-row input:first-child { flex: 3; }
+    .criterion-row input:last-child { flex: 1; max-width: 80px; }
+    .add-criterion {
+      background: none;
+      border: 2px dashed #d1d5db;
+      border-radius: 10px;
+      padding: 8px;
+      color: #9ca3af;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .add-criterion:hover {
+      border-color: #93c5fd;
+      color: #3b82f6;
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 28px 0;
+      color: #9ca3af;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .divider::before, .divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: #e5e7eb;
+    }
+
+    /* Submit area */
+    .submit-area {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .submit-area h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .submit-area p {
+      font-size: 14px;
+      color: #6e6e73;
+      margin-bottom: 16px;
+    }
+    .draft-textarea {
+      width: 100%;
+      min-height: 200px;
+      padding: 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 15px;
+      font-family: inherit;
+      line-height: 1.7;
+      outline: none;
+      resize: vertical;
+      transition: border-color 0.15s;
+    }
+    .draft-textarea:focus { border-color: #3b82f6; }
+    .draft-textarea::placeholder { color: #d1d5db; }
+    .word-count {
+      text-align: right;
+      font-size: 13px;
+      color: #9ca3af;
+      margin-top: 6px;
+      margin-bottom: 16px;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .submit-btn:hover { background: #2563eb; }
+
+    /* Previous feedback */
+    .previous {
+      margin-top: 28px;
+    }
+    .previous h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #6e6e73;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    .previous-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .previous-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .previous-card-info h4 {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .previous-card-info p {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+    .previous-card-arrow {
+      color: #d1d5db;
+      font-size: 18px;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-brand"><span>nesa</span>feedback</div>
+  </nav>
+
+  <div class="container">
+
+    <h1>Get feedback on your draft</h1>
+    <p class="subtitle">Paste your draft and get detailed, criteria-based feedback to improve before you submit.</p>
+
+    <!-- Entry method toggle -->
+    <div class="entry-options">
+      <div class="entry-tab active" onclick="showCode()">Join with a class code</div>
+      <div class="entry-tab" onclick="showOwn()">Enter my own task</div>
+    </div>
+
+    <!-- Class code entry -->
+    <div class="code-entry" id="codeEntry">
+      <h3>Enter your class code</h3>
+      <p>Your teacher will give you a 6-letter code to join the task.</p>
+      <div class="code-input-row">
+        <input type="text" class="code-input" placeholder="e.g. XK7M2P" maxlength="6">
+        <button class="btn-primary">Join</button>
+      </div>
+    </div>
+
+    <!-- Own task entry -->
+    <div class="own-task" id="ownTask">
+      <div class="form-group">
+        <label>Course</label>
+        <select>
+          <option>Select your course...</option>
+          <option selected>HSC PDHPE</option>
+          <option>HSC Biology</option>
+          <option>HSC English Advanced</option>
+          <option>HSC Modern History</option>
+          <option>HSC Business Studies</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Task question</label>
+        <div class="hint">Paste the full question from your task notification</div>
+        <textarea placeholder="e.g. Analyse how the Ottawa Charter can be used to address cardiovascular disease (CVD) as a health priority in Australia."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Marking criteria</label>
+        <div class="hint">Add each criterion and its marks — you'll find these on your task notification sheet</div>
+        <div class="criteria-inputs">
+          <div class="criterion-row">
+            <input type="text" placeholder="Criterion name">
+            <input type="number" placeholder="Marks">
+          </div>
+          <div class="criterion-row">
+            <input type="text" placeholder="Criterion name">
+            <input type="number" placeholder="Marks">
+          </div>
+          <button class="add-criterion">+ Add another criterion</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider">Your draft</div>
+
+    <!-- Draft submission -->
+    <div class="submit-area">
+      <h3>Paste your draft response</h3>
+      <p>Paste your draft below exactly as you've written it. Don't worry about formatting.</p>
+      <textarea class="draft-textarea" placeholder="Paste your draft response here..."></textarea>
+      <div class="word-count">0 words</div>
+      <button class="submit-btn">Get feedback</button>
+    </div>
+
+    <!-- Previous feedback -->
+    <div class="previous">
+      <h3>Your previous feedback</h3>
+      <div class="previous-card">
+        <div class="previous-card-info">
+          <h4>Analyse how the Ottawa Charter addresses CVD</h4>
+          <p>Draft 1 · Submitted 2 days ago · 10 improvements found</p>
+        </div>
+        <span class="previous-card-arrow">›</span>
+      </div>
+    </div>
+
+    <div class="footer">Formative feedback only — not a final mark.</div>
+  </div>
+
+  <script>
+    function showCode() {
+      document.getElementById('codeEntry').style.display = 'block';
+      document.getElementById('ownTask').classList.remove('visible');
+      document.querySelectorAll('.entry-tab')[0].classList.add('active');
+      document.querySelectorAll('.entry-tab')[1].classList.remove('active');
+    }
+    function showOwn() {
+      document.getElementById('codeEntry').style.display = 'none';
+      document.getElementById('ownTask').classList.add('visible');
+      document.querySelectorAll('.entry-tab')[1].classList.add('active');
+      document.querySelectorAll('.entry-tab')[0].classList.remove('active');
+    }
+    // Word count
+    document.querySelector('.draft-textarea').addEventListener('input', function() {
+      const words = this.value.trim() ? this.value.trim().split(/\s+/).length : 0;
+      document.querySelector('.word-count').textContent = words + ' words';
+    });
+  </script>
+
+</body>
+</html>
