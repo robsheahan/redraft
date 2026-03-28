@@ -208,7 +208,14 @@
       gap: 8px;
       align-items: flex-start;
     }
-    .criterion-row .criterion-name { flex: 1; }
+    .criterion-row .criterion-name {
+      flex: 1;
+      resize: none;
+      overflow: hidden;
+      min-height: 44px;
+      line-height: 1.4;
+      field-sizing: content;
+    }
     .criterion-row .criterion-marks { flex: 0 0 90px; }
     .criterion-row .remove-btn {
       flex: 0 0 36px;
@@ -480,7 +487,7 @@
           <h2>Marking criteria</h2>
         </div>
         <div class="form-group">
-          <div class="hint">Define the criteria students will be assessed on. Feedback will address each criterion individually.</div>
+          <div class="hint">Define the criteria students will be assessed on. Feedback will address each criterion individually. Enter marks as a single value (e.g. 5) or a range (e.g. 3-5).</div>
           <div class="criterion-labels">
             <span>Criterion</span>
             <span>Marks</span>
@@ -488,12 +495,12 @@
           </div>
           <div class="criteria-list" id="criteriaList">
             <div class="criterion-row">
-              <input type="text" class="criterion-name" placeholder="e.g. Knowledge and understanding of key concepts">
+              <textarea class="criterion-name" rows="1" placeholder="e.g. Knowledge and understanding of key concepts"></textarea>
               <input type="text" class="criterion-marks" placeholder="Marks">
               <button class="remove-btn" onclick="removeCriterion(this)">×</button>
             </div>
             <div class="criterion-row">
-              <input type="text" class="criterion-name" placeholder="e.g. Analysis and critical thinking">
+              <textarea class="criterion-name" rows="1" placeholder="e.g. Analysis and critical thinking"></textarea>
               <input type="text" class="criterion-marks" placeholder="Marks">
               <button class="remove-btn" onclick="removeCriterion(this)">×</button>
             </div>
@@ -550,7 +557,7 @@
       const row = document.createElement('div');
       row.className = 'criterion-row';
       row.innerHTML = `
-        <input type="text" class="criterion-name" placeholder="Criterion">
+        <textarea class="criterion-name" rows="1" placeholder="Criterion"></textarea>
         <input type="text" class="criterion-marks" placeholder="Marks">
         <button class="remove-btn" onclick="removeCriterion(this)">×</button>
       `;
