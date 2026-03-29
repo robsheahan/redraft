@@ -60,7 +60,8 @@
     .tasks-grid { display: flex; flex-direction: column; gap: 12px; }
     .task-card {
       background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
-      padding: 24px; transition: border-color 0.15s;
+      padding: 24px; transition: border-color 0.15s; cursor: pointer;
+      text-decoration: none; color: inherit; display: block;
     }
     .task-card:hover { border-color: #d1d5db; }
     .task-card-header {
@@ -125,7 +126,7 @@
       const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
       let html = '<div class="tasks-grid">';
       tasks.forEach(t => {
-        html += `<div class="task-card">
+        html += `<a href="task-detail.html?code=${encodeURIComponent(t.code)}" class="task-card">
           <div class="task-card-header">
             <div>
               <h3>${e(t.title || t.question || 'Untitled task')}</h3>
@@ -137,7 +138,7 @@
             <span class="stat"><strong>${t.submission_count}</strong> submissions</span>
             ${t.total_marks ? '<span class="stat"><strong>' + e(t.total_marks) + '</strong> marks</span>' : ''}
           </div>
-        </div>`;
+        </a>`;
       });
       html += '</div>';
       container.innerHTML = html;

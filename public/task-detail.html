@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Detail — Redraft</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #fafafa; color: #111827; line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .nav {
+      background: #fff; border-bottom: 1px solid #f0f0f0;
+      padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-size: 22px; font-weight: 800; text-decoration: none;
+      color: #111827; letter-spacing: -0.5px;
+    }
+    .nav-brand .re { color: #2563eb; }
+    .back-link {
+      font-size: 14px; font-weight: 500; color: #6b7280;
+      text-decoration: none; transition: color 0.15s;
+    }
+    .back-link:hover { color: #111827; }
+
+    .container { max-width: 800px; margin: 0 auto; padding: 32px 20px 80px; }
+
+    /* Task header */
+    .task-header {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 28px; margin-bottom: 24px;
+    }
+    .task-header-top {
+      display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px;
+    }
+    .task-header h1 {
+      font-size: 20px; font-weight: 700; letter-spacing: -0.3px;
+    }
+    .task-code {
+      padding: 4px 12px; background: #f0f6ff; border-radius: 6px;
+      font-size: 13px; font-weight: 700; color: #2563eb; letter-spacing: 1px; flex-shrink: 0;
+    }
+    .task-course { font-size: 13px; color: #6b7280; margin-top: 2px; }
+    .task-question {
+      margin-top: 16px; padding: 14px 16px; background: #f9fafb;
+      border-radius: 8px; font-size: 14px; font-weight: 500; line-height: 1.6;
+    }
+    .task-stats {
+      display: flex; gap: 16px; margin-top: 16px;
+    }
+    .stat { font-size: 13px; color: #6b7280; }
+    .stat strong { color: #111827; }
+
+    /* Generate button */
+    .generate-section {
+      margin-bottom: 24px;
+    }
+    .btn-generate {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; background: #111827; color: #fff; border: none;
+      border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: background 0.15s; width: 100%;
+      justify-content: center;
+    }
+    .btn-generate:hover { background: #1f2937; }
+    .btn-generate:disabled { background: #9ca3af; cursor: not-allowed; }
+    .generate-hint {
+      font-size: 13px; color: #9ca3af; margin-top: 8px; text-align: center;
+    }
+
+    /* Class feedback sections */
+    .section {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 24px 28px; margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 14px; font-weight: 700; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px; letter-spacing: -0.1px;
+    }
+    .section-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .section-text {
+      font-size: 14px; line-height: 1.8; color: #374151;
+    }
+    .feedback-list {
+      list-style: none; padding: 0;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .feedback-list li {
+      padding: 12px 16px; border-radius: 8px;
+      font-size: 14px; line-height: 1.6;
+    }
+
+    /* Color variants */
+    .strengths .section-dot { background: #22c55e; }
+    .strengths .section-title { color: #15803d; }
+    .strengths .feedback-list li { background: #f0fdf4; color: #166534; }
+
+    .weaknesses .section-dot { background: #f59e0b; }
+    .weaknesses .section-title { color: #b45309; }
+    .weaknesses .feedback-list li { background: #fffbeb; color: #78350f; }
+
+    .verb-adherence .section-dot { background: #8b5cf6; }
+    .verb-adherence .section-title { color: #6d28d9; }
+
+    .priorities { background: #fefce8; border-color: #fef08a; }
+    .priorities .section-dot { background: #eab308; }
+    .priorities .section-title { color: #a16207; }
+    .priorities .feedback-list li { background: #fef9c3; color: #713f12; }
+
+    .snapshot .section-dot { background: #3b82f6; }
+    .snapshot .section-title { color: #1d4ed8; }
+
+    /* Submissions list */
+    .submissions-section { margin-top: 32px; }
+    .submissions-section h2 {
+      font-size: 17px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.2px;
+    }
+    .submission-card {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+      padding: 16px 20px; margin-bottom: 8px;
+    }
+    .submission-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .submission-label { font-size: 14px; font-weight: 600; }
+    .submission-date { font-size: 12px; color: #9ca3af; }
+    .submission-preview {
+      font-size: 13px; color: #6b7280; line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .loading { text-align: center; padding: 60px; color: #9ca3af; font-size: 14px; }
+    .error-msg { text-align: center; padding: 40px; color: #dc2626; font-size: 14px; }
+    .footer {
+      text-align: center; padding: 32px 20px; font-size: 13px; color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
+    <a href="teacher.html" class="back-link">Back to tasks</a>
+  </nav>
+
+  <div class="container" id="content">
+    <div class="loading">Loading task...</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+    (async () => {
+      const user = await requireAuth('teacher');
+      if (!user) return;
+
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const container = document.getElementById('content');
+
+      if (!code) {
+        container.innerHTML = '<div class="error-msg">No task code provided.</div>';
+        return;
+      }
+
+      const res = await authFetch('/api/task-submissions?code=' + encodeURIComponent(code));
+      if (!res.ok) {
+        container.innerHTML = '<div class="error-msg">Could not load task.</div>';
+        return;
+      }
+
+      const { task, submissions } = await res.json();
+      document.title = (task.title || 'Task') + ' — Redraft';
+
+      let html = '';
+
+      // Task header
+      html += '<div class="task-header">';
+      html += '<div class="task-header-top"><div>';
+      html += '<h1>' + e(task.title || task.question || 'Untitled task') + '</h1>';
+      if (task.course) html += '<div class="task-course">' + e(task.course) + '</div>';
+      html += '</div><div class="task-code">' + e(task.code) + '</div></div>';
+      if (task.question) html += '<div class="task-question">' + e(task.question) + '</div>';
+      html += '<div class="task-stats">';
+      html += '<span class="stat"><strong>' + submissions.length + '</strong> submissions</span>';
+      if (task.total_marks) html += '<span class="stat"><strong>' + e(String(task.total_marks)) + '</strong> marks</span>';
+      html += '</div></div>';
+
+      // Generate class feedback button
+      html += '<div class="generate-section">';
+      html += '<button class="btn-generate" id="generateBtn" ' + (submissions.length === 0 ? 'disabled' : '') + '>Generate class feedback</button>';
+      if (submissions.length === 0) {
+        html += '<div class="generate-hint">No submissions yet — students need to submit drafts first.</div>';
+      } else {
+        html += '<div class="generate-hint">Analyse ' + submissions.length + ' submission' + (submissions.length === 1 ? '' : 's') + ' for a class-level overview.</div>';
+      }
+      html += '</div>';
+
+      // Placeholder for class feedback
+      html += '<div id="classFeedback"></div>';
+
+      // Submissions list
+      html += '<div class="submissions-section">';
+      html += '<h2>Submissions</h2>';
+      if (submissions.length === 0) {
+        html += '<div class="submission-card"><div class="submission-label" style="color:#9ca3af">No submissions yet</div></div>';
+      } else {
+        submissions.forEach((s, i) => {
+          const date = new Date(s.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          const preview = s.draft_text ? s.draft_text.substring(0, 150) + (s.draft_text.length > 150 ? '...' : '') : 'No draft text';
+          html += '<div class="submission-card">';
+          html += '<div class="submission-card-header">';
+          html += '<span class="submission-label">Student ' + (i + 1) + '</span>';
+          html += '<span class="submission-date">' + e(date) + '</span>';
+          html += '</div>';
+          html += '<div class="submission-preview">' + e(preview) + '</div>';
+          html += '</div>';
+        });
+      }
+      html += '</div>';
+
+      container.innerHTML = html;
+
+      // Generate class feedback handler
+      const btn = document.getElementById('generateBtn');
+      if (btn && submissions.length > 0) {
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          btn.textContent = 'Generating class feedback...';
+
+          try {
+            const res = await authFetch('/api/generate-class-feedback', {
+              method: 'POST',
+              body: JSON.stringify({ code }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to generate class feedback');
+
+            renderClassFeedback(data.feedback, data.submission_count);
+            btn.textContent = 'Regenerate class feedback';
+            btn.disabled = false;
+          } catch (err) {
+            alert(err.message);
+            btn.textContent = 'Generate class feedback';
+            btn.disabled = false;
+          }
+        });
+      }
+    })();
+
+    function renderClassFeedback(fb, count) {
+      const target = document.getElementById('classFeedback');
+      let html = '';
+
+      // Snapshot
+      if (fb.overall_snapshot) {
+        html += '<div class="section snapshot"><div class="section-title"><span class="section-dot"></span>Class snapshot</div>';
+        html += '<p class="section-text">' + e(fb.overall_snapshot) + '</p></div>';
+      }
+
+      // Strengths
+      if (fb.class_strengths && fb.class_strengths.length) {
+        html += '<div class="section strengths"><div class="section-title"><span class="section-dot"></span>Class strengths</div>';
+        html += '<ul class="feedback-list">';
+        fb.class_strengths.forEach(p => { html += '<li>' + e(p) + '</li>'; });
+        html += '</ul></div>';
+      }
+
+      // Weaknesses
+      if (fb.class_weaknesses && fb.class_weaknesses.length) {
+        html += '<div class="section weaknesses"><div class="section-title"><span class="section-dot"></span>Common gaps</div>';
+        html += '<ul class="feedback-list">';
+        fb.class_weaknesses.forEach(p => { html += '<li>' + e(p) + '</li>'; });
+        html += '</ul></div>';
+      }
+
+      // Task verb adherence
+      if (fb.task_verb_adherence) {
+        html += '<div class="section verb-adherence"><div class="section-title"><span class="section-dot"></span>Task verb adherence</div>';
+        html += '<p class="section-text">' + e(fb.task_verb_adherence) + '</p></div>';
+      }
+
+      // Top priorities
+      if (fb.top_priorities && fb.top_priorities.length) {
+        html += '<div class="section priorities"><div class="section-title"><span class="section-dot"></span>Top priorities for the class</div>';
+        html += '<ul class="feedback-list">';
+        fb.top_priorities.forEach(p => { html += '<li>' + e(p) + '</li>'; });
+        html += '</ul></div>';
+      }
+
+      html += '<div class="footer">Based on ' + count + ' student submission' + (count === 1 ? '' : 's') + '.</div>';
+
+      target.innerHTML = html;
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  </script>
+
+</body>
+</html>
