@@ -87,21 +87,44 @@ COMMON MISTAKES IN PDHPE RESPONSES (from HSC marking experience):
 - Not addressing all parts of a multi-part question
 
 OUTPUT FORMAT:
-Respond in the following JSON structure. Write in natural, personable language throughout — as if you're writing feedback comments on their paper.
+Respond in the following JSON structure. Each section has a "summary" (short bullet points — the headline takeaway a student sees first) and "detail" (the full explanation). Write in natural, personable language throughout.
+
+Be CONCISE. Every sentence should earn its place. Cut filler words. Lead with the action, not the reasoning. If a point can be made in one sentence, don't use three.
 
 {
-  "what_youve_done_well": [
-    "Each point should be a specific thing the student has done well, referencing their actual text. These are things they should KEEP and not change. Be genuine — only list things that are genuinely strong."
-  ],
-  "task_verb_check": "A short, plain-language paragraph (not a list) explaining what the task verb requires according to NESA, whether the student has met that requirement, and what they need to do differently if not. Reference specific parts of their response. Write this conversationally — e.g. 'The question asks you to analyse, which means... Looking at your response, you've mostly described each area rather than analysed it. For example, where you write about [X], you explain what it is but don't explore the relationships or implications...'",
-  "improvements": [
-    "Each point should be a specific, actionable thing to fix. Start with what the issue is, then tell them exactly what to do about it. Reference their text where relevant. Every single flaw you identify should appear here — do not omit any for brevity. Format: what's wrong → what to do about it."
-  ],
-  "overall": "2-3 sentences giving an honest overall picture. Where does this response sit? What's the main thing holding it back?",
-  "top_priority": "The single most impactful change that would improve this response the most. Be specific — tell them exactly what to do.",
-  "what_a_strong_response_includes": [
-    "3-5 dot points describing what a strong response to this specific question would contain — to give the student a target to aim for, without writing it for them"
-  ]
+  "what_youve_done_well": {
+    "summary": [
+      "Short bullet: one strength per line, ~10 words max (e.g. 'Strong use of Ottawa Charter action areas')"
+    ],
+    "detail": [
+      "Full explanation of each strength, referencing their actual text. These are things they should KEEP. Be genuine — only list things that are genuinely strong."
+    ]
+  },
+  "task_verb_check": {
+    "summary": "One sentence: did they meet the task verb requirement or not, and what verb depth is needed.",
+    "detail": "Full explanation: what the task verb requires according to NESA, whether the student met it, and specific examples from their response showing where they did or didn't. Write conversationally."
+  },
+  "improvements": {
+    "summary": [
+      "Short bullet per issue: the problem + the fix in ~15 words (e.g. 'Paragraph 3 describes but doesn't analyse — add cause-effect links')"
+    ],
+    "detail": [
+      "Full explanation of each issue with specific, actionable steps. Format each as: WHAT'S WRONG → WHAT TO DO. Reference their actual text. Include every flaw — do not omit any."
+    ]
+  },
+  "overall": {
+    "summary": "One sentence: where this response sits and the single biggest thing holding it back.",
+    "detail": "2-3 sentences giving the full honest picture. Performance band estimate, main patterns, what would push it to the next level."
+  },
+  "top_priority": {
+    "summary": "One sentence: the single most impactful change.",
+    "detail": "Full explanation of exactly what to do, step by step. Be specific enough that the student can sit down and do it immediately."
+  },
+  "what_a_strong_response_includes": {
+    "summary": [
+      "3-5 short bullets describing what a strong response to this specific question looks like — a target to aim for"
+    ]
+  }
 }`;
 }
 

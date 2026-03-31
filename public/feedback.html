@@ -55,10 +55,10 @@
       margin-bottom: 16px;
     }
     .header h1 {
-      font-size: 20px;
-      font-weight: 700;
+      font-size: 22px;
+      font-weight: 800;
       margin-bottom: 4px;
-      letter-spacing: -0.3px;
+      letter-spacing: -0.5px;
     }
     .task-meta {
       font-size: 13px;
@@ -95,7 +95,7 @@
     .section-title {
       font-size: 14px;
       font-weight: 700;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -107,6 +107,44 @@
       border-radius: 50%;
       flex-shrink: 0;
     }
+
+    /* Summary bullets */
+    .summary-list {
+      list-style: none; padding: 0;
+      display: flex; flex-direction: column; gap: 4px;
+      margin-bottom: 14px;
+    }
+    .summary-list li {
+      font-size: 14px; font-weight: 600; line-height: 1.5;
+      padding-left: 16px; position: relative;
+    }
+    .summary-list li::before {
+      content: ""; position: absolute; left: 0; top: 8px;
+      width: 6px; height: 6px; border-radius: 50%;
+    }
+    .summary-text {
+      font-size: 14px; font-weight: 600; line-height: 1.5;
+      margin-bottom: 14px;
+    }
+
+    /* Detail content */
+    .detail-toggle {
+      font-size: 13px; font-weight: 600; color: #6b7280;
+      cursor: pointer; background: none; border: none;
+      font-family: inherit; padding: 0; transition: color 0.15s;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .detail-toggle:hover { color: #111827; }
+    .detail-toggle-arrow {
+      font-size: 10px; transition: transform 0.15s; display: inline-block;
+    }
+    .detail-content {
+      display: none; margin-top: 12px; padding-top: 12px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .detail-content.visible { display: block; }
+    .detail-content .detail-toggle-arrow { transform: rotate(90deg); }
+
     .section-text {
       font-size: 14px;
       line-height: 1.8;
@@ -116,19 +154,33 @@
     /* Color variants */
     .done-well .section-dot { background: #22c55e; }
     .done-well .section-title { color: #15803d; }
+    .done-well .summary-list li::before { background: #22c55e; }
+    .done-well .summary-list li { color: #166534; }
+
     .verb-check .section-dot { background: #8b5cf6; }
     .verb-check .section-title { color: #6d28d9; }
+    .verb-check .summary-text { color: #4c1d95; }
+
     .top-priority { background: #fefce8; border-color: #fef08a; }
     .top-priority .section-dot { background: #eab308; }
     .top-priority .section-title { color: #a16207; }
+    .top-priority .summary-text { color: #713f12; }
+
     .improvements .section-dot { background: #f59e0b; }
     .improvements .section-title { color: #b45309; }
+    .improvements .summary-list li::before { background: #f59e0b; }
+    .improvements .summary-list li { color: #78350f; }
+
     .overall .section-dot { background: #3b82f6; }
     .overall .section-title { color: #1d4ed8; }
+    .overall .summary-text { color: #1e3a5f; }
+
     .strong-response .section-dot { background: #8b5cf6; }
     .strong-response .section-title { color: #6d28d9; }
+    .strong-response .summary-list li::before { background: #8b5cf6; }
+    .strong-response .summary-list li { color: #4c1d95; }
 
-    /* Lists */
+    /* Detail lists */
     .feedback-list {
       list-style: none;
       padding: 0;
@@ -141,6 +193,7 @@
       border-radius: 8px;
       font-size: 14px;
       line-height: 1.6;
+      font-weight: 400;
     }
     .done-well .feedback-list li { background: #f0fdf4; color: #166534; }
     .improvements .feedback-list li {
@@ -224,67 +277,134 @@
           <a href="student.html">Go to student page</a>
         </div>`;
     } else {
-      const { feedback, meta } = JSON.parse(feedbackData);
+      const { feedback: fb, meta } = JSON.parse(feedbackData);
       const task = taskData ? JSON.parse(taskData) : {};
       const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
 
-      let html = '';
+      // Helper: get summary/detail from new format, or fall back to old flat format
+      const getObj = (val) => {
+        if (val && typeof val === 'object' && !Array.isArray(val)) return val;
+        // Old format: wrap in new structure
+        if (Array.isArray(val)) return { summary: val, detail: val };
+        if (typeof val === 'string') return { summary: val, detail: val };
+        return { summary: null, detail: null };
+      };
 
-      // Header
+      let html = '';
+      let detailIdx = 0;
+
+      // Header with assessment title
       html += '<div class="header">';
-      html += '<h1>Feedback on your draft</h1>';
+      html += '<h1>' + e(task.question ? 'Feedback on your draft' : 'Feedback on your draft') + '</h1>';
       if (meta.course) html += '<div class="task-meta">' + e(meta.course) + '</div>';
       if (meta.question) html += '<div class="task-question">' + e(meta.question) + '</div>';
       if (meta.taskVerb) html += '<span class="task-verb">Task verb: ' + e(meta.taskVerb) + '</span>';
       html += '</div>';
 
-      // What you've done well
-      if (feedback.what_youve_done_well && feedback.what_youve_done_well.length) {
+      // --- What you've done well ---
+      const well = getObj(fb.what_youve_done_well);
+      if (well.summary || well.detail) {
+        const id = 'd' + (detailIdx++);
         html += '<div class="section done-well"><div class="section-title"><span class="section-dot"></span>What you\'ve done well</div>';
-        html += '<ul class="feedback-list">';
-        feedback.what_youve_done_well.forEach(p => { html += '<li>' + e(p) + '</li>'; });
-        html += '</ul></div>';
+        if (Array.isArray(well.summary) && well.summary.length) {
+          html += '<ul class="summary-list">';
+          well.summary.forEach(p => { html += '<li>' + e(p) + '</li>'; });
+          html += '</ul>';
+        }
+        if (Array.isArray(well.detail) && well.detail.length) {
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
+          html += '<div class="detail-content" id="' + id + '"><ul class="feedback-list">';
+          well.detail.forEach(p => { html += '<li>' + e(p) + '</li>'; });
+          html += '</ul></div>';
+        }
+        html += '</div>';
       }
 
-      // Task verb check
-      if (feedback.task_verb_check) {
+      // --- Task verb check ---
+      const verb = getObj(fb.task_verb_check);
+      if (verb.summary || verb.detail) {
+        const id = 'd' + (detailIdx++);
         html += '<div class="section verb-check"><div class="section-title"><span class="section-dot"></span>Task verb check — "' + e(meta.taskVerb || '') + '"</div>';
-        html += '<p class="section-text">' + e(feedback.task_verb_check) + '</p></div>';
+        if (verb.summary) html += '<p class="summary-text">' + e(typeof verb.summary === 'string' ? verb.summary : '') + '</p>';
+        if (verb.detail && verb.detail !== verb.summary) {
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
+          html += '<div class="detail-content" id="' + id + '"><p class="section-text">' + e(typeof verb.detail === 'string' ? verb.detail : '') + '</p></div>';
+        }
+        html += '</div>';
       }
 
-      // Top priority
-      if (feedback.top_priority) {
+      // --- Top priority ---
+      const priority = getObj(fb.top_priority);
+      if (priority.summary || priority.detail) {
+        const id = 'd' + (detailIdx++);
         html += '<div class="section top-priority"><div class="section-title"><span class="section-dot"></span>Top priority — focus on this first</div>';
-        html += '<p class="section-text">' + e(feedback.top_priority) + '</p></div>';
+        if (priority.summary) html += '<p class="summary-text">' + e(typeof priority.summary === 'string' ? priority.summary : '') + '</p>';
+        if (priority.detail && priority.detail !== priority.summary) {
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
+          html += '<div class="detail-content" id="' + id + '"><p class="section-text">' + e(typeof priority.detail === 'string' ? priority.detail : '') + '</p></div>';
+        }
+        html += '</div>';
       }
 
-      // Improvements
-      if (feedback.improvements && feedback.improvements.length) {
+      // --- Improvements ---
+      const impr = getObj(fb.improvements);
+      if (impr.summary || impr.detail) {
+        const id = 'd' + (detailIdx++);
         html += '<div class="section improvements"><div class="section-title"><span class="section-dot"></span>Things to improve</div>';
-        html += '<ul class="feedback-list">';
-        feedback.improvements.forEach((p, i) => {
-          html += '<li><span class="improvement-number">' + (i + 1) + '</span>' + e(p) + '</li>';
-        });
-        html += '</ul></div>';
+        if (Array.isArray(impr.summary) && impr.summary.length) {
+          html += '<ul class="summary-list">';
+          impr.summary.forEach(p => { html += '<li>' + e(p) + '</li>'; });
+          html += '</ul>';
+        }
+        if (Array.isArray(impr.detail) && impr.detail.length) {
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
+          html += '<div class="detail-content" id="' + id + '"><ul class="feedback-list">';
+          impr.detail.forEach((p, i) => {
+            html += '<li><span class="improvement-number">' + (i + 1) + '</span>' + e(p) + '</li>';
+          });
+          html += '</ul></div>';
+        }
+        html += '</div>';
       }
 
-      // Overall
-      if (feedback.overall) {
+      // --- Overall ---
+      const overall = getObj(fb.overall);
+      if (overall.summary || overall.detail) {
+        const id = 'd' + (detailIdx++);
         html += '<div class="section overall"><div class="section-title"><span class="section-dot"></span>Overall</div>';
-        html += '<p class="section-text">' + e(feedback.overall) + '</p></div>';
+        if (overall.summary) html += '<p class="summary-text">' + e(typeof overall.summary === 'string' ? overall.summary : '') + '</p>';
+        if (overall.detail && overall.detail !== overall.summary) {
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
+          html += '<div class="detail-content" id="' + id + '"><p class="section-text">' + e(typeof overall.detail === 'string' ? overall.detail : '') + '</p></div>';
+        }
+        html += '</div>';
       }
 
-      // What a strong response includes
-      if (feedback.what_a_strong_response_includes && feedback.what_a_strong_response_includes.length) {
+      // --- What a strong response includes ---
+      const strong = getObj(fb.what_a_strong_response_includes);
+      if (strong.summary && Array.isArray(strong.summary) && strong.summary.length) {
         html += '<div class="section strong-response"><div class="section-title"><span class="section-dot"></span>What a strong response includes</div>';
-        html += '<ul class="feedback-list">';
-        feedback.what_a_strong_response_includes.forEach(p => { html += '<li>' + e(p) + '</li>'; });
+        html += '<ul class="summary-list">';
+        strong.summary.forEach(p => { html += '<li>' + e(p) + '</li>'; });
         html += '</ul></div>';
       }
 
       html += '<div class="footer">This is formative feedback on a draft — not a final mark.</div>';
 
       container.innerHTML = html;
+    }
+
+    function toggleDetail(id, btn) {
+      const el = document.getElementById(id);
+      el.classList.toggle('visible');
+      const arrow = btn.querySelector('.detail-toggle-arrow');
+      if (el.classList.contains('visible')) {
+        arrow.style.transform = 'rotate(90deg)';
+        btn.lastChild.textContent = ' Hide detail';
+      } else {
+        arrow.style.transform = '';
+        btn.lastChild.textContent = ' Show detail';
+      }
     }
   </script>
 

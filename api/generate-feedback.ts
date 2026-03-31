@@ -10,6 +10,21 @@ const TASK_VERBS = [
   'examine', 'explain', 'identify', 'justify', 'outline', 'propose',
 ];
 
+const REVIEW_SYSTEM_PROMPT = `You are a senior HSC PDHPE marker and feedback quality reviewer. You have just received AI-generated feedback on a student's draft assessment response. Your job is to review this feedback for accuracy, calibration, and actionability, then return a refined version.
+
+REVIEW CHECKLIST:
+1. ACCURACY: Does the feedback correctly identify the task verb requirements? Are the strengths genuinely strong, or inflated? Are the identified issues real issues in the student's text?
+2. CALIBRATION: Is the overall assessment honest and well-calibrated to HSC standards? Would an experienced marker agree with the performance band estimate?
+3. ACTIONABILITY: Can the student actually act on every improvement point? Are the steps specific enough? Remove vague advice and replace with concrete actions.
+4. CONCISENESS: Cut any filler, repetition, or padding. Every sentence should add value. Summaries should be punchy and scannable.
+5. COMPLETENESS: Has any significant issue been missed? Has any strength been overlooked?
+
+IMPORTANT:
+- If the original feedback is already accurate and well-calibrated, make only minor refinements. Do not change for the sake of changing.
+- If you find inaccuracies (e.g. praising something that isn't actually strong, or missing a major flaw), correct them.
+- Maintain the same warm, direct, teacher-to-student voice.
+- Return the SAME JSON structure as the input, refined.`;
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -57,7 +72,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const response = await client.messages.create({
+    // --- Pass 1: Generate initial feedback ---
+    const pass1 = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 4000,
       temperature: 0.2,
@@ -65,14 +81,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       messages: [{ role: 'user', content: userPrompt }],
     });
 
-    const outputText = response.content[0].type === 'text' ? response.content[0].text : '';
-    const jsonMatch = outputText.match(/\{[\s\S]*\}/);
+    const pass1Text = pass1.content[0].type === 'text' ? pass1.content[0].text : '';
+    const pass1Match = pass1Text.match(/\{[\s\S]*\}/);
 
-    if (!jsonMatch) {
+    if (!pass1Match) {
       return res.status(500).json({ error: 'Failed to parse feedback response' });
     }
 
-    const feedback = JSON.parse(jsonMatch[0]);
+    const initialFeedback = JSON.parse(pass1Match[0]);
+
+    // --- Pass 2: Review and refine for accuracy ---
+    const reviewPrompt = `ORIGINAL TASK:
+${taskDescription}
+
+TASK VERB: "${taskVerb}"
+
+STUDENT'S DRAFT:
+${draft}
+
+---
+
+INITIAL AI FEEDBACK (to review and refine):
+${JSON.stringify(initialFeedback, null, 2)}
+
+---
+
+Review this feedback against the student's actual draft. Check for accuracy, calibration, actionability, and conciseness per your checklist. Return the refined feedback as the same JSON structure. Only make changes where genuinely needed.`;
+
+    const pass2 = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4000,
+      temperature: 0.1,
+      system: REVIEW_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: reviewPrompt }],
+    });
+
+    const pass2Text = pass2.content[0].type === 'text' ? pass2.content[0].text : '';
+    const pass2Match = pass2Text.match(/\{[\s\S]*\}/);
+
+    // Use refined feedback if pass 2 succeeded, otherwise fall back to pass 1
+    const feedback = pass2Match ? JSON.parse(pass2Match[0]) : initialFeedback;
 
     // Save submission if user is authenticated
     if (user) {
