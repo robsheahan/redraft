@@ -9,16 +9,15 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', -apple-system, sans-serif;
-      background: #fafafa;
+      background: #f5f5f7;
       color: #111827;
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
     }
 
     .nav {
-      background: #fff;
-      border-bottom: 1px solid #f0f0f0;
-      padding: 16px 32px;
+      background: #111827;
+      padding: 14px 32px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -27,16 +26,17 @@
       font-size: 22px;
       font-weight: 800;
       text-decoration: none;
-      color: #111827;
+      color: #fff;
       letter-spacing: -0.5px;
     }
-    .nav-brand .re { color: #2563eb; }
+    .nav-brand .re { color: #60a5fa; }
     .back-link {
-      font-size: 13px; font-weight: 500; color: #6b7280;
-      text-decoration: none; background: #fff; border: 1px solid #e5e7eb;
+      font-size: 13px; font-weight: 500; color: #d1d5db;
+      text-decoration: none; background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
       border-radius: 6px; padding: 6px 14px; transition: all 0.15s;
     }
-    .back-link:hover { background: #f9fafb; border-color: #d1d5db; color: #111827; }
+    .back-link:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.2); color: #fff; }
 
     .container {
       max-width: 720px;
@@ -47,10 +47,10 @@
     /* Header */
     .header {
       background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
+      border-radius: 16px;
       padding: 28px;
       margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
     }
     .header h1 {
       font-size: 22px;
@@ -66,7 +66,7 @@
       margin-top: 16px;
       padding: 14px 16px;
       background: #f9fafb;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 14px;
       font-weight: 500;
       line-height: 1.6;
@@ -85,45 +85,46 @@
     /* Feedback sections */
     .section {
       background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 24px 28px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
     }
     .section-title {
       font-size: 15px;
       font-weight: 700;
       margin-bottom: 14px;
-      letter-spacing: -0.1px;
+      letter-spacing: -0.2px;
+      color: #111827;
     }
 
     /* Summary bullets */
     .summary-list {
       list-style: none; padding: 0;
-      display: flex; flex-direction: column; gap: 4px;
+      display: flex; flex-direction: column; gap: 6px;
       margin-bottom: 14px;
     }
     .summary-list li {
-      font-size: 14px; font-weight: 600; line-height: 1.5;
-      padding-left: 16px; position: relative;
+      font-size: 14px; font-weight: 500; line-height: 1.6;
+      padding-left: 18px; position: relative; color: #374151;
     }
     .summary-list li::before {
-      content: ""; position: absolute; left: 0; top: 8px;
-      width: 6px; height: 6px; border-radius: 50%;
+      content: ""; position: absolute; left: 0; top: 9px;
+      width: 6px; height: 6px; border-radius: 50%; background: #2563eb;
     }
     .summary-text {
-      font-size: 14px; font-weight: 600; line-height: 1.5;
-      margin-bottom: 14px;
+      font-size: 14px; font-weight: 500; line-height: 1.6;
+      margin-bottom: 14px; color: #374151;
     }
 
     /* Detail content */
     .detail-toggle {
-      font-size: 13px; font-weight: 600; color: #6b7280;
+      font-size: 13px; font-weight: 600; color: #2563eb;
       cursor: pointer; background: none; border: none;
       font-family: inherit; padding: 0; transition: color 0.15s;
       display: flex; align-items: center; gap: 4px;
     }
-    .detail-toggle:hover { color: #111827; }
+    .detail-toggle:hover { color: #1d4ed8; }
     .detail-toggle-arrow {
       font-size: 10px; transition: transform 0.15s; display: inline-block;
     }
@@ -132,7 +133,6 @@
       border-top: 1px solid #f0f0f0;
     }
     .detail-content.visible { display: block; }
-    .detail-content .detail-toggle-arrow { transform: rotate(90deg); }
 
     .section-text {
       font-size: 14px;
@@ -140,13 +140,12 @@
       color: #374151;
     }
 
-    /* Section colors — unified */
-    .section .section-title { color: #111827; }
-    .section .summary-list li { color: #374151; }
-    .section .summary-list li::before { background: #111827; }
-    .section .summary-text { color: #374151; }
-
-    .self-check { background: #f0f6ff; border-color: #bfdbfe; }
+    /* Self-check card */
+    .self-check {
+      background: linear-gradient(135deg, #eff6ff 0%, #f0f6ff 100%);
+      border: 1px solid #bfdbfe;
+      box-shadow: none;
+    }
     .self-check .section-title { color: #1d4ed8; }
     .self-check .section-text { color: #1e40af; font-weight: 500; font-style: italic; }
 
@@ -160,12 +159,12 @@
     }
     .feedback-list li {
       padding: 12px 16px;
-      border-radius: 8px;
+      border-radius: 10px;
       font-size: 14px;
       line-height: 1.6;
       font-weight: 400;
+      background: #f9fafb; color: #374151;
     }
-    .feedback-list li { background: #f9fafb; color: #374151; }
     .improvements .feedback-list li {
       position: relative;
       padding-left: 40px;
@@ -176,8 +175,8 @@
       top: 12px;
       width: 20px;
       height: 20px;
-      background: #e5e7eb;
-      color: #374151;
+      background: #2563eb;
+      color: #fff;
       border-radius: 50%;
       font-size: 11px;
       font-weight: 700;
@@ -204,7 +203,7 @@
     .empty-state a {
       display: inline-block;
       padding: 10px 24px;
-      background: #111827;
+      background: #2563eb;
       color: #fff;
       border-radius: 8px;
       font-size: 14px;
@@ -248,10 +247,8 @@
       const task = taskData ? JSON.parse(taskData) : {};
       const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
 
-      // Helper: get summary/detail from new format, or fall back to old flat format
       const getObj = (val) => {
         if (val && typeof val === 'object' && !Array.isArray(val)) return val;
-        // Old format: wrap in new structure
         if (Array.isArray(val)) return { summary: val, detail: val };
         if (typeof val === 'string') return { summary: val, detail: val };
         return { summary: null, detail: null };
@@ -260,10 +257,8 @@
       let html = '';
       let detailIdx = 0;
 
-      // Capitalise verb helper
       const capVerb = (v) => v ? v.charAt(0).toUpperCase() + v.slice(1) : '';
 
-      // Header with assessment title
       const taskTitle = task.title || meta.title;
       html += '<div class="header">';
       html += '<h1>' + e(taskTitle || 'Feedback on your draft') + '</h1>';
@@ -272,7 +267,7 @@
       if (meta.taskVerb) html += '<span class="task-verb">Key term: ' + e(capVerb(meta.taskVerb)) + '</span>';
       html += '</div>';
 
-      // --- What you've done well ---
+      // What you've done well
       const well = getObj(fb.what_youve_done_well);
       if (well.summary || well.detail) {
         const id = 'd' + (detailIdx++);
@@ -291,7 +286,7 @@
         html += '</div>';
       }
 
-      // --- Task verb check ---
+      // Key term check
       const verb = getObj(fb.task_verb_check);
       if (verb.summary || verb.detail) {
         const id = 'd' + (detailIdx++);
@@ -305,7 +300,7 @@
         html += '</div>';
       }
 
-      // --- Top priority ---
+      // Top priority
       const priority = getObj(fb.top_priority);
       if (priority.summary || priority.detail) {
         const id = 'd' + (detailIdx++);
@@ -318,7 +313,7 @@
         html += '</div>';
       }
 
-      // --- Improvements ---
+      // Improvements
       const impr = getObj(fb.improvements);
       if (impr.summary || impr.detail) {
         const id = 'd' + (detailIdx++);
@@ -339,7 +334,7 @@
         html += '</div>';
       }
 
-      // --- Overall ---
+      // Overall
       const overall = getObj(fb.overall);
       if (overall.summary || overall.detail) {
         const id = 'd' + (detailIdx++);
@@ -352,7 +347,7 @@
         html += '</div>';
       }
 
-      // --- What a strong response includes ---
+      // What a strong response includes
       const strong = getObj(fb.what_a_strong_response_includes);
       if (strong.summary && Array.isArray(strong.summary) && strong.summary.length) {
         html += '<div class="section strong-response"><div class="section-title">What a strong response includes</div>';
@@ -361,7 +356,7 @@
         html += '</ul></div>';
       }
 
-      // --- Self-check ---
+      // Self-check
       if (fb.self_check) {
         html += '<div class="section self-check"><div class="section-title">Self-check before submitting</div>';
         html += '<p class="section-text">' + e(fb.self_check) + '</p></div>';

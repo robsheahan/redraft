@@ -9,30 +9,33 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', -apple-system, sans-serif;
-      background: #fafafa; color: #111827; line-height: 1.5;
+      background: #f5f5f7; color: #111827; line-height: 1.5;
       -webkit-font-smoothing: antialiased;
     }
     .nav {
-      background: #fff; border-bottom: 1px solid #f0f0f0;
-      padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+      background: #111827;
+      padding: 14px 32px; display: flex; align-items: center; justify-content: space-between;
     }
     .nav-brand {
       font-size: 22px; font-weight: 800; text-decoration: none;
-      color: #111827; letter-spacing: -0.5px;
+      color: #fff; letter-spacing: -0.5px;
     }
-    .nav-brand .re { color: #2563eb; }
+    .nav-brand .re { color: #60a5fa; }
     .back-link {
-      font-size: 14px; font-weight: 500; color: #6b7280;
-      text-decoration: none; transition: color 0.15s;
+      font-size: 13px; font-weight: 500; color: #d1d5db;
+      text-decoration: none; background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px; padding: 6px 14px; transition: all 0.15s;
     }
-    .back-link:hover { color: #111827; }
+    .back-link:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.2); color: #fff; }
 
     .container { max-width: 800px; margin: 0 auto; padding: 32px 20px 80px; }
 
     /* Task header */
     .task-header {
-      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+      background: #fff; border-radius: 16px;
       padding: 28px; margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
     }
     .task-header-top {
       display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px;
@@ -102,7 +105,8 @@
     .btn-save {
       padding: 8px 18px; background: #2563eb; color: #fff; border: none;
       border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
-      font-family: inherit; transition: background 0.15s;
+      font-family: inherit; transition: all 0.15s;
+      box-shadow: 0 1px 3px rgba(37,99,235,0.3);
     }
     .btn-save:hover { background: #1d4ed8; }
     .btn-save:disabled { background: #9ca3af; cursor: not-allowed; }
@@ -127,21 +131,22 @@
     .generate-section { margin-bottom: 24px; }
     .btn-generate {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 12px 24px; background: #111827; color: #fff; border: none;
-      border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
-      font-family: inherit; transition: background 0.15s; width: 100%;
-      justify-content: center;
+      padding: 12px 24px; background: #2563eb; color: #fff; border: none;
+      border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: all 0.15s; width: 100%;
+      justify-content: center; box-shadow: 0 2px 6px rgba(37,99,235,0.3);
     }
-    .btn-generate:hover { background: #1f2937; }
-    .btn-generate:disabled { background: #9ca3af; cursor: not-allowed; }
+    .btn-generate:hover { background: #1d4ed8; box-shadow: 0 4px 12px rgba(37,99,235,0.35); }
+    .btn-generate:disabled { background: #9ca3af; cursor: not-allowed; box-shadow: none; }
     .generate-hint {
       font-size: 13px; color: #9ca3af; margin-top: 8px; text-align: center;
     }
 
     /* Class feedback sections */
     .section {
-      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
-      padding: 24px 28px; margin-bottom: 12px;
+      background: #fff; border-radius: 14px;
+      padding: 24px 28px; margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
     }
     .section-title {
       font-size: 14px; font-weight: 700; margin-bottom: 16px;
@@ -179,10 +184,12 @@
       font-size: 17px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.2px;
     }
     .submission-card {
-      background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
-      margin-bottom: 8px; overflow: hidden; transition: border-color 0.15s;
+      background: #fff; border-radius: 10px;
+      margin-bottom: 8px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+      transition: box-shadow 0.15s;
     }
-    .submission-card:hover { border-color: #d1d5db; }
+    .submission-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04); }
     .submission-card-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 16px 20px; cursor: pointer;
