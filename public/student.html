@@ -21,8 +21,14 @@
       padding: 16px 32px;
       display: flex; align-items: center; justify-content: space-between;
     }
-    .nav-right { display: flex; align-items: center; gap: 16px; }
-    .nav-user { font-size: 14px; color: #6b7280; }
+    .nav-right { display: flex; align-items: center; gap: 24px; }
+    .nav-user-info { display: flex; align-items: center; gap: 10px; }
+    .nav-role {
+      padding: 4px 10px; background: #f0fdf4; border-radius: 6px;
+      font-size: 12px; font-weight: 700; color: #16a34a; text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .nav-user { font-size: 14px; font-weight: 500; color: #374151; }
     .nav-logout {
       font-size: 13px; color: #9ca3af; cursor: pointer; background: none;
       border: none; font-family: inherit;
@@ -252,34 +258,25 @@
     }
     .form-group select { color: #111827; }
 
-    .criteria-inputs {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .criterion-row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-    .criterion-row input:first-child { flex: 3; }
-    .criterion-row input:last-child { flex: 1; max-width: 80px; }
-    .add-criterion {
-      background: none;
-      border: 1px dashed #d1d5db;
+    .criteria-textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 12px 16px;
+      border: 1px solid #e5e7eb;
       border-radius: 8px;
-      padding: 10px;
-      color: #9ca3af;
       font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
       font-family: inherit;
-      transition: all 0.15s;
+      line-height: 1.7;
+      outline: none;
+      resize: vertical;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      color: #111827;
     }
-    .add-criterion:hover {
+    .criteria-textarea:focus {
       border-color: #2563eb;
-      color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
     }
+    .criteria-textarea::placeholder { color: #d1d5db; }
 
     /* Divider */
     .divider {
@@ -354,9 +351,15 @@
 
     /* Previous submissions */
     .previous { margin-top: 40px; }
-    .previous h3 {
+    .previous > h3 {
       font-size: 13px; font-weight: 600; color: #9ca3af;
-      text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 12px;
+      text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 16px;
+    }
+    .course-group { margin-bottom: 20px; }
+    .course-group:last-child { margin-bottom: 0; }
+    .course-heading {
+      font-size: 13px; font-weight: 600; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;
     }
     .prev-card {
       background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
@@ -374,7 +377,10 @@
   <nav class="nav">
     <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
     <div class="nav-right">
-      <span class="nav-user" id="navUser"></span>
+      <div class="nav-user-info">
+        <span class="nav-role">Student</span>
+        <span class="nav-user" id="navUser"></span>
+      </div>
       <button class="nav-logout" onclick="logout()">Log out</button>
     </div>
   </nav>
@@ -421,18 +427,11 @@
         </div>
         <div class="form-group">
           <label>Marking criteria</label>
-          <div class="hint">Add each criterion and its marks from your task notification sheet</div>
-          <div class="criteria-inputs">
-            <div class="criterion-row">
-              <input type="text" placeholder="Criterion name">
-              <input type="text" placeholder="Marks">
-            </div>
-            <div class="criterion-row">
-              <input type="text" placeholder="Criterion name">
-              <input type="text" placeholder="Marks">
-            </div>
-            <button class="add-criterion" onclick="addCriterion(this)">+ Add another criterion</button>
-          </div>
+          <div class="hint">Paste or type the marking criteria from your task notification. The AI will detect the different criteria automatically.</div>
+          <textarea class="criteria-textarea" id="ownCriteriaText" placeholder="e.g.
+Criteria 1: Knowledge and understanding (3-5 marks)
+Criteria 2: Use of examples and evidence (3-5 marks)
+Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         </div>
 
         <div class="divider">Your draft</div>
@@ -497,17 +496,32 @@
           const section = document.getElementById('previousSection');
           const list = document.getElementById('previousList');
           section.style.display = 'block';
+
+          // Group by course
+          const grouped = {};
           subs.forEach(s => {
-            const card = document.createElement('div');
-            card.className = 'prev-card';
-            const q = s.question || 'Untitled';
-            const date = new Date(s.created_at).toLocaleDateString();
-            card.innerHTML = '<div><h4>' + escapeHtml(q.substring(0, 60) + (q.length > 60 ? '...' : '')) + '</h4><p>' + date + '</p></div><span class="prev-card-arrow">›</span>';
-            card.onclick = () => {
-              sessionStorage.setItem('redraft_feedback', JSON.stringify({ feedback: s.feedback, meta: { taskVerb: '', question: s.question, course: s.course } }));
-              window.location.href = 'feedback.html';
-            };
-            list.appendChild(card);
+            const course = s.course || 'Other';
+            if (!grouped[course]) grouped[course] = [];
+            grouped[course].push(s);
+          });
+
+          Object.keys(grouped).forEach(course => {
+            const group = document.createElement('div');
+            group.className = 'course-group';
+            group.innerHTML = '<div class="course-heading">' + escapeHtml(course) + '</div>';
+            grouped[course].forEach(s => {
+              const card = document.createElement('div');
+              card.className = 'prev-card';
+              const q = s.question || 'Untitled';
+              const date = new Date(s.created_at).toLocaleDateString();
+              card.innerHTML = '<div><h4>' + escapeHtml(q.substring(0, 60) + (q.length > 60 ? '...' : '')) + '</h4><p>' + date + '</p></div><span class="prev-card-arrow">›</span>';
+              card.onclick = () => {
+                sessionStorage.setItem('redraft_feedback', JSON.stringify({ feedback: s.feedback, meta: { taskVerb: '', question: s.question, course: s.course } }));
+                window.location.href = 'feedback.html';
+              };
+              group.appendChild(card);
+            });
+            list.appendChild(group);
           });
         }
       } catch (e) {}
@@ -527,13 +541,6 @@
       document.getElementById('ownTask').classList.add('visible');
       document.querySelectorAll('.entry-tab')[1].classList.add('active');
       document.querySelectorAll('.entry-tab')[0].classList.remove('active');
-    }
-
-    function addCriterion(btn) {
-      const row = document.createElement('div');
-      row.className = 'criterion-row';
-      row.innerHTML = '<input type="text" placeholder="Criterion name"><input type="text" placeholder="Marks">';
-      btn.before(row);
     }
 
     // --- Join with task code ---
@@ -571,7 +578,12 @@
 
         // Criteria
         const criteriaDiv = document.getElementById('criteriaDisplay');
-        if (data.criteria && data.criteria.length > 0) {
+        if (data.criteria_text) {
+          let html = '<h4>Marking criteria</h4>';
+          html += '<div class="criteria-item" style="white-space:pre-line">' + escapeHtml(data.criteria_text) + '</div>';
+          criteriaDiv.innerHTML = html;
+          criteriaDiv.style.display = 'block';
+        } else if (data.criteria && data.criteria.length > 0) {
           let html = '<h4>Marking criteria</h4>';
           data.criteria.forEach(c => {
             html += '<div class="criteria-item"><span>' + escapeHtml(c.name) + '</span>';
@@ -604,6 +616,7 @@
         question: currentTask.question,
         course: currentTask.course,
         criteria: currentTask.criteria,
+        criteria_text: currentTask.criteria_text,
         outcomes: currentTask.outcomes,
         draft,
         notes: currentTask.notes,
@@ -618,15 +631,9 @@
       const draft = document.getElementById('ownDraftTextarea').value.trim();
       if (!draft) { alert('Paste your draft first.'); return; }
 
-      const criteria = [];
-      document.querySelectorAll('#ownTask .criterion-row').forEach(row => {
-        const inputs = row.querySelectorAll('input');
-        const name = inputs[0].value.trim();
-        const marks = inputs[1].value.trim();
-        if (name || marks) criteria.push({ name, marks });
-      });
+      const criteria_text = document.getElementById('ownCriteriaText').value.trim();
 
-      await generateFeedback({ question, course, criteria, outcomes: [], draft, notes: null },
+      await generateFeedback({ question, course, criteria_text, outcomes: [], draft, notes: null },
         document.querySelector('#ownTask .submit-btn'));
     }
 

@@ -197,87 +197,26 @@
       white-space: nowrap;
     }
 
-    /* Criteria builder */
-    .criteria-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .criterion-row {
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-    }
-    .criterion-row .criterion-name {
-      flex: 1;
-      resize: none;
-      overflow: hidden;
-      min-height: 44px;
-      line-height: 1.4;
-      field-sizing: content;
-    }
-    .criterion-row .criterion-marks { flex: 0 0 90px; }
-    .criterion-row .remove-btn {
-      flex: 0 0 36px;
-      height: 44px;
-      background: none;
-      border: 1px solid #fee2e2;
-      border-radius: 8px;
-      color: #ef4444;
-      font-size: 18px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.15s;
-      font-family: inherit;
-    }
-    .criterion-row .remove-btn:hover {
-      background: #fef2f2;
-      border-color: #fca5a5;
-    }
-    .criterion-labels {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #9ca3af;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-    }
-    .criterion-labels span:nth-child(1) { flex: 1; }
-    .criterion-labels span:nth-child(2) { flex: 0 0 90px; }
-    .criterion-labels span:nth-child(3) { flex: 0 0 36px; }
-
-    .add-criterion {
+    /* Criteria textarea */
+    .criteria-textarea {
       width: 100%;
-      padding: 10px;
-      background: none;
-      border: 1px dashed #d1d5db;
+      min-height: 160px;
+      padding: 14px 16px;
+      border: 1px solid #e5e7eb;
       border-radius: 8px;
-      color: #9ca3af;
       font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
       font-family: inherit;
-      transition: all 0.15s;
-      margin-top: 4px;
-    }
-    .add-criterion:hover {
-      border-color: #2563eb;
-      color: #2563eb;
-    }
-
-    .total-marks {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 12px;
-      font-size: 14px;
-      font-weight: 700;
+      line-height: 1.7;
+      outline: none;
+      resize: vertical;
+      transition: border-color 0.15s, box-shadow 0.15s;
       color: #111827;
     }
-    .total-marks span { color: #2563eb; }
+    .criteria-textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+    .criteria-textarea::placeholder { color: #d1d5db; }
 
     /* Submit */
     .submit-section {
@@ -487,26 +426,12 @@
           <h2>Marking criteria</h2>
         </div>
         <div class="form-group">
-          <div class="hint">Define the criteria students will be assessed on. Feedback will address each criterion individually. Enter marks as a single value (e.g. 5) or a range (e.g. 3-5).</div>
-          <div class="criterion-labels">
-            <span>Criterion</span>
-            <span>Marks</span>
-            <span></span>
-          </div>
-          <div class="criteria-list" id="criteriaList">
-            <div class="criterion-row">
-              <textarea class="criterion-name" rows="1" placeholder="e.g. Knowledge and understanding of key concepts"></textarea>
-              <input type="text" class="criterion-marks" placeholder="Marks">
-              <button class="remove-btn" onclick="removeCriterion(this)">×</button>
-            </div>
-            <div class="criterion-row">
-              <textarea class="criterion-name" rows="1" placeholder="e.g. Analysis and critical thinking"></textarea>
-              <input type="text" class="criterion-marks" placeholder="Marks">
-              <button class="remove-btn" onclick="removeCriterion(this)">×</button>
-            </div>
-          </div>
-          <button class="add-criterion" onclick="addCriterion()">+ Add criterion</button>
-          <div class="total-marks">Total: <span id="totalMarks">&nbsp;0 marks</span></div>
+          <div class="hint">Paste or type your marking criteria exactly as they appear on your task notification. The AI will detect the different criteria and marking levels automatically.</div>
+          <textarea class="criteria-textarea" id="criteriaText" placeholder="e.g.
+Criteria 1: Knowledge and understanding of key concepts (3-5 marks)
+Criteria 2: Use of relevant examples and evidence (3-5 marks)
+Criteria 3: Analysis and critical thinking (2-4 marks)
+Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         </div>
       </div>
 
@@ -553,46 +478,6 @@
       el.classList.add('selected');
     }
 
-    function addCriterion() {
-      const row = document.createElement('div');
-      row.className = 'criterion-row';
-      row.innerHTML = `
-        <textarea class="criterion-name" rows="1" placeholder="Criterion"></textarea>
-        <input type="text" class="criterion-marks" placeholder="Marks">
-        <button class="remove-btn" onclick="removeCriterion(this)">×</button>
-      `;
-      document.getElementById('criteriaList').appendChild(row);
-    }
-
-    function removeCriterion(btn) {
-      const list = document.getElementById('criteriaList');
-      if (list.children.length > 1) {
-        btn.closest('.criterion-row').remove();
-        updateTotal();
-      }
-    }
-
-    function getHighest(val) {
-      val = val.trim();
-      if (val.includes('-')) {
-        const parts = val.split('-');
-        return parseInt(parts[1]) || 0;
-      }
-      return parseInt(val) || 0;
-    }
-    function updateTotal() {
-      const marks = document.querySelectorAll('.criterion-marks');
-      let max = 0;
-      marks.forEach(m => {
-        const h = getHighest(m.value);
-        if (h > max) max = h;
-      });
-      document.getElementById('totalMarks').innerHTML = '&nbsp;' + max + ' marks';
-    }
-    document.addEventListener('input', function(e) {
-      if (e.target.classList.contains('criterion-marks')) updateTotal();
-    });
-
     async function createTask() {
       const btn = document.querySelector('.btn-create');
       btn.textContent = 'Creating...';
@@ -615,12 +500,7 @@
       });
 
       // Criteria
-      const criteria = [];
-      document.querySelectorAll('#criteriaList .criterion-row').forEach(row => {
-        const name = row.querySelector('.criterion-name').value.trim();
-        const marks = row.querySelector('.criterion-marks').value.trim();
-        if (name || marks) criteria.push({ name, marks });
-      });
+      const criteria_text = document.getElementById('criteriaText').value.trim();
 
       // Notes
       const notes = document.querySelector('.step:nth-child(4) textarea').value || null;
@@ -628,7 +508,7 @@
       try {
         const res = await authFetch('/api/create-task', {
           method: 'POST',
-          body: JSON.stringify({ course, title, question, task_type, total_marks, due_date, outcomes, criteria, notes }),
+          body: JSON.stringify({ course, title, question, task_type, total_marks, due_date, outcomes, criteria_text, notes }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to create task');

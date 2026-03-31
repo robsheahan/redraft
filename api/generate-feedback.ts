@@ -16,7 +16,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const user = await verifyAuth(req);
-  const { question, course, criteria, outcomes, draft, notes, task_code } = req.body;
+  const { question, course, criteria, criteria_text, outcomes, draft, notes, task_code } = req.body;
 
   if (!question || !draft) {
     return res.status(400).json({ error: 'Question and draft are required' });
@@ -29,11 +29,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ? `${course}\n\nQuestion:\n${question}`
     : `Question:\n${question}`;
 
-  const mappedCriteria = (criteria || []).map((c: any) => {
-    const marksStr = String(c.marks || '0');
-    const maxMarks = parseInt(marksStr.includes('-') ? marksStr.split('-')[1] : marksStr) || 0;
-    return { name: c.name || '', description: c.name || '', maxMarks };
-  });
+  // Support both structured criteria (old) and raw text (new)
+  const rawCriteriaText = criteria_text || null;
+  const mappedCriteria = !rawCriteriaText && Array.isArray(criteria)
+    ? criteria.map((c: any) => {
+        const marksStr = String(c.marks || '0');
+        const maxMarks = parseInt(marksStr.includes('-') ? marksStr.split('-')[1] : marksStr) || 0;
+        return { name: c.name || '', description: c.name || '', maxMarks };
+      })
+    : [];
 
   const outcomesList = (outcomes || []).map((o: any) =>
     typeof o === 'string' ? o : o.code || ''
@@ -45,6 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     taskVerb,
     outcomes: outcomesList,
     criteria: mappedCriteria,
+    criteriaText: rawCriteriaText || undefined,
     studentText: draft,
     teacherNotes: notes || undefined,
   });

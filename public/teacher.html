@@ -21,8 +21,14 @@
       color: #111827; letter-spacing: -0.5px;
     }
     .nav-brand .re { color: #2563eb; }
-    .nav-right { display: flex; align-items: center; gap: 16px; }
-    .nav-user { font-size: 14px; color: #6b7280; }
+    .nav-right { display: flex; align-items: center; gap: 24px; }
+    .nav-user-info { display: flex; align-items: center; gap: 10px; }
+    .nav-role {
+      padding: 4px 10px; background: #f0f6ff; border-radius: 6px;
+      font-size: 12px; font-weight: 700; color: #2563eb; text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .nav-user { font-size: 14px; font-weight: 500; color: #374151; }
     .nav-logout {
       font-size: 13px; color: #9ca3af; cursor: pointer; background: none;
       border: none; font-family: inherit; transition: color 0.15s;
@@ -58,6 +64,12 @@
     }
 
     .tasks-grid { display: flex; flex-direction: column; gap: 12px; }
+    .course-group { margin-bottom: 24px; }
+    .course-group:last-child { margin-bottom: 0; }
+    .course-heading {
+      font-size: 13px; font-weight: 600; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 12px;
+    }
     .task-card {
       background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
       padding: 24px; transition: border-color 0.15s; cursor: pointer;
@@ -85,7 +97,10 @@
   <nav class="nav">
     <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
     <div class="nav-right">
-      <span class="nav-user" id="navUser"></span>
+      <div class="nav-user-info">
+        <span class="nav-role">Teacher</span>
+        <span class="nav-user" id="navUser"></span>
+      </div>
       <button class="nav-logout" onclick="logout()">Log out</button>
     </div>
   </nav>
@@ -124,23 +139,36 @@
       }
 
       const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
-      let html = '<div class="tasks-grid">';
+
+      // Group tasks by course
+      const grouped = {};
       tasks.forEach(t => {
-        html += `<a href="task-detail.html?code=${encodeURIComponent(t.code)}" class="task-card">
-          <div class="task-card-header">
-            <div>
-              <h3>${e(t.title || t.question || 'Untitled task')}</h3>
-              ${t.course ? '<div class="task-course">' + e(t.course) + '</div>' : ''}
-            </div>
-            <div class="task-code">${e(t.code)}</div>
-          </div>
-          <div class="task-stats">
-            <span class="stat"><strong>${t.submission_count}</strong> submissions</span>
-            ${t.total_marks ? '<span class="stat"><strong>' + e(t.total_marks) + '</strong> marks</span>' : ''}
-          </div>
-        </a>`;
+        const course = t.course || 'Other';
+        if (!grouped[course]) grouped[course] = [];
+        grouped[course].push(t);
       });
-      html += '</div>';
+
+      let html = '';
+      Object.keys(grouped).forEach(course => {
+        html += '<div class="course-group">';
+        html += '<div class="course-heading">' + e(course) + '</div>';
+        html += '<div class="tasks-grid">';
+        grouped[course].forEach(t => {
+          html += `<a href="task-detail.html?code=${encodeURIComponent(t.code)}" class="task-card">
+            <div class="task-card-header">
+              <div>
+                <h3>${e(t.title || t.question || 'Untitled task')}</h3>
+              </div>
+              <div class="task-code">${e(t.code)}</div>
+            </div>
+            <div class="task-stats">
+              <span class="stat"><strong>${t.submission_count}</strong> submissions</span>
+              ${t.total_marks ? '<span class="stat"><strong>' + e(t.total_marks) + '</strong> marks</span>' : ''}
+            </div>
+          </a>`;
+        });
+        html += '</div></div>';
+      });
       container.innerHTML = html;
     })();
   </script>

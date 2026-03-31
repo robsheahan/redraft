@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const supabase = getSupabase();
-  const { course, title, question, task_type, total_marks, due_date, outcomes, criteria, notes } = req.body;
+  const { course, title, question, task_type, total_marks, due_date, outcomes, criteria, criteria_text, notes } = req.body;
 
   // Generate unique code
   let code = generateCode();
@@ -40,6 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     due_date: due_date || null,
     outcomes: outcomes || [],
     criteria: criteria || [],
+    criteria_text: criteria_text || null,
     notes: notes || null,
   }).select('code').single();
 

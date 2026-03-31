@@ -26,6 +26,7 @@ interface FeedbackPromptInput {
   taskVerb: string; // The NESA key word in the question (e.g. "analyse", "evaluate")
   outcomes: string[]; // Outcome codes being assessed (e.g. ["H1", "H2", "H4"])
   criteria: TaskCriterion[];
+  criteriaText?: string; // Raw criteria text pasted by user (used instead of structured criteria)
   studentText: string;
   teacherNotes?: string; // Optional: specific things the teacher wants flagged
 }
@@ -105,9 +106,14 @@ Respond in the following JSON structure. Write in natural, personable language t
 }
 
 export function buildUserPrompt(input: FeedbackPromptInput): string {
-  const criteriaBlock = input.criteria
-    .map((c, i) => `${i + 1}. ${c.name} (${c.maxMarks} marks): ${c.description}`)
-    .join("\n");
+  let criteriaBlock: string;
+  if (input.criteriaText) {
+    criteriaBlock = input.criteriaText;
+  } else {
+    criteriaBlock = input.criteria
+      .map((c, i) => `${i + 1}. ${c.name} (${c.maxMarks} marks): ${c.description}`)
+      .join("\n");
+  }
 
   const outcomesBlock = input.outcomes.join(", ");
 
