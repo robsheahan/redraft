@@ -521,11 +521,11 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
             grouped[course].forEach(s => {
               const card = document.createElement('div');
               card.className = 'prev-card';
-              const q = s.question || 'Untitled';
+              const label = s.task_title || s.question || 'Untitled';
               const date = new Date(s.created_at).toLocaleDateString();
-              card.innerHTML = '<div><h4>' + escapeHtml(q.substring(0, 60) + (q.length > 60 ? '...' : '')) + '</h4><p>' + date + '</p></div><span class="prev-card-arrow">›</span>';
+              card.innerHTML = '<div><h4>' + escapeHtml(label.substring(0, 60) + (label.length > 60 ? '...' : '')) + '</h4><p>' + date + '</p></div><span class="prev-card-arrow">›</span>';
               card.onclick = () => {
-                sessionStorage.setItem('redraft_feedback', JSON.stringify({ feedback: s.feedback, meta: { taskVerb: '', question: s.question, course: s.course, title: null } }));
+                sessionStorage.setItem('redraft_feedback', JSON.stringify({ feedback: s.feedback, meta: { taskVerb: '', question: s.question, course: s.course, title: s.task_title || null } }));
                 sessionStorage.removeItem('redraft_task');
                 window.location.href = 'feedback.html';
               };

@@ -23,5 +23,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: error.message });
   }
 
-  return res.status(200).json(data || []);
+  // Look up task titles for submissions with a task_code
+  const taskCodes = [...new Set((data || []).map(s => s.task_code).filter(Boolean))];
+  const titleMap: Record<string, string> = {};
+
+  if (taskCodes.length > 0) {
+    const { data: tasks } = await supabase
+      .from('tasks')
+      .select('code, title')
+      .in('code', taskCodes);
+
+    (tasks || []).forEach(t => {
+      if (t.title) titleMap[t.code] = t.title;
+    });
+  }
+
+  const enriched = (data || []).map(s => ({
+    ...s,
+    task_title: (s.task_code && titleMap[s.task_code]) || null,
+  }));
+
+  return res.status(200).json(enriched);
 }
