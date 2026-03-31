@@ -527,7 +527,10 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
               const date = new Date(s.created_at).toLocaleDateString();
               card.innerHTML = '<div><h4>' + escapeHtml(label.substring(0, 60) + (label.length > 60 ? '...' : '')) + '</h4><p>' + date + '</p></div><span class="prev-card-arrow">›</span>';
               card.onclick = () => {
-                sessionStorage.setItem('redraft_feedback', JSON.stringify({ feedback: s.feedback, meta: { taskVerb: '', question: s.question, course: s.course, title: s.task_title || null } }));
+                const prevVerbs = ['critically analyse', 'critically evaluate', 'analyse', 'analyze', 'assess', 'compare', 'contrast', 'describe', 'discuss', 'distinguish', 'evaluate', 'examine', 'explain', 'identify', 'justify', 'outline', 'propose'];
+                const qLow = (s.question || '').toLowerCase();
+                const detectedVerb = prevVerbs.find(v => qLow.includes(v)) || '';
+                sessionStorage.setItem('redraft_feedback', JSON.stringify({ feedback: s.feedback, meta: { taskVerb: detectedVerb, question: s.question, course: s.course, title: s.task_title || null } }));
                 sessionStorage.removeItem('redraft_task');
                 window.location.href = 'feedback.html';
               };
