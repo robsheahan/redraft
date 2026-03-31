@@ -580,7 +580,10 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         const criteriaDiv = document.getElementById('criteriaDisplay');
         if (data.criteria_text) {
           let html = '<h4>Marking criteria</h4>';
-          html += '<div class="criteria-item" style="white-space:pre-line">' + escapeHtml(data.criteria_text) + '</div>';
+          const lines = data.criteria_text.split('\n').map(l => l.trim()).filter(l => l);
+          lines.forEach(line => {
+            html += '<div class="criteria-item">' + escapeHtml(line) + '</div>';
+          });
           criteriaDiv.innerHTML = html;
           criteriaDiv.style.display = 'block';
         } else if (data.criteria && data.criteria.length > 0) {
