@@ -33,7 +33,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const user = await verifyAuth(req);
-  const { question, course, criteria, criteria_text, outcomes, draft, notes, task_code } = req.body;
+  const { question, course, criteria, criteria_text, outcomes, draft, notes, task_code, task_title } = req.body;
 
   if (!question || !draft) {
     return res.status(400).json({ error: 'Question and draft are required' });
@@ -139,7 +139,7 @@ Review this feedback against the student's actual draft. Check for accuracy, cal
 
     return res.status(200).json({
       feedback,
-      meta: { taskVerb, question, course },
+      meta: { taskVerb, question, course, title: task_title || null },
     });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || 'Failed to generate feedback' });

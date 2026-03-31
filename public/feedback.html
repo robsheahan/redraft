@@ -142,28 +142,11 @@
       color: #374151;
     }
 
-    /* Color variants */
-    .done-well .section-title { color: #15803d; }
-    .done-well .summary-list li::before { background: #22c55e; }
-    .done-well .summary-list li { color: #166534; }
-
-    .verb-check .section-title { color: #6d28d9; }
-    .verb-check .summary-text { color: #4c1d95; }
-
-    .top-priority { background: #fefce8; border-color: #fef08a; }
-    .top-priority .section-title { color: #a16207; }
-    .top-priority .summary-text { color: #713f12; }
-
-    .improvements .section-title { color: #b45309; }
-    .improvements .summary-list li::before { background: #f59e0b; }
-    .improvements .summary-list li { color: #78350f; }
-
-    .overall .section-title { color: #1d4ed8; }
-    .overall .summary-text { color: #1e3a5f; }
-
-    .strong-response .section-title { color: #6d28d9; }
-    .strong-response .summary-list li::before { background: #8b5cf6; }
-    .strong-response .summary-list li { color: #4c1d95; }
+    /* Section colors — unified */
+    .section .section-title { color: #111827; }
+    .section .summary-list li { color: #374151; }
+    .section .summary-list li::before { background: #111827; }
+    .section .summary-text { color: #374151; }
 
     .self-check { background: #f0f6ff; border-color: #bfdbfe; }
     .self-check .section-title { color: #1d4ed8; }
@@ -184,10 +167,8 @@
       line-height: 1.6;
       font-weight: 400;
     }
-    .done-well .feedback-list li { background: #f0fdf4; color: #166534; }
+    .feedback-list li { background: #f9fafb; color: #374151; }
     .improvements .feedback-list li {
-      background: #fffbeb;
-      color: #78350f;
       position: relative;
       padding-left: 40px;
     }
@@ -197,8 +178,8 @@
       top: 12px;
       width: 20px;
       height: 20px;
-      background: #fbbf24;
-      color: #78350f;
+      background: #e5e7eb;
+      color: #374151;
       border-radius: 50%;
       font-size: 11px;
       font-weight: 700;
@@ -206,7 +187,6 @@
       align-items: center;
       justify-content: center;
     }
-    .strong-response .feedback-list li { background: #f5f3ff; color: #4c1d95; }
 
     /* Empty state */
     .empty-state {
@@ -286,8 +266,9 @@
       const capVerb = (v) => v ? v.charAt(0).toUpperCase() + v.slice(1) : '';
 
       // Header with assessment title
+      const taskTitle = task.title || meta.title;
       html += '<div class="header">';
-      if (task.title) html += '<h1>' + e(task.title) + '</h1>';
+      if (taskTitle) html += '<h1>' + e(taskTitle) + '</h1>';
       else html += '<h1>Feedback on your draft</h1>';
       if (meta.course) html += '<div class="task-meta">' + e(meta.course) + '</div>';
       if (meta.question) html += '<div class="task-question">' + e(meta.question) + '</div>';
