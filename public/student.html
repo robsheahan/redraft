@@ -349,6 +349,24 @@
       color: #9ca3af;
     }
 
+    /* Loading spinner */
+    .loading-overlay {
+      display: none; text-align: center; padding: 48px 20px;
+    }
+    .loading-overlay.visible { display: block; }
+    .spinner {
+      width: 36px; height: 36px; border: 3px solid #e5e7eb;
+      border-top-color: #2563eb; border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text {
+      font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 4px;
+    }
+    .loading-hint {
+      font-size: 13px; color: #9ca3af;
+    }
+
     /* Previous submissions */
     .previous { margin-top: 40px; }
     .previous > h3 {
@@ -570,7 +588,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         const qLower = (data.question || '').toLowerCase();
         const verb = verbs.find(v => qLower.includes(v));
         if (verb) {
-          document.getElementById('taskVerb').textContent = 'Task verb: ' + verb;
+          document.getElementById('taskVerb').textContent = 'Task verb: ' + verb.charAt(0).toUpperCase() + verb.slice(1);
           document.getElementById('taskVerb').style.display = 'inline-block';
         } else {
           document.getElementById('taskVerb').style.display = 'none';
@@ -650,8 +668,12 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
 
     // --- Call feedback API ---
     async function generateFeedback(payload, btn) {
-      btn.textContent = 'Generating feedback...';
-      btn.disabled = true;
+      btn.style.display = 'none';
+      const card = btn.closest('.card') || btn.closest('#ownTask') || btn.parentElement;
+      const overlay = document.createElement('div');
+      overlay.className = 'loading-overlay visible';
+      overlay.innerHTML = '<div class="spinner"></div><div class="loading-text">Generating your feedback...</div><div class="loading-hint">This usually takes 15-30 seconds</div>';
+      card.appendChild(overlay);
 
       try {
         const res = await authFetch('/api/generate-feedback', {
@@ -671,8 +693,8 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         window.location.href = 'feedback.html';
       } catch (err) {
         alert(err.message);
-        btn.textContent = 'Get feedback';
-        btn.disabled = false;
+        overlay.remove();
+        btn.style.display = '';
       }
     }
 
