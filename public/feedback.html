@@ -93,19 +93,13 @@
       margin-bottom: 12px;
     }
     .section-title {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 700;
       margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
       letter-spacing: -0.1px;
-    }
-    .section-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      text-decoration-thickness: 2px;
     }
 
     /* Summary bullets */
@@ -152,37 +146,30 @@
     }
 
     /* Color variants */
-    .done-well .section-dot { background: #22c55e; }
-    .done-well .section-title { color: #15803d; }
+    .done-well .section-title { color: #15803d; text-decoration-color: #22c55e; }
     .done-well .summary-list li::before { background: #22c55e; }
     .done-well .summary-list li { color: #166534; }
 
-    .verb-check .section-dot { background: #8b5cf6; }
-    .verb-check .section-title { color: #6d28d9; }
+    .verb-check .section-title { color: #6d28d9; text-decoration-color: #8b5cf6; }
     .verb-check .summary-text { color: #4c1d95; }
 
     .top-priority { background: #fefce8; border-color: #fef08a; }
-    .top-priority .section-dot { background: #eab308; }
-    .top-priority .section-title { color: #a16207; }
+    .top-priority .section-title { color: #a16207; text-decoration-color: #eab308; }
     .top-priority .summary-text { color: #713f12; }
 
-    .improvements .section-dot { background: #f59e0b; }
-    .improvements .section-title { color: #b45309; }
+    .improvements .section-title { color: #b45309; text-decoration-color: #f59e0b; }
     .improvements .summary-list li::before { background: #f59e0b; }
     .improvements .summary-list li { color: #78350f; }
 
-    .overall .section-dot { background: #3b82f6; }
-    .overall .section-title { color: #1d4ed8; }
+    .overall .section-title { color: #1d4ed8; text-decoration-color: #3b82f6; }
     .overall .summary-text { color: #1e3a5f; }
 
-    .strong-response .section-dot { background: #8b5cf6; }
-    .strong-response .section-title { color: #6d28d9; }
+    .strong-response .section-title { color: #6d28d9; text-decoration-color: #8b5cf6; }
     .strong-response .summary-list li::before { background: #8b5cf6; }
     .strong-response .summary-list li { color: #4c1d95; }
 
     .self-check { background: #f0f6ff; border-color: #bfdbfe; }
-    .self-check .section-dot { background: #2563eb; }
-    .self-check .section-title { color: #1d4ed8; }
+    .self-check .section-title { color: #1d4ed8; text-decoration-color: #2563eb; }
     .self-check .section-text { color: #1e40af; font-weight: 500; font-style: italic; }
 
     /* Detail lists */
@@ -298,19 +285,23 @@
       let html = '';
       let detailIdx = 0;
 
+      // Capitalise verb helper
+      const capVerb = (v) => v ? v.charAt(0).toUpperCase() + v.slice(1) : '';
+
       // Header with assessment title
       html += '<div class="header">';
-      html += '<h1>' + e(task.question ? 'Feedback on your draft' : 'Feedback on your draft') + '</h1>';
+      if (task.title) html += '<h1>' + e(task.title) + '</h1>';
+      else html += '<h1>Feedback on your draft</h1>';
       if (meta.course) html += '<div class="task-meta">' + e(meta.course) + '</div>';
       if (meta.question) html += '<div class="task-question">' + e(meta.question) + '</div>';
-      if (meta.taskVerb) html += '<span class="task-verb">Task verb: ' + e(meta.taskVerb) + '</span>';
+      if (meta.taskVerb) html += '<span class="task-verb">Task verb: ' + e(capVerb(meta.taskVerb)) + '</span>';
       html += '</div>';
 
       // --- What you've done well ---
       const well = getObj(fb.what_youve_done_well);
       if (well.summary || well.detail) {
         const id = 'd' + (detailIdx++);
-        html += '<div class="section done-well"><div class="section-title"><span class="section-dot"></span>What you\'ve done well</div>';
+        html += '<div class="section done-well"><div class="section-title">What you\'ve done well</div>';
         if (Array.isArray(well.summary) && well.summary.length) {
           html += '<ul class="summary-list">';
           well.summary.forEach(p => { html += '<li>' + e(p) + '</li>'; });
@@ -329,7 +320,7 @@
       const verb = getObj(fb.task_verb_check);
       if (verb.summary || verb.detail) {
         const id = 'd' + (detailIdx++);
-        html += '<div class="section verb-check"><div class="section-title"><span class="section-dot"></span>Task verb check — "' + e(meta.taskVerb || '') + '"</div>';
+        html += '<div class="section verb-check"><div class="section-title">Task verb check — "' + e(capVerb(meta.taskVerb || '')) + '"</div>';
         if (verb.summary) html += '<p class="summary-text">' + e(typeof verb.summary === 'string' ? verb.summary : '') + '</p>';
         if (verb.detail && verb.detail !== verb.summary) {
           html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
@@ -342,7 +333,7 @@
       const priority = getObj(fb.top_priority);
       if (priority.summary || priority.detail) {
         const id = 'd' + (detailIdx++);
-        html += '<div class="section top-priority"><div class="section-title"><span class="section-dot"></span>Top priority — focus on this first</div>';
+        html += '<div class="section top-priority"><div class="section-title">Top priority — focus on this first</div>';
         if (priority.summary) html += '<p class="summary-text">' + e(typeof priority.summary === 'string' ? priority.summary : '') + '</p>';
         if (priority.detail && priority.detail !== priority.summary) {
           html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
@@ -355,7 +346,7 @@
       const impr = getObj(fb.improvements);
       if (impr.summary || impr.detail) {
         const id = 'd' + (detailIdx++);
-        html += '<div class="section improvements"><div class="section-title"><span class="section-dot"></span>Things to improve</div>';
+        html += '<div class="section improvements"><div class="section-title">Things to improve</div>';
         if (Array.isArray(impr.summary) && impr.summary.length) {
           html += '<ul class="summary-list">';
           impr.summary.forEach(p => { html += '<li>' + e(p) + '</li>'; });
@@ -376,7 +367,7 @@
       const overall = getObj(fb.overall);
       if (overall.summary || overall.detail) {
         const id = 'd' + (detailIdx++);
-        html += '<div class="section overall"><div class="section-title"><span class="section-dot"></span>Overall</div>';
+        html += '<div class="section overall"><div class="section-title">Overall</div>';
         if (overall.summary) html += '<p class="summary-text">' + e(typeof overall.summary === 'string' ? overall.summary : '') + '</p>';
         if (overall.detail && overall.detail !== overall.summary) {
           html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
@@ -388,7 +379,7 @@
       // --- What a strong response includes ---
       const strong = getObj(fb.what_a_strong_response_includes);
       if (strong.summary && Array.isArray(strong.summary) && strong.summary.length) {
-        html += '<div class="section strong-response"><div class="section-title"><span class="section-dot"></span>What a strong response includes</div>';
+        html += '<div class="section strong-response"><div class="section-title">What a strong response includes</div>';
         html += '<ul class="summary-list">';
         strong.summary.forEach(p => { html += '<li>' + e(p) + '</li>'; });
         html += '</ul></div>';
@@ -396,7 +387,7 @@
 
       // --- Self-check ---
       if (fb.self_check) {
-        html += '<div class="section self-check"><div class="section-title"><span class="section-dot"></span>Self-check before submitting</div>';
+        html += '<div class="section self-check"><div class="section-title">Self-check before submitting</div>';
         html += '<p class="section-text">' + e(fb.self_check) + '</p></div>';
       }
 

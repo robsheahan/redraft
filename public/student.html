@@ -686,6 +686,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         // Store feedback and redirect
         sessionStorage.setItem('redraft_feedback', JSON.stringify(data));
         sessionStorage.setItem('redraft_task', JSON.stringify({
+          title: currentTask ? currentTask.title : null,
           question: payload.question,
           course: payload.course,
           criteria: payload.criteria,
