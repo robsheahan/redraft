@@ -35,10 +35,14 @@ async function requireAuth(expectedRole) {
 }
 
 function getUserMeta(user) {
-  return {
-    displayName: user.user_metadata?.display_name || user.email,
-    role: user.user_metadata?.role || 'student',
-  };
+  const role = user.user_metadata?.role || 'student';
+  let displayName = user.user_metadata?.display_name || user.email;
+  // Strip role prefix if display_name starts with it (e.g. "Teacher - Rob" → "Rob")
+  const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
+  if (displayName.toLowerCase().startsWith(role)) {
+    displayName = displayName.slice(role.length).replace(/^[\s\-–—:·]+/, '').trim() || user.email;
+  }
+  return { displayName, role };
 }
 
 async function logout() {
