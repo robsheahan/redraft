@@ -268,8 +268,7 @@
       // Header with assessment title
       const taskTitle = task.title || meta.title;
       html += '<div class="header">';
-      if (taskTitle) html += '<h1>' + e(taskTitle) + '</h1>';
-      else html += '<h1>Feedback on your draft</h1>';
+      html += '<h1>' + e(taskTitle || 'Feedback on your draft') + '</h1>';
       if (meta.course) html += '<div class="task-meta">' + e(meta.course) + '</div>';
       if (meta.question) html += '<div class="task-question">' + e(meta.question) + '</div>';
       if (meta.taskVerb) html += '<span class="task-verb">Task verb: ' + e(capVerb(meta.taskVerb)) + '</span>';

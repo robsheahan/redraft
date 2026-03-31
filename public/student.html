@@ -524,7 +524,8 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
               const date = new Date(s.created_at).toLocaleDateString();
               card.innerHTML = '<div><h4>' + escapeHtml(q.substring(0, 60) + (q.length > 60 ? '...' : '')) + '</h4><p>' + date + '</p></div><span class="prev-card-arrow">›</span>';
               card.onclick = () => {
-                sessionStorage.setItem('redraft_feedback', JSON.stringify({ feedback: s.feedback, meta: { taskVerb: '', question: s.question, course: s.course } }));
+                sessionStorage.setItem('redraft_feedback', JSON.stringify({ feedback: s.feedback, meta: { taskVerb: '', question: s.question, course: s.course, title: null } }));
+                sessionStorage.removeItem('redraft_task');
                 window.location.href = 'feedback.html';
               };
               group.appendChild(card);
