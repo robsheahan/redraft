@@ -21,14 +21,8 @@
       padding: 16px 32px;
       display: flex; align-items: center; justify-content: space-between;
     }
-    .nav-right { display: flex; align-items: center; gap: 24px; }
-    .nav-user-info { display: flex; align-items: center; gap: 10px; }
-    .nav-role {
-      padding: 4px 10px; background: #f0f6ff; border-radius: 6px;
-      font-size: 12px; font-weight: 700; color: #2563eb; text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .nav-user { font-size: 14px; font-weight: 500; color: #374151; }
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .nav-user { font-size: 14px; color: #6b7280; }
     .nav-logout {
       font-size: 13px; color: #9ca3af; cursor: pointer; background: none;
       border: none; font-family: inherit;
@@ -395,10 +389,7 @@
   <nav class="nav">
     <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
     <div class="nav-right">
-      <div class="nav-user-info">
-        <span class="nav-role">Student</span>
-        <span class="nav-user" id="navUser"></span>
-      </div>
+      <span class="nav-user" id="navUser"></span>
       <button class="nav-logout" onclick="logout()">Log out</button>
     </div>
   </nav>
@@ -407,7 +398,7 @@
 
     <!-- Initial entry screen -->
     <div id="entryScreen">
-      <h1>Get feedback on your draft</h1>
+      <h1>Student Dashboard</h1>
       <p class="subtitle">Paste your draft and get detailed, criteria-based feedback before you submit.</p>
 
       <div class="entry-options">
@@ -503,8 +494,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
     (async () => {
       const user = await requireAuth('student');
       if (!user) return;
-      const { displayName } = getUserMeta(user);
-      document.getElementById('navUser').textContent = displayName;
+      document.getElementById('navUser').textContent = user.email;
 
       // Load previous submissions
       try {

@@ -21,14 +21,8 @@
       color: #111827; letter-spacing: -0.5px;
     }
     .nav-brand .re { color: #2563eb; }
-    .nav-right { display: flex; align-items: center; gap: 24px; }
-    .nav-user-info { display: flex; align-items: center; gap: 10px; }
-    .nav-role {
-      padding: 4px 10px; background: #f0f6ff; border-radius: 6px;
-      font-size: 12px; font-weight: 700; color: #2563eb; text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .nav-user { font-size: 14px; font-weight: 500; color: #374151; }
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .nav-user { font-size: 14px; color: #6b7280; }
     .nav-logout {
       font-size: 13px; color: #9ca3af; cursor: pointer; background: none;
       border: none; font-family: inherit; transition: color 0.15s;
@@ -97,17 +91,14 @@
   <nav class="nav">
     <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
     <div class="nav-right">
-      <div class="nav-user-info">
-        <span class="nav-role">Teacher</span>
-        <span class="nav-user" id="navUser"></span>
-      </div>
+      <span class="nav-user" id="navUser"></span>
       <button class="nav-logout" onclick="logout()">Log out</button>
     </div>
   </nav>
 
   <div class="container">
     <div class="page-header">
-      <h1>Your tasks</h1>
+      <h1>Teacher Dashboard</h1>
       <a href="new-task.html" class="btn-primary">+ New task</a>
     </div>
     <div id="content"><div class="loading">Loading...</div></div>
@@ -120,8 +111,7 @@
       const user = await requireAuth('teacher');
       if (!user) return;
 
-      const { displayName } = getUserMeta(user);
-      document.getElementById('navUser').textContent = displayName;
+      document.getElementById('navUser').textContent = user.email;
 
       const res = await authFetch('/api/my-tasks');
       const tasks = await res.json();
