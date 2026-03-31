@@ -48,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const feedbacks = submissions.map(s => s.feedback);
 
-  const systemPrompt = `You are an experienced NSW PDHPE teacher reviewing aggregated student feedback for a class. A teacher is looking at you for a concise snapshot of how their class performed on an assessment task.
+  const systemPrompt = `You are an experienced NSW Health and Movement Science teacher reviewing aggregated student feedback for a class. A teacher is looking at you for a concise snapshot of how their class performed on an assessment task.
 
 You have been given the individual AI-generated feedback for each student submission. Your job is to synthesise these into a clear, actionable class-level overview.
 

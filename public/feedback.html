@@ -180,6 +180,11 @@
     .strong-response .summary-list li::before { background: #8b5cf6; }
     .strong-response .summary-list li { color: #4c1d95; }
 
+    .self-check { background: #f0f6ff; border-color: #bfdbfe; }
+    .self-check .section-dot { background: #2563eb; }
+    .self-check .section-title { color: #1d4ed8; }
+    .self-check .section-text { color: #1e40af; font-weight: 500; font-style: italic; }
+
     /* Detail lists */
     .feedback-list {
       list-style: none;
@@ -387,6 +392,12 @@
         html += '<ul class="summary-list">';
         strong.summary.forEach(p => { html += '<li>' + e(p) + '</li>'; });
         html += '</ul></div>';
+      }
+
+      // --- Self-check ---
+      if (fb.self_check) {
+        html += '<div class="section self-check"><div class="section-title"><span class="section-dot"></span>Self-check before submitting</div>';
+        html += '<p class="section-text">' + e(fb.self_check) + '</p></div>';
       }
 
       html += '<div class="footer">This is formative feedback on a draft — not a final mark.</div>';
