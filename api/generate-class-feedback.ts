@@ -65,7 +65,7 @@ Respond in the following JSON structure:
   "class_weaknesses": [
     "Each point is a common gap, misconception, or area where multiple students struggled. Be specific about what went wrong and how widespread it was (e.g. 'most students', 'several students', 'a common pattern')."
   ],
-  "task_verb_adherence": "A short paragraph on how well the class handled the task verb requirements. Did most students actually do what the verb asked (e.g. analyse vs describe)? What was the common pattern?",
+  "task_verb_adherence": "A short paragraph on how well the class handled the key term requirements. Did most students actually do what the key term asked (e.g. analyse vs describe)? What was the common pattern?",
   "top_priorities": [
     "2-3 highest-impact things the teacher could address with the whole class to improve overall performance. These should be teachable moments — things that would help the most students."
   ],
@@ -80,7 +80,7 @@ TOTAL SUBMISSIONS: ${feedbacks.length}
 INDIVIDUAL STUDENT FEEDBACKS:
 ${feedbacks.map((f: any, i: number) => `--- Student ${i + 1} ---
 Strengths: ${JSON.stringify(f.what_youve_done_well || [])}
-Task verb check: ${f.task_verb_check || 'N/A'}
+Key term check: ${f.task_verb_check || 'N/A'}
 Improvements: ${JSON.stringify(f.improvements || [])}
 Overall: ${f.overall || 'N/A'}
 Top priority: ${f.top_priority || 'N/A'}`).join('\n\n')}

@@ -269,7 +269,7 @@
       html += '<h1>' + e(taskTitle || 'Feedback on your draft') + '</h1>';
       if (meta.course) html += '<div class="task-meta">' + e(meta.course) + '</div>';
       if (meta.question) html += '<div class="task-question">' + e(meta.question) + '</div>';
-      if (meta.taskVerb) html += '<span class="task-verb">Task verb: ' + e(capVerb(meta.taskVerb)) + '</span>';
+      if (meta.taskVerb) html += '<span class="task-verb">Key term: ' + e(capVerb(meta.taskVerb)) + '</span>';
       html += '</div>';
 
       // --- What you've done well ---
@@ -296,7 +296,7 @@
       if (verb.summary || verb.detail) {
         const id = 'd' + (detailIdx++);
         const verbLabel = meta.taskVerb ? ' — "' + e(capVerb(meta.taskVerb)) + '"' : '';
-        html += '<div class="section verb-check"><div class="section-title">Task verb check' + verbLabel + '</div>';
+        html += '<div class="section verb-check"><div class="section-title">Key term check' + verbLabel + '</div>';
         if (verb.summary) html += '<p class="summary-text">' + e(typeof verb.summary === 'string' ? verb.summary : '') + '</p>';
         if (verb.detail && verb.detail !== verb.summary) {
           html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';

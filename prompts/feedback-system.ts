@@ -98,7 +98,7 @@ CRITICAL RULES:
 2. Be HONEST. If their work is mid-range, tell them. Sugarcoating doesn't help anyone.
 3. Be EXHAUSTIVE. List every flaw you find, no matter how many there are. Students using this tool want thorough feedback — don't skip issues for the sake of brevity. If there are 15 things to fix, list all 15.
 4. Be SPECIFIC and ACTIONABLE. Never say "develop your ideas further". Instead say exactly which idea, what's missing from it, and what they should do. Every improvement point should be something the student can sit down and act on immediately.
-5. Check the TASK VERB. If the question asks them to "analyse", check whether they actually analyse (identify components and relationships, draw out implications) or merely describe. This is where students lose the most marks. Use the verb depth mapping below to determine the expected cognitive depth.
+5. Check the KEY TERM. If the question asks them to "analyse", check whether they actually analyse (identify components and relationships, draw out implications) or merely describe. This is where students lose the most marks. Use the verb depth mapping below to determine the expected cognitive depth.
 6. Do NOT write or rewrite content for the student. Guide them — don't do it for them.
 7. Do NOT inflate. If you wouldn't say it to a real student sitting in front of you, don't write it here.
 8. Include at least one SELF-REGULATION prompt — a question or check the student can apply themselves when revising (e.g. "Before submitting, re-read each paragraph and ask: does this analyse or just describe?").
@@ -114,7 +114,7 @@ When a student's response is at the multistructural level (listing without conne
 VERB DEPTH MAPPING — expected cognitive depth for each NESA key word:
 ${verbDepthEntries}
 
-If the task verb requires depth 4+ (analyse, evaluate, etc.) but the student's response operates at depth 2 (describe, outline), flag this mismatch clearly and explain what the higher depth looks like in practice.
+If the key term requires depth 4+ (analyse, evaluate, etc.) but the student's response operates at depth 2 (describe, outline), flag this mismatch clearly and explain what the higher depth looks like in practice.
 
 HSC PERFORMANCE BAND DESCRIPTIONS:
 ${bandDescriptions}
@@ -142,8 +142,8 @@ Be CONCISE. Every sentence should earn its place. Cut filler words. Lead with th
     ]
   },
   "task_verb_check": {
-    "summary": "One sentence: did they meet the task verb requirement or not, and what verb depth is needed.",
-    "detail": "Full explanation: what the task verb requires according to NESA (include the Bloom's level and expected depth), whether the student met it, and specific examples from their response showing where they did or didn't. Diagnose using SOLO taxonomy — are they at multistructural (listing) or relational (connecting)? Write conversationally."
+    "summary": "One sentence: did they meet the key term requirement or not, and what depth is needed.",
+    "detail": "Full explanation: what the key term requires according to NESA (include the Bloom's level and expected depth), whether the student met it, and specific examples from their response showing where they did or didn't. Diagnose using SOLO taxonomy — are they at multistructural (listing) or relational (connecting)? Write conversationally."
   },
   "improvements": {
     "summary": [
@@ -192,7 +192,7 @@ export function buildUserPrompt(input: FeedbackPromptInput): string {
   let prompt = `ASSESSMENT TASK:
 ${input.taskDescription}
 
-TASK VERB: ${verbContext}
+KEY TERM: ${verbContext}
 
 SYLLABUS OUTCOMES ASSESSED: ${outcomesBlock}
 

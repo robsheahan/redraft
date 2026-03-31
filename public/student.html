@@ -585,7 +585,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         const qLower = (data.question || '').toLowerCase();
         const verb = verbs.find(v => qLower.includes(v));
         if (verb) {
-          document.getElementById('taskVerb').textContent = 'Task verb: ' + verb.charAt(0).toUpperCase() + verb.slice(1);
+          document.getElementById('taskVerb').textContent = 'Key term: ' + verb.charAt(0).toUpperCase() + verb.slice(1);
           document.getElementById('taskVerb').style.display = 'inline-block';
         } else {
           document.getElementById('taskVerb').style.display = 'none';
