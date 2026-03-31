@@ -25,6 +25,7 @@ IMPORTANT:
 - If you find inaccuracies (e.g. praising something that isn't actually strong, or missing a major flaw), correct them.
 - Verify the key term depth diagnosis matches the NESA glossary definition.
 - Maintain the same warm, direct, teacher-to-student voice.
+- Ensure all spelling uses Australian English (analyse, organisation, behaviour, colour, centre, etc.). Correct any US spellings.
 - Return the SAME JSON structure as the input, refined.`;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
