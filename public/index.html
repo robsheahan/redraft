@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redraft — Get feedback on your draft</title>
+  <title>Limae — AI-powered feedback for students</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', -apple-system, sans-serif;
-      background: #fafafa; color: #111827; line-height: 1.5;
+      background: #111827; color: #fff; line-height: 1.5;
       min-height: 100vh; display: flex; flex-direction: column;
       -webkit-font-smoothing: antialiased;
     }
@@ -18,14 +18,16 @@
     }
     .nav-brand {
       font-size: 22px; font-weight: 800; text-decoration: none;
-      color: #111827; letter-spacing: -0.5px;
+      color: #fff; letter-spacing: -0.5px;
     }
-    .nav-brand .re { color: #2563eb; }
+    .nav-brand .li { color: #60a5fa; }
     .nav-login {
-      font-size: 14px; font-weight: 600; color: #6b7280;
-      text-decoration: none; transition: color 0.15s;
+      font-size: 14px; font-weight: 600; color: #d1d5db;
+      text-decoration: none; background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 6px;
+      padding: 8px 18px; transition: all 0.15s;
     }
-    .nav-login:hover { color: #111827; }
+    .nav-login:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.2); color: #fff; }
 
     .hero {
       flex: 1; display: flex; flex-direction: column;
@@ -33,50 +35,52 @@
       padding: 40px 24px 80px; text-align: center;
     }
     .hero h1 {
-      font-size: 52px; font-weight: 800; letter-spacing: -2px;
-      line-height: 1.05; margin-bottom: 16px; max-width: 560px;
+      font-size: 56px; font-weight: 800; letter-spacing: -2.5px;
+      line-height: 1.05; margin-bottom: 20px; max-width: 600px;
     }
+    .hero h1 .accent { color: #60a5fa; }
     .hero p {
-      font-size: 17px; color: #6b7280; max-width: 420px;
-      line-height: 1.6; margin-bottom: 40px;
+      font-size: 17px; color: #9ca3af; max-width: 440px;
+      line-height: 1.7; margin-bottom: 44px;
     }
     .hero-buttons { display: flex; gap: 12px; }
-    .btn-dark {
-      padding: 12px 28px; background: #111827; color: #fff;
-      border-radius: 8px; font-size: 15px; font-weight: 700;
-      text-decoration: none; transition: background 0.15s;
+    .btn-blue {
+      padding: 14px 32px; background: #2563eb; color: #fff;
+      border-radius: 10px; font-size: 15px; font-weight: 700;
+      text-decoration: none; transition: all 0.15s;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.4);
     }
-    .btn-dark:hover { background: #1f2937; }
-    .btn-outline {
-      padding: 12px 28px; background: #fff; color: #111827;
-      border: 1px solid #e5e7eb; border-radius: 8px;
+    .btn-blue:hover { background: #1d4ed8; box-shadow: 0 4px 16px rgba(37,99,235,0.45); }
+    .btn-ghost {
+      padding: 14px 32px; background: transparent; color: #d1d5db;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 10px;
       font-size: 15px; font-weight: 700; text-decoration: none;
-      transition: border-color 0.15s;
+      transition: all 0.15s;
     }
-    .btn-outline:hover { border-color: #d1d5db; }
+    .btn-ghost:hover { border-color: rgba(255,255,255,0.3); color: #fff; }
 
     @media (max-width: 600px) {
-      .hero h1 { font-size: 36px; letter-spacing: -1px; }
+      .hero h1 { font-size: 38px; letter-spacing: -1.2px; }
       .hero-buttons { flex-direction: column; width: 100%; max-width: 280px; }
       .hero-buttons a { text-align: center; }
     }
 
-    .footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; }
+    .footer { text-align: center; padding: 24px; font-size: 13px; color: #4b5563; }
   </style>
 </head>
 <body>
 
   <nav class="nav">
-    <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
+    <a href="/" class="nav-brand"><span class="li">li</span>mae</a>
     <a href="/auth.html" class="nav-login" id="navAction">Log in</a>
   </nav>
 
   <div class="hero">
-    <h1>Get feedback on your draft</h1>
-    <p>Rubric-aligned feedback on your assessment drafts, powered by NESA syllabus standards.</p>
+    <h1>Smarter feedback, <span class="accent">better results</span></h1>
+    <p>AI-powered, criteria-aligned feedback on assessment drafts — grounded in NESA syllabus standards.</p>
     <div class="hero-buttons">
-      <a href="/auth.html" class="btn-dark" id="ctaPrimary">Get started</a>
-      <a href="/auth.html" class="btn-outline" id="ctaSecondary">Log in</a>
+      <a href="/auth.html" class="btn-blue" id="ctaPrimary">Get started</a>
+      <a href="/auth.html" class="btn-ghost" id="ctaSecondary">Log in</a>
     </div>
   </div>
 

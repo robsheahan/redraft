@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Choose your role — Redraft</title>
+  <title>Choose your role — Limae</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -18,7 +18,7 @@
       font-size: 22px; font-weight: 800; text-decoration: none;
       color: #111827; letter-spacing: -0.5px;
     }
-    .nav-brand .re { color: #2563eb; }
+    .nav-brand .li { color: #2563eb; }
 
     .page {
       flex: 1; display: flex; flex-direction: column;
@@ -55,11 +55,11 @@
 <body>
 
   <nav class="nav">
-    <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
+    <a href="/" class="nav-brand"><span class="li">li</span>mae</a>
   </nav>
 
   <div class="page">
-    <h1 id="heading">How will you use Redraft?</h1>
+    <h1 id="heading">How will you use Limae?</h1>
     <p>This is saved to your account — you won't be asked again.</p>
     <div class="cards">
       <div class="card" onclick="pickRole('teacher')">
@@ -91,7 +91,7 @@
         window.location.href = role === 'teacher' ? '/teacher.html' : '/student.html';
       } else {
         const name = user.user_metadata?.display_name || '';
-        if (name) document.getElementById('heading').textContent = 'Hey ' + name + ', how will you use Redraft?';
+        if (name) document.getElementById('heading').textContent = 'Hey ' + name + ', how will you use Limae?';
       }
     });
 

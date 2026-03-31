@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student — Redraft</title>
+  <title>Student — Limae</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,7 +35,7 @@
       color: #fff;
       letter-spacing: -0.5px;
     }
-    .nav-brand .re { color: #60a5fa; }
+    .nav-brand .li { color: #60a5fa; }
 
     .container {
       max-width: 640px;
@@ -393,7 +393,7 @@
 <body>
 
   <nav class="nav">
-    <a href="/" class="nav-brand"><span class="re">re</span>draft</a>
+    <a href="/" class="nav-brand"><span class="li">li</span>mae</a>
     <div class="nav-right">
       <span class="nav-user" id="navUser"></span>
       <button class="nav-logout" onclick="logout()">Log out</button>
@@ -533,8 +533,8 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
                 const prevVerbs = ['critically analyse', 'critically evaluate', 'analyse', 'analyze', 'assess', 'compare', 'contrast', 'describe', 'discuss', 'distinguish', 'evaluate', 'examine', 'explain', 'identify', 'justify', 'outline', 'propose'];
                 const qLow = (s.question || '').toLowerCase();
                 const detectedVerb = prevVerbs.find(v => qLow.includes(v)) || '';
-                sessionStorage.setItem('redraft_feedback', JSON.stringify({ feedback: s.feedback, meta: { taskVerb: detectedVerb, question: s.question, course: s.course, title: s.task_title || null } }));
-                sessionStorage.removeItem('redraft_task');
+                sessionStorage.setItem('limae_feedback', JSON.stringify({ feedback: s.feedback, meta: { taskVerb: detectedVerb, question: s.question, course: s.course, title: s.task_title || null } }));
+                sessionStorage.removeItem('limae_task');
                 window.location.href = 'feedback.html';
               };
               group.appendChild(card);
@@ -685,8 +685,8 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         if (!res.ok) throw new Error(data.error || 'Failed to generate feedback');
 
         // Store feedback and redirect
-        sessionStorage.setItem('redraft_feedback', JSON.stringify(data));
-        sessionStorage.setItem('redraft_task', JSON.stringify({
+        sessionStorage.setItem('limae_feedback', JSON.stringify(data));
+        sessionStorage.setItem('limae_task', JSON.stringify({
           title: currentTask ? currentTask.title : null,
           question: payload.question,
           course: payload.course,
