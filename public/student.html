@@ -582,7 +582,15 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           let html = '<h4>Marking criteria</h4>';
           const lines = data.criteria_text.split('\n').map(l => l.trim()).filter(l => l);
           lines.forEach(line => {
-            html += '<div class="criteria-item">' + escapeHtml(line) + '</div>';
+            // Try to extract marks pattern like "(3-5 marks)", "(5)", "3-5 marks", "5 marks"
+            const marksMatch = line.match(/\(?\s*(\d+(?:\s*[-–]\s*\d+)?)\s*(?:marks?)?\s*\)?\s*$/i);
+            if (marksMatch) {
+              const marksText = marksMatch[1].replace(/\s/g, '') + ' marks';
+              const nameText = line.slice(0, marksMatch.index).replace(/[-–:]\s*$/, '').trim();
+              html += '<div class="criteria-item"><span>' + escapeHtml(nameText) + '</span><span class="marks">' + escapeHtml(marksText) + '</span></div>';
+            } else {
+              html += '<div class="criteria-item">' + escapeHtml(line) + '</div>';
+            }
           });
           criteriaDiv.innerHTML = html;
           criteriaDiv.style.display = 'block';
