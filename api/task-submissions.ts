@@ -40,5 +40,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: error.message });
   }
 
-  return res.status(200).json({ task, submissions: submissions || [] });
+  // Look up student display names
+  const studentIds = [...new Set((submissions || []).map(s => s.student_id).filter(Boolean))];
+  const nameMap: Record<string, string> = {};
+
+  for (const id of studentIds) {
+    const { data } = await supabase.auth.admin.getUserById(id);
+    if (data?.user) {
+      nameMap[id] = data.user.user_metadata?.display_name || data.user.email || 'Unknown';
+    }
+  }
+
+  const enriched = (submissions || []).map(s => ({
+    ...s,
+    student_name: nameMap[s.student_id] || 'Unknown student',
+  }));
+
+  return res.status(200).json({ task, submissions: enriched });
 }

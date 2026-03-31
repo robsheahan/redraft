@@ -50,15 +50,81 @@
       border-radius: 8px; font-size: 14px; font-weight: 500; line-height: 1.6;
     }
     .task-stats {
-      display: flex; gap: 16px; margin-top: 16px;
+      display: flex; gap: 16px; margin-top: 16px; align-items: center;
     }
     .stat { font-size: 13px; color: #6b7280; }
     .stat strong { color: #111827; }
 
-    /* Generate button */
-    .generate-section {
-      margin-bottom: 24px;
+    /* View details toggle */
+    .btn-view-details {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb;
+      border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: all 0.15s; margin-left: auto;
     }
+    .btn-view-details:hover { background: #e5e7eb; }
+
+    /* Task details panel */
+    .task-details-panel {
+      display: none; margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 20px;
+    }
+    .task-details-panel.visible { display: block; }
+    .detail-row {
+      margin-bottom: 16px;
+    }
+    .detail-row:last-child { margin-bottom: 0; }
+    .detail-label {
+      font-size: 12px; font-weight: 600; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;
+    }
+    .detail-value {
+      font-size: 14px; color: #374151; line-height: 1.6;
+    }
+    .detail-value.empty { color: #d1d5db; font-style: italic; }
+    .detail-pills {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .detail-pill {
+      padding: 3px 10px; background: #f0f6ff; border-radius: 4px;
+      font-size: 12px; font-weight: 600; color: #2563eb;
+    }
+
+    /* Edit mode */
+    .edit-actions {
+      display: flex; gap: 8px; margin-top: 20px;
+    }
+    .btn-edit {
+      padding: 8px 18px; background: #fff; color: #374151; border: 1px solid #e5e7eb;
+      border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: all 0.15s;
+    }
+    .btn-edit:hover { background: #f9fafb; border-color: #d1d5db; }
+    .btn-save {
+      padding: 8px 18px; background: #2563eb; color: #fff; border: none;
+      border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: background 0.15s;
+    }
+    .btn-save:hover { background: #1d4ed8; }
+    .btn-save:disabled { background: #9ca3af; cursor: not-allowed; }
+    .btn-cancel {
+      padding: 8px 18px; background: #fff; color: #6b7280; border: 1px solid #e5e7eb;
+      border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: all 0.15s;
+    }
+    .btn-cancel:hover { background: #f9fafb; }
+
+    .edit-field {
+      width: 100%; padding: 10px 14px; border: 1px solid #e5e7eb; border-radius: 6px;
+      font-size: 14px; font-family: inherit; outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s; color: #111827;
+    }
+    .edit-field:focus {
+      border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+    textarea.edit-field { min-height: 80px; resize: vertical; line-height: 1.6; }
+
+    /* Generate button */
+    .generate-section { margin-bottom: 24px; }
     .btn-generate {
       display: inline-flex; align-items: center; gap: 8px;
       padding: 12px 24px; background: #111827; color: #fff; border: none;
@@ -81,12 +147,8 @@
       font-size: 14px; font-weight: 700; margin-bottom: 16px;
       display: flex; align-items: center; gap: 10px; letter-spacing: -0.1px;
     }
-    .section-dot {
-      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-    }
-    .section-text {
-      font-size: 14px; line-height: 1.8; color: #374151;
-    }
+    .section-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .section-text { font-size: 14px; line-height: 1.8; color: #374151; }
     .feedback-list {
       list-style: none; padding: 0;
       display: flex; flex-direction: column; gap: 8px;
@@ -96,23 +158,18 @@
       font-size: 14px; line-height: 1.6;
     }
 
-    /* Color variants */
     .strengths .section-dot { background: #22c55e; }
     .strengths .section-title { color: #15803d; }
     .strengths .feedback-list li { background: #f0fdf4; color: #166534; }
-
     .weaknesses .section-dot { background: #f59e0b; }
     .weaknesses .section-title { color: #b45309; }
     .weaknesses .feedback-list li { background: #fffbeb; color: #78350f; }
-
     .verb-adherence .section-dot { background: #8b5cf6; }
     .verb-adherence .section-title { color: #6d28d9; }
-
     .priorities { background: #fefce8; border-color: #fef08a; }
     .priorities .section-dot { background: #eab308; }
     .priorities .section-title { color: #a16207; }
     .priorities .feedback-list li { background: #fef9c3; color: #713f12; }
-
     .snapshot .section-dot { background: #3b82f6; }
     .snapshot .section-title { color: #1d4ed8; }
 
@@ -123,25 +180,48 @@
     }
     .submission-card {
       background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
-      padding: 16px 20px; margin-bottom: 8px;
+      margin-bottom: 8px; overflow: hidden; transition: border-color 0.15s;
     }
+    .submission-card:hover { border-color: #d1d5db; }
     .submission-card-header {
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 4px;
+      padding: 16px 20px; cursor: pointer;
+    }
+    .submission-header-left {
+      display: flex; align-items: center; gap: 10px;
     }
     .submission-label { font-size: 14px; font-weight: 600; }
     .submission-date { font-size: 12px; color: #9ca3af; }
+    .submission-arrow {
+      color: #d1d5db; font-size: 18px; transition: transform 0.15s;
+    }
+    .submission-card.expanded .submission-arrow { transform: rotate(90deg); }
     .submission-preview {
       font-size: 13px; color: #6b7280; line-height: 1.5;
+      padding: 0 20px; margin-top: -8px; margin-bottom: 12px;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
       overflow: hidden;
+    }
+    .submission-card.expanded .submission-preview { display: none; }
+
+    /* Expanded draft */
+    .submission-draft {
+      display: none; padding: 0 20px 20px; border-top: 1px solid #f0f0f0;
+    }
+    .submission-card.expanded .submission-draft { display: block; }
+    .draft-label {
+      font-size: 12px; font-weight: 600; color: #9ca3af; text-transform: uppercase;
+      letter-spacing: 0.3px; margin: 16px 0 8px;
+    }
+    .draft-content {
+      padding: 16px; background: #f9fafb; border-radius: 8px;
+      font-size: 14px; line-height: 1.8; color: #374151; white-space: pre-wrap;
+      max-height: 400px; overflow-y: auto;
     }
 
     .loading { text-align: center; padding: 60px; color: #9ca3af; font-size: 14px; }
     .error-msg { text-align: center; padding: 40px; color: #dc2626; font-size: 14px; }
-    .footer {
-      text-align: center; padding: 32px 20px; font-size: 13px; color: #9ca3af;
-    }
+    .footer { text-align: center; padding: 32px 20px; font-size: 13px; color: #9ca3af; }
   </style>
 </head>
 <body>
@@ -159,6 +239,7 @@
   <script src="/js/app.js"></script>
   <script>
     const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    let currentTask = null;
 
     (async () => {
       const user = await requireAuth('teacher');
@@ -180,12 +261,13 @@
       }
 
       const { task, submissions } = await res.json();
+      currentTask = task;
       document.title = (task.title || 'Task') + ' — Redraft';
 
       let html = '';
 
       // Task header
-      html += '<div class="task-header">';
+      html += '<div class="task-header" id="taskHeader">';
       html += '<div class="task-header-top"><div>';
       html += '<h1>' + e(task.title || task.question || 'Untitled task') + '</h1>';
       if (task.course) html += '<div class="task-course">' + e(task.course) + '</div>';
@@ -194,7 +276,16 @@
       html += '<div class="task-stats">';
       html += '<span class="stat"><strong>' + submissions.length + '</strong> submissions</span>';
       if (task.total_marks) html += '<span class="stat"><strong>' + e(String(task.total_marks)) + '</strong> marks</span>';
-      html += '</div></div>';
+      if (task.due_date) html += '<span class="stat">Due <strong>' + e(task.due_date) + '</strong></span>';
+      html += '<button class="btn-view-details" onclick="toggleDetails()">View details</button>';
+      html += '</div>';
+
+      // Full task details panel
+      html += '<div class="task-details-panel" id="detailsPanel">';
+      html += renderDetailsView(task);
+      html += '</div>';
+
+      html += '</div>';
 
       // Generate class feedback button
       html += '<div class="generate-section">';
@@ -213,17 +304,24 @@
       html += '<div class="submissions-section">';
       html += '<h2>Submissions</h2>';
       if (submissions.length === 0) {
-        html += '<div class="submission-card"><div class="submission-label" style="color:#9ca3af">No submissions yet</div></div>';
+        html += '<div class="submission-card"><div style="padding:16px 20px;font-size:14px;color:#9ca3af">No submissions yet</div></div>';
       } else {
         submissions.forEach((s, i) => {
           const date = new Date(s.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
           const preview = s.draft_text ? s.draft_text.substring(0, 150) + (s.draft_text.length > 150 ? '...' : '') : 'No draft text';
-          html += '<div class="submission-card">';
-          html += '<div class="submission-card-header">';
-          html += '<span class="submission-label">Student ' + (i + 1) + '</span>';
+          html += '<div class="submission-card" id="sub-' + i + '">';
+          html += '<div class="submission-card-header" onclick="toggleSubmission(' + i + ')">';
+          html += '<div class="submission-header-left">';
+          html += '<span class="submission-label">' + e(s.student_name) + '</span>';
           html += '<span class="submission-date">' + e(date) + '</span>';
           html += '</div>';
+          html += '<span class="submission-arrow">›</span>';
+          html += '</div>';
           html += '<div class="submission-preview">' + e(preview) + '</div>';
+          html += '<div class="submission-draft">';
+          html += '<div class="draft-label">Full draft</div>';
+          html += '<div class="draft-content">' + e(s.draft_text || 'No draft text') + '</div>';
+          html += '</div>';
           html += '</div>';
         });
       }
@@ -237,7 +335,6 @@
         btn.addEventListener('click', async () => {
           btn.disabled = true;
           btn.textContent = 'Generating class feedback...';
-
           try {
             const res = await authFetch('/api/generate-class-feedback', {
               method: 'POST',
@@ -245,7 +342,6 @@
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to generate class feedback');
-
             renderClassFeedback(data.feedback, data.submission_count);
             btn.textContent = 'Regenerate class feedback';
             btn.disabled = false;
@@ -258,39 +354,167 @@
       }
     })();
 
+    function renderDetailsView(task) {
+      let html = '';
+
+      html += '<div class="detail-row"><div class="detail-label">Task type</div>';
+      html += '<div class="detail-value' + (!task.task_type ? ' empty' : '') + '">' + e(task.task_type || 'Not set') + '</div></div>';
+
+      html += '<div class="detail-row"><div class="detail-label">Marking criteria</div>';
+      if (task.criteria_text) {
+        html += '<div class="detail-value" style="white-space:pre-line">' + e(task.criteria_text) + '</div>';
+      } else if (task.criteria && task.criteria.length > 0) {
+        html += '<div class="detail-value">' + task.criteria.map(c => e(c.name) + (c.marks ? ' (' + e(c.marks) + ' marks)' : '')).join('<br>') + '</div>';
+      } else {
+        html += '<div class="detail-value empty">Not set</div>';
+      }
+      html += '</div>';
+
+      html += '<div class="detail-row"><div class="detail-label">Syllabus outcomes</div>';
+      if (task.outcomes && task.outcomes.length > 0) {
+        html += '<div class="detail-pills">' + task.outcomes.map(o => '<span class="detail-pill">' + e(o) + '</span>').join('') + '</div>';
+      } else {
+        html += '<div class="detail-value empty">None selected</div>';
+      }
+      html += '</div>';
+
+      html += '<div class="detail-row"><div class="detail-label">Notes for feedback engine</div>';
+      html += '<div class="detail-value' + (!task.notes ? ' empty' : '') + '" style="white-space:pre-line">' + e(task.notes || 'None') + '</div></div>';
+
+      html += '<div class="edit-actions"><button class="btn-edit" onclick="enterEditMode()">Edit task</button></div>';
+
+      return html;
+    }
+
+    function renderEditView(task) {
+      let html = '';
+
+      html += '<div class="detail-row"><div class="detail-label">Title</div>';
+      html += '<input class="edit-field" id="editTitle" value="' + e(task.title || '') + '"></div>';
+
+      html += '<div class="detail-row"><div class="detail-label">Course</div>';
+      html += '<input class="edit-field" id="editCourse" value="' + e(task.course || '') + '"></div>';
+
+      html += '<div class="detail-row"><div class="detail-label">Task question</div>';
+      html += '<textarea class="edit-field" id="editQuestion">' + e(task.question || '') + '</textarea></div>';
+
+      html += '<div class="detail-row"><div class="detail-label">Task type</div>';
+      html += '<input class="edit-field" id="editType" value="' + e(task.task_type || '') + '"></div>';
+
+      html += '<div class="detail-row"><div class="detail-label">Total marks</div>';
+      html += '<input class="edit-field" id="editMarks" type="number" value="' + e(String(task.total_marks || '')) + '"></div>';
+
+      html += '<div class="detail-row"><div class="detail-label">Due date</div>';
+      html += '<input class="edit-field" id="editDue" type="date" value="' + e(task.due_date || '') + '"></div>';
+
+      html += '<div class="detail-row"><div class="detail-label">Marking criteria</div>';
+      const criteriaVal = task.criteria_text || (task.criteria || []).map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n');
+      html += '<textarea class="edit-field" id="editCriteria" style="min-height:120px">' + e(criteriaVal) + '</textarea></div>';
+
+      html += '<div class="detail-row"><div class="detail-label">Notes for feedback engine</div>';
+      html += '<textarea class="edit-field" id="editNotes">' + e(task.notes || '') + '</textarea></div>';
+
+      html += '<div class="edit-actions">';
+      html += '<button class="btn-save" id="saveBtn" onclick="saveTask()">Save changes</button>';
+      html += '<button class="btn-cancel" onclick="cancelEdit()">Cancel</button>';
+      html += '</div>';
+
+      return html;
+    }
+
+    function toggleDetails() {
+      const panel = document.getElementById('detailsPanel');
+      const btn = document.querySelector('.btn-view-details');
+      panel.classList.toggle('visible');
+      btn.textContent = panel.classList.contains('visible') ? 'Hide details' : 'View details';
+    }
+
+    function enterEditMode() {
+      const panel = document.getElementById('detailsPanel');
+      panel.innerHTML = renderEditView(currentTask);
+    }
+
+    function cancelEdit() {
+      const panel = document.getElementById('detailsPanel');
+      panel.innerHTML = renderDetailsView(currentTask);
+    }
+
+    async function saveTask() {
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
+      const updated = {
+        code: currentTask.code,
+        title: document.getElementById('editTitle').value.trim(),
+        course: document.getElementById('editCourse').value.trim(),
+        question: document.getElementById('editQuestion').value.trim(),
+        task_type: document.getElementById('editType').value.trim(),
+        total_marks: document.getElementById('editMarks').value || null,
+        due_date: document.getElementById('editDue').value || null,
+        criteria_text: document.getElementById('editCriteria').value.trim(),
+        notes: document.getElementById('editNotes').value.trim(),
+        outcomes: currentTask.outcomes || [],
+        criteria: [],
+      };
+
+      try {
+        const res = await authFetch('/api/update-task', {
+          method: 'PUT',
+          body: JSON.stringify(updated),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to save');
+
+        // Update local state
+        Object.assign(currentTask, updated);
+
+        // Update header display
+        const headerEl = document.getElementById('taskHeader');
+        const h1 = headerEl.querySelector('h1');
+        h1.textContent = updated.title || updated.question || 'Untitled task';
+        const courseEl = headerEl.querySelector('.task-course');
+        if (courseEl) courseEl.textContent = updated.course || '';
+
+        const questionEl = headerEl.querySelector('.task-question');
+        if (questionEl) questionEl.textContent = updated.question || '';
+
+        cancelEdit();
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+        btn.textContent = 'Save changes';
+      }
+    }
+
+    function toggleSubmission(i) {
+      document.getElementById('sub-' + i).classList.toggle('expanded');
+    }
+
     function renderClassFeedback(fb, count) {
       const target = document.getElementById('classFeedback');
       let html = '';
 
-      // Snapshot
       if (fb.overall_snapshot) {
         html += '<div class="section snapshot"><div class="section-title"><span class="section-dot"></span>Class snapshot</div>';
         html += '<p class="section-text">' + e(fb.overall_snapshot) + '</p></div>';
       }
-
-      // Strengths
       if (fb.class_strengths && fb.class_strengths.length) {
         html += '<div class="section strengths"><div class="section-title"><span class="section-dot"></span>Class strengths</div>';
         html += '<ul class="feedback-list">';
         fb.class_strengths.forEach(p => { html += '<li>' + e(p) + '</li>'; });
         html += '</ul></div>';
       }
-
-      // Weaknesses
       if (fb.class_weaknesses && fb.class_weaknesses.length) {
         html += '<div class="section weaknesses"><div class="section-title"><span class="section-dot"></span>Common gaps</div>';
         html += '<ul class="feedback-list">';
         fb.class_weaknesses.forEach(p => { html += '<li>' + e(p) + '</li>'; });
         html += '</ul></div>';
       }
-
-      // Task verb adherence
       if (fb.task_verb_adherence) {
         html += '<div class="section verb-adherence"><div class="section-title"><span class="section-dot"></span>Task verb adherence</div>';
         html += '<p class="section-text">' + e(fb.task_verb_adherence) + '</p></div>';
       }
-
-      // Top priorities
       if (fb.top_priorities && fb.top_priorities.length) {
         html += '<div class="section priorities"><div class="section-title"><span class="section-dot"></span>Top priorities for the class</div>';
         html += '<ul class="feedback-list">';
@@ -299,7 +523,6 @@
       }
 
       html += '<div class="footer">Based on ' + count + ' student submission' + (count === 1 ? '' : 's') + '.</div>';
-
       target.innerHTML = html;
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
