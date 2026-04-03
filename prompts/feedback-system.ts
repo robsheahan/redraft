@@ -22,7 +22,19 @@ import {
   VERB_DEPTH_MAP,
   COMMON_PITFALLS,
   FEEDBACK_PRINCIPLES,
-} from "../data/hms-stage6.js";
+} from "../data/nesa-reference.js";
+
+const DISCIPLINE_PERSONAS: Record<string, string> = {
+  English: "English teacher with extensive experience in textual analysis, essay writing, and HSC marking",
+  Mathematics: "Mathematics teacher with deep knowledge of problem-solving strategies, proof techniques, and mathematical communication",
+  Science: "Science teacher with expertise in scientific investigation, data analysis, and evidence-based reasoning",
+  HSIE: "HSIE teacher with deep knowledge of source analysis, historical and geographical inquiry, and evidence-based argument",
+  "Creative Arts": "Creative Arts teacher with expertise in artistic practice, critical analysis, and creative expression",
+  PDHPE: "PDHPE teacher with deep knowledge of health promotion frameworks, movement science, and wellbeing",
+  TAS: "Technology teacher with expertise in design processes, engineering principles, and technical communication",
+  Languages: "Languages teacher with expertise in linguistic analysis, cultural understanding, and communication skills",
+  VET: "VET teacher with industry experience and expertise in competency-based assessment and workplace skills",
+};
 
 interface TaskCriterion {
   name: string;
@@ -40,7 +52,7 @@ interface FeedbackPromptInput {
   teacherNotes?: string;
 }
 
-export function buildSystemPrompt(): string {
+export function buildSystemPrompt(courseName?: string, discipline?: string): string {
   const bandDescriptions = PERFORMANCE_BANDS.map(
     (b) => `Band ${b.band} (${b.markRange}): ${b.description}`
   ).join("\n\n");
@@ -68,16 +80,20 @@ export function buildSystemPrompt(): string {
     .map((l) => `- ${l}`)
     .join("\n");
 
-  return `You are an experienced NSW Health and Movement Science teacher with 15+ years of classroom and HSC marking experience. You are providing formative feedback on a student's draft assessment response to help them improve before final submission.
+  const persona = (discipline && DISCIPLINE_PERSONAS[discipline])
+    || "senior secondary teacher with extensive HSC marking experience";
+  const subjectLabel = courseName || "this subject";
 
-You have deep knowledge of the NESA Health and Movement Science syllabus (2023), the HSC marking process, and what distinguishes student work at each performance band. You know what examiners look for and where students commonly lose marks.
+  return `You are an experienced NSW ${persona} with 15+ years of classroom and HSC marking experience. You are providing formative feedback on a student's draft assessment response in ${subjectLabel} to help them improve before final submission.
+
+You have deep knowledge of the NESA syllabus for ${subjectLabel}, the HSC marking process, and what distinguishes student work at each performance band. You know what examiners look for and where students commonly lose marks.
 
 VOICE AND TONE:
 You are writing feedback directly to the student. Use "you" and "your" throughout — never refer to "the student" in third person. Write the way a warm but honest teacher would write comments on a draft: approachable, direct, and genuinely helpful. You care about this student doing well, and that means being straight with them about what needs work.
 
 Avoid robotic or mechanical language. Don't use phrases like "the response demonstrates" or "the submission exhibits". Instead say things like "you've shown a solid understanding of..." or "this part of your response needs more depth because...".
 
-Use language a Year 12 student will understand. No jargon unless it's HMS terminology they should know.
+Use language a Year 12 student will understand. No jargon unless it's subject-specific terminology they should know.
 
 IMPORTANT: Always use Australian English spelling (e.g. analyse, organisation, behaviour, colour, programme, prioritise, recognise, defence, centre). Never use US English spelling.
 

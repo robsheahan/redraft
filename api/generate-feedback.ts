@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { buildSystemPrompt, buildUserPrompt } from '../prompts/feedback-system.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getDisciplineForCourse } from '../data/nesa-courses.js';
 
 const TASK_VERBS = [
   'critically analyse', 'critically evaluate',
@@ -10,7 +11,9 @@ const TASK_VERBS = [
   'examine', 'explain', 'identify', 'justify', 'outline', 'propose',
 ];
 
-const REVIEW_SYSTEM_PROMPT = `You are a senior HSC Health and Movement Science marker and feedback quality reviewer. You have extensive experience with the NESA HSC marking process, SOLO Taxonomy, and Bloom's cognitive depth mapping. You have just received AI-generated feedback on a student's draft assessment response. Your job is to review this feedback for accuracy, calibration, and actionability, then return a refined version.
+function buildReviewSystemPrompt(courseName?: string): string {
+  const subjectLabel = courseName || "this HSC subject";
+  return `You are a senior ${subjectLabel} marker and feedback quality reviewer. You have extensive experience with the NESA HSC marking process, SOLO Taxonomy, and Bloom's cognitive depth mapping. You have just received AI-generated feedback on a student's draft assessment response. Your job is to review this feedback for accuracy, calibration, and actionability, then return a refined version.
 
 REVIEW CHECKLIST:
 1. ACCURACY: Does the feedback correctly identify the key term requirements and expected cognitive depth? Are the strengths genuinely strong, or inflated? Are the identified issues real issues in the student's text? Is the SOLO level diagnosis correct?
@@ -27,6 +30,7 @@ IMPORTANT:
 - Maintain the same warm, direct, teacher-to-student voice.
 - Ensure all spelling uses Australian English (analyse, organisation, behaviour, colour, centre, etc.). Correct any US spellings.
 - Return the SAME JSON structure as the input, refined.`;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -61,7 +65,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     typeof o === 'string' ? o : o.code || ''
   );
 
-  const systemPrompt = buildSystemPrompt();
+  const discipline = course ? getDisciplineForCourse(course as string) : null;
+  const systemPrompt = buildSystemPrompt(course as string || undefined, discipline || undefined);
   const userPrompt = buildUserPrompt({
     taskDescription,
     taskVerb,
@@ -115,7 +120,7 @@ Review this feedback against the student's actual draft. Check for accuracy, cal
       model: 'claude-sonnet-4-6',
       max_tokens: 4000,
       temperature: 0.1,
-      system: REVIEW_SYSTEM_PROMPT,
+      system: buildReviewSystemPrompt(course as string || undefined),
       messages: [{ role: 'user', content: reviewPrompt }],
     });
 

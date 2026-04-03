@@ -257,6 +257,20 @@
     .form-group textarea::placeholder { color: #d1d5db; }
     .form-group select { color: #111827; }
 
+    /* Course search */
+    .course-search { position: relative; }
+    .course-suggestions {
+      display: none; position: absolute; top: 100%; left: 0; right: 0;
+      background: #fff; border: 1px solid #e8e0d4; border-top: none;
+      border-radius: 0 0 8px 8px; max-height: 240px; overflow-y: auto;
+      z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .course-suggestion {
+      padding: 10px 16px; font-size: 14px; cursor: pointer;
+      transition: background 0.1s;
+    }
+    .course-suggestion:hover { background: #fef3e6; }
+
     .criteria-textarea {
       width: 100%;
       min-height: 120px;
@@ -431,14 +445,10 @@
       <div class="own-task card" id="ownTask">
         <div class="form-group">
           <label>Course</label>
-          <select>
-            <option value="" selected>Select your course...</option>
-            <option>HSC Health and Movement Science</option>
-            <option>HSC Biology</option>
-            <option>HSC English Advanced</option>
-            <option>HSC Modern History</option>
-            <option>HSC Business Studies</option>
-          </select>
+          <div class="course-search">
+            <input type="text" id="ownCourseInput" placeholder="Search for your course..." autocomplete="off">
+            <div class="course-suggestions" id="ownCourseSuggestions"></div>
+          </div>
         </div>
         <div class="form-group">
           <label>Task question</label>
@@ -507,7 +517,9 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/app.js"></script>
+  <script src="/js/nesa-courses.js"></script>
   <script>
+    initCourseSearch('ownCourseInput', 'ownCourseSuggestions');
     // Auth check + load previous submissions
     (async () => {
       const user = await requireAuth('student');
@@ -669,7 +681,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
     // --- Submit draft (own task flow) ---
     async function submitOwn() {
       const question = document.querySelector('#ownTask .form-group textarea').value.trim();
-      const course = document.querySelector('#ownTask select').value;
+      const course = document.getElementById('ownCourseInput').value.trim();
       const draft = document.getElementById('ownDraftTextarea').value.trim();
       if (!draft) { alert('Paste your draft first.'); return; }
 

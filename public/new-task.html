@@ -165,37 +165,19 @@
       color: #ed7615;
     }
 
-    /* Outcomes checkboxes */
-    .outcomes-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
+    /* Course search */
+    .course-search { position: relative; }
+    .course-suggestions {
+      display: none; position: absolute; top: 100%; left: 0; right: 0;
+      background: #fff; border: 1px solid #e8e0d4; border-top: none;
+      border-radius: 0 0 8px 8px; max-height: 240px; overflow-y: auto;
+      z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
-    @media (max-width: 500px) {
-      .outcomes-grid { grid-template-columns: 1fr; }
+    .course-suggestion {
+      padding: 10px 16px; font-size: 14px; cursor: pointer;
+      transition: background 0.1s;
     }
-    .outcome-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 10px 12px;
-      background: #f9fafb;
-      border-radius: 8px;
-      font-size: 13px;
-      cursor: pointer;
-      transition: background 0.15s;
-      line-height: 1.5;
-    }
-    .outcome-item:hover { background: #fef3e6; }
-    .outcome-item input[type="checkbox"] {
-      margin-top: 2px;
-      flex-shrink: 0;
-    }
-    .outcome-code {
-      font-weight: 700;
-      color: #ed7615;
-      white-space: nowrap;
-    }
+    .course-suggestion:hover { background: #fef3e6; }
 
     /* Criteria textarea */
     .criteria-textarea {
@@ -340,15 +322,10 @@
         </div>
         <div class="form-group">
           <label>Course</label>
-          <select>
-            <option value="" selected>Select course...</option>
-            <option>HSC Health and Movement Science</option>
-            <option>Preliminary Health and Movement Science</option>
-            <option>HSC English Advanced</option>
-            <option>HSC Biology</option>
-            <option>HSC Modern History</option>
-            <option>HSC Business Studies</option>
-          </select>
+          <div class="course-search">
+            <input type="text" id="courseInput" placeholder="Search for your course..." autocomplete="off">
+            <div class="course-suggestions" id="courseSuggestions"></div>
+          </div>
         </div>
         <div class="form-group">
           <label>Task title</label>
@@ -387,49 +364,8 @@
           <h2>Syllabus outcomes</h2>
         </div>
         <div class="form-group">
-          <div class="hint">Select the outcomes this task assesses. These help the feedback engine understand what the student needs to demonstrate.</div>
-          <div class="outcomes-grid">
-            <label class="outcome-item">
-              <input type="checkbox">
-              <span><span class="outcome-code">HM-12-01</span> — analyses the health status of Australians at a national and international level</span>
-            </label>
-            <label class="outcome-item">
-              <input type="checkbox">
-              <span><span class="outcome-code">HM-12-02</span> — examines how technology and data can achieve better health for all Australians</span>
-            </label>
-            <label class="outcome-item">
-              <input type="checkbox">
-              <span><span class="outcome-code">HM-12-03</span> — evaluates how the Sustainable Development Goals can be used to improve the health of a community</span>
-            </label>
-            <label class="outcome-item">
-              <input type="checkbox">
-              <span><span class="outcome-code">HM-12-04</span> — investigates factors that impact movement and performance</span>
-            </label>
-            <label class="outcome-item">
-              <input type="checkbox">
-              <span><span class="outcome-code">HM-12-05</span> — analyses individual and group training programs to improve performance</span>
-            </label>
-            <label class="outcome-item">
-              <input type="checkbox">
-              <span><span class="outcome-code">HM-12-06</span> — critically analyses the relationships and implications of health and movement concepts</span>
-            </label>
-            <label class="outcome-item">
-              <input type="checkbox">
-              <span><span class="outcome-code">HM-12-07</span> — communicates health and movement concepts using appropriate modes</span>
-            </label>
-            <label class="outcome-item">
-              <input type="checkbox">
-              <span><span class="outcome-code">HM-12-08</span> — generates and assesses new ideas relevant to health and movement contexts</span>
-            </label>
-            <label class="outcome-item">
-              <input type="checkbox">
-              <span><span class="outcome-code">HM-12-09</span> — proposes and evaluates solutions to complex health and movement issues</span>
-            </label>
-            <label class="outcome-item">
-              <input type="checkbox">
-              <span><span class="outcome-code">HM-12-10</span> — analyses a range of sources to make conclusions about health and movement concepts</span>
-            </label>
-          </div>
+          <div class="hint">Type or paste the syllabus outcome codes this task assesses (one per line). These help the feedback engine understand what the student needs to demonstrate.</div>
+          <textarea id="outcomesText" placeholder="e.g.&#10;HM-12-01 — analyses the health status of Australians&#10;HM-12-06 — critically analyses relationships and implications of health and movement concepts" style="min-height:100px"></textarea>
         </div>
       </div>
 
@@ -498,7 +434,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       btn.disabled = true;
 
       // Gather form data
-      const course = document.querySelector('.step:nth-child(1) select').value;
+      const course = document.getElementById('courseInput').value.trim();
       const title = document.querySelector('.step:nth-child(1) input[type="text"]').value;
       const question = document.querySelector('.step:nth-child(1) textarea').value;
       const selectedType = document.querySelector('.task-type.selected');
@@ -507,11 +443,8 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       const due_date = document.querySelector('.step:nth-child(1) input[type="date"]').value || null;
 
       // Outcomes
-      const outcomes = [];
-      document.querySelectorAll('.outcome-item input[type="checkbox"]:checked').forEach(cb => {
-        const code = cb.closest('.outcome-item').querySelector('.outcome-code').textContent;
-        outcomes.push(code);
-      });
+      const outcomesRaw = document.getElementById('outcomesText').value.trim();
+      const outcomes = outcomesRaw ? outcomesRaw.split('\n').map(l => l.trim()).filter(l => l) : [];
 
       // Criteria
       const criteria_text = document.getElementById('criteriaText').value.trim();
@@ -547,7 +480,11 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/app.js"></script>
-  <script>requireAuth('teacher');</script>
+  <script src="/js/nesa-courses.js"></script>
+  <script>
+    requireAuth('teacher');
+    initCourseSearch('courseInput', 'courseSuggestions');
+  </script>
 
   <div class="site-footer">
     <a href="/contact.html">Contact</a>
