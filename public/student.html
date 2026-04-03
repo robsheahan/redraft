@@ -622,7 +622,14 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         const criteriaDiv = document.getElementById('criteriaDisplay');
         if (data.criteria_text) {
           let html = '<h4>Marking criteria</h4>';
-          const lines = data.criteria_text.split('\n').map(l => l.trim()).filter(l => l);
+          // Split by newlines first; if that gives only 1 line, try splitting on numbered patterns
+          var rawLines = data.criteria_text.split('\n').map(l => l.trim()).filter(l => l);
+          if (rawLines.length <= 1 && rawLines[0]) {
+            // Try splitting on patterns like "Criteria 1:", "1.", "1)", "• ", "- "
+            var split = rawLines[0].split(/(?=(?:Criteria\s+)?\d+[\.\)\:]\s)|(?=•\s)|(?=–\s)|(?=-\s(?=[A-Z]))/i).map(l => l.trim()).filter(l => l);
+            if (split.length > 1) rawLines = split;
+          }
+          const lines = rawLines;
           lines.forEach(line => {
             // Try to extract marks pattern like "(3-5 marks)", "(5)", "3-5 marks", "5 marks"
             const marksMatch = line.match(/\(?\s*(\d+(?:\s*[-–]\s*\d+)?)\s*(?:marks?)?\s*\)?\s*$/i);

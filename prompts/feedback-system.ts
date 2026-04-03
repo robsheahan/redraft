@@ -198,7 +198,9 @@ export function buildUserPrompt(input: FeedbackPromptInput): string {
       .join("\n");
   }
 
-  const outcomesBlock = input.outcomes.join(", ");
+  const outcomesBlock = input.outcomes.length > 0
+    ? input.outcomes.join("\n")
+    : "Not specified";
 
   // Look up verb depth info
   const verbLower = input.taskVerb.toLowerCase();
