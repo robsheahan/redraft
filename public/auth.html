@@ -15,57 +15,67 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Inter', -apple-system, sans-serif;
-      background: #faf7f2;
-      color: #111827;
+      background: #fdf6ee;
+      color: #1f2937;
       line-height: 1.5;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       -webkit-font-smoothing: antialiased;
     }
-    .nav { padding: 20px 32px; }
+    .nav {
+      padding: 24px 32px; display: flex; align-items: center; justify-content: space-between;
+    }
     .nav-brand {
       text-decoration: none; display: flex; align-items: center;
     }
     .nav-brand img { height: 32px; width: auto; }
+    .nav-home {
+      font-size: 14px; font-weight: 600; color: #4b5563;
+      text-decoration: none; background: rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,0.1); border-radius: 6px;
+      padding: 8px 18px; transition: all 0.15s;
+    }
+    .nav-home:hover { background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.18); color: #1f2937; }
 
     .page {
       flex: 1; display: flex; align-items: center; justify-content: center;
       padding: 40px 20px;
     }
     .auth-card {
-      background: #fff; border: 1px solid #e8e0d4; border-radius: 12px;
-      padding: 40px 32px; width: 100%; max-width: 400px;
+      width: 100%; max-width: 400px;
+      padding: 0 32px;
     }
     .auth-card h1 {
-      font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
-      margin-bottom: 4px; text-align: center;
+      font-size: 28px; font-weight: 800; letter-spacing: -0.8px;
+      margin-bottom: 6px; text-align: center;
     }
     .auth-card .sub {
-      font-size: 14px; color: #6b7280; text-align: center; margin-bottom: 28px;
+      font-size: 15px; color: #6b7280; text-align: center; margin-bottom: 32px;
     }
 
     .tabs {
-      display: flex; gap: 8px; background: #f5f0e8; border-radius: 10px;
+      display: flex; gap: 8px; background: rgba(0,0,0,0.04); border-radius: 10px;
       padding: 4px; margin-bottom: 28px;
     }
     .tab {
-      flex: 1; padding: 8px; background: transparent; border: none;
+      flex: 1; padding: 10px; background: transparent; border: none;
       border-radius: 8px; font-size: 14px; font-weight: 600; color: #6b7280;
       cursor: pointer; font-family: inherit; transition: all 0.15s;
     }
     .tab.active {
-      background: #fff; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      background: #fff; color: #1f2937; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
 
     .form-group {
       margin-bottom: 20px;
     }
     .form-group label {
-      display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #374151;
+      display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #4b5563;
     }
     .form-group input {
-      width: 100%; padding: 12px 16px; border: 1px solid #e8e0d4; border-radius: 8px;
+      width: 100%; padding: 12px 16px; background: #fff;
+      border: 1px solid rgba(0,0,0,0.1); border-radius: 10px;
       font-size: 15px; font-family: inherit; outline: none;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
@@ -74,11 +84,12 @@
     }
 
     .submit-btn {
-      width: 100%; padding: 12px; background: #111827; color: #fff; border: none;
-      border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer;
-      font-family: inherit; transition: background 0.15s;
+      width: 100%; padding: 14px; background: #ed7615; color: #fff; border: none;
+      border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: all 0.15s;
+      box-shadow: 0 2px 8px rgba(237,118,21,0.4);
     }
-    .submit-btn:hover { background: #1f2937; }
+    .submit-btn:hover { background: #d4690f; box-shadow: 0 4px 16px rgba(237,118,21,0.45); }
     .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .error-msg {
@@ -98,6 +109,7 @@
 
   <nav class="nav">
     <a href="/" class="nav-brand"><img src="/proofready-banner.svg" alt="ProofReady"></a>
+    <a href="/" class="nav-home">Home</a>
   </nav>
 
   <div class="page">
