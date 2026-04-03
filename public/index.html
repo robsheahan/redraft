@@ -35,9 +35,9 @@
     .nav-login:hover { background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.18); color: #1f2937; }
 
     .hero {
-      flex: 1; display: flex; flex-direction: column;
+      display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      padding: 40px 24px 80px; text-align: center;
+      padding: 80px 24px 100px; text-align: center;
     }
     .hero h1 {
       font-size: 56px; font-weight: 800; letter-spacing: -2.5px;
@@ -70,6 +70,39 @@
       .hero-buttons a { text-align: center; }
     }
 
+    .how-it-works {
+      max-width: 720px; margin: 0 auto; padding: 0 24px 80px;
+    }
+    .how-it-works h2 {
+      font-size: 15px; font-weight: 700; letter-spacing: 0.5px;
+      text-transform: uppercase; color: #ed7615; text-align: center;
+      margin-bottom: 40px;
+    }
+    .steps {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px;
+    }
+    .step { text-align: center; }
+    .step-number {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: #ed7615; color: #fff; font-size: 15px; font-weight: 700;
+      margin-bottom: 14px;
+    }
+    .step h3 {
+      font-size: 16px; font-weight: 700; margin-bottom: 6px; color: #1f2937;
+    }
+    .step p {
+      font-size: 14px; line-height: 1.6; color: #6b7280;
+    }
+    @media (max-width: 600px) {
+      .steps { grid-template-columns: 1fr; gap: 28px; }
+    }
+
+    .divider {
+      width: 48px; height: 3px; background: #ed7615; border-radius: 2px;
+      margin: 0 auto 80px; opacity: 0.3;
+    }
+
     .footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; }
   </style>
 </head>
@@ -86,6 +119,29 @@
     <div class="hero-buttons">
       <a href="/auth.html" class="btn-blue" id="ctaPrimary">Get started</a>
       <a href="/auth.html" class="btn-ghost" id="ctaSecondary">Log in</a>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="how-it-works">
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <h3>Teacher sets the task</h3>
+        <p>Create an assessment task with syllabus outcomes, marking criteria, and key directions.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <h3>Student submits a draft</h3>
+        <p>Paste or type a draft response. ProofReady analyses it against the criteria your teacher provided.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <h3>Receive targeted feedback</h3>
+        <p>Get specific, actionable suggestions aligned to NESA standards — not a mark, but a clear path to improve.</p>
+      </div>
     </div>
   </div>
 
