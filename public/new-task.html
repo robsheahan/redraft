@@ -310,6 +310,12 @@
       transition: border-color 0.15s;
     }
     .btn-secondary:hover { border-color: #d1d5db; }
+    .site-footer {
+      text-align: center; padding: 24px; font-size: 13px; color: #9ca3af;
+      border-top: 1px solid #e5e7eb;
+    }
+    .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+    .site-footer a:hover { color: #6b7280; }
   </style>
 </head>
 <body>
@@ -542,6 +548,12 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/app.js"></script>
   <script>requireAuth('teacher');</script>
+
+  <div class="site-footer">
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms &amp; Conditions</a>
+  </div>
 
 </body>
 </html>
