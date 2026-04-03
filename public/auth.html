@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign in — Limae</title>
+  <title>Sign in — ProofReady</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -19,10 +19,9 @@
     }
     .nav { padding: 20px 32px; }
     .nav-brand {
-      font-size: 22px; font-weight: 800; text-decoration: none;
-      color: #111827; letter-spacing: -0.5px;
+      text-decoration: none; display: flex; align-items: center;
     }
-    .nav-brand .li { color: #2563eb; }
+    .nav-brand img { height: 32px; width: auto; }
 
     .page {
       flex: 1; display: flex; align-items: center; justify-content: center;
@@ -87,7 +86,7 @@
 <body>
 
   <nav class="nav">
-    <a href="/" class="nav-brand"><span class="li">li</span>mae</a>
+    <a href="/" class="nav-brand"><img src="/proofready-banner.svg" alt="ProofReady"></a>
   </nav>
 
   <div class="page">
@@ -161,7 +160,7 @@
       document.querySelectorAll('.tab')[1].classList.add('active');
       document.querySelectorAll('.tab')[0].classList.remove('active');
       document.getElementById('heading').textContent = 'Create an account';
-      document.getElementById('subheading').textContent = 'Get started with Limae';
+      document.getElementById('subheading').textContent = 'Get started with ProofReady';
       hideError();
     }
 

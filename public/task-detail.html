@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Task Detail — Limae</title>
+  <title>Task Detail — ProofReady</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -17,10 +17,9 @@
       padding: 14px 32px; display: flex; align-items: center; justify-content: space-between;
     }
     .nav-brand {
-      font-size: 22px; font-weight: 800; text-decoration: none;
-      color: #fff; letter-spacing: -0.5px;
+      text-decoration: none; display: flex; align-items: center;
     }
-    .nav-brand .li { color: #60a5fa; }
+    .nav-brand img { height: 32px; width: auto; }
     .back-link {
       font-size: 13px; font-weight: 500; color: #d1d5db;
       text-decoration: none; background: rgba(255,255,255,0.08);
@@ -234,7 +233,7 @@
 <body>
 
   <nav class="nav">
-    <a href="/" class="nav-brand"><span class="li">li</span>mae</a>
+    <a href="/" class="nav-brand"><img src="/proofready-banner.svg" alt="ProofReady"></a>
     <a href="teacher.html" class="back-link">Back to tasks</a>
   </nav>
 
@@ -269,7 +268,7 @@
 
       const { task, submissions } = await res.json();
       currentTask = task;
-      document.title = (task.title || 'Task') + ' — Limae';
+      document.title = (task.title || 'Task') + ' — ProofReady';
 
       let html = '';
 
