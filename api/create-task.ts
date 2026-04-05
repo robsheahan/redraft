@@ -21,6 +21,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const supabase = getSupabase();
   const { course, title, question, task_type, total_marks, due_date, outcomes, criteria, criteria_text, notes } = req.body;
 
+  // Validate required fields
+  if (!question || !String(question).trim()) {
+    return res.status(400).json({ error: 'Task question is required' });
+  }
+  if (!course || !String(course).trim()) {
+    return res.status(400).json({ error: 'Course is required' });
+  }
+
   // Generate unique code
   let code = generateCode();
   for (let i = 0; i < 5; i++) {

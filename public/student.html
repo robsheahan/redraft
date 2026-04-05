@@ -340,6 +340,9 @@
       margin-top: 8px;
       margin-bottom: 20px;
     }
+    .word-count.warning {
+      color: #d97706;
+    }
     .submit-btn {
       width: 100%;
       padding: 14px;
@@ -554,7 +557,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
               const date = new Date(s.created_at).toLocaleDateString();
               card.innerHTML = '<div><h4>' + escapeHtml(label.substring(0, 60) + (label.length > 60 ? '...' : '')) + '</h4><p>' + date + '</p></div><span class="prev-card-arrow">›</span>';
               card.onclick = () => {
-                const prevVerbs = ['critically analyse', 'critically evaluate', 'analyse', 'analyze', 'assess', 'compare', 'contrast', 'describe', 'discuss', 'distinguish', 'evaluate', 'examine', 'explain', 'identify', 'justify', 'outline', 'propose'];
+                const prevVerbs = ['compare and contrast', 'critically analyse', 'critically evaluate', 'account for', 'analyse', 'analyze', 'appreciate', 'apply', 'assess', 'calculate', 'clarify', 'classify', 'compare', 'construct', 'contrast', 'deduce', 'demonstrate', 'describe', 'discuss', 'distinguish', 'evaluate', 'examine', 'explain', 'extract', 'extrapolate', 'identify', 'interpret', 'investigate', 'justify', 'outline', 'predict', 'propose', 'recommend', 'recount'];
                 const qLow = (s.question || '').toLowerCase();
                 const detectedVerb = prevVerbs.find(v => qLow.includes(v)) || '';
                 sessionStorage.setItem('proofready_feedback', JSON.stringify({ feedback: s.feedback, meta: { taskVerb: detectedVerb, question: s.question, course: s.course, title: s.task_title || null } }));
@@ -608,7 +611,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         document.getElementById('taskQuestion').textContent = data.question || '';
 
         // Task verb
-        const verbs = ['critically analyse', 'critically evaluate', 'analyse', 'analyze', 'assess', 'compare', 'contrast', 'describe', 'discuss', 'distinguish', 'evaluate', 'examine', 'explain', 'identify', 'justify', 'outline', 'propose'];
+        const verbs = ['compare and contrast', 'critically analyse', 'critically evaluate', 'account for', 'analyse', 'analyze', 'appreciate', 'apply', 'assess', 'calculate', 'clarify', 'classify', 'compare', 'construct', 'contrast', 'deduce', 'demonstrate', 'describe', 'discuss', 'distinguish', 'evaluate', 'examine', 'explain', 'extract', 'extrapolate', 'identify', 'interpret', 'investigate', 'justify', 'outline', 'predict', 'propose', 'recommend', 'recount'];
         const qLower = (data.question || '').toLowerCase();
         const verb = verbs.find(v => qLower.includes(v));
         if (verb) {
@@ -682,6 +685,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         notes: currentTask.notes,
         task_code: currentTask.code,
         task_title: currentTask.title,
+        task_type: currentTask.task_type,
       }, document.querySelector('#taskDetail .submit-btn'));
     }
 
@@ -737,16 +741,26 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
       return div.innerHTML;
     }
 
-    // Word counts
+    // Word counts with length warning
+    function updateWordCount(textareaId, countId) {
+      var el = document.getElementById(textareaId);
+      var countEl = document.getElementById(countId);
+      if (!el || !countEl) return;
+      var words = el.value.trim() ? el.value.trim().split(/\s+/).length : 0;
+      if (words > 3000) {
+        countEl.textContent = words + ' words — very long draft, feedback may not cover everything';
+        countEl.classList.add('warning');
+      } else if (words > 2000) {
+        countEl.textContent = words + ' words — long draft';
+        countEl.classList.add('warning');
+      } else {
+        countEl.textContent = words + ' words';
+        countEl.classList.remove('warning');
+      }
+    }
     document.addEventListener('input', function(e) {
-      if (e.target.id === 'codeDraftTextarea') {
-        const words = e.target.value.trim() ? e.target.value.trim().split(/\s+/).length : 0;
-        document.getElementById('codeWordCount').textContent = words + ' words';
-      }
-      if (e.target.id === 'ownDraftTextarea') {
-        const words = e.target.value.trim() ? e.target.value.trim().split(/\s+/).length : 0;
-        document.getElementById('ownWordCount').textContent = words + ' words';
-      }
+      if (e.target.id === 'codeDraftTextarea') updateWordCount('codeDraftTextarea', 'codeWordCount');
+      if (e.target.id === 'ownDraftTextarea') updateWordCount('ownDraftTextarea', 'ownWordCount');
     });
   </script>
 

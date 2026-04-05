@@ -131,7 +131,7 @@
       font-size: 10px; transition: transform 0.15s; display: inline-block;
     }
     .detail-content {
-      display: none; margin-top: 12px; padding-top: 12px;
+      display: block; margin-top: 12px; padding-top: 12px;
       border-top: 1px solid #f0f0f0;
     }
     .detail-content.visible { display: block; }
@@ -187,6 +187,29 @@
       justify-content: center;
     }
 
+    /* Criteria feedback */
+    .criteria-section { margin-top: 8px; }
+    .criterion-card {
+      background: #fff; border-radius: 12px; padding: 20px 24px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+    .criterion-name {
+      font-size: 14px; font-weight: 700; color: #1f2937; margin-bottom: 4px;
+    }
+    .criterion-band {
+      display: inline-block; padding: 2px 10px; border-radius: 12px;
+      font-size: 12px; font-weight: 700; margin-bottom: 10px;
+      background: #fef3e6; color: #ed7615;
+    }
+    .criterion-label {
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: #9ca3af; margin: 10px 0 4px;
+    }
+    .criterion-text {
+      font-size: 14px; line-height: 1.6; color: #374151;
+    }
+
     /* Empty state */
     .empty-state {
       text-align: center;
@@ -225,6 +248,14 @@
     }
     .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
     .site-footer a:hover { color: #6b7280; }
+
+    @media print {
+      .nav, .back-link, .site-footer, .detail-toggle, .btn-home { display: none !important; }
+      .detail-content { display: block !important; }
+      body { background: #fff; }
+      .container { max-width: 100%; padding: 0; }
+      .section { box-shadow: none; border: 1px solid #e8e0d4; break-inside: avoid; }
+    }
   </style>
 </head>
 <body>
@@ -286,7 +317,7 @@
           html += '</ul>';
         }
         if (Array.isArray(well.detail) && well.detail.length) {
-          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow" style="transform:rotate(90deg)">›</span> Hide detail</button>';
           html += '<div class="detail-content" id="' + id + '"><ul class="feedback-list">';
           well.detail.forEach(p => { html += '<li>' + e(p) + '</li>'; });
           html += '</ul></div>';
@@ -302,7 +333,7 @@
         html += '<div class="section verb-check"><div class="section-title">Key term check' + verbLabel + '</div>';
         if (verb.summary) html += '<p class="summary-text">' + e(typeof verb.summary === 'string' ? verb.summary : '') + '</p>';
         if (verb.detail && verb.detail !== verb.summary) {
-          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow" style="transform:rotate(90deg)">›</span> Hide detail</button>';
           html += '<div class="detail-content" id="' + id + '"><p class="section-text">' + e(typeof verb.detail === 'string' ? verb.detail : '') + '</p></div>';
         }
         html += '</div>';
@@ -315,7 +346,7 @@
         html += '<div class="section top-priority"><div class="section-title">Top priority — focus on this first</div>';
         if (priority.summary) html += '<p class="summary-text">' + e(typeof priority.summary === 'string' ? priority.summary : '') + '</p>';
         if (priority.detail && priority.detail !== priority.summary) {
-          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow" style="transform:rotate(90deg)">›</span> Hide detail</button>';
           html += '<div class="detail-content" id="' + id + '"><p class="section-text">' + e(typeof priority.detail === 'string' ? priority.detail : '') + '</p></div>';
         }
         html += '</div>';
@@ -332,13 +363,33 @@
           html += '</ul>';
         }
         if (Array.isArray(impr.detail) && impr.detail.length) {
-          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow" style="transform:rotate(90deg)">›</span> Hide detail</button>';
           html += '<div class="detail-content" id="' + id + '"><ul class="feedback-list">';
           impr.detail.forEach((p, i) => {
             html += '<li><span class="improvement-number">' + (i + 1) + '</span>' + e(p) + '</li>';
           });
           html += '</ul></div>';
         }
+        html += '</div>';
+      }
+
+      // Criteria-specific feedback (from independent Pass 2)
+      if (fb.criteria_feedback && Array.isArray(fb.criteria_feedback) && fb.criteria_feedback.length) {
+        html += '<div class="section criteria-section"><div class="section-title">Feedback by marking criterion</div>';
+        fb.criteria_feedback.forEach(function(cf) {
+          html += '<div class="criterion-card">';
+          html += '<div class="criterion-name">' + e(cf.criterion || '') + '</div>';
+          if (cf.band_estimate) html += '<div class="criterion-band">Band ' + e(String(cf.band_estimate)) + '</div>';
+          if (cf.strengths) {
+            html += '<div class="criterion-label">Strengths</div>';
+            html += '<div class="criterion-text">' + e(cf.strengths) + '</div>';
+          }
+          if (cf.improvements) {
+            html += '<div class="criterion-label">To improve</div>';
+            html += '<div class="criterion-text">' + e(cf.improvements) + '</div>';
+          }
+          html += '</div>';
+        });
         html += '</div>';
       }
 
@@ -349,7 +400,7 @@
         html += '<div class="section overall"><div class="section-title">Overall</div>';
         if (overall.summary) html += '<p class="summary-text">' + e(typeof overall.summary === 'string' ? overall.summary : '') + '</p>';
         if (overall.detail && overall.detail !== overall.summary) {
-          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow" style="transform:rotate(90deg)">›</span> Hide detail</button>';
           html += '<div class="detail-content" id="' + id + '"><p class="section-text">' + e(typeof overall.detail === 'string' ? overall.detail : '') + '</p></div>';
         }
         html += '</div>';
@@ -377,12 +428,13 @@
 
     function toggleDetail(id, btn) {
       const el = document.getElementById(id);
-      el.classList.toggle('visible');
       const arrow = btn.querySelector('.detail-toggle-arrow');
-      if (el.classList.contains('visible')) {
+      if (el.style.display === 'none') {
+        el.style.display = 'block';
         arrow.style.transform = 'rotate(90deg)';
         btn.lastChild.textContent = ' Hide detail';
       } else {
+        el.style.display = 'none';
         arrow.style.transform = '';
         btn.lastChild.textContent = ' Show detail';
       }

@@ -26,5 +26,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(404).json({ error: 'Task not found. Check the code and try again.' });
   }
 
-  return res.status(200).json(data);
+  const { notes, ...studentData } = data;
+  return res.status(200).json(studentData);
 }

@@ -3,33 +3,89 @@ import Anthropic from '@anthropic-ai/sdk';
 import { buildSystemPrompt, buildUserPrompt } from '../prompts/feedback-system.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
+import { VERB_DEPTH_MAP } from '../data/nesa-reference.js';
 
+// Multi-word verbs must come first so they match before their single-word parts
 const TASK_VERBS = [
-  'critically analyse', 'critically evaluate',
-  'analyse', 'analyze', 'assess', 'compare', 'contrast',
-  'describe', 'discuss', 'distinguish', 'evaluate',
-  'examine', 'explain', 'identify', 'justify', 'outline', 'propose',
+  'compare and contrast', 'critically analyse', 'critically evaluate', 'account for',
+  'analyse', 'analyze', 'appreciate', 'apply', 'assess',
+  'calculate', 'clarify', 'classify', 'compare', 'construct', 'contrast',
+  'deduce', 'demonstrate', 'describe', 'discuss', 'distinguish',
+  'evaluate', 'examine', 'explain', 'extract', 'extrapolate',
+  'identify', 'interpret', 'investigate', 'justify',
+  'outline', 'predict', 'propose', 'recommend', 'recount',
 ];
 
-function buildReviewSystemPrompt(courseName?: string): string {
+/**
+ * Extract the most important task verb from a question.
+ * Prioritises: (1) multi-word verbs, (2) verbs near the start, (3) highest cognitive depth.
+ * Returns null if no recognised verb is found.
+ */
+function extractTaskVerb(question: string): string | null {
+  const qLower = question.toLowerCase();
+  const startRegion = qLower.slice(0, 50);
+
+  // Find all matching verbs
+  const found: { verb: string; index: number }[] = [];
+  for (const v of TASK_VERBS) {
+    const idx = qLower.indexOf(v);
+    if (idx !== -1) {
+      found.push({ verb: v, index: idx });
+    }
+  }
+
+  if (found.length === 0) return null;
+  if (found.length === 1) return found[0].verb;
+
+  // Prefer verbs that appear in the first 50 characters
+  const earlyVerbs = found.filter(f => startRegion.includes(f.verb));
+  const candidates = earlyVerbs.length > 0 ? earlyVerbs : found;
+
+  if (candidates.length === 1) return candidates[0].verb;
+
+  // Among candidates, pick the one with highest cognitive depth
+  let best = candidates[0];
+  let bestDepth = VERB_DEPTH_MAP[best.verb]?.depth ?? 0;
+  for (let i = 1; i < candidates.length; i++) {
+    const depth = VERB_DEPTH_MAP[candidates[i].verb]?.depth ?? 0;
+    if (depth > bestDepth) {
+      best = candidates[i];
+      bestDepth = depth;
+    }
+  }
+
+  return best.verb;
+}
+
+function buildCriteriaCheckPrompt(courseName?: string): string {
   const subjectLabel = courseName || "this HSC subject";
-  return `You are a senior ${subjectLabel} marker and feedback quality reviewer. You have extensive experience with the NESA HSC marking process, SOLO Taxonomy, and Bloom's cognitive depth mapping. You have just received AI-generated feedback on a student's draft assessment response. Your job is to review this feedback for accuracy, calibration, and actionability, then return a refined version.
+  return `You are a senior ${subjectLabel} marker. You are independently assessing a student's draft response against the marking criteria provided by their teacher. You have NOT seen any other feedback — you are making a fresh assessment.
 
-REVIEW CHECKLIST:
-1. ACCURACY: Does the feedback correctly identify the key term requirements and expected cognitive depth? Are the strengths genuinely strong, or inflated? Are the identified issues real issues in the student's text? Is the SOLO level diagnosis correct?
-2. CALIBRATION: Is the overall assessment honest and well-calibrated to HSC standards and band descriptors? Would an experienced marker agree with the performance band estimate? Remember: high achievement is NOT defined solely by quantity of information.
-3. ACTIONABILITY: Can the student actually act on every improvement point? Are the steps specific enough? Is every improvement framed as a forward-looking revision action? Remove vague advice and replace with concrete actions.
-4. CONCISENESS: Cut any filler, repetition, or padding. Every sentence should add value. Summaries should be punchy and scannable.
-5. COMPLETENESS: Has any significant issue been missed? Has any strength been overlooked? Are common pitfalls checked (concept confusion, listing without connecting, one-sided responses, missing examples)?
-6. SELF-REGULATION: Does the feedback include a useful self-check question the student can apply independently?
+YOUR TASK:
+For EACH marking criterion the teacher has provided, assess the student's draft and produce specific feedback. You must address every criterion individually — do not skip any.
 
-IMPORTANT:
-- If the original feedback is already accurate and well-calibrated, make only minor refinements. Do not change for the sake of changing.
-- If you find inaccuracies (e.g. praising something that isn't actually strong, or missing a major flaw), correct them.
-- Verify the key term depth diagnosis matches the NESA glossary definition.
-- Maintain the same warm, direct, teacher-to-student voice.
-- Ensure all spelling uses Australian English (analyse, organisation, behaviour, colour, centre, etc.). Correct any US spellings.
-- Return the SAME JSON structure as the input, refined.`;
+For each criterion, provide:
+- "criterion": The criterion name/description (as the teacher wrote it)
+- "strengths": What the student has done well against this specific criterion (be genuine — only list real strengths)
+- "improvements": What needs to change to score higher on this criterion. Be specific — reference their actual text and give actionable steps.
+- "band_estimate": Your honest estimate of which HSC band (1-6) this criterion sits at currently
+
+VOICE: Write directly to the student using "you/your". Be warm but honest. Use Australian English spelling.
+
+Keep each point tight — one sentence for the observation, one for the action. No padding.
+
+OUTPUT FORMAT:
+Respond in JSON:
+{
+  "criteria_feedback": [
+    {
+      "criterion": "the criterion text",
+      "strengths": "what's working for this criterion",
+      "improvements": "specific actions to improve against this criterion",
+      "band_estimate": 4
+    }
+  ]
+}`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -38,14 +94,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const user = await verifyAuth(req);
-  const { question, course, criteria, criteria_text, outcomes, draft, notes, task_code, task_title } = req.body;
+  const { question, course, criteria, criteria_text, outcomes, draft, notes, task_code, task_title, task_type } = req.body;
 
   if (!question || !draft) {
     return res.status(400).json({ error: 'Question and draft are required' });
   }
 
-  const questionLower = (question as string).toLowerCase();
-  const taskVerb = TASK_VERBS.find(v => questionLower.includes(v)) || 'explain';
+  // If submitting against a teacher's task, fetch notes server-side (they're not exposed to students)
+  let teacherNotes = notes || null;
+  if (task_code && !teacherNotes) {
+    const supabase = getSupabase();
+    const { data: taskData } = await supabase.from('tasks').select('notes').eq('code', task_code).single();
+    if (taskData?.notes) teacherNotes = taskData.notes;
+  }
+
+  const taskVerb = extractTaskVerb(question as string);
 
   const taskDescription = course
     ? `${course}\n\nQuestion:\n${question}`
@@ -69,12 +132,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const systemPrompt = buildSystemPrompt(course as string || undefined, discipline || undefined);
   const userPrompt = buildUserPrompt({
     taskDescription,
-    taskVerb,
+    taskVerb: taskVerb || undefined,
     outcomes: outcomesList,
     criteria: mappedCriteria,
     criteriaText: rawCriteriaText || undefined,
     studentText: draft,
-    teacherNotes: notes || undefined,
+    teacherNotes: teacherNotes || undefined,
+    taskType: task_type || undefined,
   });
 
   try {
@@ -98,37 +162,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const initialFeedback = JSON.parse(pass1Match[0]);
 
-    // --- Pass 2: Review and refine for accuracy ---
-    const reviewPrompt = `ORIGINAL TASK:
+    // --- Pass 2: Independent criteria-coverage check ---
+    // This is a fresh assessment — Pass 2 does NOT see Pass 1's output.
+    // It evaluates the draft against each marking criterion independently.
+    const criteriaBlock = rawCriteriaText
+      || mappedCriteria.map((c, i) => `${i + 1}. ${c.name} (${c.maxMarks} marks): ${c.description}`).join('\n')
+      || 'No specific criteria provided — assess against general HSC standards';
+
+    const criteriaCheckPrompt = `ASSESSMENT TASK:
 ${taskDescription}
 
-KEY TERM: "${taskVerb}"
+MARKING CRITERIA:
+${criteriaBlock}
 
-STUDENT'S DRAFT:
+---
+
+STUDENT'S DRAFT RESPONSE:
 ${draft}
 
 ---
 
-INITIAL AI FEEDBACK (to review and refine):
-${JSON.stringify(initialFeedback, null, 2)}
-
----
-
-Review this feedback against the student's actual draft. Check for accuracy, calibration, actionability, and conciseness per your checklist. Return the refined feedback as the same JSON structure. Only make changes where genuinely needed.`;
+Assess this draft against each marking criterion above. Address every criterion individually.`;
 
     const pass2 = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4000,
-      temperature: 0.1,
-      system: buildReviewSystemPrompt(course as string || undefined),
-      messages: [{ role: 'user', content: reviewPrompt }],
+      max_tokens: 3000,
+      temperature: 0.3,
+      system: buildCriteriaCheckPrompt(course as string || undefined),
+      messages: [{ role: 'user', content: criteriaCheckPrompt }],
     });
 
     const pass2Text = pass2.content[0].type === 'text' ? pass2.content[0].text : '';
     const pass2Match = pass2Text.match(/\{[\s\S]*\}/);
 
-    // Use refined feedback if pass 2 succeeded, otherwise fall back to pass 1
-    const feedback = pass2Match ? JSON.parse(pass2Match[0]) : initialFeedback;
+    // Merge Pass 1 (general feedback) with Pass 2 (criteria-specific feedback)
+    let criteriaFeedback = null;
+    if (pass2Match) {
+      try {
+        const pass2Data = JSON.parse(pass2Match[0]);
+        criteriaFeedback = pass2Data.criteria_feedback || null;
+      } catch { /* criteria check failed, continue without it */ }
+    }
+
+    const feedback = {
+      ...initialFeedback,
+      criteria_feedback: criteriaFeedback,
+    };
 
     // Save submission if user is authenticated
     if (user) {

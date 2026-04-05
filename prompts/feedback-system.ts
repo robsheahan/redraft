@@ -36,6 +36,63 @@ const DISCIPLINE_PERSONAS: Record<string, string> = {
   VET: "VET teacher with industry experience and expertise in competency-based assessment and workplace skills",
 };
 
+const DISCIPLINE_PITFALLS: Record<string, string[]> = {
+  English: [
+    "Retelling the text rather than analysing how meaning is constructed through techniques.",
+    "Identifying techniques without explaining their effect on the reader or how they shape meaning.",
+    "Not integrating quotations into sentences — dropping quotes without context or analysis.",
+    "Writing a generic thesis that could apply to any text rather than engaging with the specific text's concerns.",
+  ],
+  Mathematics: [
+    "Showing the answer without showing working or logical steps — marks are awarded for the process.",
+    "Not defining variables or stating assumptions before using them in calculations.",
+    "Skipping proof steps or assuming what needs to be proved.",
+    "Confusing similar concepts: e.g. permutations vs combinations, correlation vs causation, convergence vs divergence.",
+  ],
+  Science: [
+    "Describing what happened in an experiment without explaining why (missing the scientific reasoning).",
+    "Not linking observations to underlying scientific principles or models.",
+    "Confusing correlation with causation when interpreting data.",
+    "Not controlling variables or acknowledging limitations in experimental design.",
+  ],
+  HSIE: [
+    "Narrating events chronologically instead of building an analytical argument.",
+    "Not using source evidence to support claims — making assertions without proof.",
+    "Presenting only one perspective when the question requires multiple viewpoints.",
+    "Confusing description of a geographical/historical process with analysis of its significance or impact.",
+  ],
+  "Creative Arts": [
+    "Describing artwork without analysing how artistic choices create meaning or impact.",
+    "Not connecting practice to conceptual framework (artist, artwork, world, audience).",
+    "Listing techniques without discussing their relationship to the artist's intention.",
+    "Failing to reference specific works, performances, or practitioners to support arguments.",
+  ],
+  PDHPE: [
+    "Listing Ottawa Charter action areas or health frameworks without connecting them to specific real-world examples.",
+    "Confusing related concepts: e.g. determinants vs risk factors, morbidity vs mortality, prevalence vs incidence.",
+    "Not using specific, current Australian health data or statistics to support arguments.",
+    "Confusing types of training (aerobic vs anaerobic) or principles of training with methods of training.",
+  ],
+  TAS: [
+    "Describing a design solution without justifying design decisions against the brief or constraints.",
+    "Not evaluating the effectiveness of a solution against the original design criteria.",
+    "Listing materials or processes without explaining why they were chosen for this context.",
+    "Failing to consider safety, sustainability, or ethical implications in design evaluation.",
+  ],
+  Languages: [
+    "Direct translation from English that produces grammatically incorrect or unnatural phrasing.",
+    "Not varying vocabulary — relying on basic words when more sophisticated alternatives are expected.",
+    "Ignoring register (formal vs informal) appropriate to the text type and audience.",
+    "Not demonstrating cultural understanding when the task requires it.",
+  ],
+  VET: [
+    "Describing workplace procedures without connecting them to industry standards or regulations.",
+    "Not demonstrating understanding of WHS requirements relevant to the task.",
+    "Listing competencies without providing evidence of practical application.",
+    "Using informal language when workplace documentation requires formal, industry-standard terminology.",
+  ],
+};
+
 interface TaskCriterion {
   name: string;
   description: string;
@@ -44,12 +101,13 @@ interface TaskCriterion {
 
 interface FeedbackPromptInput {
   taskDescription: string;
-  taskVerb: string;
+  taskVerb?: string;
   outcomes: string[];
   criteria: TaskCriterion[];
   criteriaText?: string;
   studentText: string;
   teacherNotes?: string;
+  taskType?: string;
 }
 
 export function buildSystemPrompt(courseName?: string, discipline?: string): string {
@@ -108,13 +166,20 @@ Think about how you would actually sit down with a student and go through their 
 - Be thorough — flag every issue you find, big or small
 - Frame improvements as forward-looking revision actions: "In your next revision, do X" rather than "You failed to do X"
 
+TASK FORMAT AWARENESS:
+Tailor your feedback to the task format:
+- Essay: Emphasise thesis development, sustained argument, paragraph structure, and logical flow. Check for introduction, body paragraphs with topic sentences, and a conclusion that doesn't just repeat.
+- Short answer: Focus on directness, precision, and whether every sentence earns marks. No wasted words. Check they've addressed all parts of the question within the mark allocation.
+- Report: Check for appropriate report structure (headings, sections, recommendations where relevant). Formal register. Data or evidence presentation.
+- Case study: Check they've applied concepts to the specific case/scenario given, not just described theory in general. Look for specific references to the case material.
+
 FEEDBACK LEVELS (apply all three where appropriate):
 ${feedbackLevels}
 
 CRITICAL RULES:
 1. You are giving feedback on a DRAFT to help them improve. You are NOT assigning a final mark.
 2. Be HONEST. If their work is mid-range, tell them. Sugarcoating doesn't help anyone.
-3. Be EXHAUSTIVE. List every flaw you find, no matter how many there are. Students using this tool want thorough feedback — don't skip issues for the sake of brevity. If there are 15 things to fix, list all 15.
+3. Be THOROUGH. Flag every genuine issue you find — do not skip problems for brevity. If there are 15 things to fix, list all 15. But keep each point tight: one sentence for the problem, one for the fix. No padding, no filler, no restating the obvious.
 4. Be SPECIFIC and ACTIONABLE. Never say "develop your ideas further". Instead say exactly which idea, what's missing from it, and what they should do. Every improvement point should be something the student can sit down and act on immediately.
 5. Check the KEY TERM. If the question asks them to "analyse", check whether they actually analyse (identify components and relationships, draw out implications) or merely describe. This is where students lose the most marks. Use the verb depth mapping below to determine the expected cognitive depth.
 6. Do NOT write or rewrite content for the student. Guide them — don't do it for them.
@@ -142,13 +207,17 @@ ${glossaryEntries}
 
 COMMON STUDENT PITFALLS (from 15+ years of HSC marker feedback):
 ${pitfalls}
+${(() => {
+    const extra = discipline && DISCIPLINE_PITFALLS[discipline];
+    return extra ? `\nSUBJECT-SPECIFIC PITFALLS for ${subjectLabel}:\n${extra.map(p => '- ' + p).join('\n')}` : '';
+  })()}
 
 Check for these specific pitfalls in the student's response and flag any that apply.
 
 OUTPUT FORMAT:
 Respond in the following JSON structure. Each section has a "summary" (short bullet points — the headline takeaway a student sees first) and "detail" (the full explanation). Write in natural, personable language throughout.
 
-Be CONCISE. Every sentence should earn its place. Cut filler words. Lead with the action, not the reasoning. If a point can be made in one sentence, don't use three.
+Keep every sentence purposeful. Summaries are punchy and scannable. Detail sections explain the why and the fix, but don't pad — lead with the action.
 
 {
   "what_youve_done_well": {
@@ -203,15 +272,22 @@ export function buildUserPrompt(input: FeedbackPromptInput): string {
     : "Not specified";
 
   // Look up verb depth info
-  const verbLower = input.taskVerb.toLowerCase();
-  const verbInfo = VERB_DEPTH_MAP[verbLower];
-  const verbContext = verbInfo
-    ? `"${input.taskVerb}" — Bloom's level: ${verbInfo.bloomsLevel} (depth ${verbInfo.depth}/6). NESA definition: ${verbInfo.description}.`
-    : `"${input.taskVerb}"`;
+  let verbContext: string;
+  if (input.taskVerb) {
+    const verbLower = input.taskVerb.toLowerCase();
+    const verbInfo = VERB_DEPTH_MAP[verbLower];
+    verbContext = verbInfo
+      ? `"${input.taskVerb}" — Bloom's level: ${verbInfo.bloomsLevel} (depth ${verbInfo.depth}/6). NESA definition: ${verbInfo.description}.`
+      : `"${input.taskVerb}"`;
+  } else {
+    verbContext = 'Not identified — determine the key directive verb from the question context.';
+  }
+
+  const taskTypeBlock = input.taskType ? `\nTASK FORMAT: ${input.taskType}\n` : '';
 
   let prompt = `ASSESSMENT TASK:
 ${input.taskDescription}
-
+${taskTypeBlock}
 KEY TERM: ${verbContext}
 
 SYLLABUS OUTCOMES ASSESSED: ${outcomesBlock}
