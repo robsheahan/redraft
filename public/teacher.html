@@ -38,15 +38,17 @@
 
     .container { max-width: 800px; margin: 0 auto; padding: 48px 20px 80px; flex: 1; }
     .page-header {
-      display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; margin-bottom: 32px; flex-wrap: wrap;
     }
-    .page-header h1 { font-size: 30px; font-weight: 800; letter-spacing: -1px; color: #111827; }
+    .page-header h1 { font-size: 30px; font-weight: 800; letter-spacing: -1px; color: #111827; min-width: 0; }
     .btn-primary {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 10px 22px; background: #ed7615; color: #fff; border: none;
       border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
       text-decoration: none; font-family: inherit; transition: background 0.15s;
       box-shadow: 0 1px 3px rgba(237,118,21,0.3);
+      flex-shrink: 0; white-space: nowrap;
     }
     .btn-primary:hover { background: #d4690f; }
 
