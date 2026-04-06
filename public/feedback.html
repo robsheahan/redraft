@@ -298,10 +298,18 @@
 
       const capVerb = (v) => v ? v.charAt(0).toUpperCase() + v.slice(1) : '';
 
-      const taskTitle = task.title || meta.title;
+      const taskTitle = task.title || meta.title || null;
+      const courseName = meta.course || null;
       html += '<div class="header">';
-      html += '<h1>' + e(taskTitle || 'Feedback on your draft') + '</h1>';
-      if (meta.course) html += '<div class="task-meta">' + e(meta.course) + '</div>';
+      if (taskTitle) {
+        html += '<h1>' + e(taskTitle) + '</h1>';
+        if (courseName && courseName !== taskTitle) html += '<div class="task-meta">' + e(courseName) + '</div>';
+      } else if (courseName) {
+        html += '<h1>Feedback on your draft</h1>';
+        html += '<div class="task-meta">' + e(courseName) + '</div>';
+      } else {
+        html += '<h1>Feedback on your draft</h1>';
+      }
       if (meta.question) html += '<div class="task-question">' + e(meta.question) + '</div>';
       if (meta.taskVerb) html += '<span class="task-verb">Key term: ' + e(capVerb(meta.taskVerb)) + '</span>';
       html += '</div>';
