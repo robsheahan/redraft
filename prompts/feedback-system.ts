@@ -102,6 +102,7 @@ interface TaskCriterion {
 interface FeedbackPromptInput {
   taskDescription: string;
   taskVerb?: string;
+  taskVerbs?: string[];
   outcomes: string[];
   criteria: TaskCriterion[];
   criteriaText?: string;
@@ -271,16 +272,22 @@ export function buildUserPrompt(input: FeedbackPromptInput): string {
     ? input.outcomes.join("\n")
     : "Not specified";
 
-  // Look up verb depth info
+  // Look up verb depth info for all detected verbs
+  const verbs = input.taskVerbs && input.taskVerbs.length > 0 ? input.taskVerbs : (input.taskVerb ? [input.taskVerb] : []);
   let verbContext: string;
-  if (input.taskVerb) {
-    const verbLower = input.taskVerb.toLowerCase();
-    const verbInfo = VERB_DEPTH_MAP[verbLower];
-    verbContext = verbInfo
-      ? `"${input.taskVerb}" — Bloom's level: ${verbInfo.bloomsLevel} (depth ${verbInfo.depth}/6). NESA definition: ${verbInfo.description}.`
-      : `"${input.taskVerb}"`;
+  if (verbs.length > 0) {
+    const verbDetails = verbs.map(v => {
+      const info = VERB_DEPTH_MAP[v.toLowerCase()];
+      return info
+        ? `"${v}" — Bloom's level: ${info.bloomsLevel} (depth ${info.depth}/6). NESA definition: ${info.description}.`
+        : `"${v}"`;
+    });
+    verbContext = verbDetails.join('\n');
+    if (verbs.length > 1) {
+      verbContext += '\n\nIMPORTANT: This question requires MULTIPLE cognitive operations. The student must demonstrate ALL of these — check each one independently.';
+    }
   } else {
-    verbContext = 'Not identified — determine the key directive verb from the question context.';
+    verbContext = 'Not identified — determine the key directive verb(s) from the question context.';
   }
 
   const taskTypeBlock = input.taskType ? `\nTASK FORMAT: ${input.taskType}\n` : '';
@@ -288,7 +295,7 @@ export function buildUserPrompt(input: FeedbackPromptInput): string {
   let prompt = `ASSESSMENT TASK:
 ${input.taskDescription}
 ${taskTypeBlock}
-KEY TERM: ${verbContext}
+KEY TERM${verbs.length > 1 ? 'S' : ''}: ${verbContext}
 
 SYLLABUS OUTCOMES ASSESSED: ${outcomesBlock}
 

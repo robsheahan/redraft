@@ -17,15 +17,14 @@ const TASK_VERBS = [
 ];
 
 /**
- * Extract the most important task verb from a question.
- * Prioritises: (1) multi-word verbs, (2) verbs near the start, (3) highest cognitive depth.
- * Returns null if no recognised verb is found.
+ * Extract all recognised task verbs from a question, deduplicated.
+ * Multi-word verbs consume their single-word parts (e.g. "critically analyse" suppresses "analyse").
+ * Returns verbs sorted by position in the question (earliest first).
  */
-function extractTaskVerb(question: string): string | null {
+function extractTaskVerbs(question: string): string[] {
   const qLower = question.toLowerCase();
-  const startRegion = qLower.slice(0, 50);
 
-  // Find all matching verbs
+  // Find all matching verbs with their positions
   const found: { verb: string; index: number }[] = [];
   for (const v of TASK_VERBS) {
     const idx = qLower.indexOf(v);
@@ -34,27 +33,28 @@ function extractTaskVerb(question: string): string | null {
     }
   }
 
-  if (found.length === 0) return null;
-  if (found.length === 1) return found[0].verb;
+  if (found.length === 0) return [];
 
-  // Prefer verbs that appear in the first 50 characters
-  const earlyVerbs = found.filter(f => startRegion.includes(f.verb));
-  const candidates = earlyVerbs.length > 0 ? earlyVerbs : found;
+  // Remove single-word verbs that are part of a matched multi-word verb
+  // e.g. if "critically analyse" matched, remove "analyse"
+  const filtered = found.filter(f => {
+    return !found.some(other =>
+      other.verb !== f.verb &&
+      other.verb.length > f.verb.length &&
+      other.verb.includes(f.verb)
+    );
+  });
 
-  if (candidates.length === 1) return candidates[0].verb;
-
-  // Among candidates, pick the one with highest cognitive depth
-  let best = candidates[0];
-  let bestDepth = VERB_DEPTH_MAP[best.verb]?.depth ?? 0;
-  for (let i = 1; i < candidates.length; i++) {
-    const depth = VERB_DEPTH_MAP[candidates[i].verb]?.depth ?? 0;
-    if (depth > bestDepth) {
-      best = candidates[i];
-      bestDepth = depth;
-    }
-  }
-
-  return best.verb;
+  // Deduplicate and sort by position
+  const seen = new Set<string>();
+  return filtered
+    .sort((a, b) => a.index - b.index)
+    .filter(f => {
+      if (seen.has(f.verb)) return false;
+      seen.add(f.verb);
+      return true;
+    })
+    .map(f => f.verb);
 }
 
 function buildCriteriaCheckPrompt(courseName?: string): string {
@@ -108,7 +108,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (taskData?.notes) teacherNotes = taskData.notes;
   }
 
-  const taskVerb = extractTaskVerb(question as string);
+  const taskVerbs = extractTaskVerbs(question as string);
+  const taskVerb = taskVerbs[0] || null;
 
   const taskDescription = course
     ? `${course}\n\nQuestion:\n${question}`
@@ -133,6 +134,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const userPrompt = buildUserPrompt({
     taskDescription,
     taskVerb: taskVerb || undefined,
+    taskVerbs: taskVerbs.length > 0 ? taskVerbs : undefined,
     outcomes: outcomesList,
     criteria: mappedCriteria,
     criteriaText: rawCriteriaText || undefined,
@@ -224,7 +226,7 @@ Assess this draft against each marking criterion above. Address every criterion 
 
     return res.status(200).json({
       feedback,
-      meta: { taskVerb, question, course, title: task_title || null },
+      meta: { taskVerb, taskVerbs, question, course, title: task_title || null },
     });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || 'Failed to generate feedback' });
