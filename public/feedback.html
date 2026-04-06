@@ -131,7 +131,7 @@
       font-size: 10px; transition: transform 0.15s; display: inline-block;
     }
     .detail-content {
-      display: block; margin-top: 12px; padding-top: 12px;
+      display: none; margin-top: 12px; padding-top: 12px;
       border-top: 1px solid #f0f0f0;
     }
     .detail-content.visible { display: block; }
@@ -317,7 +317,7 @@
           html += '</ul>';
         }
         if (Array.isArray(well.detail) && well.detail.length) {
-          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow" style="transform:rotate(90deg)">›</span> Hide detail</button>';
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
           html += '<div class="detail-content" id="' + id + '"><ul class="feedback-list">';
           well.detail.forEach(p => { html += '<li>' + e(p) + '</li>'; });
           html += '</ul></div>';
@@ -333,7 +333,7 @@
         html += '<div class="section verb-check"><div class="section-title">Key term check' + verbLabel + '</div>';
         if (verb.summary) html += '<p class="summary-text">' + e(typeof verb.summary === 'string' ? verb.summary : '') + '</p>';
         if (verb.detail && verb.detail !== verb.summary) {
-          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow" style="transform:rotate(90deg)">›</span> Hide detail</button>';
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
           html += '<div class="detail-content" id="' + id + '"><p class="section-text">' + e(typeof verb.detail === 'string' ? verb.detail : '') + '</p></div>';
         }
         html += '</div>';
@@ -346,7 +346,7 @@
         html += '<div class="section top-priority"><div class="section-title">Top priority — focus on this first</div>';
         if (priority.summary) html += '<p class="summary-text">' + e(typeof priority.summary === 'string' ? priority.summary : '') + '</p>';
         if (priority.detail && priority.detail !== priority.summary) {
-          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow" style="transform:rotate(90deg)">›</span> Hide detail</button>';
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
           html += '<div class="detail-content" id="' + id + '"><p class="section-text">' + e(typeof priority.detail === 'string' ? priority.detail : '') + '</p></div>';
         }
         html += '</div>';
@@ -363,7 +363,7 @@
           html += '</ul>';
         }
         if (Array.isArray(impr.detail) && impr.detail.length) {
-          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow" style="transform:rotate(90deg)">›</span> Hide detail</button>';
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
           html += '<div class="detail-content" id="' + id + '"><ul class="feedback-list">';
           impr.detail.forEach((p, i) => {
             html += '<li><span class="improvement-number">' + (i + 1) + '</span>' + e(p) + '</li>';
@@ -400,7 +400,7 @@
         html += '<div class="section overall"><div class="section-title">Overall</div>';
         if (overall.summary) html += '<p class="summary-text">' + e(typeof overall.summary === 'string' ? overall.summary : '') + '</p>';
         if (overall.detail && overall.detail !== overall.summary) {
-          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow" style="transform:rotate(90deg)">›</span> Hide detail</button>';
+          html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
           html += '<div class="detail-content" id="' + id + '"><p class="section-text">' + e(typeof overall.detail === 'string' ? overall.detail : '') + '</p></div>';
         }
         html += '</div>';
