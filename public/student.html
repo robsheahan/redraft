@@ -40,7 +40,7 @@
     .nav-brand img { height: 40px; width: auto; }
 
     .container {
-      max-width: 640px;
+      max-width: 800px;
       margin: 0 auto;
       padding: 48px 20px 80px;
     }
@@ -460,7 +460,7 @@
 
     <!-- Initial entry screen -->
     <div id="entryScreen">
-      <h1>Dashboard</h1>
+      <h1 id="pageHeading">Welcome</h1>
       <p class="subtitle">Paste your draft and get detailed, criteria-based feedback before you submit.</p>
 
       <div class="entry-options">
@@ -561,6 +561,12 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
       const user = await requireAuth('student');
       if (!user) return;
       document.getElementById('navUser').textContent = user.email;
+
+      // Personalise the page heading with the student's display name
+      var displayName = user.user_metadata && user.user_metadata.display_name;
+      if (displayName) {
+        document.getElementById('pageHeading').textContent = 'Welcome, ' + displayName;
+      }
 
       // Load previous submissions
       try {

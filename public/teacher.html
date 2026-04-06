@@ -36,7 +36,7 @@
     }
     .nav-logout:hover { background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.18); color: #1f2937; }
 
-    .container { max-width: 1000px; margin: 0 auto; padding: 48px 20px 80px; flex: 1; }
+    .container { max-width: 800px; margin: 0 auto; padding: 48px 20px 80px; flex: 1; }
     .page-header {
       display: flex; align-items: center; justify-content: space-between;
       gap: 16px; margin-bottom: 32px; flex-wrap: wrap;
@@ -115,7 +115,7 @@
 
   <div class="container">
     <div class="page-header">
-      <h1>Dashboard</h1>
+      <h1 id="pageHeading">Welcome</h1>
       <a href="new-task.html" class="btn-primary">+ New task</a>
     </div>
     <div id="content"><div class="loading">Loading...</div></div>
@@ -129,6 +129,12 @@
       if (!user) return;
 
       document.getElementById('navUser').textContent = user.email;
+
+      // Personalise the page heading with the teacher's display name
+      var displayName = user.user_metadata && user.user_metadata.display_name;
+      if (displayName) {
+        document.getElementById('pageHeading').textContent = 'Welcome, ' + displayName;
+      }
 
       const res = await authFetch('/api/my-tasks');
       const tasks = await res.json();
