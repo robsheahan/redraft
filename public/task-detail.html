@@ -381,6 +381,9 @@
     function renderDetailsView(task) {
       let html = '';
 
+      html += '<div class="detail-row"><div class="detail-label">Class</div>';
+      html += '<div class="detail-value' + (!task.class_name ? ' empty' : '') + '">' + e(task.class_name || 'Not set') + '</div></div>';
+
       html += '<div class="detail-row"><div class="detail-label">Task type</div>';
       html += '<div class="detail-value' + (!task.task_type ? ' empty' : '') + '">' + e(task.task_type || 'Not set') + '</div></div>';
 
@@ -418,6 +421,9 @@
 
       html += '<div class="detail-row"><div class="detail-label">Course</div>';
       html += '<input class="edit-field" id="editCourse" value="' + e(task.course || '') + '"></div>';
+
+      html += '<div class="detail-row"><div class="detail-label">Class name</div>';
+      html += '<input class="edit-field" id="editClassName" value="' + e(task.class_name || '') + '" placeholder="e.g. 12HMS1"></div>';
 
       html += '<div class="detail-row"><div class="detail-label">Task question</div>';
       html += '<textarea class="edit-field" id="editQuestion">' + e(task.question || '') + '</textarea></div>';
@@ -487,6 +493,7 @@
         code: currentTask.code,
         title: document.getElementById('editTitle').value.trim(),
         course: document.getElementById('editCourse').value.trim(),
+        class_name: document.getElementById('editClassName').value.trim() || null,
         question: document.getElementById('editQuestion').value.trim(),
         task_type: document.getElementById('editType').value.trim(),
         total_marks: document.getElementById('editMarks').value || null,

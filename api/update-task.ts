@@ -11,7 +11,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
-  const { code, course, title, question, task_type, total_marks, due_date, outcomes, criteria, criteria_text, notes } = req.body;
+  const { code, course, class_name, title, question, task_type, total_marks, due_date, outcomes, criteria, criteria_text, notes } = req.body;
 
   if (!code) {
     return res.status(400).json({ error: 'Task code is required' });
@@ -35,6 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .from('tasks')
     .update({
       course: course || null,
+      class_name: class_name || null,
       title: title || null,
       question: question || null,
       task_type: task_type || null,

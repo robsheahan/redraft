@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const supabase = getSupabase();
-  const { course, title, question, task_type, total_marks, due_date, outcomes, criteria, criteria_text, notes } = req.body;
+  const { course, class_name, title, question, task_type, total_marks, due_date, outcomes, criteria, criteria_text, notes } = req.body;
 
   // Validate required fields
   if (!question || !String(question).trim()) {
@@ -41,6 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     code,
     teacher_id: user.id,
     course: course || null,
+    class_name: class_name || null,
     title: title || null,
     question: question || null,
     task_type: task_type || null,

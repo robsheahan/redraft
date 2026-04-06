@@ -329,6 +329,11 @@
           </div>
         </div>
         <div class="form-group">
+          <label>Class name <span style="color:#9ca3af;font-weight:400">(optional)</span></label>
+          <div class="hint">Use this if you teach more than one class in the same course — keeps submissions separated.</div>
+          <input type="text" id="classNameInput" placeholder="e.g. 12HMS1, Year 12 Period 3">
+        </div>
+        <div class="form-group">
           <label>Task title</label>
           <input type="text" id="titleInput" placeholder="e.g. Task 2 — Health Priorities Essay">
         </div>
@@ -463,6 +468,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
 
       // Gather form data
       const course = document.getElementById('courseInput').value.trim();
+      const class_name = document.getElementById('classNameInput').value.trim() || null;
       const title = document.getElementById('titleInput').value.trim();
       const question = document.querySelector('.step:nth-child(1) textarea').value;
       const selectedType = document.querySelector('.task-type.selected');
@@ -489,7 +495,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       try {
         const res = await authFetch('/api/create-task', {
           method: 'POST',
-          body: JSON.stringify({ course, title, question, task_type, total_marks, due_date, outcomes, criteria_text, notes }),
+          body: JSON.stringify({ course, class_name, title, question, task_type, total_marks, due_date, outcomes, criteria_text, notes }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to create task');

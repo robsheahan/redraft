@@ -649,6 +649,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         }
         var metaParts = [];
         if (title && courseName && courseName !== title) metaParts.push(courseName);
+        if (data.class_name) metaParts.push(data.class_name);
         if (data.total_marks) metaParts.push(data.total_marks + ' marks');
         document.getElementById('taskMeta').textContent = metaParts.join(' — ');
 
