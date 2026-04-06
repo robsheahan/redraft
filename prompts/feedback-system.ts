@@ -110,6 +110,8 @@ interface FeedbackPromptInput {
   studentText: string;
   teacherNotes?: string;
   taskType?: string;
+  priorDrafts?: Array<{ draft_text: string; feedback: any; draft_version: number }>;
+  draftVersion?: number;
 }
 
 export function buildSystemPrompt(courseName?: string, discipline?: string): string {
@@ -294,6 +296,32 @@ export function buildUserPrompt(input: FeedbackPromptInput): string {
 
   const taskTypeBlock = input.taskType ? `\nTASK FORMAT: ${input.taskType}\n` : '';
 
+  // Resubmission context: show the AI the student's prior drafts and feedback
+  // so it can acknowledge progress and focus on what still needs work.
+  let resubmissionBlock = '';
+  if (input.priorDrafts && input.priorDrafts.length > 0) {
+    const draftNum = (input.draftVersion || input.priorDrafts.length + 1);
+    resubmissionBlock = `\n\n---\n\nRESUBMISSION CONTEXT:
+This is DRAFT ${draftNum} from this student. They have previously submitted ${input.priorDrafts.length} draft(s) for this task and received feedback on each.
+
+`;
+    input.priorDrafts.forEach((pd, i) => {
+      const v = pd.draft_version || (i + 1);
+      const feedbackSummary = typeof pd.feedback === 'object' && pd.feedback
+        ? JSON.stringify({
+            improvements: pd.feedback.improvements?.summary || pd.feedback.improvements,
+            top_priority: pd.feedback.top_priority?.summary || pd.feedback.top_priority,
+          })
+        : '';
+      resubmissionBlock += `--- DRAFT ${v} (previous) ---\n${pd.draft_text}\n\nPrevious feedback given (summary): ${feedbackSummary}\n\n`;
+    });
+    resubmissionBlock += `IMPORTANT: Because this is a resubmission, your feedback must:
+1. Explicitly acknowledge what the student has IMPROVED since their previous draft(s). Be specific — reference what changed. Students need to know their effort was noticed.
+2. Identify which previous issues have been addressed vs which persist. Don't just repeat feedback from earlier drafts — if something is still wrong, explain why their fix didn't work or what they still need to do differently.
+3. Focus on what's NEW or STILL PROBLEMATIC. Don't reward them for things they did well in draft 1 that they still do well now — the praise section should focus on genuine improvements in THIS draft.
+4. Be encouraging about progress while still being honest about remaining issues.`;
+  }
+
   let prompt = `ASSESSMENT TASK:
 ${input.taskDescription}
 ${taskTypeBlock}
@@ -306,8 +334,8 @@ ${criteriaBlock}
 
 ---
 
-STUDENT'S DRAFT RESPONSE:
-${input.studentText}`;
+STUDENT'S CURRENT DRAFT${input.draftVersion && input.draftVersion > 1 ? ` (DRAFT ${input.draftVersion})` : ''}:
+${input.studentText}${resubmissionBlock}`;
 
   if (input.teacherNotes) {
     prompt += `\n\n---\n\nTEACHER NOTES (specific things to look for):\n${input.teacherNotes}`;

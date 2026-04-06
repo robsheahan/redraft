@@ -100,6 +100,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Question and draft are required' });
   }
 
+  // Resubmission handling: cap at 3 drafts per student per task
+  const MAX_DRAFTS = 3;
+  let draftVersion = 1;
+  let priorDrafts: Array<{ draft_text: string; feedback: any; draft_version: number }> = [];
+  if (user && task_code) {
+    const supabase = getSupabase();
+    const { data: priorSubs } = await supabase
+      .from('submissions')
+      .select('draft_text, feedback, draft_version')
+      .eq('student_id', user.id)
+      .eq('task_code', task_code)
+      .order('draft_version', { ascending: true });
+    if (priorSubs) {
+      priorDrafts = priorSubs;
+      if (priorSubs.length >= MAX_DRAFTS) {
+        return res.status(400).json({
+          error: `You've reached the maximum of ${MAX_DRAFTS} drafts for this task.`,
+        });
+      }
+      draftVersion = priorSubs.length + 1;
+    }
+  }
+
   // If submitting against a teacher's task, fetch notes server-side (they're not exposed to students)
   let teacherNotes = notes || null;
   if (task_code && !teacherNotes) {
@@ -141,6 +164,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     studentText: draft,
     teacherNotes: teacherNotes || undefined,
     taskType: task_type || undefined,
+    priorDrafts: priorDrafts.length > 0 ? priorDrafts : undefined,
+    draftVersion,
   });
 
   try {
@@ -221,12 +246,13 @@ Assess this draft against each marking criterion above. Address every criterion 
         course: course || null,
         draft_text: draft,
         feedback,
+        draft_version: draftVersion,
       });
     }
 
     return res.status(200).json({
       feedback,
-      meta: { taskVerb, taskVerbs, question, course, title: task_title || null },
+      meta: { taskVerb, taskVerbs, question, course, title: task_title || null, draftVersion, maxDrafts: MAX_DRAFTS },
     });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || 'Failed to generate feedback' });

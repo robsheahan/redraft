@@ -81,6 +81,53 @@
       letter-spacing: 0;
     }
 
+    /* Draft navigator */
+    .draft-nav {
+      display: flex; align-items: center; gap: 10px;
+      background: #fdf6ee; border: 1px solid #e8e0d4;
+      border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .draft-nav-label {
+      font-size: 13px; font-weight: 600; color: #4b5563;
+      margin-right: auto;
+    }
+    .draft-nav-btns { display: flex; gap: 6px; }
+    .draft-btn {
+      padding: 6px 12px; background: #fff; border: 1px solid #e8e0d4;
+      border-radius: 6px; font-size: 13px; font-weight: 600;
+      color: #4b5563; cursor: pointer; font-family: inherit;
+      transition: all 0.15s;
+    }
+    .draft-btn:hover { border-color: #d4690f; color: #d4690f; }
+    .draft-btn.active {
+      background: #ed7615; color: #fff; border-color: #ed7615;
+    }
+    .draft-btn:disabled {
+      opacity: 0.5; cursor: not-allowed;
+    }
+    .btn-resubmit {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 20px; background: #ed7615; color: #fff;
+      border: none; border-radius: 8px; font-size: 14px;
+      font-weight: 600; text-decoration: none;
+      box-shadow: 0 2px 8px rgba(237,118,21,0.35);
+      transition: all 0.15s; font-family: inherit; cursor: pointer;
+    }
+    .btn-resubmit:hover {
+      background: #d4690f; box-shadow: 0 4px 12px rgba(237,118,21,0.4);
+    }
+    .resubmit-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #fff; border: 1px solid #e8e0d4;
+      border-radius: 12px; padding: 16px 20px; margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .resubmit-bar-text {
+      font-size: 14px; color: #4b5563;
+    }
+    .resubmit-bar-text strong { color: #111827; }
+
     /* Feedback sections */
     .section {
       background: #fff;
@@ -271,6 +318,13 @@
     const taskData = sessionStorage.getItem('proofready_task');
     const container = document.getElementById('content');
 
+    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+    // State for draft navigation
+    var allDrafts = null;  // Array of { draft_text, feedback, draft_version } if multi-draft
+    var currentMeta = null;
+    var currentTask = null;
+
     if (!feedbackData) {
       container.innerHTML = `
         <div class="empty-state">
@@ -279,9 +333,35 @@
           <a href="student.html">Go to student page</a>
         </div>`;
     } else {
-      const { feedback: fb, meta } = JSON.parse(feedbackData);
-      const task = taskData ? JSON.parse(taskData) : {};
-      const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+      const parsed = JSON.parse(feedbackData);
+      currentMeta = parsed.meta;
+      currentTask = taskData ? JSON.parse(taskData) : {};
+      const fb = parsed.feedback;
+      const meta = parsed.meta;
+      const task = currentTask;
+
+      // If this was submitted against a task code, load all drafts so we can navigate
+      const taskCode = task.code || meta.task_code;
+      if (taskCode) {
+        authFetch('/api/my-task-drafts?code=' + encodeURIComponent(taskCode))
+          .then(r => r.json())
+          .then(data => {
+            if (data.drafts && data.drafts.length > 0) {
+              allDrafts = data.drafts;
+              // Find which draft this feedback corresponds to
+              var currentVersion = meta.draftVersion || allDrafts[allDrafts.length - 1].draft_version;
+              renderFeedback(fb, meta, allDrafts, currentVersion);
+            }
+          })
+          .catch(() => { /* silently ignore draft nav if fetch fails */ });
+      }
+
+      renderFeedback(fb, meta, null, meta.draftVersion || 1);
+    }
+
+    function renderFeedback(fb, meta, drafts, currentVersion) {
+      var task = currentTask || {};
+      const MAX_DRAFTS = meta.maxDrafts || 3;
 
       const getObj = (val) => {
         if (val && typeof val === 'object' && !Array.isArray(val)) return val;
@@ -313,6 +393,31 @@
         html += '<div class="task-question">' + e(questionDisplay) + '</div>';
       }
       html += '</div>';
+
+      // Draft navigator — shown if there are multiple drafts
+      if (drafts && drafts.length > 1) {
+        html += '<div class="draft-nav">';
+        html += '<div class="draft-nav-label">You have ' + drafts.length + ' draft' + (drafts.length !== 1 ? 's' : '') + ':</div>';
+        html += '<div class="draft-nav-btns">';
+        drafts.forEach(function(d) {
+          var active = d.draft_version === currentVersion ? ' active' : '';
+          html += '<button class="draft-btn' + active + '" onclick="switchDraft(' + d.draft_version + ')">Draft ' + d.draft_version + '</button>';
+        });
+        html += '</div></div>';
+      }
+
+      // Resubmit bar — shown if under the cap
+      var draftsUsed = drafts ? drafts.length : (meta.draftVersion || 1);
+      if (task.code && draftsUsed < MAX_DRAFTS) {
+        html += '<div class="resubmit-bar">';
+        html += '<div class="resubmit-bar-text">You\'ve used <strong>' + draftsUsed + ' of ' + MAX_DRAFTS + '</strong> drafts. Want to revise and resubmit?</div>';
+        html += '<a href="student.html?resubmit=' + encodeURIComponent(task.code) + '" class="btn-resubmit">Submit new draft</a>';
+        html += '</div>';
+      } else if (task.code && draftsUsed >= MAX_DRAFTS) {
+        html += '<div class="resubmit-bar">';
+        html += '<div class="resubmit-bar-text">You\'ve used all <strong>' + MAX_DRAFTS + ' of ' + MAX_DRAFTS + '</strong> drafts for this task.</div>';
+        html += '</div>';
+      }
 
       // What you've done well
       const well = getObj(fb.what_youve_done_well);
@@ -431,6 +536,16 @@
       html += '<div class="footer">This is formative feedback on a draft — not a final mark.</div>';
 
       container.innerHTML = html;
+    }
+
+    function switchDraft(version) {
+      if (!allDrafts) return;
+      var draft = allDrafts.find(function(d) { return d.draft_version === version; });
+      if (!draft) return;
+      // Build a meta object for this draft (keep the same question/course from currentMeta)
+      var meta = Object.assign({}, currentMeta, { draftVersion: version });
+      renderFeedback(draft.feedback, meta, allDrafts, version);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function toggleDetail(id, btn) {

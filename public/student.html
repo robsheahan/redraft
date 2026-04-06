@@ -571,6 +571,13 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         document.getElementById('pageHeading').textContent = 'Welcome, ' + displayName;
       }
 
+      // Auto-join if ?resubmit=CODE is in the URL
+      var resubmitCode = new URLSearchParams(window.location.search).get('resubmit');
+      if (resubmitCode) {
+        document.getElementById('codeInput').value = resubmitCode.toUpperCase();
+        setTimeout(function() { joinTask(); }, 50);
+      }
+
       // Load previous submissions
       try {
         const res = await authFetch('/api/my-submissions');
@@ -764,6 +771,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         sessionStorage.setItem('proofready_task', JSON.stringify({
           title: currentTask ? currentTask.title : null,
           teacher_name: currentTask ? currentTask.teacher_name : null,
+          code: currentTask ? currentTask.code : null,
           question: payload.question,
           course: payload.course,
           criteria: payload.criteria,
