@@ -191,22 +191,14 @@
       letter-spacing: 0.3px;
       margin-bottom: 8px;
     }
-    .criteria-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 14px;
+    .criteria-block {
+      padding: 14px 16px;
       background: #f9fafb;
       border-radius: 8px;
-      margin-bottom: 6px;
       font-size: 14px;
-    }
-    .criteria-item .marks {
-      font-weight: 700;
-      color: #ed7615;
-      font-size: 13px;
-      flex-shrink: 0;
-      margin-left: 16px;
+      line-height: 1.7;
+      white-space: pre-line;
+      color: #374151;
     }
 
     /* Own task form */
@@ -622,38 +614,14 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           document.getElementById('taskVerb').style.display = 'none';
         }
 
-        // Criteria
+        // Criteria — display as clean formatted text, preserving the teacher's formatting
         const criteriaDiv = document.getElementById('criteriaDisplay');
-        if (data.criteria_text) {
-          let html = '<h4>Marking criteria</h4>';
-          // Split by newlines, then by carriage returns, then try numbered patterns for blobs
-          var rawLines = data.criteria_text.split(/\r?\n/).map(l => l.trim()).filter(l => l);
-          if (rawLines.length <= 1 && rawLines[0]) {
-            var split = rawLines[0].split(/(?=(?:Criteria\s+)?\d+[\.\)\:]\s)|(?=•\s)|(?=–\s)|(?=-\s(?=[A-Z]))/i).map(l => l.trim()).filter(l => l);
-            if (split.length > 1) rawLines = split;
-          }
-          const lines = rawLines;
-          lines.forEach(line => {
-            // Try to extract marks pattern like "(3-5 marks)", "(5)", "3-5 marks", "5 marks"
-            const marksMatch = line.match(/\(?\s*(\d+(?:\s*[-–]\s*\d+)?)\s*(?:marks?)?\s*\)?\s*$/i);
-            if (marksMatch) {
-              const marksText = marksMatch[1].replace(/\s/g, '') + ' marks';
-              const nameText = line.slice(0, marksMatch.index).replace(/[-–:]\s*$/, '').trim();
-              html += '<div class="criteria-item"><span>' + escapeHtml(nameText) + '</span><span class="marks">' + escapeHtml(marksText) + '</span></div>';
-            } else {
-              html += '<div class="criteria-item" style="white-space:pre-line">' + escapeHtml(line) + '</div>';
-            }
-          });
-          criteriaDiv.innerHTML = html;
-          criteriaDiv.style.display = 'block';
-        } else if (data.criteria && data.criteria.length > 0) {
-          let html = '<h4>Marking criteria</h4>';
-          data.criteria.forEach(c => {
-            html += '<div class="criteria-item"><span>' + escapeHtml(c.name) + '</span>';
-            if (c.marks) html += '<span class="marks">' + escapeHtml(c.marks) + '</span>';
-            html += '</div>';
-          });
-          criteriaDiv.innerHTML = html;
+        const criteriaText = data.criteria_text
+          || (data.criteria && data.criteria.length > 0
+            ? data.criteria.map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n')
+            : null);
+        if (criteriaText) {
+          criteriaDiv.innerHTML = '<h4>Marking criteria</h4><div class="criteria-block">' + escapeHtml(criteriaText) + '</div>';
           criteriaDiv.style.display = 'block';
         } else {
           criteriaDiv.style.display = 'none';
