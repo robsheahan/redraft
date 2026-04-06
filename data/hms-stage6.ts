@@ -41,18 +41,18 @@ export const OUTCOMES = {
 
 export const FOCUS_AREAS = [
   {
-    name: "Health in an Australian and Global Context",
+    name: "Health in an Australian and global context",
     hours: 45,
     outcomes: ["HM-12-01", "HM-12-02", "HM-12-03"],
     topics: [
       "How healthy are Australians?",
-      "How does Australia's healthcare system work towards achieving better health?",
-      "How is technology impacting Australia's healthcare?",
-      "What actions promote Australian health?",
+      "How does Australia's healthcare system work towards achieving better health for all Australians?",
+      "How is the growing and changing use of technology and data impacting Australia's healthcare system?",
+      "What actions are needed to promote and improve the health of Australians?",
     ],
   },
   {
-    name: "Training for Improved Performance",
+    name: "Training for improved performance",
     hours: 45,
     outcomes: ["HM-12-04", "HM-12-05"],
     topics: [

@@ -1,0 +1,117 @@
+{
+  "subject": "English Advanced",
+  "slug": "english-advanced",
+  "year": 2021,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/english-advanced/2021",
+  "scrapedAt": "2026-04-06T09:18:14.340Z",
+  "generalFeedback": [],
+  "sections": [
+    {
+      "name": "Paper 1 – Section I: Texts and human experiences",
+      "questions": [
+        {
+          "questionNumber": "2",
+          "betterResponses": [
+            "consider the human experience, moving beyond simple recount to the larger conceptual meanings",
+            "suitably integrate ideas about human experiences with detailed explanation of how meaning was shaped through language",
+            "provide a balance between the human experience they considered and how ideas were represented",
+            "use aptly chosen evidence to support their response."
+          ],
+          "areasToImprove": [
+            "responding to the question",
+            "clearly defining the human experience rather than writing in general terms",
+            "avoiding recounting the examples from the text such as “he holds a rock in his hand” and instead consider how imagery brings us to a larger understanding of the experience of reflection, awe, contemplation, etc.",
+            "ensuring that explanations align to any textual references."
+          ]
+        },
+        {
+          "questionNumber": "3",
+          "betterResponses": [
+            "insightfully explore the relationship between the characters, going beyond that they were ‘close’, and between grandparent and grandson",
+            "provide textual evidence that is accurate and strongly aligned to the relationship being explored",
+            "consider the multifaceted nature of the relationship",
+            "recognise the cultural aspects of the relationship",
+            "identify and explain the representation of ideas with clarity and understanding."
+          ],
+          "areasToImprove": [
+            "avoiding listing techniques without explaining how they address the relationship being explored",
+            "avoiding describing or recounting events in the extract."
+          ]
+        },
+        {
+          "questionNumber": "4",
+          "betterResponses": [
+            "demonstrate a conceptual understanding of the text",
+            "provide insight into Caia’s purposeful crafting of language through carefully selected literary devices to reveal the speaker’s transformative experience",
+            "skilfully select evidence to support their analysis."
+          ],
+          "areasToImprove": [
+            "providing sufficient textual evidence to support their ideas",
+            "developing a better understanding of a range of effective literary devices to support the response."
+          ]
+        },
+        {
+          "questionNumber": "5",
+          "betterResponses": [
+            "provide a sustained evaluation of how multiple language forms and features created the narrative voice that constructed the character of Katherine O’Dell",
+            "demonstrate a clear understanding of how the author crafts character using relevant textual evidence",
+            "address all aspects of the question."
+          ],
+          "areasToImprove": [
+            "using evaluative language to answer the question",
+            "using well-chosen textual evidence to support their ideas."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Paper 2 – Section III: The craft of writing (Module C)",
+      "questions": [
+        {
+          "questionNumber": "3(a)",
+          "betterResponses": [
+            "craft a central metaphor in a highly engaging piece of imaginative, discursive or persuasive writing, effectively using an aspect(s) of the image",
+            "sustain the metaphor created, keeping it central to the piece of writing",
+            "develop credible voices and/or characters that derived from the concept of the metaphor",
+            "evoke and sustain ideas and emotions in the reader through engaging figurative, rhetorical and linguistic devices, particularly imagery, authentic narrative voice, characterisation and tone",
+            "experiment with structure, making use of flashbacks and memories to further shape and develop their pieces",
+            "demonstrate skilful and highly effective control of language and structure throughout their response, appropriate to audience, purpose, context and form."
+          ],
+          "areasToImprove": [
+            "engaging closely with the question and image",
+            "crafting and sustaining a central metaphor from the image",
+            "avoiding cliché or (overly) literal interpretations of the image. While concepts of entrapment, barriers, escape, writing, artistic endeavours, freedom etc were certainly used, better responses explored these ideas in engaging and compelling ways",
+            "using figurative, rhetorical and linguistic devices to shape meaning",
+            "creating a believable, original and engaging voice or character that draws the reader into the world of the piece",
+            "avoiding a straight linear structure",
+            "avoiding overly grotesque and/or disturbing imagery or content",
+            "developing clarity, cohesion and skilful control of language to engage the reader",
+            "structuring a response, using one or more of the writing styles, with an emphasis on ‘crafting’ their writing for a specific audience, purpose, context and form."
+          ]
+        },
+        {
+          "questionNumber": "3(b)",
+          "betterResponses": [
+            "provide a considered and skilful evaluation of the creative decisions and stylistic choices made in their own piece of writing in Part (a), with relevant textual references",
+            "clearly articulate the central metaphor they employed and the purpose of their piece",
+            "differentiate between an ‘evaluation’ and an ‘explanation’",
+            "provide a considered evaluation of how the study of figurative language in The Craft of Writing influenced their own writing, making well-selected references to one or more prescribed texts. The prescribed texts were not limited to the Module C texts only, but could include any set text in any other English Advanced Module",
+            "draw meaningful connections between their response and a prescribed text(s), evaluating how their own creative decisions were inspired or informed by the studied text",
+            "demonstrate an understanding of the NESA English Glossary’s definition of figurative language – that skilful use of figurative language is not simply a checklist of figurative devices",
+            "demonstrate a skilful control of language in a sustained reflection and evaluation."
+          ],
+          "areasToImprove": [
+            "reflecting more deeply through a considered evaluation of their own creative decisions, using relevant textual references from their piece",
+            "evaluating rather than explaining their creative choices and showing a clear understanding of ‘crafting’ a piece",
+            "providing a more considered evaluation of how the study of figurative language in one or more of their prescribed texts influenced their own writing, making well-selected references to the set text(s) as well as to their own",
+            "appreciating, analysing and evaluating the versatility, power and aesthetics of language through various figurative, rhetorical and linguistic devices",
+            "considering the purpose, audience and context of both their own piece and of the prescribed text(s)",
+            "using a strong personal voice",
+            "avoiding cliched descriptions and stereotypical characters",
+            "improving control of language, including syntax, spelling, punctuation and grammar."
+          ]
+        }
+      ]
+    }
+  ]
+}

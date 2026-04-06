@@ -1,0 +1,244 @@
+{
+  "subject": "Community and Family Studies",
+  "slug": "community-and-family-studies",
+  "year": 2023,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/community-and-family-studies/2023",
+  "scrapedAt": "2026-04-06T09:19:45.977Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "use the first page of the answer booklet for an extended response to develop a plan to assist with the logical sequencing of information",
+    "engage with what the question is asking rather than presenting a pre-prepared response",
+    "relate to the question throughout the response rather than just at the beginning",
+    "sustain their judgements, where appropriate, throughout the response with a clear connection to the question",
+    "apply the skills of critical thinking and analysis where appropriate",
+    "use relevant syllabus concepts and terminology, where appropriate, to support their response",
+    "communicate ideas and information using relevant examples",
+    "present a logical and cohesive response that addresses the question",
+    "review their response to ensure that it addresses question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section I – Part B",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "correctly state a service relevant to people with disabilities",
+            "provide a description of how the service assists people with disabilities",
+            "provide relevant example(s), where possible, of services that assist people with disabilities. For example, transport services specific to people with disabilities, health services, including general practitioners, hospitals, and accommodation services."
+          ],
+          "areasToImprove": [
+            "making a clear link between the service and how that service assists people with disabilities",
+            "choosing relevant example(s) that are specifically for people with disabilities."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "show knowledge and understanding of various limitations for individuals and groups as sources of data, for example, bias, time consuming, groupthink, lack of validity",
+            "provide relevant example(s), where possible, specific to research."
+          ],
+          "areasToImprove": [
+            "addressing individuals and groups as two different sources of data",
+            "using relevant research example(s), where possible."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "provide an explanation of the role of a carer, using syllabus terminology. For example, satisfying the specific needs of the dependent, building positive relationships with the dependent and promoting the wellbeing of the dependent",
+            "provide relevant example(s), where possible, linked to the dependent's age and the role of a carer."
+          ],
+          "areasToImprove": [
+            "understanding the role of a carer in promoting the wellbeing of the dependent, building a positive relationship with the dependent and satisfying the specific needs of the dependent",
+            "addressing all parts of the question, including relating to the dependent's age and the role of the carer."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "identify social influence(s) including community attitudes, gender expectations and/or media stereotypes",
+            "provide an effect on parents if they challenged the influence(s), such as social isolation, discrimination, exclusion from social events and friends",
+            "incorporate explicit links to the aspects of wellbeing such as physical, social or emotional wellbeing",
+            "provide relevant example(s), where possible, of how parents challenge social influence(s) such as stay at home fathers, breast feeding in public, use of birth technologies."
+          ],
+          "areasToImprove": [
+            "using syllabus terminology to show an understanding of social influences",
+            "providing clear and specific information linking to a parent’s wellbeing when they challenge social influence(s)."
+          ]
+        },
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "demonstrate an understanding of the suitability of interviews and observations linked to the stimulus",
+            "provide comparable advantages and limitations of the research methods in relation to the stimulus. For example, it is time consuming and there is an inability to be able to observe all forms of access such as online",
+            "use relevant example(s), where possible, of access to local community services. For example, online, car, walking, bus or multiple modes together."
+          ],
+          "areasToImprove": [
+            "developing an understanding of each research method and the advantages and limitations of each method",
+            "applying content knowledge of research methodology to respond to all parts of the question",
+            "linking back to the stimulus throughout the response."
+          ]
+        },
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "demonstrate an understanding of strategies that could be implemented to enhance equity for the chosen group",
+            "use syllabus terminology such as government policy and legislation or organisations within the community",
+            "provide examples of a variety of strategies that could enhance equity for the chosen group. For example, the provision of hotels or accommodation hubs for homeless people that enhance equity in relation to shelter."
+          ],
+          "areasToImprove": [
+            "providing an explanation of more than one strategy",
+            "ensuring the chosen strategies are specific to enhancing equity rather than wellbeing or needs",
+            "providing explicit details as to how the strategies can enhance equity for the chosen group."
+          ]
+        },
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "demonstrate knowledge and understanding of a social parent using syllabus terminology, for example step parent, adoptive parent (a)",
+            "provide accurate and relevant examples of legislation OR community attitudes associated with the chosen social parent(b)",
+            "clearly relate the cause and effect between the legislation OR community attitudes with the effect on the chosen social parent (b)."
+          ],
+          "areasToImprove": [
+            "clearly identifying the essential characteristics when defining a social parent using correct syllabus terminology. For example, step parent, adoptive parent, foster parent or surrogate parent (a)",
+            "applying a more detailed explanation of the cause and effect of the legislation OR community attitudes on the social parent (b)."
+          ]
+        },
+        {
+          "questionNumber": "28",
+          "betterResponses": [
+            "show an understanding of ethical practices using the syllabus terminology such as bias, respect, integrity and privacy",
+            "provide clear judgements of ethical practices linked to examples from the stimulus provided."
+          ],
+          "areasToImprove": [
+            "understanding ethical practices",
+            "providing a judgement(s) ‘to what extent’ and reasons for the practices being ethical or unethical."
+          ]
+        },
+        {
+          "questionNumber": "29",
+          "betterResponses": [
+            "identify TWO relevant community organisations for the chosen groups, for example, Meals on Wheels, Salvation Army",
+            "provide an explanation of how the community organisations advocate for the specific needs of the chosen group",
+            "use example(s), where possible, to show an understanding of the benefits associated with the organisations advocating for the needs of the chosen group."
+          ],
+          "areasToImprove": [
+            "demonstrating knowledge of advocacy by using syllabus specific terminology. For example, raising awareness of the group, educating the community and promoting rights",
+            "providing clear links to how advocacy of the community organisation assists in meeting the needs of the chosen group. For example, health outcomes, adequate standard of living, safety and security."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "30(a)",
+          "betterResponses": [
+            "demonstrate an understanding of how schools protect the welfare of children, for example, school attendance, staff mandatory reporting, duty of care",
+            "provide links to how it protects the welfare of children. For example, the Working with Children Check in protecting children and young people."
+          ],
+          "areasToImprove": [
+            "demonstrating an understanding of syllabus content relating to protecting children, for example, legislation and regulation."
+          ]
+        },
+        {
+          "questionNumber": "30(b)",
+          "betterResponses": [
+            "demonstrate knowledge and understanding of ONE community organisation",
+            "draw out the cause-and-effect relationship of how the community organisation provides support for young people."
+          ],
+          "areasToImprove": [
+            "providing an explanation of a variety of ways the community organisation provides support to young people",
+            "identifying a relevant community organisation and recognising the support services offered."
+          ]
+        },
+        {
+          "questionNumber": "30(c)",
+          "betterResponses": [
+            "provide clear and detailed information on licensing drivers, school attendance and access to tobacco and alcohol",
+            "make a valid judgement of the effectiveness of the government in regulating the rights of young people regarding licensing drivers, school attendance and access to tobacco and alcohol",
+            "provide specific legislation or initiatives, for example, the Education Act, the Liquor Act, the graduated licensing scheme, the Children and Young Persons (Care and Protection) Act",
+            "provide specific examples of what the government has done to regulate the rights. For example, school attendance registers are required to be kept in accordance with the Education Act",
+            "include clear links on the effect regulations have on the wellbeing of young people throughout the response."
+          ],
+          "areasToImprove": [
+            "understanding how the government regulates the rights of young people regarding licensing drivers, school attendance as well as access to tobacco and alcohol",
+            "incorporating specific government legislation or initiatives rather than just referring to ‘government legislation or law’",
+            "providing links to the impact on the factors of wellbeing."
+          ]
+        },
+        {
+          "questionNumber": "31(a)",
+          "betterResponses": [
+            "provide a specific example of entertainment technology such as streaming services",
+            "include a link between entertainment technology and the impact on interpersonal relationships within families",
+            "refer to one effect and provide a clear description of this effect."
+          ],
+          "areasToImprove": [
+            "demonstrating an understanding of the effect that entertainment technology has on interpersonal relationships within families",
+            "providing examples of specific entertainment technologies."
+          ]
+        },
+        {
+          "questionNumber": "31(b)",
+          "betterResponses": [
+            "provide relevant examples of geographical locations such as rural/remote and urban areas",
+            "refer to the impact of an individual’s access to technology."
+          ],
+          "areasToImprove": [
+            "providing examples of various geographic locations",
+            "providing examples that impact access to technologies. For example, the lack of access to transport, lack of service or WIFI, lack of access to resources."
+          ]
+        },
+        {
+          "questionNumber": "31(c)",
+          "betterResponses": [
+            "provide a judgement(s) on the positive and negative effects of technology associated with food, health and medicine, transport and travel",
+            "provide a description of relevant examples that affect food, health and medicine, and transport and travel. For example, food: genetically modified foods, farming practices; health and medicine: robotic surgery, keyhole surgery, vaccines; transport and travel: opal cards, hybrid cars",
+            "provide clear links to the effects on specific community health and wellbeing."
+          ],
+          "areasToImprove": [
+            "providing a clear judgement(s) of the effects of technology associated with the three factors",
+            "incorporating relevant examples to address the three factors",
+            "linking the effect of technology on community health and wellbeing throughout the response."
+          ]
+        },
+        {
+          "questionNumber": "32(a)",
+          "betterResponses": [
+            "demonstrate an understanding of ONE reason people enter the workforce",
+            "provide relevant examples to support the reason people enter the workforce, such as value and status, meet specific needs and economic reasons."
+          ],
+          "areasToImprove": [
+            "providing detail in the description of why people enter the workforce."
+          ]
+        },
+        {
+          "questionNumber": "32(b)",
+          "betterResponses": [
+            "provide an explanation of how access to leave entitlements can help provide equality for males and females in the workplace",
+            "incorporate examples, such as, parental leave (maternity and paternity), carers leave, sick leave, annual leave and long service leave."
+          ],
+          "areasToImprove": [
+            "demonstrating knowledge of a range of leave entitlements."
+          ]
+        },
+        {
+          "questionNumber": "32(c)",
+          "betterResponses": [
+            "provide a judgement(s) of the suitability of patterns of work such as part-time, flexible, full-time, job share, casual, and why they would be suitable or unsuitable for each stage of the lifespan",
+            "demonstrate an understanding of how patterns of work may impact each individual's wellbeing",
+            "provide relevant examples across the stages of the lifespan to represent a variety of work patterns."
+          ],
+          "areasToImprove": [
+            "providing a judgement(s) of what work patterns are suitable by referring to relevant characteristics for each work pattern. For example, a casual worker’s hours may vary from week to week with no leave entitlements",
+            "addressing more than one work pattern for each of the individuals and presenting clear wellbeing impacts for each individual."
+          ]
+        }
+      ]
+    }
+  ]
+}

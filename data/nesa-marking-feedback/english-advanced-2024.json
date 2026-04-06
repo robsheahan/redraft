@@ -1,0 +1,62 @@
+{
+  "subject": "English Advanced",
+  "slug": "english-advanced",
+  "year": 2024,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/english-advanced/2024",
+  "scrapedAt": "2026-04-06T09:18:12.708Z",
+  "generalFeedback": [],
+  "sections": [
+    {
+      "name": "Paper 1 – Section I: Texts and human experiences",
+      "questions": [
+        {
+          "questionNumber": "2",
+          "betterResponses": [
+            "clearly and effectively analyse how Vincent connects the significance of measurement to human experience",
+            "unpack the significance of measurement in shaping the human experience",
+            "use well-chosen supporting evidence to support their ideas, for example, ‘If we could not measure, then we could not observe the world around us; could not experiment and learn’."
+          ],
+          "areasToImprove": [
+            "analysing language techniques as supporting evidence rather than explaining through examples",
+            "making clear connections between the significance of measurement and human experience."
+          ]
+        },
+        {
+          "questionNumber": "3",
+          "betterResponses": [
+            "compare skilfully how both texts offer a perspective on the ways individuals perceive their surrounding",
+            "use detailed and well-selected evidence from both texts that support the comparison of texts and ideas, for example, ‘... the sky in front becoming pink and soft ...’",
+            "sustain the comparison between the texts by showing how the texts and/or ideas are similar or different."
+          ],
+          "areasToImprove": [
+            "writing a succinct and clear response that addresses all parts of the question",
+            "using comparative language such as, ‘by contrast’, ‘similarly’ to construct a coherent comparison."
+          ]
+        },
+        {
+          "questionNumber": "4",
+          "betterResponses": [
+            "analyse effectively the relationship between discomfort and joy, and how this is represented",
+            "use well-chosen supporting evidence to demonstrate/express understanding of the relationship between discomfort and joy, for example, ‘scared, stumbling and breathless/ I am measurably happy’."
+          ],
+          "areasToImprove": [
+            "analysing using language techniques as evidence rather than explaining the relationship."
+          ]
+        },
+        {
+          "questionNumber": "5",
+          "betterResponses": [
+            "skilfully makes a judgement and/or draws conclusions about how the language used in the text illuminates the complex dynamics of the family",
+            "support ideas by well-chosen textual evidence, for example, ‘... when he was not teaching or tending to the social obligations his wife always seemed to create for him, Mr Brevoort was busy writing manuals and composing workbooks for his daughter’",
+            "skilfully assess in a coherent and clear manner the ways that language illuminates the dynamics within the Brevoort family."
+          ],
+          "areasToImprove": [
+            "understanding the requirements for the key word ‘assess’",
+            "understanding how the use of language illuminates the dynamics within the Brevoort family through well-chosen textual evidence selection",
+            "understanding that dynamic suggests complexity beyond the individual roles of each family member."
+          ]
+        }
+      ]
+    }
+  ]
+}

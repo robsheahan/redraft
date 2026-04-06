@@ -1,0 +1,284 @@
+{
+  "subject": "Physics",
+  "slug": "physics",
+  "year": 2022,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/physics/2022",
+  "scrapedAt": "2026-04-06T09:18:22.489Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "plan the response to assist in the logical sequencing of information",
+    "integrate relevant scientific terms into their responses",
+    "show clear cause and effect relationships related to key physical concepts in explanations",
+    "engage with any stimulus material provided and refer to it in their response when required by the question",
+    "show full working in calculations including formulas and substitution into formulas",
+    "include correct units and directions for vector quantities for calculated values",
+    "review their response to ensure that it addresses the all the requirements of the question",
+    "be familiar with the constants and formulas provided on the Data and Formula Sheets",
+    "be familiar with the SI units of all relevant quantities and the relevant prefixes and their abbreviations",
+    "be able to plot graphs and understand the relationship between the graph and the relevant concept",
+    "be able to extract quantitative relationships from graphs",
+    "be familiar with key physical principles such as, conservation laws and laws of motion and be able to apply them in a range of contexts",
+    "be able to discuss how a range of models are applied in Physics and the evidence used to validate them."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21(a)",
+          "betterResponses": [
+            "provide a clear comparison of surface temperature and luminosity for Star X and Star Y."
+          ],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "21(b)",
+          "betterResponses": [
+            "identify the elements fusing explicitly in the core of Star X and Star Y."
+          ],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "explicitly link each named feature to how it improves efficiency",
+            "identify that energy is lost as heat."
+          ],
+          "areasToImprove": [
+            "using correct terms to describe the maximum transfer of flux - flux linkage as opposed to flux leakage",
+            "recognising that laminations reduce the size of an eddy current rather than prevent them from forming."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "state the measurements that were required",
+            "relate measurements to a determination of the speed of light",
+            "describe how precision or experimental errors affect the result."
+          ],
+          "areasToImprove": [
+            "distinguishing between experimental errors and human errors, or mistakes",
+            "relating how the method enabled a calculation of the speed of light."
+          ]
+        },
+        {
+          "questionNumber": "24(a)",
+          "betterResponses": [
+            "use the graph to identify the half-life of Am-242",
+            "correctly substitute half-life into the relevant equation to calculate the decay constant."
+          ],
+          "areasToImprove": [
+            "reading the question carefully and using the data in the graph to determine the half-life rather than just through calculation."
+          ]
+        },
+        {
+          "questionNumber": "24(b)",
+          "betterResponses": [
+            "identify the correct equation from the data sheet and substitute relevant data into the equation including the decay constant as provided in (a)."
+          ],
+          "areasToImprove": [
+            "showing substitution of all given values",
+            "solving equations using natural logs."
+          ]
+        },
+        {
+          "questionNumber": "25(a)",
+          "betterResponses": [
+            "identify the equation for kinetic energy and substitute the data given in the question",
+            "show all steps of the calculation for the change in kinetic energy."
+          ],
+          "areasToImprove": [
+            "reading the question carefully, so the correct context of the question is identified and understanding that this was not a question about changing orbit."
+          ]
+        },
+        {
+          "questionNumber": "25(b)",
+          "betterResponses": [
+            "apply the law of conservation of energy to kinetic energy and gravitational potential energy."
+          ],
+          "areasToImprove": [
+            "applying the correct calculation process for subtraction of fractions with different denominators."
+          ]
+        },
+        {
+          "questionNumber": "26(a)",
+          "betterResponses": [
+            "convert between electron volts and joules."
+          ],
+          "areasToImprove": [
+            "identifying the relevant variables from the stimulus provided."
+          ]
+        },
+        {
+          "questionNumber": "26(b)",
+          "betterResponses": [
+            "apply relationships between kinetic energy, work, and electric fields",
+            "manipulate equations to find the desired subject."
+          ],
+          "areasToImprove": [
+            "distinguishing between physical quantities such as energy, electric field, and voltage."
+          ]
+        },
+        {
+          "questionNumber": "27(a)",
+          "betterResponses": [
+            "apply features of Newton’s model to clearly sketch and label the expected pattern."
+          ],
+          "areasToImprove": [
+            "understanding the difference between particle and wave model of light",
+            "labelling diagrams as required."
+          ]
+        },
+        {
+          "questionNumber": "27(b)",
+          "betterResponses": [
+            "identify m = 2 and substitute it correctly into the relevant equation to find the angle."
+          ],
+          "areasToImprove": [
+            "ensuring correct units are used in calculations",
+            "showing substantial working to calculate the angle."
+          ]
+        },
+        {
+          "questionNumber": "27(c)",
+          "betterResponses": [
+            "identify and explain the difference in pattern of light bands",
+            "use the relevant equation to relate the change in wavelength to a change in angle and hence a change in spacing between bands."
+          ],
+          "areasToImprove": [
+            "relating the change in the pattern to cause and effect."
+          ]
+        },
+        {
+          "questionNumber": "28",
+          "betterResponses": [
+            "use the data provided to calculate a mass defect for process Y",
+            "apply the conversion factor 931.5 MeV/c 2 to calculate the energy released for Y",
+            "link the larger energy release in Y to a larger mass defect or larger change in binding energy."
+          ],
+          "areasToImprove": [
+            "ensuring that units are used consistently during calculations",
+            "ensuring that rounding of numbers does not occur in calculations involving a.m.u",
+            "linking the relevant concepts into a coherent response."
+          ]
+        },
+        {
+          "questionNumber": "29",
+          "betterResponses": [
+            "identify the 3-dimensional nature of the motion of the apple including the vector sum of the car’s velocity and the apple’s velocity for the horizontal component, and the gravitational acceleration for the vertical component",
+            "use the cause and effect relationship between net force and features of the horizontal and vertical components",
+            "use a vector diagram for the horizontal component."
+          ],
+          "areasToImprove": [
+            "using appropriate scientific terminology to describe features of the apple’s motion and refer to the relevant forces that affect the components of the velocity",
+            "describing the motion of the apple presented in the stimulus rather than describing a generic projectile."
+          ]
+        },
+        {
+          "questionNumber": "30(a)",
+          "betterResponses": [
+            "make unambiguous statements regarding the observations from the different frames of refence",
+            "make conclusions from the supplied evidence that support the concept of time dilation."
+          ],
+          "areasToImprove": [
+            "using unambiguous language to explain consequences of special relativity."
+          ]
+        },
+        {
+          "questionNumber": "30(b)",
+          "betterResponses": [
+            "identify the need to calculate the dilated time t",
+            "recall that 1 nanosecond is 1 x 10 -9 s",
+            "apply the time dilation equation."
+          ],
+          "areasToImprove": [
+            "identifying which variable is provided in the stimulus, t or t 0 ."
+          ]
+        },
+        {
+          "questionNumber": "31",
+          "betterResponses": [
+            "directly use the provided stimulus in their response",
+            "recognise that the hydrogen spectrum shows the Balmer series",
+            "use the question as a scaffold to plan their response to ensure that all the required information was provided."
+          ],
+          "areasToImprove": [
+            "targeting their knowledge and understanding to the question to produce more succinct responses",
+            "labelling diagrams to illustrate all the relevant features."
+          ]
+        },
+        {
+          "questionNumber": "32(a)",
+          "betterResponses": [
+            "link the relative motion of the flywheel through the magnetic field to the concepts of electromagnetic induction, opposing forces and torque",
+            "apply Faraday’s and Lenz’s Laws."
+          ],
+          "areasToImprove": [
+            "understanding the sequence of cause and effect in electromagnetic induction",
+            "differentiating between Faraday’s Law and Lenz’s Law."
+          ]
+        },
+        {
+          "questionNumber": "32(b)",
+          "betterResponses": [
+            "recognise that moving the magnets away from the centre of the flywheel would increase both the rate of change of flux and the distance that the force was being applied hence increasing the opposing torque",
+            "describe a practical method of adjusting the magnets to increase the opposing torque."
+          ],
+          "areasToImprove": [
+            "addressing the question in a practical way not just a theoretical way",
+            "applying a combination of physical concepts, such as torque and electromagnetic induction, to analyse the scenario."
+          ]
+        },
+        {
+          "questionNumber": "33(a)",
+          "betterResponses": [
+            "use the circular motion data in the stimulus to determine the launch velocity",
+            "provide a vector diagram to show how the initial vertical component is related to the initial velocity."
+          ],
+          "areasToImprove": [
+            "linking circular motion to projectile motion",
+            "labelling vector diagrams."
+          ]
+        },
+        {
+          "questionNumber": "33(b)",
+          "betterResponses": [
+            "determine the horizontal component of the motion",
+            "recognise that the trajectory was not symmetrical as the hammer landed lower that it was launched",
+            "apply the equations of motion, or the quadratic equation, to find the time of flight."
+          ],
+          "areasToImprove": [
+            "interpreting the scenario in the stimulus rather than analysing a different but more common scenario, that is, net vertical displacement vs zero vertical displacement",
+            "recognising the sequence of steps that are required to find the range, given the launch velocity and vertical displacement."
+          ]
+        },
+        {
+          "questionNumber": "34",
+          "betterResponses": [
+            "identify that the relevant features of the paths were the circular nature, the variations in radius of Y compared to X and Z and the variation in direction of curve of X and Y compared to Z",
+            "use correct scientific terminology and relevant equations to support their response",
+            "explain, rather than relate, the path features with the properties of the particle."
+          ],
+          "areasToImprove": [
+            "writing with clarity to ensure the response is unambiguous",
+            "structuring the response to highlight key points",
+            "using a mathematical analysis to support the response."
+          ]
+        },
+        {
+          "questionNumber": "35",
+          "betterResponses": [
+            "extract the appropriate data from the stimulus to perform calculations relating to the forces and /or motion",
+            "write a logical and sequential argument, supported by relevant mathematical analysis, to refute the hypothesis."
+          ],
+          "areasToImprove": [
+            "having a clear understanding of the term “hypothesis”",
+            "recognising that a hypothesis can be true or false based on the evidence",
+            "using calculations as evidence to support or refute a hypothesis."
+          ]
+        }
+      ]
+    }
+  ]
+}

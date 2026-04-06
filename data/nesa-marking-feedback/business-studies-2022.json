@@ -1,0 +1,132 @@
+{
+  "subject": "Business Studies",
+  "slug": "business-studies",
+  "year": 2022,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/business-studies/2022",
+  "scrapedAt": "2026-04-06T09:18:50.117Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "use the first page of the answer booklet for an extended response to develop a plan to assist in the logical sequencing of information",
+    "engage with what the question is asking rather than presenting a pre-prepared response",
+    "relate to the question throughout the response rather than just at the beginning",
+    "sustain their judgements, where appropriate, throughout the response with a clear connection to the question",
+    "use relevant business terms and concepts, where appropriate, to support their response",
+    "apply relevant business case study/studies and contemporary business issues where appropriate",
+    "present a sustained, logical and cohesive response that addresses the question where appropriate",
+    "review their response to ensure that it addresses the question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "directly address the question by applying the operations theory to the stimulus business",
+            "demonstrate an understanding of the implications for the situation",
+            "provide reasons the stimulus business would use a specific operations strategy",
+            "provide detailed and specific references to the stimulus business process layout when comparing efficiency and profitability (c)."
+          ],
+          "areasToImprove": [
+            "directly addressing the specific question, and supporting statements with relevant theory",
+            "ensuring responses referenced the stimulus business situation",
+            "providing detail in responses rather than general statements."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "use specific and relevant examples from the Australian national minimum employment standards (a,b)",
+            "provide details on how human resource processes and strategies can benefit a business (b,c)",
+            "provide accurate and detailed implications of carrying out an induction program for employees (c)."
+          ],
+          "areasToImprove": [
+            "using relevant examples to support human resource theory (a,b,c)",
+            "ensuring that responses specifically address the relevant area of the syllabus",
+            "providing clear responses that demonstrate knowledge of key human resource influences, processes and management strategies relevant to the question (a,b,c)."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "demonstrate a clear understanding of finance theory when applied to the information provided in the business stimulus situation",
+            "show understanding of the implications of specific financial ratios for the business stakeholders (a,b,c)",
+            "demonstrate understanding of the implications of financial management decisions related to debt and equity financing (d)",
+            "communicate clearly with detailed and specific references to the question."
+          ],
+          "areasToImprove": [
+            "understanding and application of finance theory to specific financial information",
+            "interpreting the meaning and implications of financial ratios for business financial objectives (a,b,c)",
+            "directly addressing the specific question and supporting statements with references to the stimulus business situation."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "apply correct marketing theory relevant to the introduction of new products",
+            "demonstrate an understanding of the marketing process and ways to measure the success of a marketing plan related to a new product range (b)",
+            "clearly show an understanding of the characteristics of each approach to marketing, and provide reasons why the marketing approach was appropriate for the business (c)."
+          ],
+          "areasToImprove": [
+            "supporting answers with syllabus theory and relevant terminology instead of making general statements",
+            "demonstrating an understanding of the implementation, monitoring and controlling stage of the marketing plan (b)",
+            "understanding there are different approaches to marketing and why the marketing approach is appropriate for a business to use when introducing a new product to the market (c)."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section III",
+      "questions": [
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "recognise the difference between product and branding strategies compared to other marketing strategies",
+            "provide detailed reasons as to why they recommended a particular channel choice",
+            "draw out and relate the implications of global financial management strategies and make direct links to the stimulus",
+            "interpret and apply the stimulus across all three areas of the question",
+            "structure the report using appropriate report features."
+          ],
+          "areasToImprove": [
+            "recognising product and branding strategies suitable for global markets",
+            "recommending an appropriate channel choice rather than providing unnecessary information regarding alternate channel choices",
+            "understanding the difference between channel choice and distribution channel",
+            "identifying global management strategies to analyse rather than general financial or operations strategies."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section IV",
+      "questions": [
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "provide detailed causes and effects of human resource strategies that could reduce workplace disputes and increase worker satisfaction",
+            "provide detailed examples and business terminology relating to human resource strategies, such as rewards and grievance procedures",
+            "incorporate relevant business case studies to support their explanation of how human resource strategies can benefit a business by reducing workplace disputes and improving worker satisfaction."
+          ],
+          "areasToImprove": [
+            "understanding what workplace disputes are and the various reasons they may occur linking to the need for human resources strategies",
+            "illustrating the response with specific example disputes, and linking to worker satisfaction",
+            "incorporating workplace dispute case study/studies to highlight explanation."
+          ]
+        },
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "explain detailed cause and effect in relation to how operations processes link to competitive advantage",
+            "incorporate detailed examples and business terminology relating to operations processes, such as, transformed/transforming resources and visibility",
+            "use case study/studies to show the importance of having operations processes that ensure a business can sustain its competitive advantage. This could include processes related to the quality of inputs or output, processes related to providing superior customer service and warranties that may continue to be highlighted in marketing campaigns."
+          ],
+          "areasToImprove": [
+            "explaining operations processes rather than operations strategies or influences",
+            "focusing on the correct and effective operations processes in the maintenance of competitive advantage",
+            "explicitly relating competitive advantage knowledge to the question rather than only including detail about operations processes."
+          ]
+        }
+      ]
+    }
+  ]
+}

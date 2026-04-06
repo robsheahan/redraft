@@ -1,0 +1,150 @@
+{
+  "subject": "Economics",
+  "slug": "economics",
+  "year": 2024,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/economics/2024",
+  "scrapedAt": "2026-04-06T09:19:06.304Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "use the first page of the answer booklet for an extended response to develop a plan to assist in the logical sequencing of information",
+    "engage with what the question is asking rather than presenting a pre-prepared response",
+    "relate to the question throughout the response rather than just at the beginning",
+    "sustain their judgements, where appropriate, throughout the response with a clear connection to the question",
+    "apply relevant economic information, terms, concepts, relationships and theory, where appropriate, to support their response",
+    "present a sustained, logical and cohesive response that addresses the question where appropriate",
+    "review their response to ensure that it addresses the question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "accurately interpret the diagram and calculate the economic implications of protection (a)",
+            "demonstrate understanding of a correct multilateral trade agreement and an implication of Australia’s participation in the agreement (b)",
+            "provide cause and effect in relation to the impact of protectionist policies on the components of the current account which include imports, exports and the net primary income account (c)",
+            "support arguments with relevant contemporary knowledge of global protection or Australia’s current account (b,c)."
+          ],
+          "areasToImprove": [
+            "distinguishing between a multilateral trade agreement, a bilateral trade agreement and other international organisations (b)",
+            "providing characteristics and features of the economic impacts of the trade agreement (b)",
+            "providing clear cause and effect of the impact of protectionist policies on more than one single component of the current account (c)."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "demonstrate understanding of the relationships between a range of relevant concepts using relevant economic terms to form a logical argument. For example, an increase in wages causes increased spending and therefore demand-pull inflation; or that inflation increases input costs for exporting firms increasing export prices and lowering demand for exports, thereby worsening international competitiveness (a)",
+            "support arguments with relevant contemporary information (b)",
+            "provide correct information about more than one specific labour market policy (c)."
+          ],
+          "areasToImprove": [
+            "broadening the range of economic terms used within responses and using explicit economic concepts to communicate economic understanding",
+            "making connections between the economic concepts used, for example, an increase in household disposable income leads to increased consumer spending which leads to demand bidding up prices which therefore leads to demand-pull inflation."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "demonstrate understanding of environmental issues pertaining to Australia (a)",
+            "demonstrate understanding of the term ‘market-based policy’, rather than regulations or restrictions (c)",
+            "demonstrate detailed understanding of how a market-based policy can be used to manage the environment (c)",
+            "use relevant data to support responses."
+          ],
+          "areasToImprove": [
+            "providing precise responses on issues affecting Australia and not general global environmental issues (c)",
+            "distinguishing between market-based policies used to manage the environment and regulatory policies (c)."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "demonstrate clear understanding of both international and regional business cycles (a)",
+            "provide a well-developed reason to account for the differences between advanced and emerging nations (b)."
+          ],
+          "areasToImprove": [
+            "distinguishing between a regional business cycle and a single domestic economy’s business cycle (a)",
+            "understanding the differences in the characteristics of emerging and developing nations (b)",
+            "using data to illustrate the impact of globalisation on development (c)",
+            "choosing a country that provides a suitable example of globalisation affecting economic development (c)",
+            "understanding the scope of the concept of development as a qualitative concept that encompasses many factors, for example, health, education, literacy, as well as a measure of GDP (c)."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section III",
+      "questions": [
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "include conflicting goals and limitations of policy in their discussion",
+            "demonstrate understanding of how macroeconomic and microeconomic policies promote sustainable economic growth",
+            "link macroeconomic policy (or policies) to aggregate demand and the impacts on sustainable economic growth",
+            "link microeconomic policy (or policies) to aggregate supply and hence output and the impacts on sustainable economic growth",
+            "show understanding of sustained economic growth, long term growth that is not so high as to cause inflation nor so low as to result in unemployment."
+          ],
+          "areasToImprove": [
+            "demonstrating a clearer understanding of the concept of sustainable economic growth",
+            "providing a connection between macroeconomic and microeconomic policies and their limitations",
+            "using the stimulus to support discussion points",
+            "providing more current data, statistics, and examples."
+          ]
+        },
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "demonstrate understanding of full employment through reference to concepts such as the NAIRU or natural rate of unemployment",
+            "identify and relate policy limitations to achieving full employment, including conflicting economic objectives",
+            "associate cyclical unemployment with shorter-term macroeconomic policies and structural unemployment with longer-term microeconomic policies",
+            "use correctly labelled graphs and diagrams to apply relevant theory to real world circumstances, such as the short-run and long-run Phillips curves."
+          ],
+          "areasToImprove": [
+            "elaborating on the process of achieving full employment and distinguishing it from simply reducing unemployment",
+            "explaining the relationship between income, consumption, production, demand for labour and achieving full employment",
+            "providing economic reasons for changes in unemployment trends and the corresponding Australian Government policy measures aimed at addressing them",
+            "interpreting, rather than restating, the stimulus material and supporting arguments with appropriate data and examples."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section IV",
+      "questions": [
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "demonstrate understanding of the factors that contributed to international economic integration",
+            "comprehensively relate why and how those factors contributed to international economic integration",
+            "provide features of, and trends in, global trade and financial flows",
+            "demonstrate understanding of the global economy measured through Gross World Product and changes in international economic integration",
+            "demonstrate understanding of the role of international organisations and government forums such at the WTO, IMF, World Bank and G20."
+          ],
+          "areasToImprove": [
+            "understanding of the various factors that contribute to international economic integration",
+            "showing how or why factors contribute to international economic integration, rather than just providing information about the factors without linking to international economic integration",
+            "understanding the role of, and trends in, global trade and financial flows which contribute to international economic integration",
+            "understanding how the removal of protectionist policies and their impacts contribute to international economic integration."
+          ]
+        },
+        {
+          "questionNumber": "28",
+          "betterResponses": [
+            "demonstrate understanding of how an appreciation impacts individuals, firms and the government in an Australian context",
+            "draw out the relationship between an appreciation of the Australian dollar and its impacts, such as improved living standards for individuals, reduced international competitiveness for exporting firms and reduced servicing costs for government foreign debt",
+            "explain the positive and negative impacts of an appreciation of the Australian dollar for individuals, firms and the government",
+            "explain the short-term and long-term impacts of an appreciation for individuals, firms, and the government",
+            "integrate relevant economic theory such as the reverse J-curve and Dutch Disease to make the response comprehensive."
+          ],
+          "areasToImprove": [
+            "understanding the impacts of an appreciation of a currency as opposed to a depreciation of a currency",
+            "integrating relevant, correctly drawn and labelled diagrams to support the explanation of an impact",
+            "drawing out the relationship between an appreciation of a currency and the consequent impacts of such a movement."
+          ]
+        }
+      ]
+    }
+  ]
+}

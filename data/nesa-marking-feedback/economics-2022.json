@@ -1,0 +1,145 @@
+{
+  "subject": "Economics",
+  "slug": "economics",
+  "year": 2022,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/economics/2022",
+  "scrapedAt": "2026-04-06T09:19:12.236Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "use the first page of the answer booklet for an extended response to develop a plan to assist in the logical sequencing of information",
+    "engage with what the question is asking rather than presenting a pre-prepared response",
+    "relate to the question throughout the response rather than just at the beginning",
+    "sustain their judgements, where appropriate, throughout the response with a clear connection to the question",
+    "apply relevant economic information, terms, concepts, relationships and theory, where appropriate, to support their response",
+    "present a sustained, logical and cohesive response that addresses the question where appropriate",
+    "review their response to ensure that it addresses the question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "process the question and articulate their responses by clearly using correct economic terms and current data as evidence",
+            "demonstrate understanding of both sides of the budget, that is, income (from taxation) and expenditure (on infrastructure and welfare), and link this to the counter cyclical stance (a)",
+            "correctly identify one method of financing a budget deficit and demonstrate a clear understanding of a consequence of this using method (b)",
+            "correctly identify the current fiscal stance for the recent Budget and demonstrate an understanding of economic factors causing it (c)."
+          ],
+          "areasToImprove": [
+            "defining fiscal policy using relevant key terminology (a)",
+            "using current data",
+            "understanding both short and long-term consequences of financing a budget deficit (b)",
+            "addressing more than one factor if question uses a plural, for example, ‘factors’ (c)."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "distinguish clearly between a public good and a private good, and provide an appropriate example of both (a)",
+            "demonstrate a clear understanding of the nature of a positive externality (b)",
+            "explain how the use of solar panels causes positive externalities (b)",
+            "refer to and explain at least two trade-offs between environmental sustainability and government objectives (c)."
+          ],
+          "areasToImprove": [
+            "using examples when they are required and using precise terms in definitions, such as, non-rival and non-excludable (a)",
+            "understanding the differences between a positive externality and the reduction of a negative externality, as well as a social and private benefit (b)",
+            "ensuring at least two areas are included when the question refers to economic objectives (plural) (c)",
+            "showing causation rather than simply describing a conflict of objectives (c)."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "describe the role of the price mechanism in determining the value of a currency under a floating exchange rate system (a)",
+            "clearly explain the relationship between a higher cash rate, general interest rates, foreign investment and demand for currency (b)",
+            "explicitly identify contemporary global trends and propose the impact on Australia’s industry composition (c)."
+          ],
+          "areasToImprove": [
+            "understanding the difference between the Trade Weighted Index and exchange rate mechanisms (a)",
+            "providing direct reference to changes in the demand and/or supply of a country’s currency in response to an increase in the country’s cash rate (b)",
+            "distinguishing between global and purely domestic economic trends (c)",
+            "avoiding reference to changes in work practices and other irrelevant impacts (c)."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "show how and why an increase in imports to the economy they identified with goods and services increases its productive capacity or improves the standard of living of its individuals/households (ai)",
+            "show how the export of goods or services from the economy they identified has had a positive effect, such as reducing poverty levels of workers involved",
+            "demonstrate how or why economic growth, through export driven manufacturing or agriculture, produces negative externalities such as, environmental degradation (aii)",
+            "recognise that an increase in quotas leads to lower prices because of higher supply and a more competitive environment, and how this will either encourage higher efficiency amongst domestic firms, or force inefficient domestic firm to close, resulting in unemployment (b)."
+          ],
+          "areasToImprove": [
+            "understanding that trade consists of both exports and imports (ai, aii)",
+            "writing specific detail, showing how an aspect of trade (imports or exports) creates a positive or negative impact on an economy rather than giving generalisations (ai, aii)",
+            "recognising that an increase in a quota creates a more competitive market and then logically write about the impact of this increased competition on prices, household consumption, firms and unemployment."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section III",
+      "questions": [
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "analyse the relationship between each balance of payment (BOP) component and the value of the Australian dollar (AUD) clearly and comprehensively, using the stimulus and their own knowledge",
+            "demonstrate a clear understanding and draw out the relationships between more than two BOP components on the value of the AUD",
+            "synthesise economic relationships to develop a sustained, logical and cohesive response that addressed the question specifically."
+          ],
+          "areasToImprove": [
+            "integrating the stimulus appropriately into their response to support their analysis",
+            "sustaining their analysis of the impact of more than one BOP component on the value of the AUD",
+            "presenting a logical and cohesive response that addresses the impact of the BOP components on the AUD rather than the impact of changes in the AUD on BOP components."
+          ]
+        },
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "use the stimulus and their own knowledge clearly and extensively",
+            "show the relationships and implications of Australian labour market policies on both economic growth and the distribution of income and wealth",
+            "integrate analysis of at least two labour market policies comprehensively."
+          ],
+          "areasToImprove": [
+            "using the stimulus appropriately within their response",
+            "limiting responses to implications of the relationship between labour market policies and economic growth and income distribution",
+            "carefully reading and using the information provided to stimulate their thinking, add to their analysis and to assist with their application of relevant economic terms and concepts related to labour market policies",
+            "increasing the range of labour market policies addressed."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section IV",
+      "questions": [
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "clearly articulate several effects of inflation on individuals, firms and the government",
+            "compare the effects of high and low inflation or short-term verses long term effects of inflation on individuals, firms and the government",
+            "use comparative statistics and examples to support/illustrate their response."
+          ],
+          "areasToImprove": [
+            "ensuring only information relevant to answering the question is included in their response, for example, causes of inflation were not needed",
+            "supporting general statements with specific detail to make relationships clear, for example, using theory and supporting statistics in their comparisons."
+          ]
+        },
+        {
+          "questionNumber": "28",
+          "betterResponses": [
+            "integrate economic theory and examples clearly and effectively",
+            "focus closely on the reasons for differences in economic growth and development between nations",
+            "frequently reference appropriate terms and concepts to create a concise response."
+          ],
+          "areasToImprove": [
+            "engaging with the question rather than writing generally about economic growth and development",
+            "recognising the difference between causes of differences in economic growth and development and the effects of economic growth and development",
+            "extending points and demonstrating their knowledge and understanding by providing and referring to relevant data or examples to support the analysis."
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,225 @@
+{
+  "subject": "Physics",
+  "slug": "physics",
+  "year": 2024,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/physics/2024",
+  "scrapedAt": "2026-04-06T09:18:21.410Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components",
+    "have a clear understanding of the glossary of key words in the question and recognise the intent of the question and its requirements",
+    "plan the response to assist in the logical sequencing of information",
+    "integrate relevant scientific terms into their responses",
+    "show clear cause and effect relationships related to key physical concepts in explanations",
+    "engage with any stimulus material provided and refer to it in their response when required by the question",
+    "show full working in calculations including formulas and substitution into formulas",
+    "include correct units and directions for calculated vector quantities",
+    "review their response to ensure that it addresses all the requirements of the question",
+    "be familiar with the constants and formulas provided on the Data and Formula Sheets",
+    "be familiar with the SI units of all relevant quantities and the relevant prefixes and their abbreviations",
+    "be able to plot graphs and understand the relationship between the graph and the relevant concept",
+    "be able to extract quantitative relationships from graphs",
+    "be familiar with key physical principles such as, conservation laws and laws of motion and be able to apply them in a range of contexts",
+    "be able to discuss how a range of models are applied in physics and the evidence used to validate them."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "select the correct formula, show substitution and calculate the correct answer",
+            "link suggested ways of increasing torque to the motor",
+            "address their response to DC motor and not the spanner."
+          ],
+          "areasToImprove": [
+            "converting all quantities into SI units before substitution, for example, converting centimetres to metres",
+            "clearly showing how the angle is determined from the stimulus."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "use the correct relationship in the graph to describe the significance, for example, ‘as the distance from the Earth increases, the recessional velocity of the galaxies increases’ (a)",
+            "relate the relationship from the graph to the significance, for example, the ‘graph provides evidence for the expansion of the universe’ (a)",
+            "provide an explanation which clearly outlines how the velocities of receding galaxies can be calculated. For example, the spectra of receding galaxies are red shifted and the velocity of receding galaxies can be determined by comparing this red-shifted spectra to hydrogen spectra on Earth (b)",
+            "describe a clear outline which links a feature of the galaxy to a method which could be used to determine the galaxies velocity. For example, the spectra of a galaxies are red shifted because they are moving away from the observer (b)",
+            "explain how changes in spectral lines and/or red shift are viewed from receding galaxies. Leading to a calculation of the receding velocity of the galaxy (b)."
+          ],
+          "areasToImprove": [
+            "comprehending the variables on a graph and determining the relationship between them (a)",
+            "understanding how Hubble’s Law relates to significant aspects of the universe like the Big Bang theory or the expansion of the universe (a)",
+            "referring to the expansion of the universe, not stars or planets (a)",
+            "clearly demonstrating how a receding galaxies velocity can be calculated by correctly outlining a method and verifying this to a stationary source (b)",
+            "correctly using terms, for example, planets or stars alone are incorrect as the question is clearly about galaxies (b)",
+            "outlining, not naming terms which are inconsistently used like red shift, spectra or the Doppler effect to explain the features of a receding galaxy (b)."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "identify the role of paraffin to release protons for analysis (ai)",
+            "apply Chadwick’s conclusion of the discovery of a particle with mass to the increased understanding of the nucleus to include neutrons (aii)",
+            "apply de Broglie’s hypothesis of the wave nature of electrons to limitations in the explanation of behaviour of electrons in the Rutherford-Bohr model (b)."
+          ],
+          "areasToImprove": [
+            "correctly relating experimental conclusions to specific changes in understanding (ai)",
+            "demonstrating the development of models in physics with respect to new knowledge, evidence and understanding (aii)",
+            "understanding the relationship between Bohr’s limitation of the atom and de Broglie’s hypothesis of the atom (b)."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "use the peak in a blackbody radiation curve to correctly calculate temperature (a)",
+            "use the provided equation to determine the frequency of light absorbed (b)",
+            "demonstrate an understanding the role of the electron in the production of the absorption spectrum (c)",
+            "recognise the absorption spectrum is the decrease in intensity of a certain wavelength on a continuous spectrum (c)."
+          ],
+          "areasToImprove": [
+            "determining the peak in a blackbody radiation curve (a)",
+            "understanding the relationship between Bohr-Ryberg equation and frequency (b)",
+            "showing substitution of all given values (b)",
+            "understanding the complete processes involved in the production of an absorption spectra (c)."
+          ]
+        },
+        {
+          "questionNumber": "25(a)",
+          "betterResponses": [
+            "identify the required formulae for derivation",
+            "manipulate the formulae to derive Kepler’s aw via substitution and rearrangement to derive the required formula",
+            "sequentially show working."
+          ],
+          "areasToImprove": [
+            "deriving equations, for example, derivation of Kepler’s Law’s of Planetary Motion is included in the syllabus.",
+            "learning to rearrange equations",
+            "reading the question carefully and using available information to respond, for example, ‘by considering gravitational force’."
+          ]
+        },
+        {
+          "questionNumber": "25(b)",
+          "betterResponses": [
+            "calculate the gradient using two points on the graph",
+            "show clear and sequential steps showing their working",
+            "find the gradient using the line of best fit, convert units for both radius and period, and invert the gradient to substitute into the Kepler’s Law formula",
+            "rearrange the Kepler’s Law equation."
+          ],
+          "areasToImprove": [
+            "using the line of best fit to calculate the gradient using two points and showing this as a triangle on the graph",
+            "reading the labels on the graph to ensure that conversions are done accordingly to find mass of the planet. For example, km 3 to m 3 and days 2 to seconds 2",
+            "rearranging the formula to calculate the mass of the planet",
+            "calculating the gradient from the graph and then determining the inverse of the gradient before substituting in the Kepler’s third law equation."
+          ]
+        },
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "correctly relate the relativistic effect to the frame of reference from where the observation was made",
+            "explicitly link the effects to both the muon’s frame of reference and Earth’s frame of reference",
+            "describe how the relativistic effect allows for detection of muons on Earth’s surface."
+          ],
+          "areasToImprove": [
+            "using appropriate terminology, especially length contraction and time dilation for effects",
+            "avoiding the use of acronyms that are not standard, unless defined, for example, ‘FoR’ (frame of reference)",
+            "distinguishing between observed event and frame of reference."
+          ]
+        },
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "identify the two quarks in each pion (a)",
+            "calculate the change in mass and determine the energy released per pion with correct units (b)",
+            "link the increase in mass/momentum with an explanation of how kinetic energy of the pions could increase without the velocity exceeding the speed of light (c)",
+            "draw diagrams comparing Newtonian to relativistic calculations (c)."
+          ],
+          "areasToImprove": [
+            "reading the question carefully to identify the requirements (a)",
+            "converting MeV/c 2 to MeV or Joules (b)",
+            "avoiding the overuse of ‘infinity’ when describing variables for sub-c relativistic velocities (c)",
+            "addressing how the problem is solved rather than only state why speeds exceeding c are not possible (c)."
+          ]
+        },
+        {
+          "questionNumber": "28",
+          "betterResponses": [
+            "select the correct equation and substitute the appropriate values from the data sheet (a)",
+            "apply equations and concepts from different areas of the syllabus, such as forces on charged particles in electric fields and projectile motion (b)",
+            "show the selected equation and the steps of a calculation in their response (b)."
+          ],
+          "areasToImprove": [
+            "converting millimetres to metres (a)",
+            "recognising that answers provided in the early parts of a question need to be correctly utilised in later parts of the question (b)",
+            "showing the steps of their calculations (b)."
+          ]
+        },
+        {
+          "questionNumber": "29",
+          "betterResponses": [
+            "concisely address every aspect of the question, for example, electromagnetic origin of the force and difference in motion of Rod A and Rod B",
+            "recognise that hen the current increases in Rod A, F A on B increases too (Motor Effect), but F A on B is still equal to F B on A (Ampere’s Law)",
+            "recognise that the same magnitude of force is acting on both Rod A and Rod B but Rod B moves further",
+            "support their answer with relevant equations."
+          ],
+          "areasToImprove": [
+            "reading the question carefully to identify key information and avoid misinterpreting the question. For example, the mass of the wires was negligible, not the mass of the rods",
+            "reviewing Kirchhoff’s circuit laws."
+          ]
+        },
+        {
+          "questionNumber": "30",
+          "betterResponses": [
+            "thoroughly explain the effect of halving the period on both horizontal and vertical forces acting on the object in uniform circular motion",
+            "link the change in period to change in velocity and hence change in centripetal force",
+            "draw a clear free body diagram and annotate all the forces",
+            "calculate the effect of halving the period on centripetal force."
+          ],
+          "areasToImprove": [
+            "addressing the effect of halving the period on all the forces acting on the object",
+            "reviewing the difference between gravity and force of gravity."
+          ]
+        },
+        {
+          "questionNumber": "31",
+          "betterResponses": [
+            "concisely address both aspects of the question, for example, comparing maximum heights and describing energy changes",
+            "link the maximum height comparison explicitly to the two models",
+            "use appropriate physics theory and terminology"
+          ],
+          "areasToImprove": [
+            "addressing all parts of the question",
+            "not writing irrelevant and extraneous detail",
+            "structuring responses for optimal readability."
+          ]
+        },
+        {
+          "questionNumber": "32",
+          "betterResponses": [
+            "identify relevant experiments",
+            "present evidence from each experiment, in particular focus on the observations made in the experiment",
+            "clearly link the experiment to a greater understanding of a field, or theory of physics, often distinguishing between competing theories."
+          ],
+          "areasToImprove": [
+            "writing succinct and structured answers",
+            "paying careful attention to the specifics of the question found in the stimulus",
+            "looking for opportunities to use equations and other physics representations to support the analysis",
+            "presenting experimental diagrams to clarify phenomena and results."
+          ]
+        },
+        {
+          "questionNumber": "33",
+          "betterResponses": [
+            "integrate the analysis of energy transformations with changes in motion",
+            "show how the motion of the magnet and the can changed over an entire cycle of the magnet’s oscillation",
+            "show how energy moved through the whole system."
+          ],
+          "areasToImprove": [
+            "describing electromagnetic interactions in terms of energy transformations as opposed to interactions involving forces",
+            "referring to energy transformations as well as motion within the system",
+            "using electromagnetic induction to predict how the motion of the magnet affects the motion of the can",
+            "keeping the focus of the response on energy transformations and changes to the motion of the magnet and the can, as opposed to electrical interactions within the can."
+          ]
+        }
+      ]
+    }
+  ]
+}

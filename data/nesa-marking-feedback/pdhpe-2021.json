@@ -1,0 +1,114 @@
+{
+  "subject": "PDHPE",
+  "slug": "pdhpe",
+  "year": 2021,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/pdhpe/2021",
+  "scrapedAt": "2026-04-06T09:18:12.158Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "use the first page of the answer booklet for an extended response to develop a plan to assist with the logical sequencing of information",
+    "engage with what the question is asking rather than presenting a pre-prepared response",
+    "relate to the question throughout the response rather than just at the beginning",
+    "sustain their judgements, where appropriate, throughout the response with a clear connection to the question",
+    "apply the skills of critical thinking and analysis where appropriate",
+    "use relevant concepts and terms, where appropriate, to support their response",
+    "communicate ideas and information using relevant examples",
+    "present a logical and cohesive response that addresses the question",
+    "review their response to ensure that it addresses question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section I – Part B",
+      "questions": [
+        {
+          "questionNumber": "21(a)",
+          "betterResponses": [
+            "correctly identify types of cardiovascular disease, as opposed to causal factors",
+            "sketch in general terms two types of cardiovascular disease."
+          ],
+          "areasToImprove": [
+            "developing their knowledge of types of cardiovascular disease."
+          ]
+        },
+        {
+          "questionNumber": "21(b)",
+          "betterResponses": [
+            "make the relationship between protective factors and the reduced risk of cardiovascular disease clear",
+            "support the response with specific examples, for example, a diet low in fat reduces the chance of plaque build-up in the arteries which is a leading cause of coronary heart disease."
+          ],
+          "areasToImprove": [
+            "ensuring a focus on how protective factors specifically reduce the risk of cardiovascular disease."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "link creatine to the ATP PC energy system and the ATP PC system to the long jump event",
+            "show ‘why’ an athlete would consider creatine supplementation by making reference to faster resynthesis of ATP, increased creatine storage and/or an increased capacity to improve muscle strength or power."
+          ],
+          "areasToImprove": [
+            "addressing the key word ‘why’ by clearly showing the relationship between the relevant components of the question."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "address each of the components of the question by identifying two types of extrinsic motivation and provide features of each, using examples and linking to an effect on performance."
+          ],
+          "areasToImprove": [
+            "providing characteristics and features of types of extrinsic motivation",
+            "showing specifically how extrinsic motivation affects performance."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "ensure descriptions include relevant examples of how both specificity and progressive overload training principles are applied to a strength training program and a clear link to improved performance",
+            "provide relevant examples to support the response."
+          ],
+          "areasToImprove": [
+            "demonstrating knowledge of the two training principles",
+            "demonstrating knowledge of how the principles can be applied to strength training and how the application of the principles link to improved performance."
+          ]
+        },
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "demonstrate relevant knowledge of a health promotion initiative used to strengthening community action",
+            "provide detailed and accurate knowledge of the principle of strengthening community action",
+            "ensure a clear relationship between strengthening community action in a health promotion initiative and how those actions improve the health of Australians using relevant examples."
+          ],
+          "areasToImprove": [
+            "developing their knowledge and understanding of strengthening community action",
+            "recognising the focus on one health promotion initiative and at least two examples of strengthening community action needs to be linked to one initiative."
+          ]
+        },
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "demonstrate a detailed understanding of at least two social justice principles",
+            "demonstrate a comprehensive understanding of the issues associated with health care access, for example, multicultural communities having issues understanding health information due to language barriers",
+            "ensure a clear relationship between social justice principles and improvement of health care access, for example, how implementing the principle of diversity leads to health being provided in multiple languages in doctors’ surgeries. This therefore increases access to health care information provided."
+          ],
+          "areasToImprove": [
+            "developing knowledge and understanding of the application of social justice principles",
+            "providing clear examples related to improvement of access to health care through the application of social justice principles, rather than general health improvement."
+          ]
+        },
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "demonstrate knowledge of the performance elements of decision-making and strategic, tactical development and the associative stage of skill acquisition",
+            "make evident the relationship between both performance elements of decision-making and strategic, tactical development and their introduction to athletes at the associative stage of skill acquisition, for example, introducing strategic and tactical development before the associative stage, could cause information overload leading to greater error",
+            "use clear, sport specific examples demonstrating the two performance elements."
+          ],
+          "areasToImprove": [
+            "demonstrating the relationship between the performance elements of decision-making, strategic and tactical development and their introduction to athletes at the associative stage rather than describing the associative stage",
+            "providing two relevant examples demonstrating the two performance elements."
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,289 @@
+{
+  "subject": "Biology",
+  "slug": "biology",
+  "year": 2021,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/biology/2021",
+  "scrapedAt": "2026-04-06T09:18:18.684Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they understand its intent and requirements",
+    "plan the response to assist in the logical sequencing of information",
+    "integrate relevant scientific terms into their responses",
+    "engage with any stimulus material provided and refer to it in their response",
+    "show all working in calculations and include correct units."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21(a)",
+          "betterResponses": [
+            "correctly label two features of bacteria."
+          ],
+          "areasToImprove": [
+            "recalling features of bacteria",
+            "including clear labelling."
+          ]
+        },
+        {
+          "questionNumber": "21(b)",
+          "betterResponses": [
+            "complete both boxes correctly",
+            "recognise and apply Koch’s postulates to the flow chart."
+          ],
+          "areasToImprove": [
+            "applying biological knowledge to a given situation",
+            "using flow charts to provide key information about a process."
+          ]
+        },
+        {
+          "questionNumber": "21(c)",
+          "betterResponses": [
+            "correctly outline a benefit and limitation for each farm’s strategy",
+            "interpret the information in the table and recognise both benefits and limitations for each strategy."
+          ],
+          "areasToImprove": [
+            "developing their answer using their own knowledge in relation to the information in the table, not just copying the information directly into their answer",
+            "recognising the difference between prevention and treatment and that both approaches have benefits and limitations."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "recognise that the black rabbit was heterozygous",
+            "correctly use a Punnett square to show the resulting offspring from a heterozygous black rabbit and white rabbit cross",
+            "translate the offspring genotypes into a phenotypic ratio, for example ‘black: white = 1:1’."
+          ],
+          "areasToImprove": [
+            "drawing and using Punnett squares accurately, including a key",
+            "translating the information given into appropriate genotypes, for example, knowing the black rabbit is heterozygous because its mother was white",
+            "clearly presenting phenotypic ratios, not just write the genotypic ratio."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "link the presence of a control line to the validity of the test and the absence of a test line to a negative result, for example, ‘Strip 2, because it has a control line, showing the test has worked, but no test line, indicating ovulation has not occurred’",
+            "recognise that although Strip 3 did not have a test line, it was not valid as there was no control line."
+          ],
+          "areasToImprove": [
+            "engaging with all parts of the stimulus, not just the graphic",
+            "distinguishing between the function of the control line and the test line."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "interpret the pedigree correctly and refer to it explicitly in their justification (a)",
+            "clearly state the type of mutation followed by the correct justification, for example, ‘The trait is a result of a somatic mutation because the affected individual’s parents and his offspring are unaffected, despite it being a dominant trait’ (a)",
+            "use correct terms in the response, for example, autosomal, dominant, somatic and germ-line (a), and mutation, germ cells, somatic cells and cell differentiation (b)",
+            "correctly interpret both written and visual stimulus to determine the effect of Mutation A and Mutation B (b)",
+            "link the timing of the cell differentiation and the mutation to the effect on Twin 1, Twin 2 and their offspring, for example, ‘Mutation B occurs before cell differentiation, meaning that it is present in Twin 1’s germ-line and somatic cells and may be inherited by Twin 1’s offspring. Mutation C occurs after cell differentiation and is a somatic mutation, so it will not be passed down onto Twin 2’s offspring and will only affect their body cells’ (b)."
+          ],
+          "areasToImprove": [
+            "understanding the difference between the terms: somatic and autosomal, germ-line and sex-linkage, dominant and recessive traits (a)",
+            "reading all parts of the stimulus, not just the pedigree (a) or the diagram (b)",
+            "referencing all parts of the diagram in the response (b)."
+          ]
+        },
+        {
+          "questionNumber": "25(a)",
+          "betterResponses": [
+            "clearly plot data for the right ear and the left ear, ensuring plots were against the correct frequency and without providing a line of best fit, joining the plots or drawing columns",
+            "use different shapes or colours in the key to show the corresponding data for each ear."
+          ],
+          "areasToImprove": [
+            "providing a key that clearly differentiated the left ear and the right ear",
+            "reading the dB axis carefully",
+            "drawing precise plots – not large circles, squares or triangles which make it difficult to judge where the plotted point is supposed to be."
+          ]
+        },
+        {
+          "questionNumber": "25(b)",
+          "betterResponses": [
+            "use information from the graph that showed the right ear was in the normal hearing range",
+            "clearly state a correct conclusion for the left ear, for example, that the left ear cannot hear as well as the right ear",
+            "interpret information from the graph to show that as frequency increased the patient needed a louder volume to hear the frequencies in their left ear."
+          ],
+          "areasToImprove": [
+            "providing two clear conclusions, one for each ear. Students should avoid saying the same information in two different ways",
+            "not making incorrect assumptions about the left ear being deaf or having profound hearing loss",
+            "correctly interpreting each axis of the graph to provide correct conclusions, for example, the volume of sound needed (decibels) to hear frequencies."
+          ]
+        },
+        {
+          "questionNumber": "25(c)",
+          "betterResponses": [
+            "deduce that the most suitable technology for a patient with a permanent blockage and working cochlea is a bone conduction implant or bone conduction hearing aid",
+            "outline how the technology assists the patient’s hearing, that is, how it works",
+            "provide a suitable justification for their decision."
+          ],
+          "areasToImprove": [
+            "considering the context of the stimulus to select the relevant technology",
+            "providing an outline that is relevant to the technology being discussed",
+            "using the stimulus to write a valid justification."
+          ]
+        },
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "engage with the stimulus material provided and refer to it in their response",
+            "explain that offspring can display different phenotypes to their parents by receiving two copies of a recessive mutation that is expressed",
+            "explain changes in the phenotype of offspring using reasons including: a lack of gene flow, inbreeding and accumulation of mutations, with reference to recessive alleles impact on gene pools in populations, for example, ‘A mutation may have occurred in a germ line cell which could have resulted in the coat pattern observed in the offspring. The proportion of the offspring carrying this mutation may increase due to inbreeding and the reduced gene pool’",
+            "relate that the change in concentration of recessive alleles in gene pools results in offspring with different phenotypes to parents."
+          ],
+          "areasToImprove": [
+            "describing how a reduction in gene flow occurs in populations",
+            "outlining how a smaller gene pool can amplify the accumulation of mutations, not cause the mutations",
+            "engaging with the stimulus rather than proposing alternative scenarios such as natural selection",
+            "linking inbreeding to the changes in phenotype rather than hybridisation with other species."
+          ]
+        },
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "justify the correct phenotype of Child 3 by referring to the DNA profile and the associated phenotype of each member of the family",
+            "engage with the stimulus to recognise that individuals were either heterozygous or homozygous for an allele",
+            "recognise that the presence and/or absence of a band in the profile would influence the phenotype of the individual",
+            "demonstrate an understanding of inheritance by recognising the parents as the origin of the alleles expressed in Child 3."
+          ],
+          "areasToImprove": [
+            "engaging with the stimulus to make a definitive statement on the phenotype of Child 3, for example, ‘Child 3 will have sickle cell anaemia’, not ‘Child 3 might have sickle cell anaemia’",
+            "recognising that a single band in the DNA profile represented an individual being homozygous for the specific allele",
+            "understanding that the phenotype of Child 3 was not related to probability, and therefore could not be determined through the use of a Punnett Square."
+          ]
+        },
+        {
+          "questionNumber": "28(a)",
+          "betterResponses": [
+            "describe the steps of polypeptide synthesis that involve mRNA, for example, creation of a complementary code of DNA, transfer of the mRNA from the nucleus to the ribosome and using it as a template for a polypeptide chain",
+            "distinguish between transcription and translation."
+          ],
+          "areasToImprove": [
+            "knowing the differences between protein synthesis and DNA replication",
+            "using correct terms in describing the role of mRNA, for example, codon, complementary."
+          ]
+        },
+        {
+          "questionNumber": "28(b)",
+          "betterResponses": [
+            "distinguish between mRNA vaccine and other forms of vaccination, for example, attenuated viruses",
+            "describe how mRNA is translated by the human body to create the spike protein of the virus",
+            "identify that the coded spike protein acted as the antigen to trigger the immune response",
+            "provide a logical and detailed description of how active immunity is established leading to a faster response when exposed to the virus."
+          ],
+          "areasToImprove": [
+            "understanding that the mRNA vaccine is not the antigen, but that it promotes the production of the spike protein to act as the antigen",
+            "showing a relationship between the mRNA vaccine and active immunity",
+            "demonstrating a thorough knowledge of active immunity, for example, the production of memory B and T cells which result in long term immunity",
+            "using the terms antibody and antigen correctly",
+            "distinguishing between active and passive immunity."
+          ]
+        },
+        {
+          "questionNumber": "29",
+          "betterResponses": [
+            "use cause and effect to demonstrate their understanding of how mammals maintain a stable body temperature",
+            "explain how ambient temperature influences the posture of the koala",
+            "relate the pictures of the koala to the observations seen in the graph at different temperatures."
+          ],
+          "areasToImprove": [
+            "demonstrating a clear understanding of how the position of the koala changes its surface area to volume ratio and thereby affects heat loss or gain",
+            "linking the posture of the koala to the ambient temperature",
+            "correctly interpreting the stimulus material provided."
+          ]
+        },
+        {
+          "questionNumber": "30",
+          "betterResponses": [
+            "engage with every component of the stimulus provided and refer to it in their response",
+            "provide at least three arguments based on the data to support and refute the statement",
+            "provide a comprehensive analysis of the graphs to support arguments for the statement, for example, ‘In graph 1 the number of cases in the unvaccinated population were cyclic and significantly higher than the cases in the vaccinated population’",
+            "analyse the data in the table and extrapolate each piece of data to support their arguments for and against, for example, ‘the difference of 85 diarrhoea and dysentery deaths in the vaccinated community compared to 156 deaths in the unvaccinated community suggested that the measles vaccine protected the community against diseases other than measles. However, in fever the unvaccinated population deaths were 25 compared to the vaccinated populations of deaths 22; this small difference of 3 suggests that the measles vaccine does not protect the community against diseases other than measles’",
+            "analyse rather than restate the quantitative data to support their arguments. For example, ‘The difference of 21 deaths in the unvaccinated community from Oedema versus the 6 deaths in the vaccinated community suggested that the measles vaccine did have an impact on deaths from Oedema’ is a better response than ‘There were 21:6 deaths in unvaccinated vs vaccinated communities’ or ‘there were more deaths from oedema in the unvaccinated than in the vaccinated’",
+            "understand the role of vaccines in the community."
+          ],
+          "areasToImprove": [
+            "understanding the role of stimulus material in a question and utilising all of the stimulus in their response",
+            "making concise supported arguments rather than using words such as ‘slightly correct’ or ‘possibly correct’",
+            "manipulating all of the data components rather than just stating or referring to it, for example, ‘The number of deaths of 2 in the vaccinated population versus the 40 deaths in the unvaccinated population shows that the vaccine protected the community against measles’, instead of ‘there were more deaths in the unvaccinated population for measles, so the vaccine was successful’",
+            "using the data analysis to support multiple arguments for and against the statement and not providing just one argument or one piece of data",
+            "understanding axes of graphs, the headings in columns and rows of data table and processing the material given to identify that in the ‘Cause of death’ table the other listed diseases are not symptoms or side effects of measles."
+          ]
+        },
+        {
+          "questionNumber": "31",
+          "betterResponses": [
+            "evaluate the stimulus material for features of a valid epidemiological study, for example, the sample size of 60 participants was too small, ideally a sample size in the thousands would have been more appropriate",
+            "engage with the results and provide a suitable interpretation of their meaning, for example, the similarity of results for statin tablets and placebo tablets suggests that the statin may not have been the cause of the symptoms and this could be attributed to the placebo effect",
+            "make a judgement that the design of the study impacts on the reliability of the results, for example, the study design was flawed and therefore the results are not considered reliable and, overall, the study was invalid."
+          ],
+          "areasToImprove": [
+            "addressing both aspects of the question (study and results)",
+            "providing more than one point about the validity of the study and interpretation of the results",
+            "understanding that the purpose of a placebo in the study was to determine whether the statin was the cause of the symptoms, or the symptoms were due to other factors, for example, underlying health conditions",
+            "demonstrating a clear understanding of the terms reliability, accuracy and validity",
+            "making the connection between the flaws in the study design and the inconclusive results."
+          ]
+        },
+        {
+          "questionNumber": "32",
+          "betterResponses": [
+            "correctly interpret the steps of the negative feedback loop in the diagram",
+            "explain how anabolic steroids would disrupt the negative feedback loop shown in the diagram and how the change would be counteracted",
+            "link the effects of taking anabolic steroids directly to changes that would result in the testes",
+            "explain both the stimulatory and inhibitory effects of taking anabolic steroids."
+          ],
+          "areasToImprove": [
+            "practising reading and interpreting a range of texts, including diagrams, by applying knowledge and understanding of concepts learned in the course. This includes correctly interpreting positive and negative signs used in the diagram",
+            "providing clear reasons for the changes identified using the information provided in the stimulus",
+            "understanding the differences between negative feedback and positive feedback."
+          ]
+        },
+        {
+          "questionNumber": "33(a)",
+          "betterResponses": [
+            "demonstrate their knowledge of the process of gene cloning by articulating in detail the steps involved in the process",
+            "explain all four steps using relevant scientific terms and link the purpose of these steps to gene amplification",
+            "clearly demonstrate knowledge of role of plasmids and bacteria in gene cloning."
+          ],
+          "areasToImprove": [
+            "knowing the key word ‘explain’ (cause and effect)",
+            "identifying the purpose of the process (gene cloning)",
+            "describing the role of bacteria/plasmid in gene cloning",
+            "appropriately using scientific terms",
+            "thoughtfully structuring their response allowing for a succinct and precise answer."
+          ]
+        },
+        {
+          "questionNumber": "33(b)",
+          "betterResponses": [
+            "interpret data from the graph to identify transgenic salmon that reached maturity and market size faster",
+            "explain the benefit (showing both cause and effect) of transgenic salmon in relation to aquaculture",
+            "use quantitative and comparative data to support the explanation."
+          ],
+          "areasToImprove": [
+            "showing both cause and effect of the use of transgenic salmon in relation to the data provided and aquaculture",
+            "using quantitative data to support identified trend",
+            "clearly linking the benefit to aquaculture."
+          ]
+        },
+        {
+          "questionNumber": "33(c)",
+          "betterResponses": [
+            "analyse the techniques listed, drawing out the implications each technique would have on biodiversity",
+            "make reference to the biodiversity of the wild-type salmon population and the transgenic salmon population",
+            "discuss the idea of protecting the wild salmon biodiversity, while preserving the transgenic salmon (especially with Technique 3)",
+            "address each of the five techniques listed in the question."
+          ],
+          "areasToImprove": [
+            "noting how each technique impacts biodiversity, either possibly increasing or decreasing",
+            "not simply stating the effect as being to protect and preserve biodiversity",
+            "referring to the multiple levels of biodiversity",
+            "referring to the techniques in a logical and clear order."
+          ]
+        }
+      ]
+    }
+  ]
+}

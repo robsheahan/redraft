@@ -1,0 +1,150 @@
+{
+  "subject": "Geography",
+  "slug": "geography",
+  "year": 2021,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/geography/2021",
+  "scrapedAt": "2026-04-06T09:19:26.762Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "use the first page of the answer booklet for an extended response to develop a plan to assist in the logical sequencing of information",
+    "engage with what the question is asking rather than presenting a pre-prepared response",
+    "relate to the question throughout the response rather than just at the beginning",
+    "sustain their judgements, where appropriate, throughout the response with a clear connection to the question",
+    "communicate ideas and information using geographical terms and concepts appropriately",
+    "refer to case studies, illustrative examples, and the Stimulus Booklet where appropriate",
+    "present a sustained, logical, and cohesive response that addresses the question",
+    "review their response to ensure that it addresses question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "calculate the local relief on the cross-section which requires taking the highest point from the lowest point along the top of the ice sheet (3.9kms - 0.9km = 3kms) (a)",
+            "identify the different scales for the vertical (1/100 000) and horizontal scale (1/40 000 000) (b)",
+            "clearly show all relevant working",
+            "correctly use the vertical exaggeration formula (b)."
+          ],
+          "areasToImprove": [
+            "understanding that the concept of relief requires taking the highest point from the lowest point – some students looked at the difference in elevation between point A and point B",
+            "expressing the vertical exaggeration correctly (400 times) (b)",
+            "writing the different scales as a fraction, 1/100 000 and 1/40 000 000 (b)",
+            "complying with the instruction ‘Show all relevant working in questions involving calculations’, as marks are awarded for working."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "outline two benefits of using Geographic Information Systems (GIS) to study the possible effects of the proposed housing development with reference to Source E and/or G. For example, the benefit of seeing the size, slope and aspect of the site, so that the housing development can be better planned as seen in Source E (a)",
+            "use explicit and relevant argument to justify two management strategies that could minimise damage from the housing development process to the surrounding area, for example, one management strategy is using silt traps. This will reduce damage from sediment runoff in the Onkaparinga River (Source G) (b)",
+            "clearly describe how the completed housing development may affect economic enterprises in the surrounding area. For example, food and other retail outlets at the nearby shopping centre may see higher trade, however, they may also see congestion in the car park, leading to the shopping centre needing to invest in more parking (c)",
+            "clearly describe how the completed housing development may affect Seaford area’s culture of place. For example, the housing development may affect architecture, streetscape, vitality, and lifestyles of the Seaford area (d)."
+          ],
+          "areasToImprove": [
+            "directly addressing the specific question and supporting statements within responses with relevant theory and examples",
+            "interpreting and referring to the stimulus material and applying it to specific questions",
+            "specifically applying terms relating to ‘culture of place’ and avoiding opinion and general statements that are based on stereotypes (d)."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "clearly describe two traditional management strategies, for example, mosaic burning, and a totemic system used by Indigenous peoples to manage ecosystems, either in an historical or contemporary context (a)",
+            "make a clear link between how different climates, in particular temperature and rainfall, influence the range of ecosystems. For example, rainforests located in tropical areas with a tropical climate with high temperatures and high precipitation (b)."
+          ],
+          "areasToImprove": [
+            "ensuring that the type of management strategy identified has a specific purpose mosaic burning to promote regrowth of certain species of plants (a)",
+            "understanding the link between climate (temperature and rainfall) and type of ecosystem, for example, rainforest found in the tropics (b)",
+            "understanding that ecosystem diversity (the range of different ecosystems) is different to biodiversity within an ecosystem (b)",
+            "ensuring that when referring to examples that the ecosystem is clearly identified (b)",
+            "using specific information such as types of plants, amount of rainfall, temperature, and amount of biomass, rather than general statements such as hot/cold or wet/dry (b)."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "name continents/regions with specific world cities, for example, North America – New York, Los Angles; Europe – London, Paris; Asia – Tokyo, Australia – Sydney (a)",
+            "identify that most world cities are in the northern hemisphere, in the developed world and in coastal locations where there is access to trade (a)",
+            "structure their response comparing the character of world cities and mega cities of the developing world consistently through their response (b)",
+            "compare the cities on themes such as economics, transport and environment and reference examples including housing, employment opportunities, sectors of employment, entertainment, and cultural events (b)",
+            "include a variety of case studies and statistics to support their response, examples include London, New York, Sydney, Dhaka, Mumbai (b)",
+            "focus on the character of world cities and mega cities and not repeat their response regarding location (b)."
+          ],
+          "areasToImprove": [
+            "understanding of the concept 'spatial distribution' (a)",
+            "knowing the names of countries and cities and not confusing them. Often a country name was used in place of a city, for example, India was used instead of Mumbai or USA was used instead of New York (a, b)",
+            "integrating specific case study data/examples from their study of urban places to enhance their response(b)",
+            "referring to the comparison required throughout the response rather than just individually describing both world and mega cities (b)",
+            "focusing on comparing the character of World Cities and Mega Cities of the developing world and not their location (b)."
+          ]
+        },
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "clearly locate one economic enterprise, for example, a specific winery located in the Hunter Valley region, and clearly identify an external linkage, for example, a bottling company (a)",
+            "explain how a locational factor affects one external linkage of the economic enterprise, for example, the winery’s proximity to the bottling company helps to reduce transport costs for the winery (a)",
+            "demonstrate understanding of what ecological factors are, for example, resource use, climate change, sustainability (b)",
+            "explain how ecological factors are influencing both the nature and spatial patterns of an economic activity. For example, changes to grape production and the changing areas that can engage in viticulture (b)."
+          ],
+          "areasToImprove": [
+            "understanding of the difference between an economic enterprise (one specific entity, for example, Taronga Zoo) and an economic activity (a whole industry, for example, tourism)",
+            "understanding of an external link for the economic enterprise and how a locational factor with that external linkage affects the enterprise (a)",
+            "understanding ecological dimensions, and how those factors affect both the nature and spatial distribution of an economic activity (b)."
+          ]
+        },
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "refer to at least two ecosystems as illustrative examples. For example, coastal dunes, freshwater wetlands, inter-tidal wetlands, coral reefs, arid areas, alpine areas, rainforests, temperate forests to show the effects of both positive and negative effects of human activities",
+            "identify specific ways that humans can affect ecosystems in both positive and negative ways and describe the nature of these activities",
+            "describe the ways in which the positive and negative activities impacted the ecosystems, for example, impact on ecosystem functioning, loss of biodiversity",
+            "draw out an implication on functioning, for example, energy flows and nutrient cycling based of the effect on the ecosystem from both the positive and negative human activity."
+          ],
+          "areasToImprove": [
+            "responding to all aspects of the question, for example, analysing both positive and negative effects of human activities",
+            "understanding the key word ‘analyse’ and how this involves drawing out the implications of how both positive and negative human activities affecting the functioning of ecosystems",
+            "demonstrating knowledge and understanding of illustrative examples",
+            "using correct terms to strengthen illustrative examples and show a comprehensive understanding of content."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section III",
+      "questions": [
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "identify a large city in the developed world and provide comprehensive knowledge and understanding of urban dynamics operating within this city",
+            "demonstrate deep knowledge and understanding of the influences of urban dynamics on shaping the development of a large city, with specific reference to both suburbanisation and urban consolidation",
+            "discuss the urban dynamics that influence and shape the development of a large city, by providing positive and/or negative implications of these dynamics. For example, because of increasing population, suburbanisation occurring on the periphery of Sydney has had an impact on the natural environment as greenfield sites are released to allow the construction of social infrastructure (housing, transport, education and health services). On the other hand, urban consolidation is occurring in areas closer to the CBD, using pre-existing social infrastructure with less impact on the natural environment in comparison to suburbanisation",
+            "provide a range of current examples where urban dynamics are operating. Case studies of Sydney, the suburbs of Rhodes, Leppington, Pyrmont, Green Square, Rouse Hill, Marsden Park and Chatswood were frequently used to demonstrate this understanding."
+          ],
+          "areasToImprove": [
+            "being able to demonstrate an understanding of urban dynamics and associated processes that operate in a large city, for example, urban consolidation increases population density which has led to increased residential development in Green Square in Sydney",
+            "identifying the key word ‘discuss’, which mean to identify issues and provide points for and/or against, rather than provide a description of urban dynamics",
+            "correctly applying urban dynamics to the relevant suburb, for example, suburbanisation does not occur in Barangaroo",
+            "showing how the effects of urban dynamics relate back to the city rather than a suburb."
+          ]
+        },
+        {
+          "questionNumber": "28",
+          "betterResponses": [
+            "correctly identify (at least TWO) global changes on an economic enterprise, for example, change in competition, consumer demand fluctuations, and COVID-19",
+            "successfully evaluate the effects of global changes on the enterprise, for example, COVID-19 resulted in less tourists, which led to closure and/or downsizing of operations",
+            "use supporting statistics and specific examples to evaluate the impacts of the global changes, for example, economic/financial factors: revenue profit, sales figures, employee numbers and growth",
+            "provide a comprehensive evaluation on multiple fronts, for example, positive and negative effects such as tariffs imposed by China meant the enterprise had to find new markets."
+          ],
+          "areasToImprove": [
+            "understanding the difference between an economic enterprise and an economic activity. An economic enterprise is a business on a local scale, for example, a study of a local hotel, whereas economic activity is undertaken on a global scale, for example, tourism",
+            "having an understanding of the contexts of global changes and the impact on the economic enterprise",
+            "providing an understanding of the effect of changes on the enterprise rather than on the environment or activity."
+          ]
+        }
+      ]
+    }
+  ]
+}

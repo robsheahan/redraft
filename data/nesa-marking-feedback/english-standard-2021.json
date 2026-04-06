@@ -1,0 +1,123 @@
+{
+  "subject": "English Standard",
+  "slug": "english-standard",
+  "year": 2021,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/english-standard/2021",
+  "scrapedAt": "2026-04-06T09:18:16.514Z",
+  "generalFeedback": [],
+  "sections": [
+    {
+      "name": "Paper 1 – Section I: Texts and human experiences",
+      "questions": [
+        {
+          "questionNumber": "1",
+          "betterResponses": [
+            "clearly identify the specific aspects of Karlie Noon’s experience that contributed to her unique story",
+            "identify and explore the link between traditional Aboriginal cultural knowledge and understanding and modern scientific and academic knowledge",
+            "analyse the curiosity and enthusiasm in Karlie Noon’s unique journey."
+          ],
+          "areasToImprove": [
+            "providing a detailed exploration of selected features of the text",
+            "addressing and remaining focused on all parts of the question",
+            "avoiding a general survey style response",
+            "composing a response that goes beyond a description of the text."
+          ]
+        },
+        {
+          "questionNumber": "2",
+          "betterResponses": [
+            "provide an insightful thesis that is elaborated and justified through an effectively structured response",
+            "specifically identify an aspect or a relational concept within the childhood memory explored",
+            "recognise and integrate the understanding that memory continues to influence and impact the present and future",
+            "identify and explore the tonal changes through the extract."
+          ],
+          "areasToImprove": [
+            "using well-chosen textual evidence to support ideas",
+            "answering all parts of the question",
+            "avoiding recounting the text",
+            "effectively explaining or analysing textual evidence."
+          ]
+        },
+        {
+          "questionNumber": "3",
+          "betterResponses": [
+            "clearly explain how the experience of reading books was also a sensory experience that provided an escape into literary worlds, and the power of literature generally",
+            "support the identification of the experience with textual references rather than description of the text."
+          ],
+          "areasToImprove": [
+            "avoiding generic terms such as ‘this reveals Gray’s human experience’",
+            "developing more effective explanations that go beyond general statements such as ‘this shows Gray likes books’ or, ‘he likes reading’",
+            "avoiding listing techniques without linking them to the question."
+          ]
+        },
+        {
+          "questionNumber": "4",
+          "betterResponses": [
+            "consider the human experience, moving beyond simple recount to the larger conceptual meanings",
+            "suitably integrate ideas about human experiences with detailed explanation of how meaning was shaped through language",
+            "provide a balance between the human experience they considered and how ideas were represented",
+            "use aptly chosen evidence to support their response."
+          ],
+          "areasToImprove": [
+            "responding to the question",
+            "clearly defining the human experience rather than writing in general terms",
+            "avoiding recounting the examples from the text such as “he holds a rock in his hand” and instead consider how imagery brings us to a larger understanding of the experience of reflection, awe, contemplation, etc.",
+            "ensuring that explanations align to any textual references."
+          ]
+        },
+        {
+          "questionNumber": "5",
+          "betterResponses": [
+            "insightfully explore the relationship between the characters, going beyond that they were ‘close’, and between grandparent and grandson",
+            "provide textual evidence that is accurate and strongly aligned to the relationship being explored",
+            "consider the multifaceted nature of the relationship",
+            "recognise the cultural aspects of the relationship",
+            "identify and explain the representation of ideas with clarity and understanding."
+          ],
+          "areasToImprove": [
+            "avoiding listing techniques without explaining how they address the relationship being explored",
+            "avoiding describing or recounting events in the extract."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Paper 2 – Section III: The craft of writing (Module C)",
+      "questions": [
+        {
+          "questionNumber": "3(a)",
+          "betterResponses": [
+            "use one idea from the stimulus in an integrated, sustained and interesting way",
+            "employ an authentic personal voice/ character voice",
+            "write with a strong sense of purpose",
+            "shape the features of their chosen form (imaginative, discursive or persuasive) in an effective way",
+            "engage the audience through well-crafted language devices and stylistic features."
+          ],
+          "areasToImprove": [
+            "including detail that is accurate, to bring credibility",
+            "using appropriate content and subject matter for an examination context",
+            "sustaining control and accuracy of spelling, punctuation and grammar."
+          ]
+        },
+        {
+          "questionNumber": "3(b)",
+          "betterResponses": [
+            "articulate their purpose in 3a, including a reference to audience",
+            "clearly explain their language and stylistic choices with detail and relevance as inspired and/or modelled by a Prescribed Text",
+            "use quotations from their own writing in 3a and references to a Prescribed Text to justify their creative choices",
+            "reflect thoughtfully on their own crafting in terms of concept, structure, style and language devices, audience and purpose",
+            "make a strong connection to their study of Craft of Writing",
+            "demonstrate confident and sustained control of language."
+          ],
+          "areasToImprove": [
+            "using a clear introductory statement rather than long introductions and conclusions that detract from the time spent on their explanations",
+            "articulating their creative choices in 3a",
+            "avoiding recounting the plot of a Prescribed Text",
+            "using quotes and the techniques used from their own writing",
+            "reflecting positively about their own writing, rather than negatively critiquing."
+          ]
+        }
+      ]
+    }
+  ]
+}

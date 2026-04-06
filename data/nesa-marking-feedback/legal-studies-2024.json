@@ -1,0 +1,258 @@
+{
+  "subject": "Legal Studies",
+  "slug": "legal-studies",
+  "year": 2024,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/legal-studies/2024",
+  "scrapedAt": "2026-04-06T09:18:55.918Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and the question requirements",
+    "use the first page of the answer booklet for an extended response to develop a plan to assist in the logical sequencing of information",
+    "relate the response to the question rather than just at the beginning",
+    "sustain their judgements throughout the response with a clear connection to the question",
+    "communicate ideas and information using legal terms and concepts appropriately",
+    "refer to relevant examples such as legislation, cases, media, international instruments and documents, where applicable",
+    "present a comprehensive, logical, and sustained response",
+    "review their response to ensure that it addresses the question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "demonstrate knowledge of and clearly define self-determination."
+          ],
+          "areasToImprove": [
+            "showing understanding of the essential qualities of self-determination such as the collective right to belong to a group."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "demonstrate a clear understanding of the framework of the Australian Constitution through the discussion of one or more of the following: judicial interpretation, referendums, legislative reform, separation of powers, division of powers, express and implied rights",
+            "make clear arguments and provide well supported examples such as the 2023 Indigenous Voice referendum, 1967 referendum and, common law cases such as Lange v ABC [1997] HCA, to draw out the relationship between the function of the Constitution and its adaptability in reflecting changing social values and ethical standards",
+            "write in a concise manner and apply legal terminology and concepts."
+          ],
+          "areasToImprove": [
+            "having a clear understanding of the Constitution and its role",
+            "applying legal terminology and using examples to help demonstrate the extent to which the Constitution reflects social change and ethical standards, such as the 1988 Rights and Freedoms referendum."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "recognise that state sovereignty gives nation states a range of powers; for example, the power to ratify or ignore international documents, develop legislation, and ignore pressure from other states, the United Nations and NGOs",
+            "clearly specify the relationship between state sovereignty and a human rights issue",
+            "incorporate relevant legal terminology, such as compliance, enforceability and justice."
+          ],
+          "areasToImprove": [
+            "moving beyond general statements about state sovereignty",
+            "noting the difference between ‘states’ in Australian and international contexts",
+            "clearly identifying a relevant contemporary human rights issue."
+          ]
+        },
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "identify and apply knowledge and understanding specific to both the criminal trial and sentencing process",
+            "make a clear judgement of the extent to which both processes provide justice specifically for adult offenders",
+            "link and support judgements with a variety of relevant examples",
+            "demonstrate depth of knowledge and understanding about how well justice is achieved for adult offenders throughout their response."
+          ],
+          "areasToImprove": [
+            "carefully using content related to the specified syllabus areas",
+            "making explicit and qualified judgments supported by content and explored using examples",
+            "using legal terminology and providing a sustained and logical response."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section III",
+      "questions": [
+        {
+          "questionNumber": "25(a)",
+          "betterResponses": [
+            "refer to federal government organisations such as the Australian Competition and Consumer (ACCC), Australian Securities and Investments Commission (ASIC) and state government organisations such as NSW Fair Trading",
+            "clearly articulate the role of both federal and state government responses and their relationship to the rights of consumers",
+            "incorporate relevant examples of the legal measures undertaken by government organisations such as Australian Competition and Consumer Commission (ACCC) and Australian Securities and Investments Commission (ASIC) initiated court actions."
+          ],
+          "areasToImprove": [
+            "making a clear and accurate distinction between federal and state government organisations",
+            "demonstrating knowledge of consumer rights",
+            "supporting arguments with a range of relevant examples."
+          ]
+        },
+        {
+          "questionNumber": "25(b)",
+          "betterResponses": [],
+          "areasToImprove": [
+            "clearly stating the issues for consumers concerning credit and technology and the way in which legal responses address these",
+            "making a judgement of the effectiveness of the legal responses in addressing the issues",
+            "supporting arguments with a range of relevant examples."
+          ]
+        },
+        {
+          "questionNumber": "26(a)",
+          "betterResponses": [
+            "engage with aspects of Australia's federal structure and the implications of this structure for global environmental protection such as the separation of powers, the division of powers, external affairs power, and the role of courts",
+            "identify and integrate a range of examples to demonstrate how Australia's federal structure impacts global environmental protection",
+            "use relevant examples to engage with an analysis of the federal structure and link this with a deep understanding of environmental protection."
+          ],
+          "areasToImprove": [
+            "explaining the link between the federal structure and protecting the global environment in areas such as global warming, ozone depletion and biodiversity",
+            "demonstrating a broad knowledge of Australia's federal structure rather than a single element such as the external affairs power",
+            "integrating relevant evidence to suit the needs of the question."
+          ]
+        },
+        {
+          "questionNumber": "26(b)",
+          "betterResponses": [
+            "demonstrate a clear relationship between the demand for resources and global environmental protection and how they act as a source of conflict",
+            "express a deep knowledge of environmental issues that are a consequence of the demand for resources",
+            "use a wide range of legal responses supported by evidence that allow for the demonstration of judgement."
+          ],
+          "areasToImprove": [
+            "identifying and explaining the legal responses to the conflict and using evidence to support their arguments such as the Kyoto Accord, Paris Agreement, Climate Change Act 2022 (Cth) and the High Court of Australia",
+            "avoiding vague descriptions about legal responses and environmental issues",
+            "building an informed argument that is supported by evidence that does more than feature at the beginning and end of each paragraph."
+          ]
+        },
+        {
+          "questionNumber": "27(a)",
+          "betterResponses": [
+            "clearly differentiate between jurisdictions of state and federal governments in family law matters and explain the responsibility to uphold rights",
+            "highlight the governments’ protection of family members' rights through legislation such as marriage laws, child protection mechanisms and the Family Law Act 1975 (Cth)",
+            "provide an informed analysis of government responses, by drawing out implications on the rights of family members such as enforceability, accessibility and just outcomes",
+            "discuss the collaboration between federal and state governments to advocate for family rights, such as in the development of national frameworks on family violence."
+          ],
+          "areasToImprove": [
+            "providing clarity about the responsibilities of state and federal governments, such as distinguishing the specific roles played by each level of government in addressing family rights",
+            "incorporating examples to illustrate how government responses have evolved in protecting family members' rights",
+            "drawing out a range of implications, such as challenges and gaps which provide barriers to rights being realised."
+          ]
+        },
+        {
+          "questionNumber": "27(b)",
+          "betterResponses": [
+            "demonstrate knowledge of the existing legal frameworks which established clear guidelines on the rights and responsibilities of parties involved, such as the Surrogacy Act 2010 (NSW) and the Assisted Reproductive Technology Act 2007 (NSW)",
+            "discuss the extent to which legal responses attempt to balance the rights of intended parents, surrogates, and children born through assisted reproductive technologies, with attention to ethical issues such as exploitation, consent, and the rights of children to know their biological origins",
+            "provide a judgement on a range of legal responses, including courts in adjudicating on surrogacy and birth technology disputes and the role of Australian Federal Police and the Department of Home Affairs in enforcing bans on commercial surrogacy."
+          ],
+          "areasToImprove": [
+            "exploring specific legal provisions and common law cases that address surrogacy and birth technologies, such as the Family Law Act 1975 (Cth) and cases dealing with parentage, such as Masson v Parsons [2019] HCA, to support a judgement of effectiveness of legal responses",
+            "comparing domestic and international responses to surrogacy and the challenges in upholding rights",
+            "integrating valid examples to support an informed judgement of ethical, social and cultural concerns about the commodification of reproduction."
+          ]
+        },
+        {
+          "questionNumber": "28(a)",
+          "betterResponses": [
+            "demonstrate thorough understanding of the role of the Australian Constitution in dividing legislative power between federal and state governments and the ability of governments to create and enforce laws relevant to Indigenous rights",
+            "explore how the federal structure leads to varying degrees of protection and recognition of Indigenous rights across states, highlighting the complexity of achieving consistent outcomes nationwide",
+            "recognise the implications of legal responses to Indigenous rights in Australia and how legislation such as the Racial Discrimination Act 1975 (Cth) and Native Title Act 1993 (Cth) , alongside precedents set in Mabo v Queensland (No 2) [1992] HCA and Wik Peoples v Queensland [1996] HCA have advanced or constrained Indigenous rights."
+          ],
+          "areasToImprove": [
+            "demonstrating a deep understanding of the evolving landscape of Indigenous rights in Australia expanding beyond Mabo and Wik",
+            "moving beyond general statements on government responses by detailing specific federal and state legislation, policy reforms, and judicial decisions and how they have impacted Indigenous rights",
+            "ensuring that responses go beyond a narrative of events impacting Indigenous Australians."
+          ]
+        },
+        {
+          "questionNumber": "28(b)",
+          "betterResponses": [
+            "demonstrate an understanding of the constraints of state sovereignty that impede the effective recognition and protection of Indigenous intellectual property and cultural rights",
+            "assess how different legal systems and cultural contexts influence the recognition and protection of Indigenous rights, highlighting both successes and ongoing struggles in each jurisdiction",
+            "use comparative language to demonstrate an understanding of the varied progress made by Indigenous Peoples in their struggles to achieve rights to intellectual property and cultural rights."
+          ],
+          "areasToImprove": [
+            "demonstrating an understanding of a range of international case studies and examples that draw from experiences beyond those of Aboriginal and Torres Strait Islander peoples",
+            "formulating judgments on the effectiveness of specific legal responses, moving beyond a simple recounting of events",
+            "supporting judgments by incorporating examples from various Indigenous communities worldwide to ensure a broad, comparative perspective."
+          ]
+        },
+        {
+          "questionNumber": "29(a)",
+          "betterResponses": [
+            "demonstrate an understanding of how federal and state governments respond to the rights of individuals accessing shelter by exploring a range of issues such as discrimination, tenancy, homelessness and strata law",
+            "analyse the role of domestic governments in fulfilling international obligations under the UDHR and ICESCR to uphold the right to an adequate standard of living",
+            "support analysis with government budgetary responses such as the National Housing and Homelessness Agreement, and legislation such as the Residential Tenancies Act 2010 (NSW) ."
+          ],
+          "areasToImprove": [
+            "moving beyond outlining the issues facing those securing shelter, and focusing on the responses by government",
+            "including content that engages with rights and government responses",
+            "engaging with the concept of the right to shelter and the rights of tenants or those seeking shelter."
+          ]
+        },
+        {
+          "questionNumber": "29(b)",
+          "betterResponses": [
+            "focus on relevant aspects of social housing and housing affordability and effectiveness of responses to both",
+            "clearly identify legal responses to the issues",
+            "provide clear judgments about legislation and government policy supported by a range of evidence."
+          ],
+          "areasToImprove": [
+            "addressing relevant content areas with a focus on legal responses rather than non-legal responses",
+            "avoiding issues-based descriptions that provide a narrative on the state of housing affordability without moving into the role of government or legal responses",
+            "using a variety of evidence to support a reasoned judgement of legal responses in addressing issues."
+          ]
+        },
+        {
+          "questionNumber": "30(a)",
+          "betterResponses": [
+            "explicitly distinguish between the roles of the state and federal government with correct reference to state and federal institutions, legislation and cases",
+            "identify and explore the relationships between state and federal governments and how they each protect the rights of employees",
+            "develop an informed analysis through the integration of relevant evidence that is reflective of wider trends in the work of the state and federal governments to protect the rights of employees."
+          ],
+          "areasToImprove": [
+            "differentiating between the roles, responsibilities and functions of the state and federal government in relation to the protection of the rights of employees",
+            "unpacking the relationship between the role of state and federal governments in responding to the rights of employees",
+            "avoiding referencing aspects of workplace law that are not relevant to the question, such as the roles of the media and trade unions."
+          ]
+        },
+        {
+          "questionNumber": "30(b)",
+          "betterResponses": [
+            "confidently engage with the question and develop a clear and logical argument that led to an informed judgement",
+            "sustain a detailed, well-evidenced examination of the contemporary issues of leave and termination",
+            "integrate a range of evidence to make judgements that are consistent with wider trends in the evolution of legal responses to the issues of leave and termination."
+          ],
+          "areasToImprove": [
+            "providing a sufficiently detailed treatment of both leave and termination",
+            "using relevant cases to support judgements about the extent to which legal responses effectively address the issues of leave and termination of employment",
+            "avoiding reference to contemporary issues that are not relevant to the question."
+          ]
+        },
+        {
+          "questionNumber": "31(a)",
+          "betterResponses": [
+            "demonstrate an understanding of the role of Australia's federal government in promoting and maintaining world order through a range of examples such as the contributions to the United Nations, implementation of international instruments and decisions made by international courts",
+            "engage with the question by developing an informed analysis that draws out the implications and relationships of Australia’s government and their role in world order mechanisms and issues",
+            "support their analysis with a variety of evidence such as The Nuclear Threat, wars in Eastern Europe, conflicts in the Middle East and the relationship Australia has with world powers and IGOs."
+          ],
+          "areasToImprove": [
+            "developing knowledge of Australia’s contribution to international relationships, both in our region and on a global scale",
+            "providing evidence of legal responses and issues where Australia plays a role in maintaining peace and security",
+            "avoiding references to non-world order issues such as environmental law or human rights."
+          ]
+        },
+        {
+          "questionNumber": "31(b)",
+          "betterResponses": [
+            "make informed judgements supported by evidence of the extent legal responses establish the Responsibility to Protect (R2P) and the rules regarding the conduct of hostilities",
+            "demonstrate an understanding of the structure and elements of each issue such as the three pillars of R2P and options for intervention; the Geneva Conventions, the Hague Conventions and the role of relevant courts",
+            "make judgments regarding the extent to where R2P and the rules regarding the conduct of hostilities should be used in world order issues, supported by a range of evidence",
+            "integrate a range of examples such as Libya, Syria, Ukraine, Palestine, East Timor, Afghanistan and Yemen."
+          ],
+          "areasToImprove": [
+            "developing specific knowledge of the two issues embedded in the question instead of broad legal responses",
+            "avoiding a narration of cases involving overseas conflict which move away from the question and a judgement",
+            "ensuring both issues are addressed in the response."
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "subject": "Business Studies",
+  "slug": "business-studies",
+  "year": 2023,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/business-studies/2023",
+  "scrapedAt": "2026-04-06T09:18:46.913Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "use the first page of the answer booklet for an extended response to develop a plan to assist in the logical sequencing of information",
+    "engage with what the question is asking rather than presenting a pre-prepared response",
+    "relate to the question throughout the response rather than just at the beginning",
+    "sustain their judgements, where appropriate, throughout the response with a clear connection to the question",
+    "use relevant business terms and concepts, where appropriate, to support their response",
+    "apply relevant business case study/studies and contemporary business issues where appropriate",
+    "present a sustained, logical and cohesive response that addresses the question where appropriate",
+    "review their response to ensure that it addresses the question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "address the question by applying operations theory to the stimulus business situations",
+            "provide the positive effects of economies of scale for both the business and consumers (b)",
+            "provide reasons why both staff and management might be resistant to change with reference to the stimulus (c)."
+          ],
+          "areasToImprove": [
+            "addressing the question directly and supporting the response with relevant theory",
+            "ensuring responses referenced the stimulus business situations",
+            "providing how and why staff and management might be resistant to the change referenced in the stimulus (c)."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "address the question by applying human resource theory to the stimulus business situation (b)",
+            "use the information in the stimulus to demonstrate understanding of human resource issues (b)",
+            "provide clear links between relevant social influences and the changes in participation rates provided in the stimulus (c)."
+          ],
+          "areasToImprove": [
+            "providing detail in responses rather than general statements",
+            "showing understanding of issues in human resource management (b)",
+            "ensuring that the relationship between relevant social influences and the data provided is evident (c)."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "provide the features of the post maturity phase of the product life cycle (a)",
+            "show how a niche market approach would specifically improve sales for this business (b)",
+            "provide detailed reasons why a specific global marketing strategy would be useful for the expansion referenced in the stimulus provided (c)."
+          ],
+          "areasToImprove": [
+            "providing specific theory from the marketing topic rather than making general statements",
+            "ensuring responses specifically reference the stimulus business situation",
+            "understanding the difference between the product life cycle and the economic cycle",
+            "directly addressing the specific question and supporting statements with references to the stimulus provided."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "demonstrate understanding of the use of specific financial statements (a)",
+            "demonstrate understanding of the conflicts between financial objectives (b)",
+            "demonstrate understanding of the impacts of specific limitations of financial reports and relate these to stakeholders (c)."
+          ],
+          "areasToImprove": [
+            "understanding specific finance theory rather than making general statements",
+            "developing detailed understanding of the features and purpose of each financial statement",
+            "addressing the key words of the question when explaining the impacts of finance."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section III",
+      "questions": [
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "provide an outline of the challenges of global costs, skills and supply and effectively relate these challenges to both recruiting and retaining staff",
+            "make accurate and detailed comparisons between the use of debt and equity",
+            "identify a specific and appropriate source of finance and provide comprehensive reasons in favour of using this source of finance to fund the business’s expansion",
+            "structure the response using appropriate business report features and apply relevant terminology and concepts."
+          ],
+          "areasToImprove": [
+            "improving the structure of the business report when outlining the challenges of global costs, skills and supply and relating these to retaining staff",
+            "addressing the term ‘compare’, rather than only providing a description or outline or debt and equity finance",
+            "identifying a specific source of finance rather than referring to debt and equity generally",
+            "applying the hypothetical business situation more effectively to the challenges of global costs, skills and supply."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section IV",
+      "questions": [
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "engage with the question by providing a clear and detailed judgement",
+            "demonstrate understanding of how marketing influences can impact business success both negatively and positively",
+            "identify syllabus specific influences and apply these to business case studies."
+          ],
+          "areasToImprove": [
+            "demonstrating better knowledge and understanding of the marketing influences",
+            "understanding how to make a judgement regarding business success",
+            "applying relevant and detailed case studies information consistently throughout the response."
+          ]
+        },
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "provide a clear and detailed judgement by showing how influences on operations impact business success",
+            "apply case studies to inform their judgement on operational influences that affect business success",
+            "provide logical, structured and comprehensive arguments using business terminology and concepts."
+          ],
+          "areasToImprove": [
+            "using relevant business terminology that effectively conveys a clear and informed judgement relating to influences on operations and business success",
+            "structuring a response that addresses key components of the question and in particular, business success.",
+            "applying relevant and detailed case study(s) information consistently throughout the response."
+          ]
+        }
+      ]
+    }
+  ]
+}

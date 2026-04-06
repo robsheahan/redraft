@@ -1,0 +1,293 @@
+{
+  "subject": "Chemistry",
+  "slug": "chemistry",
+  "year": 2024,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/chemistry/2024",
+  "scrapedAt": "2026-04-06T09:18:19.234Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "plan the response to assist in the logical sequencing of information",
+    "integrate relevant scientific terms into their responses",
+    "engage with any stimulus material provided and refer to it in their response",
+    "show all working in calculations and include correct units and significant figures",
+    "present a logical and succinct response that addresses the question",
+    "review their response to ensure that it addresses the question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "correctly name the products of a metal + acid reaction",
+            "identify the states of the products, for example, hydrogen gas."
+          ],
+          "areasToImprove": [
+            "identifying salts produced from specific metals and acids",
+            "converting acids to appropriate anions."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "accurately draw a structural diagram of a section of an addition polymer",
+            "identify that the double bond in a monomer is involved in addition polymerisation",
+            "show that both ends of a polymer section continue."
+          ],
+          "areasToImprove": [
+            "clearly representing organic structures as correct formulae",
+            "using conventions to represent sections of polymers",
+            "recognising that in a correct structure, carbon atoms will have 4 covalent bonds",
+            "drawing every bond in structural formulae."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "clearly link the observed blue colour to the equilibrium shifting right, or favouring the forward reaction, which then increased the concentration of cobalt chloride",
+            "make connections between the increased concentration of cobalt chloride and increased K eq due to an increase in the numerator of the equilibrium expression."
+          ],
+          "areasToImprove": [
+            "tailoring responses specific to the question by writing succinctly",
+            "using the terms reactant and product if they are not confident with using left and right."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "show a different symbol for the key, that clearly shows each set of data",
+            "use a scale (increments of 10°C starting from –10°C to 120°C) that uses up the majority of the graph paper provided",
+            "recognise that both alcohols and amines exhibit hydrogen bonding",
+            "explain using difference in electronegativity of both oxygen and nitrogen to demonstrate why alcohols have a higher boiling point than amines",
+            "explain either using increasing molecular mass or electron density why dispersion forces become stronger. For example, increasing boiling point as carbon chain increases within a group, or that with increasing carbon chain, dispersion forces become more influential in dictating boiling point than hydrogen bonding (boiling points are converging between the groups)."
+          ],
+          "areasToImprove": [
+            "recognising that hydrogen bonding is a force of attraction exhibited by molecules that have N, O or F",
+            "having a clear understanding of the role of electronegativity in dictating the strength of a hydrogen bond",
+            "graphing skills – using an even scale that uses most of the graph",
+            "graphing skills – ensuring that different sets of data are shown using appropriate symbols."
+          ]
+        },
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "accurately read off the graph by carefully interpolating and checking the scale",
+            "clearly express each step in their calculations, showing all working out within each step",
+            "use the concentration from the graph to correctly calculate the number of moles and apply the dilution factor."
+          ],
+          "areasToImprove": [
+            "being able to correctly convert mg to g and apply the dilution factor appropriately",
+            "using a ruler to interpolate a graph and reading values from a graph",
+            "knowing formulas for polyatomic ions to correctly calculate molar masses",
+            "using words and/or units to indicate which calculation is being demonstrated."
+          ]
+        },
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "draw a correct curve using the supplied information",
+            "clearly link the concentration of I 2",
+            "use rates of reaction to explain the graph",
+            "specify the direction of the rate of reaction change."
+          ],
+          "areasToImprove": [
+            "using a ruler to draw graphs",
+            "starting a graph from zero only if data shows it",
+            "understanding collision theory and its impact on rate of reaction and the difference of this from Le Chatelier’s Principle."
+          ]
+        },
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "demonstrate good understanding of solubility rules and many students used K sp values to identify the insoluble species being formed in this procedure in steps 1 and 3",
+            "include correctly balanced chemical equations with correct states"
+          ],
+          "areasToImprove": [
+            "applying their understanding of qualitative ion testing to this procedure",
+            "analysing the steps provided in the question to state that if barium and lead were both present, they both precipitate in step 1",
+            "applying analytic skills to state that filtering in step 2 would remove the lead and barium ions as excess sodium sulfate was added",
+            "concisely stating there would be no lead ions left to precipitate in step 3",
+            "stating there would be false positive if both lead and barium were present due to step 2."
+          ]
+        },
+        {
+          "questionNumber": "28",
+          "betterResponses": [
+            "clearly state that as both these acids do not dissociate fully, they are weak acids",
+            "use the provided pH value to calculate the concentration of the H + ions using the formula: [H + ] = 10 -pH",
+            "explicitly state that, as the calculated concentration of H + ions was higher than the concentration that was being used for both acids, neither had fully dissociated to produce H + ions",
+            "compare the concentrations of iodic and sulfamic acid being used",
+            "state succinctly that as the sulfamic was a higher concentration then it was a weaker acid."
+          ],
+          "areasToImprove": [
+            "using the information provided. Noting that some responses wrote formulae of iodic and sulfamic acids which were not needed as they were told they were monoprotic",
+            "relating the concentration of H + ions calculated to the concentration of the acids being used in the question",
+            "showing that as the calculated concentration of H + ions was lower than the concentration in the question the acids have not dissociated fully."
+          ]
+        },
+        {
+          "questionNumber": "29",
+          "betterResponses": [
+            "clearly set out their calculation, showing all working",
+            "included a balanced equation to show the mole ratio and could correctly calculate the excess",
+            "use the relationship between pOH and pH to calculate the final pH."
+          ],
+          "areasToImprove": [
+            "writing balanced equations",
+            "showing all working",
+            "identifying the excess reactant",
+            "calculating the moles of excess ion using the 1:2 ratio."
+          ]
+        },
+        {
+          "questionNumber": "30",
+          "betterResponses": [
+            "identify that additional CO was added and identified the amount with a pronumeral",
+            "identified that adding more product will push the equilibrium towards the reactants and thereby increase the concentration of reactants",
+            "use an ICE (initial, change, equilibrium) table to calculate the changes in all concentrations",
+            "substitute into K eq to determine amount added."
+          ],
+          "areasToImprove": [
+            "identifying mole ratio of reactants and products to determine the relative change",
+            "recognising that K eq does not change as the temperature is stable",
+            "substituting correctly into the K eq equation."
+          ]
+        },
+        {
+          "questionNumber": "31",
+          "betterResponses": [
+            "analyse and process the information provided to determine the preferred process, using dimethyl carbonate (DMC)",
+            "write coherent and logical responses incorporating relevant information from the question with clear points of comparison between the DMC process and the phosgene process",
+            "incorporated clear justification for the DMC process with appropriate terminology."
+          ],
+          "areasToImprove": [
+            "writing in a logical and coherent manner",
+            "using the information given rather than general knowledge to answer the question."
+          ]
+        },
+        {
+          "questionNumber": "32",
+          "betterResponses": [
+            "set out their response clearly starting with the equation using the correct K sp expression",
+            "substitute into the K sp expression correctly and multiply out the brackets to get to 108 s 5",
+            "perform and show the mathematical steps to determine s, and from there, use the stoichiometric ratio to calculate the concentration of cadmium ions",
+            "give the answer to 3 significant figures."
+          ],
+          "areasToImprove": [
+            "being able to write chemical equations for more complex solubility problems, including the corresponding K sp expression",
+            "incorporating sufficient working out in the calculation",
+            "considering order of operations in multiplication",
+            "setting out the calculation in a coherent fashion."
+          ]
+        },
+        {
+          "questionNumber": "33",
+          "betterResponses": [
+            "provide correct names of molecular shapes in full for both molecules, in correct order, for example, trigonal planar, and not just planar and tetrahedral",
+            "use the 13 C NMR data from the data sheet and refer to the spectral features in the ketone and alcohol groups",
+            "provide a clear explanation or cause and effect on the change that occurs in the reaction and how this change is used to monitor the reaction."
+          ],
+          "areasToImprove": [
+            "knowing shapes of molecules when carbon compounds react",
+            "using specific names of shapes rather than generic descriptions such as linear/bent",
+            "distinguishing similar terms such as trigonal planar and trigonal pyramidal",
+            "providing clarity on the change in the reaction that occurs in reference to spectral features, that is, the specific signals changing from reactant to product and how this can be monitored."
+          ]
+        },
+        {
+          "questionNumber": "34",
+          "betterResponses": [
+            "use two correctly balanced appropriate equations",
+            "thoroughly explain the chemistry behind decrease in conductivity, with links to ions changing",
+            "thoroughly explain the lowest point of conductivity (equivalence point).",
+            "explain the slight rise in conductivity with reference to the equilibrium reaction occurring when excess ammonia is added and small change in [OH - ]."
+          ],
+          "areasToImprove": [
+            "providing correctly balanced equations that are appropriate to the question",
+            "providing more detail in reference to chemistry (ions) occurring as conductivity changes",
+            "justifying the rise in conductivity due to small changes in [OH - ] when excess ammonia is added, and not because of low conductivity of OH - ."
+          ]
+        },
+        {
+          "questionNumber": "35",
+          "betterResponses": [
+            "interpret all the given numerical data and text information to distinguish between the 3 acidic compounds",
+            "relate the information about the bromine reaction to the presence or absence of C=C and distinguish Y and Z using mass data",
+            "use titration calculations to distinguish between Y and Z, demonstrating the diprotic nature of Structure 3/Z",
+            "use organic structures to communicate their understanding of the hydration products of Y and Z."
+          ],
+          "areasToImprove": [
+            "structuring their response in a logical sequence",
+            "using all information and numerical data provided somewhere in their response",
+            "using calculations, chemical equations and structures to support their written response",
+            "clearly identifying the specific double bond they are referencing."
+          ]
+        },
+        {
+          "questionNumber": "36",
+          "betterResponses": [
+            "write the balanced equation for the reaction between sodium hydrogen carbonate and hydrochloric acid",
+            "calculate the number of moles of sodium hydrogen carbonate",
+            "recall and apply the formula ∆H = - q / n",
+            "determine the limiting reagent."
+          ],
+          "areasToImprove": [
+            "calculating density to work out the mass of hydrochloric acid",
+            "adding the mass of both solutions to calculate the q value",
+            "using all the information provided in the stimulus to construct their answer and avoid ignoring key components such as carbon dioxide lost from the solution",
+            "subtracting the mass of carbon dioxide from the solution when calculating q ."
+          ]
+        },
+        {
+          "questionNumber": "37",
+          "betterResponses": [
+            "identify that the relationship between K eq and ∆G as depicted in the graph",
+            "explain that as K eq gets larger in magnitude, according to the equation it means that the numerator (products) is higher compared to the denominator (reactants)",
+            "identify that a very large K value essentially means that the reactants are negligible and therefore the reaction can be considered to go to completion",
+            "identifying that ∆G <0 means a spontaneous reaction in the forward direction."
+          ],
+          "areasToImprove": [
+            "using the Gibbs free energy equation correctly by accounting for the signs of ∆H and T∆S",
+            "interpreting the variables of the graph. This graph was not referring to a reaction over time, and depicted the relationship between K eq and ∆G ."
+          ]
+        },
+        {
+          "questionNumber": "38",
+          "betterResponses": [
+            "use the given information and spectroscopic data to propose the correct molecular structures",
+            "provide explanations based on a detailed analysis of the spectroscopic data and understanding of the associated chemical reactions",
+            "draw correct structures of organic compounds including those with methyl/ethyl branch",
+            "analyse the mass spectra correctly to identify the molecular ion peak, the base peak and determine the identity of the halogen",
+            "relate the hydrogen environments and chemical shifts to the structure by explaining both integration and splitting patterns in the proton NMR.",
+            "analyse the 1 H NMR data completely and use the reference data to identify the chemical compound",
+            "explain all reactions logically and succinctly."
+          ],
+          "areasToImprove": [
+            "drawing structures of branched organic compounds that have the correct number of carbons and hydrogens",
+            "referring to the relevant data and information provided in the stimulus",
+            "proposing structures which are consistent with the provided molar mass data and incorporating relevant chemical and structural information",
+            "determining the structures as part of a sequence of chemical reactions",
+            "making clear interpretations of chemical shifts and splitting patterns with reference to a proposed structure and functional groups."
+          ]
+        },
+        {
+          "questionNumber": "39",
+          "betterResponses": [
+            "clearly calculate the equilibrium concentration of the bromoacetic acid in aqueous solution",
+            "calculate the total amount of aqueous species (molecular and ionised)",
+            "calculate, by subtraction, the amount of bromoacetic acid dissolved in organic solvent",
+            "substitute these quantities into the supplied K eq expression, hence determining the value of the K eq ."
+          ],
+          "areasToImprove": [
+            "clearly calculating equilibrium concentrations from supplied data",
+            "producing equilibrium expressions from a balanced equation",
+            "recognising and correctly using a K a value to determine an unknown concentration",
+            "identifying total [acid] in organic solvent = initial concentration – the sum of the [bromoacetic acid] and [bromoacetate ion]:"
+          ]
+        }
+      ]
+    }
+  ]
+}

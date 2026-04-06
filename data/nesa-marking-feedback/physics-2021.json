@@ -1,0 +1,299 @@
+{
+  "subject": "Physics",
+  "slug": "physics",
+  "year": 2021,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/physics/2021",
+  "scrapedAt": "2026-04-06T09:18:23.566Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "plan their response to assist in the logical sequencing of information",
+    "integrate relevant scientific terms into their responses",
+    "show clear cause and effect relationships related to key physical concepts in their explanations",
+    "engage with any stimulus material provided and refer to it in their response when required by the question",
+    "show full working in calculations including formulas and substitution into formulas",
+    "include correct units and directions for vector quantities for calculated values",
+    "review their response to ensure that it addresses the all the requirements of the question",
+    "be familiar with the constants and formulas provided on the Data and Formula Sheets",
+    "be familiar with the SI units of all relevant quantities and the relevant prefixes and their abbreviations",
+    "be able to plot graphs and understand the relationship between the graph and the relevant concept",
+    "be able to extract quantitative relationships from graphs",
+    "be familiar with key physical principles such as the conservation laws and laws of motion and be able to apply them in a range of contexts",
+    "be able to discuss how a range of models are applied in Physics and the evidence used to validate them."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21(a)",
+          "betterResponses": [
+            "select the relevant torque equation and show correct substitution and answer",
+            "recognise that the maximum torque occurs when the angle is 90⁰ as shown in the diagram."
+          ],
+          "areasToImprove": [
+            "examining the diagram carefully and selecting the most relevant torque formula to answer the question."
+          ]
+        },
+        {
+          "questionNumber": "21(b)",
+          "betterResponses": [
+            "clearly describe two changes occurring to the magnitude of torque as the coil rotated 180 o from the position shown",
+            "draw a clear graph showing how the magnitude of torque changes with angle."
+          ],
+          "areasToImprove": [
+            "recognising that a half rotation means the coil rotates through 180 degrees not 90⁰",
+            "recognising that maximum torque occurs when the normal is perpendicular to the magnetic field lines, at the position shown in the stimulus."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "identify that the angular velocity was the same for X and Y",
+            "identify the difference between angular AND instantaneous velocity",
+            "support their answers with equations/calculations and quantitative comparison using the radius information from the stimulus."
+          ],
+          "areasToImprove": [
+            "recognising the difference between angular and instantaneous velocity",
+            "recognising how the radius of uniform circular motion affects the instantaneous velocity."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "identify the electric, magnetic, and gravitational fields used by Thomson and Millikan in their experiments",
+            "clearly link the electron property determined by each scientist, for example, Thomson determined charge to mass ratio and Millikan determined charge value on the electron."
+          ],
+          "areasToImprove": [
+            "providing a clear description for each scientist separately and not as a ‘they’ response."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "recognise the need to calculate the change in flux",
+            "substitute the change in flux into Faraday’s Law equation."
+          ],
+          "areasToImprove": [
+            "ensuring that full working is shown",
+            "recognising when a change in flux has a negative value",
+            "including all negative signs in the equation and subsequent working."
+          ]
+        },
+        {
+          "questionNumber": "25(a)",
+          "betterResponses": [
+            "identify two types of energy changes correctly",
+            "describe the transformation from kinetic energy to potential energy of the satellite",
+            "identify that the satellite gained kinetic energy as it was initially stationary on the surface."
+          ],
+          "areasToImprove": [
+            "recognising the difference between the forces and energy involved in the satellite motion",
+            "understanding the difference between mechanical energy, total energy, and transfer of energy."
+          ]
+        },
+        {
+          "questionNumber": "25(b)",
+          "betterResponses": [
+            "identify relevant data and formula from the data sheet",
+            "apply Kepler's Third Law to calculate the answer",
+            "convert hours and minutes into seconds."
+          ],
+          "areasToImprove": [
+            "substituting data accurately in the correct units into the correct equation."
+          ]
+        },
+        {
+          "questionNumber": "26(a)",
+          "betterResponses": [
+            "create a scale that was a good fit for the gridlines provided so all the data points could be accurately plotted."
+          ],
+          "areasToImprove": [
+            "choosing a suitable scale rather than one that uses the tabulated data as the major scale markers",
+            "drawing a straight line that best fits the data points and not joining dot to dot."
+          ]
+        },
+        {
+          "questionNumber": "26(b)",
+          "betterResponses": [
+            "identify that using the gradient of the line was a better method by reducing the effects of random error and systematic error",
+            "show or describe how Planck’s constant could be determine from their selected method",
+            "correctly calculate the gradient from two points on the line",
+            "address directly how their chosen method incorporated more data thereby reducing the effects of random error and systematic error."
+          ],
+          "areasToImprove": [
+            "reading the question thoroughly. Many students interpreted the question as ‘calculate Planck’s constant’ rather than to describe and justify a better method of determining Planck’s constant",
+            "recognising that ‘justify’ means giving a reason to support their answer."
+          ]
+        },
+        {
+          "questionNumber": "27(a)",
+          "betterResponses": [
+            "draw clear diagrams which were correctly labelled or annotated with conventions of current and magnetic field",
+            "indicate the correct orientation of the forces using arrows (weight force down and magnetic force up)",
+            "clearly indicate the correct orientation for the current carrying wire in a magnetic field to achieve the Lorentz force direction required."
+          ],
+          "areasToImprove": [
+            "using established conventions (x and 8) to indicate magnetic fields and current directions",
+            "ensuring that diagrams are fully labelled to provide the relevant information about orientation of the magnetic field, current and force directions."
+          ]
+        },
+        {
+          "questionNumber": "27(b)",
+          "betterResponses": [
+            "equate forces in an equation and correctly substituted values to determine 0.282kg/m",
+            "use the calculated values to explain that if the M/L exceeds 0.282kg/m then the weight force will exceed the magnetic force and the wire will fall."
+          ],
+          "areasToImprove": [
+            "writing the relevant equations and showing full substitution of values from the question to calculate 0.282 kg/m",
+            "using cause and effect in to explain when the gravitational force per unit length exceeds the Lorenz force on the wire, levitation is no longer possible."
+          ]
+        },
+        {
+          "questionNumber": "28(a)",
+          "betterResponses": [
+            "identify the time dilation equation and substitute appropriately to calculate the velocity of the spaceship",
+            "calculate the distance from earth using an appropriate equation",
+            "recognise and use the correct units for given or calculated values to arrive at the correct answer."
+          ],
+          "areasToImprove": [
+            "correctly identifying the given variables (for example t 0 ) to be used in the equation for time dilation",
+            "using appropriate units to calculate the distance",
+            "organising the given values and equations in a way that makes the working clear",
+            "recognising that the calculated velocity of the spaceship cannot be greater than ‘c’."
+          ]
+        },
+        {
+          "questionNumber": "28(b)",
+          "betterResponses": [
+            "identify the consequence of relativistic momentum",
+            "identify explicitly how the limitation on the velocity of the spaceship is imposed as v approaches c",
+            "identify the Lorentz factor and use a mathematical approach to support the answer."
+          ],
+          "areasToImprove": [
+            "providing a clear link between special relativity and a limitation to the velocity of spaceship",
+            "using appropriate and specific scientific terms."
+          ]
+        },
+        {
+          "questionNumber": "29",
+          "betterResponses": [
+            "provide a detailed description of the underlying nature of the electron in each model, structuring their response to highlight the unique features of each model."
+          ],
+          "areasToImprove": [
+            "linking each model of the electron to a specific scientist",
+            "clearly identifying the differences between the models."
+          ]
+        },
+        {
+          "questionNumber": "30(a)",
+          "betterResponses": [
+            "recognise that the proton started from rest, and therefore had an initial kinetic energy of zero and the gradient of gain in kinetic energy is the inverse of the gradient of loss in the electric potential energy graph."
+          ],
+          "areasToImprove": [
+            "applying the law of conservation of energy to interpret graph of energy being transformed."
+          ]
+        },
+        {
+          "questionNumber": "30(b)",
+          "betterResponses": [
+            "recognise that the direction of the motion of the electron is determined by its negative charge and its higher acceleration was not only a result of its lower mass, but also the equal force it experiences, due to its equal magnitude of charge to the proton."
+          ],
+          "areasToImprove": [
+            "stating explicitly the cause and effect when providing an explanation, for example, the direction of motion of the electron due to its type of charge."
+          ]
+        },
+        {
+          "questionNumber": "31",
+          "betterResponses": [
+            "use the battery terminals to determine direction of currents and magnetic fields",
+            "explain the link between the currents in the galvanometers by the changing flux in the coil on Cart 1 inducing an EMF and an opposing flux in the coil on Cart 2",
+            "recognise that Cart 1 and Cart 2 experienced equal and opposite forces",
+            "used data from stimulus to calculate the ratio of speeds of the two carts."
+          ],
+          "areasToImprove": [
+            "applying the Right-Hand Grip Solenoid Rule to determine the magnetic field direction",
+            "linking cause and effect in relation to Faraday and Lenz’s laws",
+            "recognising that opposing fields doesn’t mean opposite poles facing each other."
+          ]
+        },
+        {
+          "questionNumber": "32",
+          "betterResponses": [
+            "make links between the increasing distances and the recessional velocity and then redshift (evidence for Hubble’s discovery)",
+            "analyse the information in the stimulus to show that the proportional increase or greater increase between points on the elastic further away links to a greater recessional velocity and how this supports Hubble",
+            "identify limitation(s) of the model",
+            "recognise that space itself was expanding and not the galaxies themselves",
+            "offer improvements the model."
+          ],
+          "areasToImprove": [
+            "recognising that the question is not just about Hubble’s discovery, it is about the nature of modelling as well",
+            "linking the investigation given in the question, and not some other investigation they have done in class",
+            "making the justification using the stimulus provided, for example, use the ruler to measure and compare the stretch of the elastic."
+          ]
+        },
+        {
+          "questionNumber": "33",
+          "betterResponses": [
+            "explain specifically how the experimental results support the two different models of light",
+            "relate constructive and destructive interference to bright and dark regions on the screen",
+            "use the relevant data to correctly calculate the spacing between adjacent regions on the screen",
+            "recognise the one-to-one relationship between a photon and an emitted electron as evidence for the particle model of light",
+            "use the relevant data to determine the kinetic energy of the electron emitted from the calcium."
+          ],
+          "areasToImprove": [
+            "ensuring that the response addresses all components of the question",
+            "performing comprehensive quantitative analysis of experimental results or data when it is provided in the question",
+            "differentiating between the Einsteinian photon model from the Newtonian Corpuscular model of light."
+          ]
+        },
+        {
+          "questionNumber": "34(a)",
+          "betterResponses": [
+            "account for the differences in relative kinetic energy values at different times during the trajectory",
+            "analyse the contributions of the x and y components of the velocity to the kinetic energy of the mass."
+          ],
+          "areasToImprove": [
+            "providing a clear account of the behaviour of the projectile once it passed the launch height in its path to the ground."
+          ]
+        },
+        {
+          "questionNumber": "34b",
+          "betterResponses": [
+            "extract relevant information about the x and y components of velocity at different times to apply the equations of motion",
+            "calculate and add the times at different parts of the trajectory."
+          ],
+          "areasToImprove": [
+            "assigning positive and negative values for the vertical component to use in the calculations",
+            "working carefully to ensure that there is correct substitution into all equations."
+          ]
+        },
+        {
+          "questionNumber": "35(a)",
+          "betterResponses": [
+            "correctly determine mass defect from the provided data",
+            "use the data and/or formula provided in the data sheet for appropriate calculations and/or conversion from mass defect into energy",
+            "clearly set out all steps towards finding the answer."
+          ],
+          "areasToImprove": [
+            "identifying the relevant equation and data from formula sheet",
+            "structuring response so all work is explicit and logically formatted."
+          ]
+        },
+        {
+          "questionNumber": "35(b)",
+          "betterResponses": [
+            "correctly construct a response through all four relevant steps",
+            "use data provided in part (a) for appropriate calculations",
+            "use effective labelling with words or subscripts to ensure there is clarity in all steps."
+          ],
+          "areasToImprove": [
+            "having a clear plan to enable a path to the solution to be followed",
+            "setting out steps of working",
+            "checking that the work they have done answers the question."
+          ]
+        }
+      ]
+    }
+  ]
+}

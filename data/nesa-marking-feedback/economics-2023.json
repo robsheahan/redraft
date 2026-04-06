@@ -1,0 +1,146 @@
+{
+  "subject": "Economics",
+  "slug": "economics",
+  "year": 2023,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/economics/2023",
+  "scrapedAt": "2026-04-06T09:19:09.375Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "use the first page of the answer booklet for an extended response to develop a plan to assist in the logical sequencing of information",
+    "engage with what the question is asking rather than presenting a pre-prepared response",
+    "relate to the question throughout the response rather than just at the beginning",
+    "sustain their judgements, where appropriate, throughout the response with a clear connection to the question",
+    "apply relevant economic information, terms, concepts, relationships and theory, where appropriate, to support their response",
+    "present a sustained, logical and cohesive response that addresses the question where appropriate",
+    "review their response to ensure that it addresses the question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "process the question and articulate a response using correct economic terms and current data as evidence",
+            "outline TWO roles of the World Trade Organisation (WTO) (a)",
+            "provide an explanation of why countries trade, including reasons such as a discussion on comparative advantage, access to a wider variety of goods and services, economies of scale (b)",
+            "explain, drawing on cause and effect, multiple effects of a reduction in global trade protection on the global distribution of income, by discussing factors such as how it could lead to increased export opportunities for developing countries (c)."
+          ],
+          "areasToImprove": [
+            "ensuring that the TWO roles outlined for the WTO are distinct and relevant (a)",
+            "providing an explanation of the underlying economic principles that motivate trade using relevant economic concepts and terms (b)",
+            "addressing the complexity of the effects of trade protection on income distribution such as the impact on income inequality within developing versus developed countries (c)."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "interpret the question accurately and make a judgement",
+            "relate theoretical understanding to the given data to make the answer clear and relevant",
+            "write in a logical sequence and use economic terms and concepts appropriately."
+          ],
+          "areasToImprove": [
+            "performing correct calculations for net secondary income (a)",
+            "showing a cause-and-effect relationship between the current account and the capital and financial account in this economy (b)",
+            "making a judgement of value in relation to the balance on current account by including the direction of the change in this surplus (c)."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "correctly sketch a new Lorenz curve moving towards the Line of equality (a)",
+            "sketch in general terms ONE method a government could use to decrease income inequality (b)",
+            "demonstrate an understanding of how family structure may influence income inequality (c)",
+            "demonstrate an understanding of the relationship between income inequality and economic and social costs (d)."
+          ],
+          "areasToImprove": [
+            "reading the question and addressing the requirement to sketch a new Lorenz Curve 'on the diagram above'. Many students did not draw a new Lorenz curve on the diagram (a)",
+            "outlining a method the government could use to decrease economic inequality, that is, to close the gap between higher and lower income earners (b)",
+            "providing direct reference as to how family structure contributes to income inequality, rather than on the roles of members within a family, as the question required the link to income inequality (c)",
+            "demonstrating the relationship between income inequality and how it contributes to both economic and social costs, rather than just economic or social costs or just simply demonstrating an understanding of inequality (d)."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "link a benefit of training and employment programs to an explicit aspect of the Australian economy, such as a reduction in structural unemployment (a)",
+            "explain how common law contracts are beneficial to both employers and employees (b)",
+            "use relevant evidence to articulate a comprehensive judgement about the effectiveness of microeconomic policies to reduce different types of unemployment over the short and long term in Australia (c)."
+          ],
+          "areasToImprove": [
+            "understanding the connection between improved skills and the economy more broadly (a)",
+            "understanding the difference between the various types of wage determination systems (b)",
+            "understanding the difference between macroeconomic and microeconomic policies (c)",
+            "making a judgement rather than simply explaining the relationship between microeconomic policies and unemployment (c)."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section III",
+      "questions": [
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "analyse how the value, composition and direction of Australia’s trade have affected its economic performance",
+            "demonstrate a comprehensive and clear understanding of the relationship between the value, composition and direction using the stimulus and their knowledge and integrating it with the economic performance of Australia",
+            "synthesise economic relationships to develop a sustained, logical and cohesive response."
+          ],
+          "areasToImprove": [
+            "integrating the stimulus appropriately to support analysis",
+            "providing an analysis of the implications of changing value, composition and direction of trade on economic performance rather than an analysis of the factors changing the composition and direction of trade",
+            "approaching the entire question in a wholistic manner",
+            "sustaining the analysis of how changes to the value, composition and direction of trade have affected the economy",
+            "demonstrating logic and cohesiveness in the response rather than rewriting the stimulus and attempting to make some link to the question which may not be relevant."
+          ]
+        },
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "demonstrate a clear understanding of the implications of pursuing environmental sustainability on aspects of the Australian economy including economic growth, inflation, unemployment, income inequality, external stability and the natural environment",
+            "provide distinctions between the effects experienced by the Australian economy in the short-term and long-term",
+            "support the analysis with accurate and relevant economic information including statistics, reports and examples."
+          ],
+          "areasToImprove": [
+            "integrating elements and themes of the stimulus into the response rather than simply restating the stimulus material",
+            "using more technical and precise economic terms relevant to the response such as structural unemployment and cost inflation",
+            "explaining the theory underpinning the diagrams presented and using contemporary examples to illustrate the theoretical analysis",
+            "providing greater detail of the specific effects of pursuing environmental sustainability rather than focusing generally on policies and their respective details and efficacy."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section IV",
+      "questions": [
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "demonstrate understanding of a range of impacts on economic growth and economic development on an economy other than Australia",
+            "use comparative statistics, economic information and examples to support and/or illustrate well-informed judgment(s)",
+            "present a sustained, logical, and cohesive response that was comprehensive in detail and demonstrated knowledge of the impacts of globalisation on an economy other than Australia."
+          ],
+          "areasToImprove": [
+            "providing an evaluation of a greater range of impacts on economic growth and economic development",
+            "supporting general statements with specific detail to make relationships clear. For example, using theory and supporting statistics in comparisons",
+            "increasing the amount of economic information provided in the response."
+          ]
+        },
+        {
+          "questionNumber": "28",
+          "betterResponses": [
+            "demonstrate understanding of the role of both monetary and fiscal policy in addressing the economic objectives of economic growth and price stability",
+            "support judgements of the effectiveness (or ineffectiveness) of each policy by using statistical data or specific examples from the Australian economy",
+            "integrate theory and terms to show the relationships between policies and their impact on economic growth and inflation."
+          ],
+          "areasToImprove": [
+            "engaging with the question rather than writing generally about macroeconomic policies",
+            "supporting their judgements with relevant statistics and current examples from the Australian or global economy",
+            "using relevant economic theory, concepts or relationships to demonstrate a more comprehensive understanding of Australia’s macroeconomic policies."
+          ]
+        }
+      ]
+    }
+  ]
+}

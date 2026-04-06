@@ -1,0 +1,137 @@
+{
+  "subject": "Business Studies",
+  "slug": "business-studies",
+  "year": 2024,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/business-studies/2024",
+  "scrapedAt": "2026-04-06T09:18:43.149Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "use the first page of the answer booklet for an extended response to develop a plan to assist in the logical sequencing of information",
+    "engage with what the question is asking rather than presenting a pre-prepared response",
+    "relate to the question throughout the response rather than just at the beginning",
+    "sustain their judgements, where appropriate, throughout the response with a clear connection to the question",
+    "use relevant business terms and concepts, where appropriate, to support their response",
+    "apply relevant business case study/studies and contemporary business issues where appropriate",
+    "present a sustained, logical and cohesive response that addresses the question where appropriate",
+    "review their response to ensure that it addresses the question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "clearly identify another key business function and show the mutual relationship with operations for the business (a)",
+            "apply knowledge of inventory management to the specific products in the stimulus by referring to strategies, for example, just in time (JIT) or first in first out (FIFO) (b)",
+            "demonstrate a clear understanding of visibility and provide detailed discussion of its impacts on the business (c)",
+            "make meaningful use of each stimuli to support key ideas."
+          ],
+          "areasToImprove": [
+            "providing understanding of the two-way relationship between operations and another key business function (a)",
+            "naming inventory management strategies relevant to the stimulus (b)",
+            "recognising the impact on visibility (customer contact) on the business as opposed to the customer (c)",
+            "avoiding re-writing significant portions of the provided stimulus (a,b,c)."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "clearly identify a relevant stakeholder and its role in human resources (a)",
+            "demonstrate an understanding of corporate social responsibility and apply this knowledge to employees in the stimulus (b)",
+            "demonstrate a clear understanding of maintenance as a function of the human resources process, using relevant examples to support an argument (c)"
+          ],
+          "areasToImprove": [
+            "providing the effects of utilising corporate social responsibility for the business (b)",
+            "demonstrating a clear understanding of how effective maintenance can be achieved in this business (c)",
+            "understanding relevant syllabus terminology relating to human resources (a,b,c)."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "correctly use the stimulus to reference how marketing and human resources are interdependent (a)",
+            "clearly demonstrate how more than one economic factor can impact customer choice with reference to the stimulus (b)",
+            "clearly suggest two forms of market segmentation with examples that contribute to growth for the business (c)",
+            "consistently refer to stimulus material provided in their responses."
+          ],
+          "areasToImprove": [
+            "demonstrating understanding of the economic factors as opposed to only customer choice (b)",
+            "demonstrating understanding of marketing segmentation as opposed to other marketing strategies (c)",
+            "addressing the growth aspect of market segmentation reference to the business (c)."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "effectively apply the information in the stimulus to the question",
+            "correctly calculate the current ratio using the information in the stimulus (a)",
+            "select an appropriate financial institution, making connection to the financial management of the business with cause and effect (b)",
+            "provide clear implications for the impact of discounts on cash flow on working capital (b)."
+          ],
+          "areasToImprove": [
+            "demonstrating understanding the elements of the financial statement",
+            "applying financial knowledge to the information in the business scenario",
+            "demonstrating understanding of the question and avoid rewriting the stimulus."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section III",
+      "questions": [
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "provide a detailed description on the product differentiation strategy, using sophisticated business terminology and concepts",
+            "provide multiple points for and/or against the current acquisition process and may draw from a range of aspects within the acquisition process, for example, identifying staffing needs, recruitment and selection",
+            "provide detailed reasons in favour of at least two appropriate human resource strategies",
+            "frequently integrate the stimulus in a business report format resulting in a sustained, logical and cohesive response."
+          ],
+          "areasToImprove": [
+            "applying the theoretical business concepts to the stimulus material, such as examples of product/service differentiation",
+            "demonstrating an holistic understanding of the acquisition process, drawing out multiple reasons for and/or against",
+            "selecting human resource strategies appropriate to the stimulus and explaining the reasons in favour of those strategies",
+            "integrating appropriate business terminology and concepts to demonstrate extensive knowledge and understanding relevant to the question."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section IV",
+      "questions": [
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "identify financial strategies and financial objectives from the syllabus",
+            "make detailed links between how each strategy was able to achieve a financial objective",
+            "apply case studies to show specifically how a business was able to use the strategy",
+            "show comprehensive knowledge by linking a strategy to multiple objectives. For example, factoring improves liquidity but in the long term reduces profitability; or expense minimisation improves profitability, and this allows the business to achieve growth in the future",
+            "use appropriate business terminology throughout."
+          ],
+          "areasToImprove": [
+            "referring to financial strategies from the syllabus, not strategies from other topics or general tasks of a business",
+            "implementing case study knowledge and applying it to each strategy",
+            "understanding the key term of 'how' requires the student to explain a connection between the strategy and the objective",
+            "writing in detail and providing a sustained response."
+          ]
+        },
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "demonstrate a strong understanding of how operations strategies that are used by businesses can have an impact on corporate social responsibility",
+            "link the effect of the operations strategy clearly to corporate social responsibility through a clear application of a case study",
+            "present a sustained response using examples of different strategies and their effect on corporate social responsibility across multiple body paragraphs."
+          ],
+          "areasToImprove": [
+            "understanding the elements of corporate social responsibility in relation to operations management",
+            "implementing case study knowledge and applying it to each strategy",
+            "understanding the key term of 'how' requires the student to explain a connection between the strategy and corporate social responsibility",
+            "writing in depth and providing a sustained response."
+          ]
+        }
+      ]
+    }
+  ]
+}

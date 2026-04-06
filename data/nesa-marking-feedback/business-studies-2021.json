@@ -1,0 +1,139 @@
+{
+  "subject": "Business Studies",
+  "slug": "business-studies",
+  "year": 2021,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/business-studies/2021",
+  "scrapedAt": "2026-04-06T09:18:53.159Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "use the first page of the answer booklet for an extended response to develop a plan to assist in the logical sequencing of information",
+    "engage with what the question is asking rather than presenting a pre-prepared response",
+    "relate to the question throughout the response rather than just at the beginning",
+    "sustain their judgements, where appropriate, throughout the response with a clear connection to the question",
+    "use relevant business terms and concepts, where appropriate, to support their response",
+    "apply relevant business case study/studies and contemporary business issues where appropriate",
+    "present a sustained, logical and cohesive response that addresses the question where appropriate",
+    "review their response to ensure that it addresses the question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "apply their theoretical knowledge of the Operations function to the stimulus business scenario",
+            "understand the ways in which the customer impacts the operations process as an input (a)",
+            "apply knowledge of sequencing and scheduling (b)",
+            "explain two different quality management strategies and show the likely effects of these strategies (c)."
+          ],
+          "areasToImprove": [
+            "referencing the business identified in the question scenario",
+            "understanding the impact of the customer on the operations process (a)",
+            "recognising the terms of the contract from the information supplied and explaining how a Gantt chart could be used to help the company meet those terms (b)",
+            "understanding of specific quality management strategies and the ways these strategies are used to ensure quality outputs when work is outsourced as in this case or carried out internally (c)."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "understand and correctly identify where different items should appear on a balance sheet (a)",
+            "recognise global financial risks and associated potential impacts such as on the cost of borrowing funds overseas (b)",
+            "apply financial knowledge to the stimulus business scenario based on the financial information supplied and their understanding of current and forecast profitability, and of gearing (a, b, c)."
+          ],
+          "areasToImprove": [
+            "understanding the elements of each financial statement (a)",
+            "applying financial knowledge to the information from the business scenario (a, b, c)."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "provide a feature of corporate culture and link to the effect on staff turnover (a)",
+            "demonstrate an understanding of the role of a contractor in human resource management (b)",
+            "clearly show why a contractor may be used to recruit staff (b)",
+            "draw out clear, possible implications of the influences in the stimulus (c)",
+            "use language such as advantages and disadvantages to clearly detail a discussion around the implications from the stimulus (c)."
+          ],
+          "areasToImprove": [
+            "understanding corporate culture and its possible impact on effective human resource management and staff turnover (a)",
+            "responding to the ‘why’ key word in the question and providing a clear reason for a business using a contractor to recruit staff (b)",
+            "understanding the difference between a contractor and an employment contract in human resources (b)",
+            "using the stimulus to identify the required syllabus and content area for the correct response (c)",
+            "avoiding rewriting the stimulus in the answer (c)."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "demonstrate an understanding of customisation and its benefits in the context of global marketing (a)",
+            "apply content knowledge of sociocultural factors to demonstrate the influence on customer choice (b)",
+            "examine the stimulus carefully to identify aspects of the advertisement that relate closely to Australian consumer laws (c)",
+            "show an understanding of more than one area of Australian consumer law and how aspects included in the stimulus advertisement would be in breach of them (c)."
+          ],
+          "areasToImprove": [
+            "identifying the topic that the question assesses (Marketing) and ensuring the response draws on content from that topic (a, b, c)",
+            "avoiding using several lines of the response to rewrite the stimulus (b, c)",
+            "ensuring written responses to b and c clearly used information in the stimulus advertisement as directed."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section III",
+      "questions": [
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "outline two operations influences which link to the stimulus provided",
+            "discuss how applying retraining and redundancy payments could help overcome employee resistance to changes being considered by Ozzi Baby Foods Pty Ltd",
+            "use comparative terms when comparing the similarities and differences or advantages and disadvantages of using a mortgage or new share issue to fund the factory purchase",
+            "present a logical, cohesive business report which linked to the stimulus material provided."
+          ],
+          "areasToImprove": [
+            "discussing how retraining and redundancy help overcome resistance to change rather than cause it",
+            "comparing the two sources of finance that could be used to fund the factory purchase rather than describing them",
+            "incorporating the stimulus material throughout the business report",
+            "recognising and responding to the key words in each question",
+            "complying with the expectations communicated in the rubric."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Section IV",
+      "questions": [
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "draw out the implications of situational analysis on marketing strategies directly, addressing the key word ‘analyse’",
+            "use specific information about case study(ies) to help analyse marketing strategies",
+            "relate the implications of marketing strategies used rather than referring to theory in applying relevant case study information",
+            "make specific reference to both a SWOT analysis and the product life cycle",
+            "respond to the question in a logical order, for example, firstly looking at a situational analysis and then working out strategies to use as a consequence",
+            "provide a variety of links between situational analysis and marketing strategies",
+            "refer to several specific strategies within the marketing mix."
+          ],
+          "areasToImprove": [
+            "using syllabus specific terms regarding marketing strategies consistently throughout the response",
+            "integrating case study information to all parts of question."
+          ]
+        },
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "clearly draw out and relate how human resource management strategies can improve both processes of employee acquisition and of subsequent maintenance",
+            "apply relevant case study(ies) which included specific data on the indicators of the effectiveness of human resource management",
+            "show extensive knowledge and understanding of the strategies and processes that could be used in acquisition and maintenance."
+          ],
+          "areasToImprove": [
+            "making the relationship evident between human resource management strategies and their application to processes of employee acquisition and maintenance",
+            "applying appropriate case study(ies) to support their response",
+            "demonstrating an understanding of the contribution of human resource management to business performance."
+          ]
+        }
+      ]
+    }
+  ]
+}

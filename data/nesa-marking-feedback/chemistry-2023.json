@@ -1,0 +1,312 @@
+{
+  "subject": "Chemistry",
+  "slug": "chemistry",
+  "year": 2023,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/chemistry/2023",
+  "scrapedAt": "2026-04-06T09:18:19.783Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of what is being asked",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "attempt to engage with all questions",
+    "plan the response to assist in the logical sequencing of information",
+    "integrate relevant scientific terms into their responses",
+    "engage with any stimulus material provided and refer to it in their response",
+    "show all working in calculations, not rounding early and include correct units and significant figures",
+    "recognise the importance of the Working Scientifically section of the syllabus."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "name ONE pair of isomers using the compounds provided in the question",
+            "identify butanal and butan-2-one as the functional group isomers."
+          ],
+          "areasToImprove": [
+            "reading all of the information",
+            "understanding the difference between functional group isomers and chain isomers",
+            "understanding isomers have the same molecular formula but differences occur based on either the position of the same functional group, or the different arrangement of carbons or the different positions of atoms to give a different functional group."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "demonstrate that NH 4 Cl is a salt rather than an Arrhenius acid because it does not ionise in water to produce H +",
+            "show chemical equations for both HCl and NH 4 Cl",
+            "include all charges of ions in chemical equations."
+          ],
+          "areasToImprove": [
+            "developing knowledge of reactions that include NH 4 Cl",
+            "understanding the definitions of Br­­Ønsted-Lowry acids and Arrhenius acids and how they are differ."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "understand that hydronium ions and hydroxide ions are equal in a solution of pH of 7, so that when hydroxide ions are added to the solution, the hydronium ions decrease while the hydroxide ions increase which leads to an increase in pH",
+            "identify the composition of a buffer and explain the hydroxide ions will react with the weak acid ion in solution causing the equilibrium to shift and therefore minimising the pH change."
+          ],
+          "areasToImprove": [
+            "identifying that a buffer acts to minimise pH changes",
+            "understanding that in a neutral solution the hydroxide and hydronium ions are equal and hydroxide ions are added, the hydronium ions will decrease and increase the pH due to pH=-log[H+]."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "identify that amphiprotic substances can donate and accept protons",
+            "write a correct equation showing the hydrogen oxalate ion reacting with an acid and a separate equation to show the hydrogen oxalate ion reacting with a base."
+          ],
+          "areasToImprove": [
+            "addressing all charges when writing an equation containing ions",
+            "understanding the charges change when amphiprotic ions react with an acid and a base."
+          ]
+        },
+        {
+          "questionNumber": "25(a)",
+          "betterResponses": [
+            "use correct mass in the formula, q = m c ΔT",
+            "use correct units (kJ for both q and ΔH) when calculating moles of octan-1-ol combusted",
+            "calculate the moles of octan-1-ol by substitution in the formula ΔH = q/n",
+            "calculate the correct mass of octan-1-ol."
+          ],
+          "areasToImprove": [
+            "using the mass of water and not octan-1-ol in the formula, q = m c ΔT",
+            "using the correct units for specific heat capacity of water (c) corresponding to the units used for mass in the formula for q",
+            "using the same units for q and ΔH, J or kJ, when substituting in the formula, ΔH =q/n."
+          ]
+        },
+        {
+          "questionNumber": "25(b)",
+          "betterResponses": [
+            "state the advantage of biofuel using precise scientific terms",
+            "link the advantage of biofuels with the relevant effect."
+          ],
+          "areasToImprove": [
+            "linking the advantage of using biofuel with its effect",
+            "using key terminology instead of generic information."
+          ]
+        },
+        {
+          "questionNumber": "26(a)",
+          "betterResponses": [
+            "incorporate the equilibrium equation from Reactor 2 in the response",
+            "identify NO 2 concentration decreased in the reaction because it was consumed and relate this to the decrease in concentration of the N 2 O 4 from the mixture in equilibrium",
+            "include the correct equilibrium direction shift linked to Le Chatelier’s Principle."
+          ],
+          "areasToImprove": [
+            "referring to the equilibrium equation from Reactor 2 when explaining the equilibrium shift",
+            "stating there was a decrease/decomposition of the N 2 O 4 concentration due the of equilibrium shift to produce more NO 2 ."
+          ]
+        },
+        {
+          "questionNumber": "26(b)",
+          "betterResponses": [
+            "identify where the improvement in design was made, for example, water from Separator 1 could be used in Reactor 3.",
+            "state a valid reason why the modification was suggested, for example, reduce costs."
+          ],
+          "areasToImprove": [
+            "avoiding the use of a generic reason/explanation, for example to ‘reduce waste’ or ‘economically efficient’",
+            "understanding a flow chart",
+            "commenting on the processes in the flow chart."
+          ]
+        },
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "use all the information in the question",
+            "use the ideal gas law formula to calculate volume."
+          ],
+          "areasToImprove": [
+            "using the data sheet to find formulae PV=nRT and gas constant",
+            "not rounding off too early in the calculations",
+            "beginning with the correct formula and displaying the equal sign underneath each other in their calculations."
+          ]
+        },
+        {
+          "questionNumber": "28(a)",
+          "betterResponses": [
+            "identify a specific chemical test that can be performed in school lab to confirm the alkene.",
+            "identify the chemical test observations, such as, specific colour changes occurring."
+          ],
+          "areasToImprove": [
+            "understanding the difference between physical and chemical properties, for example, Boiling BP is physical property and is not a chemical test to confirm the alkene",
+            "understanding spectroscopy is not a chemical test for alkenes but an analysis for organic compounds.",
+            "understanding precipitation reaction is for testing solubility of ionic substances and not alkenes",
+            "recalling colours of chemical tests for oxidising agents when reaction occurs, for example, permanganate (purple to clear) and dichromate (orange to green)."
+          ]
+        },
+        {
+          "questionNumber": "28(b)",
+          "betterResponses": [
+            "engage with the stimulus material and calculate the parent peak molecular mass",
+            "engage with the stimulus material and use the % value provided to calculate the number of carbons to support the answer",
+            "use the parent peak mass and carbon mass to calculate the remainder of molecule mass",
+            "support the answer using base peak fragment = 63 m/z"
+          ],
+          "areasToImprove": [
+            "using the information or stimulus given in the response, for example, 32% of carbon or parent peak from the graph",
+            "providing all atoms and bonds with correct position of chlorine atoms when drawing the structure",
+            "determining which carbon the chlorine atoms attach to based on the fragments provided in the mass spectroscopy graph."
+          ]
+        },
+        {
+          "questionNumber": "29",
+          "betterResponses": [
+            "identify the trend from the graph by linking the variables from the graph",
+            "link the decrease in solubility to the increase chain length/ alkyl chain and therefore dispersion forces",
+            "explain that all primary alcohols have a Hydrogen bond due to terminal OH group which is impacted by chain length lowering solubility",
+            "provide comparative statements to show the contribution of dispersion forces and hydrogen bonding."
+          ],
+          "areasToImprove": [
+            "identifying and explaining dispersion forces and hydrogen bonds",
+            "recognising that responses that explain molecular structure needed to relate bonding to the intermolecular forces."
+          ]
+        },
+        {
+          "questionNumber": "30",
+          "betterResponses": [
+            "demonstrate an understanding of the sequence to positively test for these two anions",
+            "identify relevant reagents and observations for reactions used to identify the two anions",
+            "apply sequential and logical thinking."
+          ],
+          "areasToImprove": [
+            "learning solubility rules or use Ksp values from the data sheet as a guide to solubility rules",
+            "including correct states, particularly solids and gas in chemical equations",
+            "balancing all chemical equations and providing expected observations (colour of precipitates and production of gases where relevant) for each equation mentioned."
+          ]
+        },
+        {
+          "questionNumber": "31",
+          "betterResponses": [
+            "use the scale provided in the question to clearly plot the data and indicate on the graph how the concentration at an absorbance of 0.66 was determined",
+            "produce a line of best fit closest to the majority of readings",
+            "provide the correct expression for Keq and a clear ICE (Initial, Change, Equilibrium) table to determine the equilibrium concentrations."
+          ],
+          "areasToImprove": [
+            "using a realistic scale for the axis, for example, 0.1 and 0.01",
+            "reading the concentration off their graph correctly",
+            "showing all calculation working out, including an ICE table and an expression for Keq",
+            "reviewing the use of mole ratios to calculate final concentration of reactants."
+          ]
+        },
+        {
+          "questionNumber": "32",
+          "betterResponses": [
+            "process all the given information and data to calculate a mass of ammonium ions to four s.f.",
+            "identify and exclude the correct outlier in working out the average titre volume, in L",
+            "use C=n/V to calculate [OH - ] in flask and apply n=CV."
+          ],
+          "areasToImprove": [
+            "calculating the total number of moles of excess OH - (in the flask)",
+            "avoiding the use of formulas in titration calculations",
+            "rounding after the final answer has been calculated."
+          ]
+        },
+        {
+          "questionNumber": "33(a)",
+          "betterResponses": [
+            "explain the system had reached equilibrium in terms of the rates of the forward and reverse reactions being equal."
+          ],
+          "areasToImprove": [
+            "providing a reason when asked to explain rather than describing",
+            "recognising the rates of reaction are equal in an equilibrium reaction rather than the concentrations being equal."
+          ]
+        },
+        {
+          "questionNumber": "33(b)",
+          "betterResponses": [
+            "identify the TWO factors that result in the disturbance at 8 minutes as a change in temperature and pressure/volume",
+            "explain increasing the temperature shifts the equilibrium to the reactants side to absorb the added heat because the reaction was exothermic",
+            "link the effect of increasing the volume to a decrease in pressure",
+            "explain the effect of the equilibrium shifting to the side with the greater number of gaseous molecules to occupy the increased space."
+          ],
+          "areasToImprove": [
+            "understanding that the y-axis showed the amount in moles rather than concentration",
+            "providing a specific effect, for example, the equilibrium shifts to the left to ‘absorb(s) the added heat’ or ‘remove(s) the excess heat’ when the equilibrium shifts to the left (endothermic reaction/reactants/left hand side) rather than just stating the direction of the shift."
+          ]
+        },
+        {
+          "questionNumber": "34",
+          "betterResponses": [
+            "correctly calculate the K sp",
+            "subtract the solid moles of F from the initial moles",
+            "use M/L in the K sp not mol."
+          ],
+          "areasToImprove": [
+            "providing a balanced equation",
+            "providing the correct K sp expression",
+            "calculating moles and M/L correctly."
+          ]
+        },
+        {
+          "questionNumber": "35(a)",
+          "betterResponses": [
+            "correctly calculate [H + ] from a given pH",
+            "use an ICE table to determine the change in concentration of an acid",
+            "write a correct expression for K a , calculate K a, and show full working."
+          ],
+          "areasToImprove": [
+            "not assuming that an acid is weak and consequently assuming that its concentration will not change from its initial value."
+          ]
+        },
+        {
+          "questionNumber": "35(b)",
+          "betterResponses": [
+            "correctly connect acid strength to pK a (or equivalently to K a via conversion)",
+            "recognise the importance of ΔG and relative spontaneity for ionisation",
+            "use the ΔS data (or -TΔS data) as part of a coherent response."
+          ],
+          "areasToImprove": [
+            "relating acid strength to K a and pK a , and comparing acid strength, not just degree of ionisation",
+            "understanding the difference between ΔH, ΔS and ΔG",
+            "using data in a coherent answer, rather than simply listing the values from the table."
+          ]
+        },
+        {
+          "questionNumber": "36",
+          "betterResponses": [
+            "integrate the information and spectroscopic data in the response, and propose correct structures with justifications based on interpretation of spectroscopic data and understanding of chemical reactions",
+            "make clear interpretations of chemical shifts and splitting patterns with reference to a proposed structure and functional groups",
+            "use 13 C-NMR to identify unique chemical environments for C, IR to identify functional groups within a molecule and 1 H-NMR to identify the number of H atoms and their chemical environment."
+          ],
+          "areasToImprove": [
+            "suggesting structures which are consistent with supplied molecular weight data and incorporating chemical and structural information",
+            "providing clear justifications with specific reference to the supplied data, rather than general statements",
+            "identifying structures as part of a sequence of chemical reactions",
+            "identifying the type of chemical reaction from the reagents involved",
+            "identifying and drawing functional groups, for example, alcohol, ketone",
+            "drawing accurate structures that fit established rules, for example, each carbon only having four bonds."
+          ]
+        },
+        {
+          "questionNumber": "37(a)",
+          "betterResponses": [
+            "write the K eq expression correctly for the system",
+            "substitute the given concentrations of carbon dioxide and carbon monoxide into the expression as Q and correctly calculate the value to be 10.00",
+            "compare the calculated value of Q with K eq and determine that the system was at equilibrium."
+          ],
+          "areasToImprove": [
+            "understanding solids are not included in the K expression",
+            "correctly substituting data from the question into the expression."
+          ]
+        },
+        {
+          "questionNumber": "37(b)",
+          "betterResponses": [
+            "use the information in the question and the Keq expression to determine the numerical value for the concentration of carbon dioxide and carbon monoxide at equilibrium",
+            "understand that the increase in concentration of carbon dioxide produced a decrease in the concentration of carbon dioxide and an increase in carbon monoxide, and show this clearly in the ICE table if one was used",
+            "apply the ratio from the equation correctly",
+            "manipulate the numbers to determine the moles of carbon dioxide added"
+          ],
+          "areasToImprove": [
+            "showing relevant working and a logical sequence for a calculation",
+            "coherently describing changes in a system with a change in species concentration."
+          ]
+        }
+      ]
+    }
+  ]
+}

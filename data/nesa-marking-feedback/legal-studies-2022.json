@@ -1,0 +1,115 @@
+{
+  "subject": "Legal Studies",
+  "slug": "legal-studies",
+  "year": 2022,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/legal-studies/2022",
+  "scrapedAt": "2026-04-06T09:19:01.862Z",
+  "generalFeedback": [],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "25",
+          "betterResponses": [],
+          "areasToImprove": []
+        }
+      ]
+    },
+    {
+      "name": "Section III",
+      "questions": [
+        {
+          "questionNumber": "26(a)",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "26(b)",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "27(a)",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "27(b)",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "28(a)",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "28(b)",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "29(a)",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "29(b)",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "30(a)",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "30(b)",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "31(a)",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "31(b)",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "32(a)",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "32(b)",
+          "betterResponses": [],
+          "areasToImprove": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,273 @@
+{
+  "subject": "Biology",
+  "slug": "biology",
+  "year": 2023,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/biology/2023",
+  "scrapedAt": "2026-04-06T09:18:17.592Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "plan the response to assist in the logical sequencing of information",
+    "integrate relevant scientific terms into their responses",
+    "engage with any stimulus material provided and refer to it in their response",
+    "show all working in calculations and include correct units",
+    "present a logical and succinct response that addresses the question",
+    "review their response to ensure that it addresses the question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "correctly identify the three components of a nucleotide",
+            "complete the mRNA strand with the correct complementary bases."
+          ],
+          "areasToImprove": [
+            "knowing the three components that make up a nucleotide",
+            "knowing that uracil replaces thymine as the complementary base to adenine in RNA."
+          ]
+        },
+        {
+          "questionNumber": "22(a)",
+          "betterResponses": [
+            "describe the action of phagocytes using correct and precise scientific terminology."
+          ],
+          "areasToImprove": [
+            "using correct and precise scientific terminology. For example, using terms such as ‘engulf’ or ‘enclose’."
+          ]
+        },
+        {
+          "questionNumber": "22(b)",
+          "betterResponses": [
+            "demonstrate a detailed understanding of the steps in the process by which antibodies are produced in response to the entry of a pathogen, including the detection/recognition of antigens, and the production of antibodies by plasma B cells",
+            "distinguish the roles of the various cells involved, including antigen-presenting cells, helper T cells and plasma B cells."
+          ],
+          "areasToImprove": [
+            "distinguishing between the antibody mediated response and the cell-mediated response, including the cells involved in each",
+            "providing a logical and sequential explanation of the steps involved in antibody production."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "demonstrate their understanding of the function of different pregnancy hormones using the correct biological terms",
+            "interpret the graph to identify peaks in specific hormones."
+          ],
+          "areasToImprove": [
+            "identifying trends in graphs",
+            "using correct biological terminology."
+          ]
+        },
+        {
+          "questionNumber": "24(a)",
+          "betterResponses": [
+            "name a particular visual disorder",
+            "identify the parts of the eye involved in the visual disorder",
+            "link the altered structure of the eye to the change in its function."
+          ],
+          "areasToImprove": [
+            "identifying the parts of the eye involved in a specific visual disorder",
+            "understanding how a change in structure results in a change in function."
+          ]
+        },
+        {
+          "questionNumber": "24(b)",
+          "betterResponses": [
+            "provide accurate characteristics and features of a technology involved in the treatment of a named visual disorder",
+            "identify the impact on vision when using the technology."
+          ],
+          "areasToImprove": [
+            "using appropriate technologies specific for the named disorder",
+            "describing both the steps involved and how the technology is used in the treatment of the disorder",
+            "identifying the impact on vision when using the technology."
+          ]
+        },
+        {
+          "questionNumber": "25(a)",
+          "betterResponses": [
+            "show that individual H could only be heterozygous with the use of a Punnett square or describing the phenotypes of their offspring."
+          ],
+          "areasToImprove": [
+            "identifying all possible genotypes on a pedigree to determine the genotype of individual H",
+            "understanding the difference between autosomal and sex-linked inheritance and dominant and recessive inheritance patterns."
+          ]
+        },
+        {
+          "questionNumber": "25(b)",
+          "betterResponses": [
+            "use the information provided in the stimulus to correctly identify the amino acid."
+          ],
+          "areasToImprove": [
+            "reading the stimulus material and not transcribing the mRNA sequence before interpreting the codon chart."
+          ]
+        },
+        {
+          "questionNumber": "25(c)",
+          "betterResponses": [
+            "relate the number of CAG repeats as the determining factor for the age of onset of Huntington’s disease and use data from the graph or the stimulus to support their response."
+          ],
+          "areasToImprove": [
+            "identifying the independent variable on the x-axis and the dependent variable on the y-axis and using the terminology from the stimulus. For example, ‘age of onset of Huntington's disease’ rather than ‘age’",
+            "using data and stimulus material to explain the relationship between variables."
+          ]
+        },
+        {
+          "questionNumber": "25(d)",
+          "betterResponses": [
+            "use data from more than one diagram presented to correctly predict the outcome for both individuals."
+          ],
+          "areasToImprove": [
+            "linking the relationship between individuals to the number of CAG repeats shared to predict the age of onset."
+          ]
+        },
+        {
+          "questionNumber": "26(a)",
+          "betterResponses": [
+            "recognise that the dependent variable was obtained from the results table. For example, ‘number of times mosquitos landed on clothing’, rather than ‘transmission of malaria’",
+            "identify a single example of a controlled variable linked to the experiment."
+          ],
+          "areasToImprove": [
+            "providing sufficient detail for controlled variables. For example, size of the container rather than just the container",
+            "correctly following directions provided by the question. For example, providing a single example of each variable, instead of multiple variables."
+          ]
+        },
+        {
+          "questionNumber": "26(b)",
+          "betterResponses": [
+            "use trends in the data to draw conclusions about how the cleanliness of the clothes impacted transmission of malaria",
+            "use quantitative measures to justify their conclusion. For example, total or average times landed for each group",
+            "annotate the table to indicate status of container. For example, Container A = infected and dirty, Container B = uninfected and dirty."
+          ],
+          "areasToImprove": [
+            "linking their conclusion to the aim of the experiment, that is, whether clean clothing reduces the transmission of malaria",
+            "interpreting quantitative data to understand the significance of results. For example, the difference between the averages of container A and C were significant."
+          ]
+        },
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "demonstrate a good understanding of the features of an epidemiological study",
+            "identify invalid features of the study",
+            "make the correct judgement about the study’s validity based on the analysis."
+          ],
+          "areasToImprove": [
+            "engaging directly with the feature of the study in the stimulus provided",
+            "using several features to support the analysis of the study",
+            "making a clear and correct judgement."
+          ]
+        },
+        {
+          "questionNumber": "28",
+          "betterResponses": [
+            "identify a clear distinguishing feature between a virus and bacteria",
+            "use a table to compare features",
+            "outline a relevant procedure which could be used to distinguish between a virus and a bacteria and outline the results expected for each pathogen."
+          ],
+          "areasToImprove": [
+            "outlining specific features of viruses and bacteria which help to distinguish them",
+            "comparing one of the distinguishing features rather than only listing features",
+            "outlining the expected results from a procedure that can be used to distinguish viruses from bacteria."
+          ]
+        },
+        {
+          "questionNumber": "29(a)",
+          "betterResponses": [
+            "outline a physiological adaptation in endotherms."
+          ],
+          "areasToImprove": [
+            "understanding the difference between physiological, behavioural and structural adaptations."
+          ]
+        },
+        {
+          "questionNumber": "29(b)",
+          "betterResponses": [
+            "link cause and effect to show how adaptations of plants assist in the maintenance of water balance."
+          ],
+          "areasToImprove": [
+            "ensuring that the response includes details of the adaptation, how, and why the adaptation functions the way it does."
+          ]
+        },
+        {
+          "questionNumber": "30",
+          "betterResponses": [
+            "make a judgement about the vaccination schedule which is supported by the data and the information provided",
+            "show a comprehensive understanding of what a vaccine is and what it does in the body",
+            "interpret the graph and clearly link the data to show that the increased number of booster shots leads to longer lasting immunity."
+          ],
+          "areasToImprove": [
+            "stating a judgement rather than describing the graph",
+            "providing sufficient information to show correct understanding of what vaccines are and how they work",
+            "using all of the stimulus material provided, not just the information in the graph."
+          ]
+        },
+        {
+          "questionNumber": "31",
+          "betterResponses": [
+            "demonstrate their knowledge of a genetic technology",
+            "correctly use biological terminology to describe the process of a genetic technology",
+            "use an appropriate medical application that aligns with their genetic technology."
+          ],
+          "areasToImprove": [
+            "using relevant terminology specific to genetic technologies",
+            "demonstrating a clear understanding of the techniques of genetic technologies",
+            "selecting an appropriate medical application relevant to their genetic technologies."
+          ]
+        },
+        {
+          "questionNumber": "32",
+          "betterResponses": [
+            "explain both the impact of bushfires and the introduction of male possums on both the population size and gene pool",
+            "use correct terminology including genetic drift (bottleneck effect) and gene flow",
+            "provide a judgement on the impact of bushfires and the introduction of male possums on both the population size and the gene pool",
+            "use data from the stimulus to support the judgement."
+          ],
+          "areasToImprove": [
+            "using scientific knowledge and terminology to explain the trends and patterns identified in the stimulus",
+            "engaging with all stimulus materials provided in the question."
+          ]
+        },
+        {
+          "questionNumber": "33",
+          "betterResponses": [
+            "interpret the stimulus to recognise more than one difference between humans and generalised fungi. For example fungi utilise sexual and asexual reproduction while humans undergo sexual reproduction only",
+            "interpret the stimulus to recognise more than one similarity between humans and generalised fungi. For example, meiosis is used in reproduction in both species to produce gametes in humans and spores in fungi",
+            "demonstrate an understanding of stimulus by linking a process to an outcome, rather than simply listing common features. For example, meiosis is used to produce gametes."
+          ],
+          "areasToImprove": [
+            "translating information contained within the stimulus into a range of unique similarities and differences",
+            "demonstrating an understanding of reproduction in both humans and generalised fungi, not just writing the stimulus without elaboration. For example, ‘meiosis is used to produce gametes in humans and spores in fungi’, rather than ‘both use meiosis’."
+          ]
+        },
+        {
+          "questionNumber": "34",
+          "betterResponses": [
+            "demonstrate an extensive understanding of the biotechnologies provided in the table",
+            "provide a judgement about how each biotechnology can increase, decrease and maintain biodiversity in cattle",
+            "use specific information from the table provided to support their judgement",
+            "use correct and precise biological terminology to show a depth of understanding."
+          ],
+          "areasToImprove": [
+            "communicating their understanding in a concise manner to write a planned and structured response",
+            "using examples provided in the table to form judgements, rather than their own examples",
+            "linking the biotechnology to its effect on biodiversity, rather than its effect on the organism."
+          ]
+        },
+        {
+          "questionNumber": "35",
+          "betterResponses": [
+            "identify a point or substitution mutation",
+            "demonstrate how a change in the DNA sequence results in a different protein with a new shape and different function",
+            "describe in detail several ways a point mutation can affect protein synthesis."
+          ],
+          "areasToImprove": [
+            "expressing and sequencing the correct steps involved in protein synthesis",
+            "linking changes in the base sequence to the shape of protein which in turn results in a change in function of the protein",
+            "analysing and engaging with the stimulus material provided."
+          ]
+        }
+      ]
+    }
+  ]
+}

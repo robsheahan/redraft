@@ -23,6 +23,7 @@ import {
   COMMON_PITFALLS,
   FEEDBACK_PRINCIPLES,
 } from "../data/nesa-reference.js";
+import { buildMarkerVoiceReference } from "../data/marker-voice-loader.js";
 
 const DISCIPLINE_PERSONAS: Record<string, string> = {
   English: "English teacher with extensive experience in textual analysis, essay writing, and HSC marking",
@@ -214,6 +215,7 @@ ${(() => {
   })()}
 
 Check for these specific pitfalls in the student's response and flag any that apply.
+${buildMarkerVoiceReference(courseName, discipline)}
 
 OUTPUT FORMAT:
 Respond in the following JSON structure. Each section has a "summary" (short bullet points — the headline takeaway a student sees first) and "detail" (the full explanation). Write in natural, personable language throughout.

@@ -1,0 +1,239 @@
+{
+  "subject": "Biology",
+  "slug": "biology",
+  "year": 2024,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/biology/2024",
+  "scrapedAt": "2026-04-06T09:18:17.052Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "plan the response to assist in the logical sequencing of information",
+    "integrate relevant scientific terms into their responses",
+    "engage with any stimulus material provided and refer to it in their response",
+    "show all working in calculations and include correct units",
+    "present a logical and succinct response that addresses the question",
+    "review their response to ensure that it addresses the question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "correctly identify both structures, as shown on the diagram (a)",
+            "correctly compare the three features of sexual and asexual reproduction (b)",
+            "use specific organisms as examples, rather than broad groups. For example, ‘humans’, rather than ‘mammals’ (b)."
+          ],
+          "areasToImprove": [
+            "referring to the specific structures shown on the diagram, rather than structures not shown on the diagram. For example, for pollen, identifying the anther, rather than stamen, and for ovules, identifying the ovary, rather than the pistil (a)",
+            "distinguishing male parts of the flower from female parts (a)",
+            "choosing a suitable, specific example to distinguish between sexual and asexual reproduction. For example, for asexual reproduction, ‘yeast’, rather than just ‘fungi’ (b)",
+            "distinguishing between internal/external fertilisation and sexual/asexual reproduction. For example, fish are an example of an organism which utilises external fertilisation, not asexual reproduction (b)",
+            "understanding that self-pollination in flowering plants is not an example of asexual reproduction, despite only involving a single parent, because it involves the production of gametes (b)."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "correctly identify a safety precaution relevant to the experiment with microbes (a)",
+            "provide an appropriate reason for implementing the safety precaution (a)",
+            "correctly identify how reliability could be ensured (b)",
+            "make the link between repetition and consistency of results or removal of outliers (b)."
+          ],
+          "areasToImprove": [
+            "providing a justification that uses language additional to the question stem, for example, ‘prevent direct transmission or contact with microbes’ rather than ‘prevent infection’ (a)",
+            "understanding the difference between reliability, validity and accuracy (b)."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "identify a type of electromagnetic radiation",
+            "outline how the electromagnetic radiation causes damage to the structure of the DNA",
+            "outline that a germline mutation occurs when the DNA in gametes is damaged."
+          ],
+          "areasToImprove": [
+            "distinguishing between gametic and somatic mutations",
+            "understanding which parts of the electromagnetic radiation cause mutations to DNA."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "name a non-infectious disease caused by environmental exposure (a)",
+            "provide a cause of the disease (a)",
+            "outline features of an educational program or campaign specific to a disease caused by environmental exposure (b)",
+            "explicitly link the relationship between the features of the educational program or campaign and the resulting change in behaviour from the public. For example, the campaign raised awareness of preventative strategies and because people used these strategies, the incidence of disease decreased (b)."
+          ],
+          "areasToImprove": [
+            "naming a disease caused by environmental exposure, rather than a disease caused by a pathogen or genetics (a)",
+            "providing a cause rather than a symptom of the disease (a)",
+            "linking how the campaign or program led to a decreased incidence rather than identifying features of the program (b)."
+          ]
+        },
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "clearly link the fact that Jack’s genome had not been altered to the resulting clone being born with two eyes (a)",
+            "clearly, succinctly, and sequentially describe the characteristics and features of somatic cell nuclear transfer (b)",
+            "include all steps in the process, including stimulation of cell division via electric charge and the production of the cloned offspring as the outcome (b)."
+          ],
+          "areasToImprove": [
+            "linking the cause for the change in Jack to the effect on his clone (a)",
+            "describing the steps involved in whole animal cloning rather than just providing a general outline of the process or of the outcome (b)."
+          ]
+        },
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "correctly name a plant disease",
+            "give characteristics and features of the disease such as signs, symptoms and effect on the plant",
+            "recognise the effects on agriculture production such as poor quality of products and reduced yield."
+          ],
+          "areasToImprove": [
+            "naming plant diseases",
+            "describing the effect the disease has on the plant",
+            "identifying directional effects on agriculture, not just stating ‘it has an impact’."
+          ]
+        },
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "identify trends in the data by referencing specific data points. For example, after 1945 the number of raw milk disease outbreaks decreased significantly",
+            "explain the trends shown in the graph by providing logical reasons for the trend. For example, the lower number of outbreaks in pasteurised milk is likely due to heat killing microbes found in the milk",
+            "explain that the declining number of outbreaks in raw milk is likely due to fewer people drinking raw milk, because of increasing awareness of the benefits of pasteurised milk",
+            "expand on the contributions of Pasteur’s work as a reason for the trends observed in the graph. For example, Pasteur’s work in disproving spontaneous generation."
+          ],
+          "areasToImprove": [
+            "linking Pasteur’s work directly to the trends in the graph. For example, outbreaks related to pasteurised milk from 1915 onwards are always less than 5 because heating kills microbes in the milk, thereby preventing disease outbreaks",
+            "using specific data from the graph to support their explanations. For example, ‘infections from raw milk gradually declined from around 50 outbreaks in 1925 to less than 5 outbreaks from 1950 onwards’, rather than ‘infections from raw milk decreased’",
+            "interpreting the stimulus material to explain more than one trend, including the difference between pasteurised and raw milk outbreaks, and the declining infections from raw milk."
+          ]
+        },
+        {
+          "questionNumber": "28",
+          "betterResponses": [
+            "provide the correct parental genotypes with clear genotypes of offspring (a)",
+            "provide the correct probability as percentage, fraction, decimal or ratio (a)",
+            "demonstrate understanding of the deletion affecting two different codons (b)",
+            "demonstrate that after the deletion only phenylalanine is deleted (b)."
+          ],
+          "areasToImprove": [
+            "ensuring that the values are consistent if multiple ways of presenting probabilities are used, for example, 1/4 and 33% are contradictory (a)",
+            "understanding if 3 nucleotides are across two codons that both amino acids should have been affected (b)",
+            "interpreting the codon chart to understand that multiple codons can correspond to the same amino acid (b)."
+          ]
+        },
+        {
+          "questionNumber": "29",
+          "betterResponses": [
+            "accurately plot points (a)",
+            "draw a line of best fit where plot points were balanced either side of line (a)",
+            "extrapolate data by extending same trend line beyond data points (b)",
+            "read scale from extrapolated line accurately (b)",
+            "work with large numbers (b)."
+          ],
+          "areasToImprove": [
+            "plot data points clearly to avoid misrepresentation of data (a)",
+            "reading a scale (a)",
+            "choosing a graph appropriate for continuous data (a)",
+            "drawing relevant lines of best fit (a)",
+            "showing working on graph by drawing an extrapolated line (b)",
+            "performing calculations involving percentages (b)",
+            "showing working of required calculation (b)."
+          ]
+        },
+        {
+          "questionNumber": "30",
+          "betterResponses": [
+            "provide a similarity and a difference of the processes of transcription and DNA replication (a)",
+            "provide a thorough explanation of the importance of mRNA and tRNA in polypeptide synthesis (b)",
+            "relate the role of mRNA and tRNA to the process of polypeptide synthesis (b)",
+            "explain the role of mRNA in relation to DNA as a source of genetic information and tRNA matching the mRNA codons with complimentary anticodons and carrying amino acids specific to the mRNA codons (b)."
+          ],
+          "areasToImprove": [
+            "understanding the similarities and differences between transcription and DNA replication (a)",
+            "referring to the same feature when comparing, that is, same point of similarity or same point of difference (a)",
+            "using the correct terminology related to the role of mRNA and tRNA in polypeptide synthesis, for example, codon/anticodon, specific amino acid, binding (b)",
+            "understanding of the role of mRNA and tRNA in the process of polypeptide synthesis (b)",
+            "establishing a clear link between mRNA, tRNA and polypeptide synthesis (b)."
+          ]
+        },
+        {
+          "questionNumber": "31",
+          "betterResponses": [
+            "correctly interpret the graph using the key and include units (a)",
+            "use the information provided and the data in the graph to determine which organism was displaying torpor (b)",
+            "use the data about the human and the kookaburra to support their explanation (b)",
+            "outline a relevant adaptation for a bird that it could use within the inactive period. For example, shivering or huddling with other kookaburras (c)."
+          ],
+          "areasToImprove": [
+            "interpreting the x-axis scale to identify the time of the lowest body temperature (a)",
+            "providing reasons why the chosen organism was displaying torpor and not just identifying the organism (b)",
+            "referencing all the data provided to support their explanation (b)",
+            "linking the response to the stimulus material provided. For example, providing an adaptation relevant to a bird’s inactive period instead of flying to seek warmth or generate heat (c)",
+            "understanding that organisms cannot adapt in response to an environmental change. For example, grow more or thicker feathers in response to a drop in body temperature (c)."
+          ]
+        },
+        {
+          "questionNumber": "32",
+          "betterResponses": [
+            "use the 3 lines of defence to produce a well-structured response",
+            "show an understanding of how the innate and adaptive immune response work together",
+            "use the stimulus to support their response."
+          ],
+          "areasToImprove": [
+            "applying an understanding of the immune response to the context of the question",
+            "linking the innate and adaptive response."
+          ]
+        },
+        {
+          "questionNumber": "33",
+          "betterResponses": [
+            "identify what happens in meiosis (a)",
+            "link crossing over to genetic diversity (a)",
+            "recognise genetic diversity supports survival of the population (a)",
+            "identify correct allele location (b)",
+            "demonstrate the effect of crossing over (b)",
+            "correctly draw single chromosomes in gametes (b)."
+          ],
+          "areasToImprove": [
+            "understanding the function of meiosis (a)",
+            "understanding the process of crossing over, in terms of allele exchange (a)",
+            "linking the variation caused by crossing over to survival/adaptation (a)",
+            "describing and explaining the process of crossing over during meiosis (b)",
+            "drawing the outcome of meiosis (b)",
+            "distinguishing between chromosomes and chromatids (b)."
+          ]
+        },
+        {
+          "questionNumber": "34",
+          "betterResponses": [
+            "provide two different biotechnologies with suitable examples of each",
+            "provide impacts for and/or against the use of each biotechnology in society",
+            "provide ethical implications of both biotechnologies."
+          ],
+          "areasToImprove": [
+            "distinguishing between biotechnologies and other technologies",
+            "establishing a link between the advantages of the biotechnologies and their impact on any segment of society",
+            "highlighting the ethical implications of the biotechnology provided by explaining why it raises concerns for certain sections of society."
+          ]
+        },
+        {
+          "questionNumber": "35",
+          "betterResponses": [
+            "identify that the cochlear implant directly stimulates the auditory nerve",
+            "use specific terminology to describe how a cochlear implant works",
+            "compare the trends in the data for all 3 different age groupings, to describe the impact of cochlear implantation on communication."
+          ],
+          "areasToImprove": [
+            "distinguishing between hearing aids, bone conduction devices and cochlear implants and how they work",
+            "referring explicitly to the stimulus material",
+            "engaging with all elements of the graph."
+          ]
+        }
+      ]
+    }
+  ]
+}

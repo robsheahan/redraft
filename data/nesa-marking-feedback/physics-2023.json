@@ -1,0 +1,270 @@
+{
+  "subject": "Physics",
+  "slug": "physics",
+  "year": 2023,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/physics/2023",
+  "scrapedAt": "2026-04-06T09:18:21.948Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components",
+    "have a clear understanding of the glossary of key words in the question and recognise the intent of the question and its requirements",
+    "plan the response to assist in the logical sequencing of information",
+    "integrate relevant scientific terms into their responses",
+    "show clear cause and effect relationships related to key physical concepts in explanations",
+    "engage with any stimulus material provided and refer to it in their response when required by the question",
+    "show full working in calculations including formulas and substitution into formulas",
+    "include correct units and directions for calculated vector quantities",
+    "review their response to ensure that it addresses all the requirements of the question",
+    "be familiar with the constants and formulas provided on the Data and Formula Sheets",
+    "be familiar with the SI units of all relevant quantities and the relevant prefixes and their abbreviations",
+    "be able to plot graphs and understand the relationship between the graph and the relevant concept",
+    "be able to extract quantitative relationships from graphs",
+    "be familiar with key physical principles such as, conservation laws and laws of motion and be able to apply them in a range of contexts",
+    "be able to discuss how a range of models are applied in Physics and the evidence used to validate them."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21(a)",
+          "betterResponses": [
+            "correctly identify variables to determine luminosity."
+          ],
+          "areasToImprove": [
+            "distinguishing between the definitions for luminosity and brightness."
+          ]
+        },
+        {
+          "questionNumber": "21(b)",
+          "betterResponses": [
+            "describe a range of features comparing Star A and Star B on an H-R diagram. For example, hydrogen fusion in Star A and no fusion in Star B."
+          ],
+          "areasToImprove": [
+            "interpreting the H-R diagram correctly and understanding complex features of stars such as fuel and size to use in comparisons."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "identify the time between the pulses is the relativistic time."
+          ],
+          "areasToImprove": [
+            "calculating the correct value for the denominator of the time dilation equation."
+          ]
+        },
+        {
+          "questionNumber": "23(a)",
+          "betterResponses": [
+            "identify and make accurate substitutions into the correct equation for gravitational force."
+          ],
+          "areasToImprove": [
+            "using values with scientific notation in calculations. For example, 6 x 10 -7 equals 0.0000006."
+          ]
+        },
+        {
+          "questionNumber": "23(b)",
+          "betterResponses": [
+            "identify that the longer wavelength photon had the lower energy and therefore make the appropriate calculations."
+          ],
+          "areasToImprove": [
+            "substituting into relevant equations."
+          ]
+        },
+        {
+          "questionNumber": "23(c)",
+          "betterResponses": [
+            "report an answer in SI units."
+          ],
+          "areasToImprove": [
+            "understanding that Kelvins are the SI unit of temperature in astronomy."
+          ]
+        },
+        {
+          "questionNumber": "24(a)",
+          "betterResponses": [
+            "equate the correct equations to determine the magnetic field required."
+          ],
+          "areasToImprove": [
+            "recognising that magnetic field is a vector quantity, therefore, direction is needed.",
+            "understanding that Ampere’s Law is only for current in straight conductors and not for particles in a magnetic field and cannot be used in this question."
+          ]
+        },
+        {
+          "questionNumber": "25(a)",
+          "betterResponses": [
+            "describe the function of a split ring commutator as reversing the current in the loop."
+          ],
+          "areasToImprove": [
+            "ensuring they address the key word used in the question."
+          ]
+        },
+        {
+          "questionNumber": "25(b)",
+          "betterResponses": [
+            "explain that increased back emf will reduce the current in the motor."
+          ],
+          "areasToImprove": [
+            "distinguishing that part a and b were separate questions",
+            "understanding that eddy currents are not the same as back emf",
+            "identifying back emf in the motor",
+            "showing a cause-and-effect relationship."
+          ]
+        },
+        {
+          "questionNumber": "26(a)",
+          "betterResponses": [
+            "calculate the mass defect from the data then use this to calculate energy",
+            "organise mathematical working showing all steps and substitution of data in a logical way",
+            "state the relevant units for energy using either MeV or Joules."
+          ],
+          "areasToImprove": [
+            "transposing data from the table",
+            "understanding that mass is provided in atomic mass units and it is not energy",
+            "being aware of significant figures and the inaccuracy that results with rounding data too early."
+          ]
+        },
+        {
+          "questionNumber": "27(a)",
+          "betterResponses": [
+            "compare emission spectra of elements to absorption spectra of stars",
+            "describe maximum peak intensity in relation to black body radiation curve."
+          ],
+          "areasToImprove": [
+            "understanding that maximum wavelength in Wiens Law is the wavelength at peak intensity",
+            "describing how different elements have unique emission spectra and link this to how it is used to determine chemical composition."
+          ]
+        },
+        {
+          "questionNumber": "27(b)",
+          "betterResponses": [
+            "relate red shifted and blue shifted light to approaching and receding sides of the rotating star to explain broadened spectral line."
+          ],
+          "areasToImprove": [
+            "relating red shift and blue shift to the parts of the star that are rotating",
+            "understanding the difference between a star's rotation on its axis and the concept of an object's revolution."
+          ]
+        },
+        {
+          "questionNumber": "28(a)",
+          "betterResponses": [
+            "identify the correct equation and substitute the data given."
+          ],
+          "areasToImprove": [
+            "showing the equation being used and the data being substituted."
+          ]
+        },
+        {
+          "questionNumber": "28(b)",
+          "betterResponses": [
+            "apply Ohm’s Law to the secondary circuit when a second globe is added",
+            "apply the Law of Conservation of Energy to then deduce the effect of the change in current from the secondary coil to the primary coil."
+          ],
+          "areasToImprove": [
+            "understanding the change in current that occurs when a globe is added to a parallel circuit",
+            "explaining the application of the Law of Conservation of Energy when a current is changed in a transformer."
+          ]
+        },
+        {
+          "questionNumber": "29",
+          "betterResponses": [
+            "describe the unpolarised nature of the light emitted by the incandescent lamp",
+            "explain how a component of waves not parallel or perpendicular to the polarising axis were transmitted and relate this to a reduction in intensity",
+            "support their answers with clear diagrams."
+          ],
+          "areasToImprove": [
+            "describing the important feature of the light before and after it passes through the polariser",
+            "explaining how the interaction of unpolarised light with the polariser results in polarised light",
+            "including a labelled diagram."
+          ]
+        },
+        {
+          "questionNumber": "30(a)",
+          "betterResponses": [
+            "show how the rate of change of flux through the ring determined the force between the ring and the coil."
+          ],
+          "areasToImprove": [
+            "determining the effect of the changing magnetic field on the ring."
+          ]
+        },
+        {
+          "questionNumber": "30(b)",
+          "betterResponses": [
+            "identify that an emf is induced in ring Y, but no current will flow (i)",
+            "calculate the emf induced in the ring for the time period that the magnetic flux was increasing (ii)."
+          ],
+          "areasToImprove": [
+            "relating an electromagnetic change in the ring to the ring’s motion (i)",
+            "substituting the correct values (including powers of 10) into a relevant equation (ii)."
+          ]
+        },
+        {
+          "questionNumber": "31",
+          "betterResponses": [
+            "apply the concept of electromagnetic induction due to the relative motion of magnets on the roller coaster and the aluminium braking fin to explain similarities and differences between the two data sets."
+          ],
+          "areasToImprove": [
+            "engaging with all parts of the graph to identify similarities and differences",
+            "considering cause and effect to explain the features of the graph."
+          ]
+        },
+        {
+          "questionNumber": "32",
+          "betterResponses": [
+            "determine the range by evaluating the rotational speed of the launcher and applying it as a horizontal velocity for the ball",
+            "determine the time of flight by considering the vertical velocity",
+            "use clear and concise diagrams or annotations/descriptions to indicate the position of the ball relative to the new launcher position."
+          ],
+          "areasToImprove": [
+            "realising there was both a horizontal motion for the ball and a rotational motion for the launcher at the same time",
+            "being clear in labelling diagrams or describing positions, particularly including the use of angles",
+            "ensuring clear lay out of working so it is easy to follow",
+            "being careful with rounding in calculations too early."
+          ]
+        },
+        {
+          "questionNumber": "33",
+          "betterResponses": [
+            "identify multiple experiments and observations which allowed scientists to increase their knowledge of both processes that occur in the physical world and properties of subatomic particles",
+            "recount methods and use diagrams while relating these procedures to both the field particles interacted with, and the interactions with matter. A combination of Thompson, Millikan, Chadwick, Geiger Marden and particle accelerators afforded students ample opportunity to address all these points."
+          ],
+          "areasToImprove": [
+            "using diagrams in their answers deconstructing the question and addressing all parts in detail",
+            "knowing details of key experiments including methods and outcomes."
+          ]
+        },
+        {
+          "questionNumber": "34(a)",
+          "betterResponses": [
+            "link the conservation of energy of the satellite as it moves from P to Q with the decrease in K and increase in U (that results from radius increasing)."
+          ],
+          "areasToImprove": [
+            "using conservation of energy to analyse the situation",
+            "focusing on the P to Q part of the journey and being aware that this is after the engines are fired",
+            "knowing that an increase in radius leads to a smaller negative U value which is an increase in U."
+          ]
+        },
+        {
+          "questionNumber": "34(b)",
+          "betterResponses": [
+            "follow a logical problem-solving sequence incorporating all relevant energy values to reach the desired value for K at Q."
+          ],
+          "areasToImprove": [
+            "using a clear step-by-step process incorporating subscripts to ensure clarity about where the E, U and K values are being determined",
+            "showing full working with equation, substitution and answer unrounded."
+          ]
+        },
+        {
+          "questionNumber": "34(c)",
+          "betterResponses": [
+            "use physics principles appropriately supported by calculations to provide the ‘how’ and ‘why’ for a specific motion of the satellite passes Q."
+          ],
+          "areasToImprove": [
+            "showing a cause-and-effect relationship",
+            "understanding the potentially sequential nature of questions and therefore referring back to parts (b) and (c)",
+            "using physics principles and numerical values to support responses."
+          ]
+        }
+      ]
+    }
+  ]
+}

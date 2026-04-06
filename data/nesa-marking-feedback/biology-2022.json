@@ -1,0 +1,260 @@
+{
+  "subject": "Biology",
+  "slug": "biology",
+  "year": 2022,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/biology/2022",
+  "scrapedAt": "2026-04-06T09:18:18.132Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements",
+    "plan the response to assist in the logical sequencing of information",
+    "integrate relevant scientific terms into their responses",
+    "engage with any stimulus material provided and refer to it in their response",
+    "show all working in calculations and include correct units",
+    "present a logical and succinct response that addresses the question",
+    "review their response to ensure that it addresses the question requirements."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21(a)",
+          "betterResponses": [
+            "correctly outline a route of transmission between affected and unaffected hosts",
+            "demonstrate a clear understanding of the modes of transmission, with examples as outlined in the syllabus, for example, direct contact, indirect contact, and vector transmission."
+          ],
+          "areasToImprove": [
+            "providing an adequate outline of the route of transmission, not just identifying a transmission route."
+          ]
+        },
+        {
+          "questionNumber": "21(b)",
+          "betterResponses": [
+            "demonstrate their knowledge of the distinguishing features of each pathogen group to correctly complete the key."
+          ],
+          "areasToImprove": [
+            "providing the correct biological terms to distinguish one pathogen group from another, for example, fungi and protozoa, as opposed to eukaryotes",
+            "classifying the pathogen groups based on their distinguishing features, for example, the presence or absence of a nucleus or the cellular or non-cellular nature of the pathogen."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "recognise that the violet eggplant was an example of incomplete dominance",
+            "use a Punnett square to show the resulting offspring from two heterozygous violet eggplants",
+            "translate the offspring genotypes into a phenotypic ratio, for example, PP:PW:WW = dark purple:violet:white = 1:2:1."
+          ],
+          "areasToImprove": [
+            "drawing and using Punnett squares accurately, including a key",
+            "translating the stimulus information into appropriate genotypes, for example, recognising the violet eggplant was heterozygous for the alleles because the parents were homozygous for each trait",
+            "demonstrating an understanding of phenotypic ratios",
+            "assigning letters to represent alleles and genotypes that are different in capital form compared to lower case, for example, Aa compared to Vv."
+          ]
+        },
+        {
+          "questionNumber": "23(a)",
+          "betterResponses": [
+            "demonstrate their understanding of artificial pollination as being a manual, human-induced process involving the selective transfer of pollen between plants",
+            "correctly demonstrate their knowledge of the reproductive organs of angiosperms, for example, anther and stigma."
+          ],
+          "areasToImprove": [
+            "identifying the male and female reproductive parts of a flower."
+          ]
+        },
+        {
+          "questionNumber": "23(b)",
+          "betterResponses": [
+            "demonstrate their understanding of possible outcomes with logical reasoning."
+          ],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "24(a)",
+          "betterResponses": [
+            "draw a line graph with correct axes, labels, scales, and clearly plotted data points",
+            "draw a smooth, continuous curved line of best fit through all data points."
+          ],
+          "areasToImprove": [
+            "labelling the axes using the headings and units provided in the stimulus",
+            "using the most appropriate scale to represent the data",
+            "drawing a suitable line of best fit for the data and not joining data points in a dot-to-dot manner",
+            "recognising that it is incorrect to extrapolate the data to zero."
+          ]
+        },
+        {
+          "questionNumber": "24(b)",
+          "betterResponses": [
+            "identify the trend as the exponential relationship between maternal age and the rate of increase of prevalence of chromosomal abnormalities."
+          ],
+          "areasToImprove": [
+            "outlining the trend by providing detail on the change in the rate of increase of chromosomal abnormalities, not just identifying that as one increases so does the other",
+            "referring to the data to support the outline of the trend."
+          ]
+        },
+        {
+          "questionNumber": "24(c)",
+          "betterResponses": [
+            "clearly identify a type of chromosomal mutation, such as aneuploidy, trisomy, monoploidy, deletion, inversion, translocation, and explain the cause of the identified chromosomal mutation using appropriate terminology."
+          ],
+          "areasToImprove": [
+            "understanding that point mutations are not a type of chromosomal mutation",
+            "explaining the cause of the chromosomal mutation, rather than describing the type of chromosomal mutation or listing the cause with no detail."
+          ]
+        },
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "comprehensively compare the two forms of reproduction, identifying mutation as a similarity and provided detailed processes of how variations arise in sexual reproduction",
+            "link various parts of the syllabus together to formulate a response, for example, Modules 5 and 6 on mutations, meiosis and mitosis and the relevant explanations related to a comparison of offspring",
+            "use correct and precise scientific terms in demonstrating their understanding of the processes in mitosis and meiosis that lead to genetic variations."
+          ],
+          "areasToImprove": [
+            "demonstrating an understanding, more than identification, of the processes in reproduction that lead to variations",
+            "expressing the causes of genetic variation relating to the processes of mitosis, meiosis and mutation",
+            "distinguishing between the sources of variation in sexual and asexual reproduction, as opposed to the mechanisms of reproduction",
+            "illustrating an understanding of the foundation concepts of mitosis, meiosis, sexual and asexual reproduction that are integral processes in organisms."
+          ]
+        },
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "provide a safe and logical procedure to test the effectiveness of Jelly Bush honey",
+            "include independent, dependent, and controlled variables, the use of a control and repetition",
+            "include safety considerations throughout the procedure."
+          ],
+          "areasToImprove": [
+            "ensuring nutrient agar is inoculated with bacteria, rather than just adding honey and assuming the prevention of bacterial growth",
+            "inoculating with a pure culture of bacteria",
+            "comparing bacterial growth from inoculated samples with a control",
+            "writing a safe procedure that does not include any unsafe steps such as opening the petri dish after incubation of bacteria."
+          ]
+        },
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "base their judgement on a detailed analysis of the stimulus, where they used information from both the text above the graph, and the data on the graph",
+            "provide appropriate biological reasoning for each of the three campaigns, and relate it to decreasing the incidence of cervical cancer",
+            "demonstrate the link between the role of vaccinating boys in preventing transmission of the virus to girls",
+            "state that there was insufficient data to support the success of the vaccination as there was not enough time to see whether it was effective."
+          ],
+          "areasToImprove": [
+            "engaging with all parts of the stimulus, not just the graph",
+            "interpreting each axis of the graph to provide correct conclusions, for example, linking the drop in incidence of cervical cancer to the year the particular program was implemented",
+            "questioning whether the data supported their judgement."
+          ]
+        },
+        {
+          "questionNumber": "28(a)",
+          "betterResponses": [
+            "correctly identify Model 2 based on the semi-conservative DNA strands shown."
+          ],
+          "areasToImprove": [
+            "understanding that DNA replication results in two semi-conservative DNA molecules as indicated by each product having one of each parent strand."
+          ]
+        },
+        {
+          "questionNumber": "28(b)",
+          "betterResponses": [
+            "describe key steps involved in DNA replication including the ‘unzipping’ of DNA, the binding of free floating complementary nitrogenous bases to the exposed strands before ‘gluing’ the two completed strands together to form two semi-conservative and identical DNA molecules",
+            "include the role of enzymes at different stages (note: specific names were not required)."
+          ],
+          "areasToImprove": [
+            "avoiding the confusion of DNA replication with polypeptide synthesis",
+            "providing adequate detail at each step to demonstrate that the key role of DNA replication is to produce two semi-conservative, identical DNA molecules",
+            "understanding that knowing the names of specific enzymes is not a requirement of the syllabus. However, if choosing to explicitly name the enzymes involved, ensuring they are named correctly."
+          ]
+        },
+        {
+          "questionNumber": "28(c)",
+          "betterResponses": [
+            "outline a minimum of two key differences in DNA structure between prokaryotic and eukaryotic cells including information relating to the linear versus circular chromosomes, the DNA being tightly wrapped around histone proteins in eukaryotic cells and the relative absence of introns in prokaryotic cells."
+          ],
+          "areasToImprove": [
+            "understanding that the DNA molecular structure itself is the same in prokaryotic and eukaryotic cells as it is the chromosome structures that differ",
+            "understanding the question is related to DNA structure, not its location nor the differences between prokaryotic and eukaryotic cells."
+          ]
+        },
+        {
+          "questionNumber": "29",
+          "betterResponses": [
+            "show the relationship between increasing cotton yield to the introduction of Bt cotton (a)",
+            "explain how the introduction of Bt cotton caused an increase in the yield, though the killing off of the bollworm pest (a)",
+            "recognise the trends within the graphs and link the implications with insecticide use (b)",
+            "recognise the increased use of insecticide for hemiptera is due to an increase in the population of this pest, a result of reduced competition from the bollworm (b)."
+          ],
+          "areasToImprove": [
+            "making inferences from trends (a)",
+            "engaging with all parts of the stimulus (b)",
+            "linking multiple stimuli together to form a succinct response (b)",
+            "considering both the advantages and disadvantages of the Bt cotton (b)."
+          ]
+        },
+        {
+          "questionNumber": "30",
+          "betterResponses": [
+            "identify multiple differences within the maps, for example, specific locations where the malaria vector was present but malaria was not, and where the vector was absent but malaria was present",
+            "apply their knowledge of infectious disease through the transmission of a vector."
+          ],
+          "areasToImprove": [
+            "engaging with the stimulus to show how the maps differ when comparing the distribution of the mosquito vector and the distribution of malaria cases",
+            "considering multiple reasons for the differences between the maps."
+          ]
+        },
+        {
+          "questionNumber": "31(a)",
+          "betterResponses": [
+            "give a judgement about the effectiveness or validity, using features of the epidemiological study (i)",
+            "apply their knowledge of epidemiology to passive smoking (i)",
+            "identify a valid control group (i)",
+            "give two correct conclusions about the results that were supported by the study (ii)",
+            "support each conclusion with the data from lung cancer mortality rates (ii)."
+          ],
+          "areasToImprove": [
+            "using the whole stimulus provided (i)",
+            "providing a clearly identifiable judgement (i)",
+            "analysing the study and consider advantages and disadvantages (i)",
+            "selecting appropriate data to support their conclusions (ii)",
+            "linking inferences from the data to their conclusions (ii)."
+          ]
+        },
+        {
+          "questionNumber": "31(b)",
+          "betterResponses": [
+            "organise their response into a clear and succinct flow chart (i)",
+            "make clear reference to the EGFR protein stated in the stimulus and not just protein synthesis (i)",
+            "outline key features of transcription including complementary base pairing in transcription (A-U and C-G) and thymine being replaced by uracil in mRNA (i)",
+            "outline key features of translation including the roles of mRNA (codons) and tRNA (anticodons) (i)",
+            "include the polypeptide chain folding into a protein as the final stage of the flow chart (i)",
+            "use labelled diagrams to support their response (i)",
+            "describe mutations affecting EGFR gene as leading to changes in the amino acid sequence (ii)",
+            "engage with the stimulus material provided and refer to the impact of changes in the EGFR gene on protein structure and function (ii)",
+            "refer to the changes in enzymes and receptors due to mutations and how this can lead to uncontrolled cell division (ii)."
+          ],
+          "areasToImprove": [
+            "knowing the difference between DNA replication and polypeptide synthesis (i)",
+            "using correct terminology for the steps involved in polypeptide synthesis (i)",
+            "using the stimulus and relating the flow chart specifically to the creation of the folded EGFR protein rather than a general protein (i)",
+            "using the stimulus effectively in the response (ii)",
+            "linking an understanding of mutations to the change in structure and ultimately function of controlling cell division (ii)",
+            "understanding that uncontrolled cell division leads to cancer (ii)."
+          ]
+        },
+        {
+          "questionNumber": "32",
+          "betterResponses": [
+            "use the stimulus to support explanations of each process",
+            "provide explanations of changes in gene pools."
+          ],
+          "areasToImprove": [
+            "understanding the difference between gene flow and genetic drift",
+            "using cause and effect statements to demonstrate their understanding of the processes",
+            "demonstrating how the processes could result in differences in gene pools",
+            "integrating the stimulus to demonstrate their understanding of the processes",
+            "relating their response specifically to the data in the question and table."
+          ]
+        }
+      ]
+    }
+  ]
+}

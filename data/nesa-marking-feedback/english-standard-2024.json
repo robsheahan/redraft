@@ -1,0 +1,111 @@
+{
+  "subject": "English Standard",
+  "slug": "english-standard",
+  "year": 2024,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/english-standard/2024",
+  "scrapedAt": "2026-04-06T09:18:14.883Z",
+  "generalFeedback": [],
+  "sections": [
+    {
+      "name": "Paper 1 – Section I: Texts and human experiences",
+      "questions": [
+        {
+          "questionNumber": "1",
+          "betterResponses": [
+            "explain effectively Brazil’s connection to place using well-chosen textual references to support her connection to Venice",
+            "explain the link to connection to place."
+          ],
+          "areasToImprove": [
+            "using well-chosen supporting evidence",
+            "explaining rather than providing a recount",
+            "identifying Brazil’s connection to place using appropriate textual references to support."
+          ]
+        },
+        {
+          "questionNumber": "2",
+          "betterResponses": [
+            "identify the complex concept of change",
+            "explain effectively how Morton represented change through observing others and reflecting on her own life",
+            "use well-chosen supporting evidence to articulate the experience of change."
+          ],
+          "areasToImprove": [
+            "using well-chosen evidence to support points about change",
+            "explaining rather than recounting the events in the text",
+            "identifying more than one aspect of change that is referenced in the text."
+          ]
+        },
+        {
+          "questionNumber": "3",
+          "betterResponses": [
+            "demonstrate an effective understanding of how Green invites the reader to consider aspects/ideas/areas of the human sense of smell",
+            "make clear and sustained connection to aspects/ideas/areas of human sense of smell",
+            "use appropriate supporting evidence to explain how Green invites the reader to consider aspects of the human sense of smell, for example, ‘Humans, smell like the exhalations of the bacteria that colonize us ... in how we collectively imagine the human scent’."
+          ],
+          "areasToImprove": [
+            "avoiding simple descriptions or recounts of the text."
+          ]
+        },
+        {
+          "questionNumber": "4",
+          "betterResponses": [
+            "clearly and effectively analyse how Vincent connects the significance of measurement to human experience",
+            "unpack the significance of measurement in shaping the human experience",
+            "use well-chosen supporting evidence to support their ideas, for example, ‘If we could not measure, then we could not observe the world around us; could not experiment and learn’."
+          ],
+          "areasToImprove": [
+            "analysing language techniques as supporting evidence rather than explaining through examples",
+            "making clear connections between the significance of measurement and human experience."
+          ]
+        },
+        {
+          "questionNumber": "5",
+          "betterResponses": [
+            "compare skilfully how both texts offer a perspective on the ways individuals perceive their surrounding",
+            "use detailed and well-selected evidence from both texts that support the comparison of texts and ideas, for example, ‘... the sky in front becoming pink and soft ...’",
+            "sustain the comparison between the texts by showing how the texts and/or ideas are similar or different."
+          ],
+          "areasToImprove": [
+            "writing a succinct and clear response that addresses all parts of the question",
+            "using comparative language such as, ‘by contrast’, ‘similarly’ to construct a coherent comparison."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Paper 2 – Section III: The craft of writing (Module C)",
+      "questions": [
+        {
+          "questionNumber": "3",
+          "betterResponses": [],
+          "areasToImprove": []
+        },
+        {
+          "questionNumber": "3(a)",
+          "betterResponses": [
+            "explore at least one idea from the stimulus conceptually and metaphorically to compose an engaging imaginative piece of writing",
+            "effectively craft a response using a range of language devices and stylistic devices to create an engaging imaginative piece of writing",
+            "demonstrate strong and sustained control of language and structure throughout their response, appropriate to audience, purpose, context and form."
+          ],
+          "areasToImprove": [
+            "crafting a response through thoughtful selection of literary devices that purposefully create meaning",
+            "showing awareness of context by using appropriate content and subject matter",
+            "demonstrating effective control of the mechanics of language including paragraphing, sentence structure, spelling, grammar and punctuation."
+          ]
+        },
+        {
+          "questionNumber": "3(b)",
+          "betterResponses": [
+            "clearly explain one stylistic device used in (a) with relevant references",
+            "effectively explain how their chosen stylistic device was inspired by one of their Module C texts",
+            "make strong links between their chosen Module C text and their own imaginative writing",
+            "demonstrate confident and sustained control of language."
+          ],
+          "areasToImprove": [
+            "using specific, relevant textual references from their own writing and one Module C text to support their explanation",
+            "demonstrating effective control of language, including syntax, spelling and punctuation."
+          ]
+        }
+      ]
+    }
+  ]
+}

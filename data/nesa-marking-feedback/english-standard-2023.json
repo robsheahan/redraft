@@ -1,0 +1,75 @@
+{
+  "subject": "English Standard",
+  "slug": "english-standard",
+  "year": 2023,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/english-standard/2023",
+  "scrapedAt": "2026-04-06T09:18:15.426Z",
+  "generalFeedback": [],
+  "sections": [
+    {
+      "name": "Paper 1 – Section I: Texts and human experiences",
+      "questions": [
+        {
+          "questionNumber": "1",
+          "betterResponses": [
+            "explain effectively how Greenacre represents the value of shared experiences, for example, through inclusive statements such as ‘one and all’, and ‘a family of four children was suddenly one at home’",
+            "use well-chosen textual evident to support their explanation of familial belonging",
+            "provide an explanation that showed a specific understanding of the nature of the family’s shared experience."
+          ],
+          "areasToImprove": [
+            "avoiding simple explanations or recount of the events of the poem",
+            "considering the value of the experience rather than just the experience itself."
+          ]
+        },
+        {
+          "questionNumber": "2",
+          "betterResponses": [
+            "skilfully explain the importance of kindness as suggested by the composer. For example, through contrast such as ‘we’re all acutely aware of the warmth of it, along with the frost of its opposite’, and emotive language such as ‘that lovely mother melted me back down to my original form, just by being kind’",
+            "make a clear and specific link between the experiences of welcome to the kindness that they demonstrate and foster",
+            "coherently and logically articulate ideas",
+            "use well-chosen evidence in support of their ideas."
+          ],
+          "areasToImprove": [
+            "making the link between welcome and kindness",
+            "providing a response that explains the link rather than recounting the events of the text."
+          ]
+        },
+        {
+          "questionNumber": "3",
+          "betterResponses": [
+            "demonstrate an effective understanding of why Dank prefers ‘that gravel and dust comfort, away from that other place’",
+            "make clear and sustained connections to place",
+            "use well-chosen supporting evidence that assists in unpacking why Dank prefers ‘that gravel and dust comfort, away from that other place’."
+          ],
+          "areasToImprove": [
+            "avoiding simple descriptions of recounts of the text",
+            "providing a detailed and effective understanding of why Dank prefers ‘that gravel and dust comfort, away from that other place’."
+          ]
+        },
+        {
+          "questionNumber": "4",
+          "betterResponses": [
+            "demonstrate an effective analysis of Langbroek’s representation of the emotional impact of new places",
+            "unpack the emotional impacts of new places, for example, ‘emotional reasons of love and appreciation’",
+            "use well-chosen supporting evidence to support their points."
+          ],
+          "areasToImprove": [
+            "analysing, rather than just explaining examples",
+            "making clear connections between the emotional impact of new places."
+          ]
+        },
+        {
+          "questionNumber": "5",
+          "betterResponses": [
+            "explain skilfully how Hamblin expands the reader’s understanding of the paradoxes of consumerism",
+            "unpack the paradoxes of consumerism, for example, even a bad experience becomes a good story’",
+            "use well-chosen supporting evidence to support the paradoxes identified."
+          ],
+          "areasToImprove": [
+            "describing rather than explaining the reader’s understanding of the paradoxes of consumerism."
+          ]
+        }
+      ]
+    }
+  ]
+}

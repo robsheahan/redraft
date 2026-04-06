@@ -1,0 +1,112 @@
+{
+  "subject": "English Advanced",
+  "slug": "english-advanced",
+  "year": 2023,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/english-advanced/2023",
+  "scrapedAt": "2026-04-06T09:18:13.250Z",
+  "generalFeedback": [],
+  "sections": [
+    {
+      "name": "Paper 1 – Section I: Texts and human experiences",
+      "questions": [
+        {
+          "questionNumber": "1",
+          "betterResponses": [
+            "demonstrate an effective understanding of why Dank prefers ‘that gravel and dust comfort, away from that other place’",
+            "make clear and sustained connections to place",
+            "use well-chosen supporting evidence that assists in unpacking why Dank prefers ‘that gravel and dust comfort, away from that other place’."
+          ],
+          "areasToImprove": [
+            "avoiding simple descriptions of recounts of the text",
+            "providing a detailed and effective understanding of why Dank prefers ‘that gravel and dust comfort, away from that other place’."
+          ]
+        },
+        {
+          "questionNumber": "2",
+          "betterResponses": [
+            "demonstrate an effective analysis of Langbroek’s representation of the emotional impact of new places",
+            "unpack the emotional impacts of new places, for example, ‘emotional reasons of love and appreciation’",
+            "use well-chosen supporting evidence to support their points."
+          ],
+          "areasToImprove": [
+            "analysing, rather than just explaining examples",
+            "making clear connections between the emotional impact of new places."
+          ]
+        },
+        {
+          "questionNumber": "3",
+          "betterResponses": [
+            "explain skilfully how Hamblin expands the reader’s understanding of the paradoxes of consumerism",
+            "unpack the paradoxes of consumerism, for example, even a bad experience becomes a good story’",
+            "use well-chosen supporting evidence to support the paradoxes identified."
+          ],
+          "areasToImprove": [
+            "describing rather than explaining the reader’s understanding of the paradoxes of consumerism."
+          ]
+        },
+        {
+          "questionNumber": "4",
+          "betterResponses": [
+            "explain skilfully how Robertson challenges the trend towards ‘self-narrativisation’ in modern culture",
+            "unpack the trend towards ‘self-narrativisation’ in modern culture and how Robertson challenges this is sustained and coherent",
+            "use well-chosen supporting evidence to support the ideas, for example, 'emphasises its damaging effects upon true identity.'"
+          ],
+          "areasToImprove": [
+            "explaining rather than describing",
+            "consistency with explanation on all aspects of the question."
+          ]
+        },
+        {
+          "questionNumber": "5",
+          "betterResponses": [
+            "demonstrate a skilful analysis of how O’Sullivan captures the idea of being in the moment",
+            "sustain analysis through strong insight of being in the moment for example, the transient nature of time and the need to capture the moment",
+            "use detailed and well-chosen evidence that supported how O’Sullivan captures the idea of being in the moment."
+          ],
+          "areasToImprove": [
+            "analysing rather than explaining how O’Sullivan captures the idea of being in the moment",
+            "sustaining the insight of being in the moment."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Paper 2 – Section III: The craft of writing (Module C)",
+      "questions": [
+        {
+          "questionNumber": "3(a)",
+          "betterResponses": [
+            "interpret the key terms of the question to demonstrate a range of stylistic choices to establish and sustain tone",
+            "demonstrate an understanding of the hope that comes with anticipation",
+            "craft an authentic and sustained voice with deliberate control and awareness of audience, purpose and context",
+            "incorporate the stimulus as a stylistic choice, such as a motif or cyclical structure",
+            "construct a response focusing on hopeful subject matter, which contained a discerning tone appropriate to audience and context."
+          ],
+          "areasToImprove": [
+            "responding to the specific demands of the question, such as focusing on establishing a relationship between the ideas of ‘hope’ and anticipation’",
+            "providing clear and meaningful links between the stimulus extract and the concepts in the question",
+            "clearly identifying part (a) textual references and using more than one textual reference to illustrate their intentions in part (a)",
+            "providing a balanced treatment of hope and anticipation."
+          ]
+        },
+        {
+          "questionNumber": "3(b)",
+          "betterResponses": [
+            "provide a clear intent or purpose for their piece of writing in part (a), drawing on key concepts of the Module",
+            "justify their intent or purpose by using well selected stylistic choices from their part (a) response",
+            "include deliberate and detailed references from their part (a) text, using skilful control of language",
+            "use quotes from their part (a) response when justifying or explaining the effect of stylistic choices."
+          ],
+          "areasToImprove": [
+            "providing clear and purposeful statements to organise their part (b) response",
+            "ensuring that quotes and textual references from their writing in part (a) are supported by meaningful links to the focus of the question",
+            "incorporating specific consideration about the effect on the reader rather than general statements",
+            "judiciously selecting textual references from part (a) to support ideas",
+            "drawing on the text prescriptions to enhance their original ideas",
+            "establishing and sustaining their original ideas using judicious references to prescribed texts."
+          ]
+        }
+      ]
+    }
+  ]
+}

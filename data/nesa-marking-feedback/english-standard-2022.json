@@ -1,0 +1,80 @@
+{
+  "subject": "English Standard",
+  "slug": "english-standard",
+  "year": 2022,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/english-standard/2022",
+  "scrapedAt": "2026-04-06T09:18:15.973Z",
+  "generalFeedback": [],
+  "sections": [
+    {
+      "name": "Paper 1 – Section I: Texts and human experiences",
+      "questions": [
+        {
+          "questionNumber": "1",
+          "betterResponses": [
+            "clearly, correctly and completely answer the question",
+            "show a thoughtful understanding of the sense of freedom expressed in the novel extract",
+            "analyse how the author has shaped this idea through his use of language and/or stylistic features",
+            "offer relevant examples from the text to support their ideas."
+          ],
+          "areasToImprove": [
+            "analysing textual evidence rather than explanation or description",
+            "addressing all aspects of the question",
+            "selecting suitable textual evidence to support their ideas."
+          ]
+        },
+        {
+          "questionNumber": "2",
+          "betterResponses": [
+            "insightfully explain the effect that memories can have on us over time",
+            "cohesively consider both the text and the images in their response",
+            "offer suitable examples from the text to support their ideas."
+          ],
+          "areasToImprove": [
+            "avoiding recounting the experiences explored in the interview",
+            "considering how memories can specifically affect us over time",
+            "selecting suitable textual evidence to support their ideas."
+          ]
+        },
+        {
+          "questionNumber": "3",
+          "betterResponses": [
+            "explain effectively the different ways Azzam celebrates togetherness of different people and cultures, for example, through detailing the origins of the diversity of the spices such as ‘West Indies’ and ‘Indonesia’",
+            "use well-chosen textual evidence to support their explanation of how togetherness was celebrated",
+            "provide an explanation that was closely linked to the metaphorical interpretation of the poem."
+          ],
+          "areasToImprove": [
+            "addressing the question with a close emphasis on the ways Azzam celebrates considering togetherness of people and cultures rather than food or spices",
+            "providing well-chosen evidence that supports their ideas."
+          ]
+        },
+        {
+          "questionNumber": "4",
+          "betterResponses": [
+            "analyse effectively how Fforde captures the narrator’s experience of awe and wonder, for example, through the rich description of the setting as ‘elegant’ and ‘endless’ library, and the quality of the books, for example, ‘these books (are) alive!’",
+            "use well-chosen evidence to support a strong understanding of how the narrator’s experience of awe and wonder is captured",
+            "provide a coherent and succinct analysis."
+          ],
+          "areasToImprove": [
+            "avoiding relying on simplistic description of the narrator’s experience",
+            "addressing all parts of the question in particular ‘the narrator’s experience of awe and wonder’, not just wonder",
+            "using evidence that is well-chosen and that supports their ideas."
+          ]
+        },
+        {
+          "questionNumber": "5",
+          "betterResponses": [
+            "skilfully analyse and engage closely with the question especially with the notion of paradox",
+            "understand the paradoxes of human behaviour in the text, for example, humans are plunderers, predators and yet that have left Antarctica untouched except for scientific inquiry",
+            "use well-chosen textual evidence to illustrate the paradoxes of human behaviour."
+          ],
+          "areasToImprove": [
+            "understanding what paradoxes are and being able to correctly identify and explain their use in the text",
+            "providing a detailed response that analyses rather than simply describes or briefly explains",
+            "using well-chosen evidence to support ideas."
+          ]
+        }
+      ]
+    }
+  ]
+}

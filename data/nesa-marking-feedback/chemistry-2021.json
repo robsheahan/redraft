@@ -1,0 +1,269 @@
+{
+  "subject": "Chemistry",
+  "slug": "chemistry",
+  "year": 2021,
+  "sourceUrl": "https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/chemistry/2021",
+  "scrapedAt": "2026-04-06T09:18:20.867Z",
+  "generalFeedback": [
+    "read the question carefully to ensure that they understand its intent and requirements",
+    "attempt all questions",
+    "plan the response to assist in the logical sequencing of information",
+    "integrate relevant scientific terms into their responses",
+    "engage with any stimulus material provided and refer to it in their response",
+    "show all working in calculations and include correct units and significant figures",
+    "recognise the importance of the Working Scientifically section of the syllabus."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "21",
+          "betterResponses": [
+            "choose appropriate safety concerns and mitigation measures for organic compounds",
+            "use clear scientific vocabulary such as flammable and corrosive",
+            "identify specific organic compounds based on their reaction with an oxidising agent and the compound’s miscibility with water",
+            "describe an appropriate test for an organic compound including expected observations."
+          ],
+          "areasToImprove": [
+            "linking the risk to the precaution they would use in the school laboratory",
+            "being explicit with their explanations of safety precautions and mitigation measures",
+            "using specific language rather than simply ‘wear PPE’",
+            "interpreting the data to identify the compounds",
+            "understanding different reactions of organic compounds and expected positive results for the different reactions",
+            "linking the test to the observation."
+          ]
+        },
+        {
+          "questionNumber": "22",
+          "betterResponses": [
+            "identify any two of the following as correct changes: increasing temperature in an exothermic reaction, increasing the concentration of dichromate ions, reducing the concentration of hydrogen ions",
+            "justify changes by applying Le Chatelier’s Principle."
+          ],
+          "areasToImprove": [
+            "demonstrating an understanding of the consequence of adding water to an equilibrium system",
+            "recognising that pressure does not affect a reaction taking place in aqueous solution",
+            "explaining how the equilibrium system provided specifically counteracts the identified change it is subjected to rather than simply stating ‘as per LCP’."
+          ]
+        },
+        {
+          "questionNumber": "23",
+          "betterResponses": [
+            "write a correctly balanced equation",
+            "identify the salt as basic",
+            "write a chemical equation that demonstrates methanoate ions hydrolysing in water to produce hydroxide ions."
+          ],
+          "areasToImprove": [
+            "learning the prefixes for organic molecules",
+            "understanding how salts can influence the pH of a solution."
+          ]
+        },
+        {
+          "questionNumber": "24",
+          "betterResponses": [
+            "link molar mass of an alkane with its chemical formula, many showing the calculation using C n H 2n+2",
+            "draw a structural formula of straight chain alkanes using the expanded form",
+            "identify chain isomers of alkanes such as pentane",
+            "compare straight chain molecules and the branched ones",
+            "recognise the number of single bonds available in an alkane structure",
+            "apply the appropriate convention to name an organic compound using the IUPAC nomenclature with numbers separated by a comma; numbers and letters are separated by a dash."
+          ],
+          "areasToImprove": [
+            "drawing the correct structural formula showing all constituent atoms, including all hydrogen atoms in the structures",
+            "recognising chain isomers of straight chain alkanes."
+          ]
+        },
+        {
+          "questionNumber": "25",
+          "betterResponses": [
+            "show their working and thought processes clearly",
+            "write a balanced equation for fermentation and recognise that the nutrient did not need to be included in the equation",
+            "use the correct final volume of CO 2(g)",
+            "use the correct units for the correct numerical values",
+            "convert volume and temperature to the appropriate units before applying the Ideal Gas Law to find the number of moles of CO 2 (as an alternate strategy)."
+          ],
+          "areasToImprove": [
+            "applying the molar volume equation correctly",
+            "knowing the formula for glucose and ethanol",
+            "being familiar with syllabus investigations",
+            "using numerical data correctly including the order of operations, no rounding until the end of a calculation and using the values for atomic numbers directly from the periodic table."
+          ]
+        },
+        {
+          "questionNumber": "26",
+          "betterResponses": [
+            "recognise the last process as esterification and work backwards to find D, B and C and A",
+            "recognise that A and B were different from each other",
+            "recognise the different types of organic reactions",
+            "draw clear structural formulas."
+          ],
+          "areasToImprove": [
+            "providing specific reasons why reflux is used rather than general laboratory safety reasons",
+            "naming apparatus correctly when making reference to scientific equipment used in investigations."
+          ]
+        },
+        {
+          "questionNumber": "27",
+          "betterResponses": [
+            "show correct significant figures",
+            "identify the two correct concentrations needed for the Ksp calculation",
+            "calculate the correct Ksp value and cube the Lithium ion",
+            "show the correct Ksp expression",
+            "provide a balance chemical equation",
+            "provide a link or justification that reducing the increments between 0.01M and 0.1M reduces the Ksp range."
+          ],
+          "areasToImprove": [
+            "showing in the balanced chemical equation that the reactant is the complex and the ions are the products",
+            "recognising how the change in the increments of concentration of the phosphate ion affect the Ksp range",
+            "providing a link between how changing the concentration narrows the Ksp range or brings it closer to the theoretical value."
+          ]
+        },
+        {
+          "questionNumber": "28",
+          "betterResponses": [
+            "write a correctly balanced chemical equation with states for a precipitation reaction",
+            "identify the precipitates by using solubility rules",
+            "process the information in the question to perform a multistep calculation",
+            "provide all steps in the calculation with full working",
+            "calculate the mass of the unknown alkali metal",
+            "locate the alkali metal in the periodic table based on the calculated molar mass",
+            "identify the alkali metal hydroxide."
+          ],
+          "areasToImprove": [
+            "writing balanced chemical equations for precipitation reactions with correct formulae for compounds, single arrow, and states",
+            "locating different groups of elements in the periodic table",
+            "showing working for all steps in the calculation."
+          ]
+        },
+        {
+          "questionNumber": "29",
+          "betterResponses": [
+            "relate the highlighted features of the spectra to the relevant part(s) of the molecule",
+            "identify the amine N−H stretches at 3300-3500 cm −1 in the IR spectrum",
+            "identify the fragment responsible for the base peak in the mass spectrum as CH 2 NH 2 +",
+            "explain the number of signals, chemical shift, splitting ( 1 H only) and integration ( 1 H only) in the NMR spectra."
+          ],
+          "areasToImprove": [
+            "interpreting the mass spectrum carefully to distinguish between the base peak at m/z = 30 (with intensity 100) and the parent ion peak at m/z = 102",
+            "identifying that electronegative atoms such as nitrogen commonly cause deshielding and result in larger 13 C chemical shift values (reflected in the corresponding chemical shift ranges on the data sheet)",
+            "distinguishing between the identity of protons relating to peak integration and protons relating to peak splitting."
+          ]
+        },
+        {
+          "questionNumber": "30",
+          "betterResponses": [
+            "apply thorough knowledge of solubility rules",
+            "examine accurately the stimulus information to interpret the identified ions",
+            "apply precipitation reactions to identify cations and anions",
+            "outline both positive and negative aspects of the observations in terms of their ability to identify ions",
+            "evaluate by making an informed judgement based on all positive and negative outlines offered."
+          ],
+          "areasToImprove": [
+            "identifying ions using solubility rules/precipitation reactions from the stimulus material",
+            "interpreting results and observations for solubility using terminology such as soluble, insoluble, and precipitate appropriately",
+            "applying prior knowledge in solubility from the Year 11 course."
+          ]
+        },
+        {
+          "questionNumber": "31",
+          "betterResponses": [
+            "convert moles into concentrations",
+            "identify a general Keq expression for this chemical reaction",
+            "calculate changes to concentration and hence equilibrium concentrations using an ICE table",
+            "import equilibrium concentrations into the correct Keq expression and solve for the unknown",
+            "calculate the amount of nitrogen that needed to be added and to convert this amount into moles."
+          ],
+          "areasToImprove": [
+            "presenting a Keq expression when provided with a chemical equilibrium equation",
+            "applying mole ratios in order to determine the relative change in concentrations as a chemical reaction proceeds to equilibrium",
+            "applying the Keq expression consistently within a response, remembering to use concentrations rather than moles and to utilise the correct exponents throughout the calculation."
+          ]
+        },
+        {
+          "questionNumber": "32",
+          "betterResponses": [
+            "identify the strong and weak acids present",
+            "explain the difference in ionisation/dissociation between strong and weak acids",
+            "understand that neutralisation involves the formation of water and recognise that the net ionic equation was the same for all three reactions",
+            "understand that the weak acid did not fully ionise meaning that energy was required to separate the acid molecules reducing the total amount of energy released in the third reaction."
+          ],
+          "areasToImprove": [
+            "discussing the chemistry behind the reactions rather than making simple statements about the strength of acids",
+            "understanding that the ion ionisation of weak acids is an equilibrium and as the hydrogen ions react with hydroxide ions from the base to form water, the equilibrium shifts to the product side according to Le Chatelier’s Principle",
+            "understanding that in a weak acid and strong base reaction, all hydrogen ions will react, but the ionisation is an endothermic process and therefore requires energy."
+          ]
+        },
+        {
+          "questionNumber": "33",
+          "betterResponses": [
+            "use a ruler to interpret the graph correctly",
+            "use TΔS and ΔH values from the graph",
+            "identify the equation from the data sheet for ΔG",
+            "use the correct terms to describe spontaneity and equilibrium",
+            "clearly link spontaneity to ΔG vales",
+            "identify an equilibrium at ΔG=0",
+            "state ΔG values relative to zero at the specific temperatures."
+          ],
+          "areasToImprove": [
+            "extrapolating from the temperature specified in the question",
+            "linking deductions to ΔG values",
+            "addressing spontaneity inappropriately",
+            "using correct terms."
+          ]
+        },
+        {
+          "questionNumber": "34",
+          "betterResponses": [
+            "demonstrate the ionisation of HCl gas in water",
+            "write a balanced chemical equation of the ionisation of HCl in water including correct states",
+            "link the increase in hydronium ion H 3 O + concentration to decreased pH as pH = -log [H + ] which is read from the data table",
+            "identify the composition of buffers (weak acids and its conjugate base)",
+            "write the equilibrium equation for the reaction of ions in a buffer solution with the hydrogen ions added from the HCl solution",
+            "understand the effect of changing concentration of the hydrogen ions on reaction at equilibrium and apply the Le Chatelier Principle to explain the effect of a disturbance to the equilibrium."
+          ],
+          "areasToImprove": [
+            "differentiating between complete reaction as represented by the dissociation of strong acids like hydrochloric acids and reactions at equilibrium as represented by a buffer solution as identified by appropriate use of arrows.",
+            "comparing types of buffer solutions, for example, why one buffer resists change to pH longer than another, and relating this to the concentration of the ions present in the buffer solution",
+            "describing the effect of increasing hydronium ion on the conjugate base of a weak acid buffer",
+            "using chemical equations to explain chemical phenomena being described."
+          ]
+        },
+        {
+          "questionNumber": "35",
+          "betterResponses": [
+            "eliminate the outlier and correctly work the average volume of titre",
+            "correctly work out the moles of thiosulfate and work backwards, using ratios to determine the moles of I­ 2 and relate this from equation 3 to equation 2",
+            "correctly work out the moles of dichromate that reacted and subtract from original moles placed in the system",
+            "correctly work out the moles of ethanol from dichromate using mole ratio",
+            "correctly calculate the concentration of the original undiluted solution",
+            "correctly convert the moles of ethanol into grams and using the density formula, work out the volume",
+            "correctly calculate the V/V% and provide justification that matches the calculation."
+          ],
+          "areasToImprove": [
+            "recognising the outlier in titre calculations",
+            "realising that rounding off should not occur until the final answer",
+            "logically following the sequence of reactions, linking the correct mole species and their mole ratios",
+            "recognising the principles that enable a back titration to be used to calculate the unknown concentration",
+            "recognising what information is not needed in the data provided",
+            "present the response so that it is clear what is being calculated and the links between each calculation are obvious."
+          ]
+        },
+        {
+          "questionNumber": "36",
+          "betterResponses": [
+            "write the correct equilibrium expressions for all three equations without the inclusion of water",
+            "calculate the numerical values of Ka given the pKa values in the question",
+            "demonstrate the working to manipulate the Ka expressions for the sulfurous acid and hydrogen sulfite to derive the overall Keq expression",
+            "substitute the Ka values appropriately to determine the numerical value for Keq."
+          ],
+          "areasToImprove": [
+            "using the information in the question and the data sheet to perform the calculations for Ka using the given pKa values",
+            "excluding water from expressions for Ka and Keq when it is an aqueous system",
+            "showing all the steps in the calculation and avoid bringing in numbers to the response without showing the working",
+            "checking for transcription errors with numerical data when moving through the response."
+          ]
+        }
+      ]
+    }
+  ]
+}
