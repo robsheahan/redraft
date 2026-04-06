@@ -664,7 +664,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
       const draft = document.getElementById('ownDraftTextarea').value.trim();
       if (!draft) { alert('Paste your draft first.'); return; }
 
-      const criteria_text = document.getElementById('ownCriteriaText').value.trim();
+      const criteria_text = formatCriteria(document.getElementById('ownCriteriaText').value.trim());
 
       await generateFeedback({ question, course, criteria_text, outcomes: [], draft, notes: null },
         document.querySelector('#ownTask .submit-btn'));
@@ -723,6 +723,22 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         overlay.remove();
         btn.style.display = '';
       }
+    }
+
+    function formatCriteria(text) {
+      if (!text) return text;
+      var lines = text.split(/\r?\n/).filter(function(l) { return l.trim(); });
+      if (lines.length > 2) return text;
+      var s = text;
+      s = s.replace(/([.\s])(\d{1,2}\s*[–\-]\s*\d{1,2})(\s*[*•\-])/g, '$1\n$2$3');
+      s = s.replace(/([.\s])(\d{1,2}\s*[–\-]\s*\d{1,2})(\s*[A-Z])/g, '$1\n$2 $3');
+      s = s.replace(/(\))(Range)/gi, '$1\n$2');
+      s = s.replace(/(Range\s*Criteria)/gi, '\n$1');
+      s = s.replace(/([^\n])(\s*\*\s)/g, '$1\n$2');
+      s = s.replace(/([^\n])(\s*•\s)/g, '$1\n$2');
+      s = s.replace(/([^\n])((?:Criteria\s+)?\d+[\.\)\:]\s)/gi, '$1\n$2');
+      s = s.replace(/\n{3,}/g, '\n\n');
+      return s.trim();
     }
 
     function escapeHtml(str) {

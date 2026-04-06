@@ -429,6 +429,33 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       el.classList.add('selected');
     }
 
+    /**
+     * Clean up pasted criteria text by inserting line breaks at common rubric patterns.
+     * Handles blobs where line breaks were lost when copying from Word/PDF/tables.
+     */
+    function formatCriteria(text) {
+      // If it already has multiple lines, leave it alone
+      var lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length > 2) return text;
+
+      var s = text;
+      // Insert line break before mark ranges like "13–15", "10-12", "7–9", "4-6", "1-3"
+      // when preceded by text (common rubric band headers)
+      s = s.replace(/([.\s])(\d{1,2}\s*[–\-]\s*\d{1,2})(\s*[*•\-])/g, '$1\n$2$3');
+      s = s.replace(/([.\s])(\d{1,2}\s*[–\-]\s*\d{1,2})(\s*[A-Z])/g, '$1\n$2 $3');
+      // Insert line break before "Range" or "Criteria" headers
+      s = s.replace(/(\))(Range)/gi, '$1\n$2');
+      s = s.replace(/(Range\s*Criteria)/gi, '\n$1');
+      // Insert line break before bullet points (*, •, -)
+      s = s.replace(/([^\n])(\s*\*\s)/g, '$1\n$2');
+      s = s.replace(/([^\n])(\s*•\s)/g, '$1\n$2');
+      // Insert line break before "Criteria 1:", "1.", "1)" patterns
+      s = s.replace(/([^\n])((?:Criteria\s+)?\d+[\.\)\:]\s)/gi, '$1\n$2');
+      // Clean up any double line breaks
+      s = s.replace(/\n{3,}/g, '\n\n');
+      return s.trim();
+    }
+
     async function createTask() {
       const btn = document.querySelector('.btn-create');
       btn.textContent = 'Creating...';
@@ -451,9 +478,10 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       const outcomesRaw = document.getElementById('outcomesText').value.trim();
       const outcomes = outcomesRaw ? outcomesRaw.split('\n').map(l => l.trim()).filter(l => l) : [];
 
-      // Criteria
-      const criteria_text = document.getElementById('criteriaText').value.trim();
-      if (!criteria_text) { alert('Please enter the marking criteria. This is essential for generating accurate feedback.'); btn.textContent = 'Create task'; btn.disabled = false; return; }
+      // Criteria — clean up pasted blobs by inserting line breaks at common rubric patterns
+      const rawCriteria = document.getElementById('criteriaText').value.trim();
+      if (!rawCriteria) { alert('Please enter the marking criteria. This is essential for generating accurate feedback.'); btn.textContent = 'Create task'; btn.disabled = false; return; }
+      const criteria_text = formatCriteria(rawCriteria);
 
       // Notes
       const notes = document.querySelector('.step:nth-child(4) textarea').value || null;
