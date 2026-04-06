@@ -387,7 +387,6 @@
         fb.criteria_feedback.forEach(function(cf) {
           html += '<div class="criterion-card">';
           html += '<div class="criterion-name">' + e(cf.criterion || '') + '</div>';
-          if (cf.band_estimate) html += '<div class="criterion-band">Band ' + e(String(cf.band_estimate)) + '</div>';
           if (cf.strengths) {
             html += '<div class="criterion-label">Strengths</div>';
             html += '<div class="criterion-text">' + e(cf.strengths) + '</div>';
