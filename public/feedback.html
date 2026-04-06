@@ -436,7 +436,8 @@
     function toggleDetail(id, btn) {
       const el = document.getElementById(id);
       const arrow = btn.querySelector('.detail-toggle-arrow');
-      if (el.style.display === 'none') {
+      const isHidden = el.style.display === 'none' || getComputedStyle(el).display === 'none';
+      if (isHidden) {
         el.style.display = 'block';
         arrow.style.transform = 'rotate(90deg)';
         btn.lastChild.textContent = ' Hide detail';
