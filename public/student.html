@@ -708,8 +708,28 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
       const card = btn.closest('.card') || btn.closest('#ownTask') || btn.parentElement;
       const overlay = document.createElement('div');
       overlay.className = 'loading-overlay visible';
-      overlay.innerHTML = '<div class="spinner"></div><div class="loading-text">Generating your feedback...</div><div class="loading-hint">This usually takes 15-30 seconds</div>';
+      overlay.innerHTML = '<div class="spinner"></div><div class="loading-text" id="loadingText">Reading your draft...</div><div class="loading-hint">Please be patient — feedback can take up to a minute to generate</div>';
       card.appendChild(overlay);
+
+      var loadingMessages = [
+        'Reading your draft...',
+        'Checking against the marking criteria...',
+        'Analysing response depth...',
+        'Identifying strengths...',
+        'Finding areas to improve...',
+        'Checking key term alignment...',
+        'Reviewing against syllabus outcomes...',
+        'Putting it all together...',
+        'Almost there...',
+      ];
+      var msgIndex = 0;
+      var loadingInterval = setInterval(function() {
+        msgIndex++;
+        if (msgIndex < loadingMessages.length) {
+          var el = document.getElementById('loadingText');
+          if (el) el.textContent = loadingMessages[msgIndex];
+        }
+      }, 4000);
 
       try {
         const res = await authFetch('/api/generate-feedback', {
@@ -727,8 +747,10 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           course: payload.course,
           criteria: payload.criteria,
         }));
+        clearInterval(loadingInterval);
         window.location.href = 'feedback.html';
       } catch (err) {
+        clearInterval(loadingInterval);
         alert(err.message);
         overlay.remove();
         btn.style.display = '';
