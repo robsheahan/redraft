@@ -170,16 +170,6 @@
       color: #6b7280;
       margin-bottom: 12px;
     }
-    .task-verb {
-      display: inline-block;
-      padding: 4px 12px;
-      background: #fef3e6;
-      color: #ed7615;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 20px;
-    }
     .criteria-display {
       margin-bottom: 8px;
     }
@@ -479,7 +469,6 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
 
       <div class="card">
         <div class="task-question" id="taskQuestion"></div>
-        <span class="task-verb" id="taskVerb"></span>
         <div class="criteria-display" id="criteriaDisplay">
           <h4>Marking criteria</h4>
         </div>
@@ -597,30 +586,32 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
 
         currentTask = data;
 
-        // Populate task detail
-        document.getElementById('taskTitle').textContent = data.title || 'Task';
-        document.getElementById('taskMeta').textContent = [data.course, data.total_marks ? data.total_marks + ' marks' : ''].filter(Boolean).join(' — ');
-
-        document.getElementById('taskQuestion').textContent = data.question || '';
-
-        // Task verb
-        const verbs = ['compare and contrast', 'critically analyse', 'critically evaluate', 'account for', 'analyse', 'analyze', 'appreciate', 'apply', 'assess', 'calculate', 'clarify', 'classify', 'compare', 'construct', 'contrast', 'deduce', 'demonstrate', 'describe', 'discuss', 'distinguish', 'evaluate', 'examine', 'explain', 'extract', 'extrapolate', 'identify', 'interpret', 'investigate', 'justify', 'outline', 'predict', 'propose', 'recommend', 'recount'];
-        const qLower = (data.question || '').toLowerCase();
-        const verb = verbs.find(v => qLower.includes(v));
-        if (verb) {
-          document.getElementById('taskVerb').textContent = 'Key term: ' + verb.charAt(0).toUpperCase() + verb.slice(1);
-          document.getElementById('taskVerb').style.display = 'inline-block';
+        // Populate task detail — title bold, course in grey underneath (no duplication)
+        var title = data.title || null;
+        var courseName = data.course || null;
+        if (title) {
+          document.getElementById('taskTitle').textContent = title;
+          var metaParts = [];
+          if (courseName && courseName !== title) metaParts.push(courseName);
+          if (data.total_marks) metaParts.push(data.total_marks + ' marks');
+          document.getElementById('taskMeta').textContent = metaParts.join(' — ');
         } else {
-          document.getElementById('taskVerb').style.display = 'none';
+          document.getElementById('taskTitle').textContent = courseName || 'Task';
+          document.getElementById('taskMeta').textContent = data.total_marks ? data.total_marks + ' marks' : '';
         }
 
-        // Criteria — display as clean formatted text, preserving the teacher's formatting
+        // Question — convert * bullets to • dot points
+        var questionText = (data.question || '').replace(/^\*\s/gm, '• ').replace(/\n\*\s/g, '\n• ');
+        document.getElementById('taskQuestion').textContent = questionText;
+
+        // Criteria — display as clean formatted text, convert * to • dot points
         const criteriaDiv = document.getElementById('criteriaDisplay');
-        const criteriaText = data.criteria_text
+        var criteriaText = data.criteria_text
           || (data.criteria && data.criteria.length > 0
             ? data.criteria.map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n')
             : null);
         if (criteriaText) {
+          criteriaText = criteriaText.replace(/^\*\s/gm, '• ').replace(/\n\*\s/g, '\n• ');
           criteriaDiv.innerHTML = '<h4>Marking criteria</h4><div class="criteria-block">' + escapeHtml(criteriaText) + '</div>';
           criteriaDiv.style.display = 'block';
         } else {
