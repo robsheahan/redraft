@@ -330,7 +330,7 @@
         </div>
         <div class="form-group">
           <label>Task title</label>
-          <input type="text" placeholder="e.g. Task 2 — Health Priorities Essay">
+          <input type="text" id="titleInput" placeholder="e.g. Task 2 — Health Priorities Essay">
         </div>
         <div class="form-group">
           <label>Task question</label>
@@ -463,7 +463,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
 
       // Gather form data
       const course = document.getElementById('courseInput').value.trim();
-      const title = document.querySelector('.step:nth-child(1) input[type="text"]').value;
+      const title = document.getElementById('titleInput').value.trim();
       const question = document.querySelector('.step:nth-child(1) textarea').value;
       const selectedType = document.querySelector('.task-type.selected');
       const task_type = selectedType ? selectedType.textContent : null;
