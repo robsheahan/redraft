@@ -155,6 +155,7 @@
       display: none;
     }
     .task-detail.visible { display: block; }
+    .task-teacher { font-size: 16px; font-weight: 500; color: #6b7280; letter-spacing: 0; }
     .task-detail .task-question {
       padding: 16px;
       background: #f9fafb;
@@ -189,6 +190,56 @@
       line-height: 1.7;
       white-space: pre-line;
       color: #374151;
+    }
+
+    /* Structured rubric table */
+    .rubric-table {
+      border: 1px solid #e8e0d4;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .rubric-row {
+      display: flex;
+      border-bottom: 1px solid #e8e0d4;
+    }
+    .rubric-row:last-child { border-bottom: none; }
+    .rubric-row:nth-child(odd) { background: #fdf6ee; }
+    .rubric-band {
+      flex: 0 0 80px;
+      padding: 14px 12px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #ed7615;
+      border-right: 1px solid #e8e0d4;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      text-align: center;
+    }
+    .rubric-criteria {
+      flex: 1;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #374151;
+      line-height: 1.6;
+    }
+    .rubric-criteria ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .rubric-criteria li {
+      padding-left: 16px;
+      position: relative;
+      margin-bottom: 6px;
+    }
+    .rubric-criteria li:last-child { margin-bottom: 0; }
+    .rubric-criteria li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: #ed7615;
+      font-weight: 700;
     }
 
     /* Own task form */
@@ -501,6 +552,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/app.js"></script>
+  <script src="/js/rubric.js"></script>
   <script src="/js/nesa-courses.js"></script>
   <script>
     initCourseSearch('ownCourseInput', 'ownCourseSuggestions');
@@ -585,33 +637,33 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
 
         currentTask = data;
 
-        // Populate task detail — title bold, course in grey underneath (no duplication)
+        // Populate task detail — title with teacher name next to it, course in grey underneath
         var title = data.title || null;
         var courseName = data.course || null;
+        var teacherName = data.teacher_name || null;
+        var titleEl = document.getElementById('taskTitle');
         if (title) {
-          document.getElementById('taskTitle').textContent = title;
-          var metaParts = [];
-          if (courseName && courseName !== title) metaParts.push(courseName);
-          if (data.total_marks) metaParts.push(data.total_marks + ' marks');
-          document.getElementById('taskMeta').textContent = metaParts.join(' — ');
+          titleEl.innerHTML = escapeHtml(title) + (teacherName ? '<span class="task-teacher"> — ' + escapeHtml(teacherName) + '</span>' : '');
         } else {
-          document.getElementById('taskTitle').textContent = courseName || 'Task';
-          document.getElementById('taskMeta').textContent = data.total_marks ? data.total_marks + ' marks' : '';
+          titleEl.innerHTML = escapeHtml(courseName || 'Task') + (teacherName ? '<span class="task-teacher"> — ' + escapeHtml(teacherName) + '</span>' : '');
         }
+        var metaParts = [];
+        if (title && courseName && courseName !== title) metaParts.push(courseName);
+        if (data.total_marks) metaParts.push(data.total_marks + ' marks');
+        document.getElementById('taskMeta').textContent = metaParts.join(' — ');
 
         // Question — convert * bullets to • dot points
         var questionText = (data.question || '').replace(/^\*\s/gm, '• ').replace(/\n\*\s/g, '\n• ');
         document.getElementById('taskQuestion').textContent = questionText;
 
-        // Criteria — display as clean formatted text, convert * to • dot points
+        // Criteria — render as structured rubric table or formatted text block
         const criteriaDiv = document.getElementById('criteriaDisplay');
         var criteriaText = data.criteria_text
           || (data.criteria && data.criteria.length > 0
             ? data.criteria.map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n')
             : null);
         if (criteriaText) {
-          criteriaText = criteriaText.replace(/^\*\s/gm, '• ').replace(/\n\*\s/g, '\n• ');
-          criteriaDiv.innerHTML = '<h4>Marking criteria</h4><div class="criteria-block">' + escapeHtml(criteriaText) + '</div>';
+          criteriaDiv.innerHTML = '<h4>Marking criteria</h4>' + renderRubric(criteriaText, escapeHtml);
           criteriaDiv.style.display = 'block';
         } else {
           criteriaDiv.style.display = 'none';
@@ -701,6 +753,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         sessionStorage.setItem('proofready_feedback', JSON.stringify(data));
         sessionStorage.setItem('proofready_task', JSON.stringify({
           title: currentTask ? currentTask.title : null,
+          teacher_name: currentTask ? currentTask.teacher_name : null,
           question: payload.question,
           course: payload.course,
           criteria: payload.criteria,

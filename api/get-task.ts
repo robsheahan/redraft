@@ -26,6 +26,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(404).json({ error: 'Task not found. Check the code and try again.' });
   }
 
+  // Look up the teacher's display name
+  let teacherName = null;
+  if (data.teacher_id) {
+    try {
+      const { data: teacherData } = await supabase.auth.admin.getUserById(data.teacher_id);
+      teacherName = teacherData?.user?.user_metadata?.display_name || null;
+    } catch { /* silently skip if lookup fails */ }
+  }
+
   const { notes, ...studentData } = data;
-  return res.status(200).json(studentData);
+  return res.status(200).json({ ...studentData, teacher_name: teacherName });
 }

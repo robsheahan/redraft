@@ -72,16 +72,13 @@
       font-size: 14px;
       font-weight: 500;
       line-height: 1.6;
+      white-space: pre-line;
     }
-    .task-verb {
-      display: inline-block;
-      margin-top: 12px;
-      padding: 4px 12px;
-      background: #fef3e6;
-      color: #ed7615;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
+    .task-teacher {
+      font-size: 16px;
+      font-weight: 500;
+      color: #6b7280;
+      letter-spacing: 0;
     }
 
     /* Feedback sections */
@@ -300,18 +297,21 @@
 
       const taskTitle = task.title || meta.title || null;
       const courseName = meta.course || null;
+      const teacherName = task.teacher_name || null;
+      const teacherSuffix = teacherName ? '<span class="task-teacher"> — ' + e(teacherName) + '</span>' : '';
       html += '<div class="header">';
       if (taskTitle) {
-        html += '<h1>' + e(taskTitle) + '</h1>';
+        html += '<h1>' + e(taskTitle) + teacherSuffix + '</h1>';
         if (courseName && courseName !== taskTitle) html += '<div class="task-meta">' + e(courseName) + '</div>';
       } else if (courseName) {
-        html += '<h1>Feedback on your draft</h1>';
-        html += '<div class="task-meta">' + e(courseName) + '</div>';
+        html += '<h1>' + e(courseName) + teacherSuffix + '</h1>';
       } else {
-        html += '<h1>Feedback on your draft</h1>';
+        html += '<h1>Feedback on your draft' + teacherSuffix + '</h1>';
       }
-      if (meta.question) html += '<div class="task-question">' + e(meta.question) + '</div>';
-      if (meta.taskVerb) html += '<span class="task-verb">Key term: ' + e(capVerb(meta.taskVerb)) + '</span>';
+      if (meta.question) {
+        var questionDisplay = meta.question.replace(/^\*\s/gm, '• ').replace(/\n\*\s/g, '\n• ');
+        html += '<div class="task-question">' + e(questionDisplay) + '</div>';
+      }
       html += '</div>';
 
       // What you've done well
