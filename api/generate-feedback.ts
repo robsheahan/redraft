@@ -6,6 +6,7 @@ import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { VERB_DEPTH_MAP } from '../data/nesa-reference.js';
 import { generateInlineSuggestions } from '../lib/generate-inline-suggestions.js';
 import { extractTaskVerbs } from '../lib/task-verbs.js';
+import { extractFirstJsonObject } from '../lib/extract-json.js';
 
 function buildCriteriaCheckPrompt(courseName?: string): string {
   const subjectLabel = courseName || "this HSC subject";
@@ -131,13 +132,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     const pass1Text = pass1.content[0].type === 'text' ? pass1.content[0].text : '';
-    const pass1Match = pass1Text.match(/\{[\s\S]*\}/);
+    const pass1Json = extractFirstJsonObject(pass1Text);
 
-    if (!pass1Match) {
+    if (!pass1Json) {
       return res.status(500).json({ error: 'Failed to parse feedback response' });
     }
 
-    const initialFeedback = JSON.parse(pass1Match[0]);
+    const initialFeedback = JSON.parse(pass1Json);
 
     // --- Pass 2: Independent criteria-coverage check ---
     // This is a fresh assessment — Pass 2 does NOT see Pass 1's output.
@@ -189,13 +190,13 @@ Assess this draft against each marking criterion above. Address every criterion 
     const inlineSuggestions = inlineResult.annotations; // graceful: empty [] on either failure or no-usable-output
 
     const pass2Text = pass2.content[0].type === 'text' ? pass2.content[0].text : '';
-    const pass2Match = pass2Text.match(/\{[\s\S]*\}/);
+    const pass2Json = extractFirstJsonObject(pass2Text);
 
     // Merge Pass 1 (general feedback) with Pass 2 (criteria-specific feedback)
     let criteriaFeedback = null;
-    if (pass2Match) {
+    if (pass2Json) {
       try {
-        const pass2Data = JSON.parse(pass2Match[0]);
+        const pass2Data = JSON.parse(pass2Json);
         criteriaFeedback = pass2Data.criteria_feedback || null;
       } catch { /* criteria check failed, continue without it */ }
     }

@@ -14,6 +14,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { buildInlineSuggestionsSystemPrompt } from '../prompts/inline-suggestions-system.js';
 import { buildInlineSuggestionsUserPrompt } from '../prompts/inline-suggestions-user.js';
+import { extractFirstJsonObject } from './extract-json.js';
 
 export type InlineCategory =
   | 'strength'
@@ -87,15 +88,15 @@ export async function generateInlineSuggestions(
 
   // From here the model responded — any "zero annotations" outcome counts as ok: true.
   const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) {
+  const jsonText = extractFirstJsonObject(text);
+  if (!jsonText) {
     console.warn('[inline-suggestions] no JSON object in model response');
     return { ok: true, annotations: [] };
   }
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(match[0]);
+    parsed = JSON.parse(jsonText);
   } catch (e) {
     console.warn('[inline-suggestions] JSON parse failed', e);
     return { ok: true, annotations: [] };
