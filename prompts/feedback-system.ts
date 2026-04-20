@@ -25,7 +25,7 @@ import {
 } from "../data/nesa-reference.js";
 import { buildMarkerVoiceReference } from "../data/marker-voice-loader.js";
 
-const DISCIPLINE_PERSONAS: Record<string, string> = {
+export const DISCIPLINE_PERSONAS: Record<string, string> = {
   English: "English teacher with extensive experience in textual analysis, essay writing, and HSC marking",
   Mathematics: "Mathematics teacher with deep knowledge of problem-solving strategies, proof techniques, and mathematical communication",
   Science: "Science teacher with expertise in scientific investigation, data analysis, and evidence-based reasoning",

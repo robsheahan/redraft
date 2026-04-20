@@ -4,6 +4,7 @@ import { buildSystemPrompt, buildUserPrompt } from '../prompts/feedback-system.j
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { VERB_DEPTH_MAP } from '../data/nesa-reference.js';
+import { generateInlineSuggestions } from '../lib/generate-inline-suggestions.js';
 
 // Multi-word verbs must come first so they match before their single-word parts
 const TASK_VERBS = [
@@ -211,13 +212,31 @@ ${draft}
 
 Assess this draft against each marking criterion above. Address every criterion individually.`;
 
-    const pass2 = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 3000,
-      temperature: 0.3,
-      system: buildCriteriaCheckPrompt(course as string || undefined),
-      messages: [{ role: 'user', content: criteriaCheckPrompt }],
-    });
+    // --- Pass 3: Inline annotations ---
+    // Runs in parallel with Pass 2. Pass 3 references Pass 1's improvements so
+    // inline notes stay coherent with the holistic feedback, but it can't run
+    // until Pass 1 has returned.
+    const improvementsSummary = Array.isArray(initialFeedback?.improvements?.summary)
+      ? initialFeedback.improvements.summary
+      : [];
+
+    const [pass2, inlineSuggestions] = await Promise.all([
+      client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 3000,
+        temperature: 0.3,
+        system: buildCriteriaCheckPrompt(course as string || undefined),
+        messages: [{ role: 'user', content: criteriaCheckPrompt }],
+      }),
+      generateInlineSuggestions(client, {
+        taskDescription,
+        taskVerbs: taskVerbs.length > 0 ? taskVerbs : undefined,
+        studentText: draft,
+        holisticImprovements: improvementsSummary,
+        courseName: course as string || undefined,
+        discipline: discipline || undefined,
+      }),
+    ]);
 
     const pass2Text = pass2.content[0].type === 'text' ? pass2.content[0].text : '';
     const pass2Match = pass2Text.match(/\{[\s\S]*\}/);
@@ -234,6 +253,7 @@ Assess this draft against each marking criterion above. Address every criterion 
     const feedback = {
       ...initialFeedback,
       criteria_feedback: criteriaFeedback,
+      inline_suggestions: inlineSuggestions,
     };
 
     // Save submission if user is authenticated
@@ -252,6 +272,7 @@ Assess this draft against each marking criterion above. Address every criterion 
 
     return res.status(200).json({
       feedback,
+      draft_text: draft,
       meta: { taskVerb, taskVerbs, question, course, title: task_title || null, draftVersion, maxDrafts: MAX_DRAFTS },
     });
   } catch (err: any) {

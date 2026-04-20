@@ -293,12 +293,121 @@
     .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
     .site-footer a:hover { color: #6b7280; }
 
+    /* View tabs (Feedback / Annotated Draft) */
+    .view-tabs {
+      display: flex; gap: 4px; margin-bottom: 16px;
+      background: #fff; border-radius: 10px; padding: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+    .view-tab {
+      flex: 1; padding: 10px 16px; background: transparent;
+      border: none; border-radius: 8px; font-size: 14px;
+      font-weight: 600; color: #6b7280; cursor: pointer;
+      font-family: inherit; transition: all 0.15s;
+    }
+    .view-tab.active { background: #ed7615; color: #fff; }
+    .view-tab:not(.active):hover { background: #f3f4f6; color: #1f2937; }
+
+    /* Annotated draft layout */
+    .annotated-layout { display: grid; grid-template-columns: 1fr 320px; gap: 16px; align-items: start; }
+    @media (max-width: 900px) { .annotated-layout { grid-template-columns: 1fr; } }
+
+    .annotated-draft-text {
+      background: #fff; border-radius: 14px; padding: 28px 32px;
+      font-size: 15px; line-height: 1.9; color: #111827;
+      white-space: pre-wrap; word-wrap: break-word;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+
+    /* Annotation highlights in the draft */
+    .annotation {
+      border-radius: 3px; padding: 1px 2px; cursor: pointer;
+      transition: box-shadow 0.15s, filter 0.15s;
+      border-bottom: 2px solid;
+    }
+    .annotation:hover, .annotation.focused {
+      filter: brightness(0.96);
+      box-shadow: 0 0 0 2px currentColor;
+    }
+    .annotation-num {
+      display: inline-block; margin-left: 2px;
+      font-size: 10px; font-weight: 700;
+      vertical-align: super; color: #1f2937;
+    }
+    .annotation--strength       { background: #dcfce7; border-bottom-color: #16a34a; }
+    .annotation--clarity        { background: #fef3c7; border-bottom-color: #eab308; }
+    .annotation--evidence       { background: #ffedd5; border-bottom-color: #f97316; }
+    .annotation--depth          { background: #fee2e2; border-bottom-color: #ef4444; }
+    .annotation--structure      { background: #e0e7ff; border-bottom-color: #6366f1; }
+    .annotation--task_alignment { background: #fce7f3; border-bottom-color: #ec4899; }
+    .annotation--mechanics      { background: #f3f4f6; border-bottom-color: #9ca3af; }
+
+    /* Sidebar cards */
+    .annotated-sidebar {
+      display: flex; flex-direction: column; gap: 10px;
+      max-height: 80vh; overflow-y: auto;
+      position: sticky; top: 16px;
+    }
+    @media (max-width: 900px) {
+      .annotated-sidebar { max-height: none; position: static; overflow: visible; }
+    }
+    .annotation-card {
+      background: #fff; border-radius: 10px; padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+      scroll-margin-top: 20px;
+      border-left: 4px solid;
+      cursor: pointer;
+      transition: box-shadow 0.15s;
+    }
+    .annotation-card--strength       { border-left-color: #16a34a; }
+    .annotation-card--clarity        { border-left-color: #eab308; }
+    .annotation-card--evidence       { border-left-color: #f97316; }
+    .annotation-card--depth          { border-left-color: #ef4444; }
+    .annotation-card--structure      { border-left-color: #6366f1; }
+    .annotation-card--task_alignment { border-left-color: #ec4899; }
+    .annotation-card--mechanics      { border-left-color: #9ca3af; }
+    .annotation-card.focused {
+      box-shadow: 0 0 0 2px #ed7615, 0 4px 12px rgba(237,118,21,0.2);
+    }
+    .annotation-card-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    .annotation-num-badge {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: #1f2937; color: #fff; font-size: 12px;
+      font-weight: 700; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .annotation-category {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: #6b7280;
+    }
+    .annotation-quote {
+      font-size: 13px; font-style: italic; color: #6b7280;
+      margin-bottom: 8px; line-height: 1.5;
+      padding: 6px 10px; background: #f9fafb; border-radius: 6px;
+    }
+    .annotation-comment {
+      font-size: 14px; line-height: 1.6; color: #374151;
+    }
+
+    .annotated-empty {
+      background: #fff; border-radius: 14px; padding: 60px 32px;
+      text-align: center; color: #6b7280; font-size: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+
     @media print {
-      .nav, .back-link, .site-footer, .detail-toggle, .btn-home { display: none !important; }
+      .nav, .back-link, .site-footer, .detail-toggle, .btn-home, .view-tabs { display: none !important; }
       .detail-content { display: block !important; }
       body { background: #fff; }
       .container { max-width: 100%; padding: 0; }
       .section { box-shadow: none; border: 1px solid #e8e0d4; break-inside: avoid; }
+      /* Annotated view prints with draft on top, comments below (not side-by-side) */
+      .annotated-layout { display: block; }
+      .annotated-sidebar { max-height: none; overflow: visible; position: static; margin-top: 20px; }
+      .annotation-card { break-inside: avoid; box-shadow: none; border: 1px solid #e8e0d4; }
+      .annotated-draft-text { box-shadow: none; border: 1px solid #e8e0d4; }
     }
   </style>
 </head>
@@ -338,6 +447,7 @@
       currentTask = taskData ? JSON.parse(taskData) : {};
       const fb = parsed.feedback;
       const meta = parsed.meta;
+      const draftText = parsed.draft_text || '';
       const task = currentTask;
 
       // If this was submitted against a task code, load all drafts so we can navigate
@@ -348,20 +458,24 @@
           .then(data => {
             if (data.drafts && data.drafts.length > 0) {
               allDrafts = data.drafts;
-              // Find which draft this feedback corresponds to
               var currentVersion = meta.draftVersion || allDrafts[allDrafts.length - 1].draft_version;
-              renderFeedback(fb, meta, allDrafts, currentVersion);
+              var current = allDrafts.find(function(d) { return d.draft_version === currentVersion; });
+              renderFeedback(fb, meta, allDrafts, currentVersion, current ? current.draft_text : draftText);
             }
           })
           .catch(() => { /* silently ignore draft nav if fetch fails */ });
       }
 
-      renderFeedback(fb, meta, null, meta.draftVersion || 1);
+      renderFeedback(fb, meta, null, meta.draftVersion || 1, draftText);
     }
 
-    function renderFeedback(fb, meta, drafts, currentVersion) {
+    // Active view, preserved across switchDraft calls
+    var activeView = 'feedback';
+
+    function renderFeedback(fb, meta, drafts, currentVersion, draftText) {
       var task = currentTask || {};
       const MAX_DRAFTS = meta.maxDrafts || 3;
+      const annotations = Array.isArray(fb && fb.inline_suggestions) ? fb.inline_suggestions : [];
 
       const getObj = (val) => {
         if (val && typeof val === 'object' && !Array.isArray(val)) return val;
@@ -418,6 +532,17 @@
         html += '<div class="resubmit-bar-text">You\'ve used all <strong>' + MAX_DRAFTS + ' of ' + MAX_DRAFTS + '</strong> drafts for this task.</div>';
         html += '</div>';
       }
+
+      // View tabs — only show if we actually have annotations to offer
+      if (annotations.length > 0 && draftText) {
+        html += '<div class="view-tabs">';
+        html += '<button class="view-tab' + (activeView === 'feedback' ? ' active' : '') + '" data-view="feedback" onclick="switchView(\'feedback\')">Feedback</button>';
+        html += '<button class="view-tab' + (activeView === 'annotated' ? ' active' : '') + '" data-view="annotated" onclick="switchView(\'annotated\')">Annotated draft (' + annotations.length + ')</button>';
+        html += '</div>';
+      }
+
+      // Feedback view wrapper
+      html += '<div id="view-feedback"' + (activeView === 'annotated' ? ' hidden' : '') + '>';
 
       // What you've done well
       const well = getObj(fb.what_youve_done_well);
@@ -533,9 +658,92 @@
         html += '<p class="section-text">' + e(fb.self_check) + '</p></div>';
       }
 
+      html += '</div>'; // close #view-feedback
+
+      // Annotated draft view
+      if (annotations.length > 0 && draftText) {
+        html += '<div id="view-annotated"' + (activeView === 'feedback' ? ' hidden' : '') + '>';
+        html += '<div class="annotated-layout">';
+        html += '<div class="annotated-draft-text">' + renderAnnotatedDraftHtml(draftText, annotations) + '</div>';
+        html += '<div class="annotated-sidebar">' + renderAnnotationCardsHtml(annotations) + '</div>';
+        html += '</div>';
+        html += '</div>';
+      }
+
       html += '<div class="footer">This is formative feedback on a draft — not a final mark.</div>';
 
       container.innerHTML = html;
+    }
+
+    function renderAnnotatedDraftHtml(draftText, annotations) {
+      // Server guarantees annotations are sorted by start and non-overlapping.
+      var html = '';
+      var cursor = 0;
+      for (var i = 0; i < annotations.length; i++) {
+        var a = annotations[i];
+        // Defensive: skip any annotation whose positions look invalid relative to draft
+        if (typeof a.start !== 'number' || typeof a.end !== 'number' || a.start < cursor || a.end > draftText.length) continue;
+        html += e(draftText.slice(cursor, a.start));
+        html += '<span class="annotation annotation--' + e(a.category) + '" data-idx="' + i + '" onclick="focusAnnotation(' + i + ')" tabindex="0">';
+        html += e(draftText.slice(a.start, a.end));
+        html += '<sup class="annotation-num">' + (i + 1) + '</sup>';
+        html += '</span>';
+        cursor = a.end;
+      }
+      html += e(draftText.slice(cursor));
+      return html;
+    }
+
+    var CATEGORY_LABELS = {
+      strength: 'Strength',
+      clarity: 'Clarity',
+      evidence: 'Evidence',
+      depth: 'Depth',
+      structure: 'Structure',
+      task_alignment: 'Task alignment',
+      mechanics: 'Mechanics'
+    };
+
+    function renderAnnotationCardsHtml(annotations) {
+      return annotations.map(function(a, i) {
+        var label = CATEGORY_LABELS[a.category] || a.category;
+        return '<div class="annotation-card annotation-card--' + e(a.category) + '" id="ann-card-' + i + '" onclick="focusAnnotation(' + i + ')">'
+          + '<div class="annotation-card-header">'
+          + '<span class="annotation-num-badge">' + (i + 1) + '</span>'
+          + '<span class="annotation-category">' + e(label) + '</span>'
+          + '</div>'
+          + '<div class="annotation-quote">"' + e(a.quote) + '"</div>'
+          + '<div class="annotation-comment">' + e(a.comment) + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    function switchView(view) {
+      activeView = view;
+      var feedbackView = document.getElementById('view-feedback');
+      var annotatedView = document.getElementById('view-annotated');
+      if (feedbackView) feedbackView.hidden = (view !== 'feedback');
+      if (annotatedView) annotatedView.hidden = (view !== 'annotated');
+      document.querySelectorAll('.view-tab').forEach(function(t) {
+        t.classList.toggle('active', t.getAttribute('data-view') === view);
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function focusAnnotation(idx) {
+      document.querySelectorAll('.annotation.focused, .annotation-card.focused').forEach(function(el) {
+        el.classList.remove('focused');
+      });
+      var highlight = document.querySelector('.annotation[data-idx="' + idx + '"]');
+      var card = document.getElementById('ann-card-' + idx);
+      if (highlight) highlight.classList.add('focused');
+      if (card) {
+        card.classList.add('focused');
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      if (highlight) {
+        highlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
 
     function switchDraft(version) {
@@ -544,7 +752,7 @@
       if (!draft) return;
       // Build a meta object for this draft (keep the same question/course from currentMeta)
       var meta = Object.assign({}, currentMeta, { draftVersion: version });
-      renderFeedback(draft.feedback, meta, allDrafts, version);
+      renderFeedback(draft.feedback, meta, allDrafts, version, draft.draft_text || '');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
