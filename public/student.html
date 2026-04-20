@@ -619,8 +619,24 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
                 const prevVerbs = ['compare and contrast', 'critically analyse', 'critically evaluate', 'account for', 'analyse', 'analyze', 'appreciate', 'apply', 'assess', 'calculate', 'clarify', 'classify', 'compare', 'construct', 'contrast', 'deduce', 'demonstrate', 'describe', 'discuss', 'distinguish', 'evaluate', 'examine', 'explain', 'extract', 'extrapolate', 'identify', 'interpret', 'investigate', 'justify', 'outline', 'predict', 'propose', 'recommend', 'recount'];
                 const qLow = (latest.question || '').toLowerCase();
                 const detectedVerb = prevVerbs.find(v => qLow.includes(v)) || '';
-                sessionStorage.setItem('proofready_feedback', JSON.stringify({ feedback: latest.feedback, meta: { taskVerb: detectedVerb, question: latest.question, course: latest.course, title: latest.task_title || null } }));
-                sessionStorage.removeItem('proofready_task');
+                sessionStorage.setItem('proofready_feedback', JSON.stringify({
+                  feedback: latest.feedback,
+                  draft_text: latest.draft_text || '',
+                  meta: {
+                    taskVerb: detectedVerb,
+                    question: latest.question,
+                    course: latest.course,
+                    title: latest.task_title || null,
+                    task_code: latest.task_code || null,
+                    draftVersion: latest.draft_version || 1,
+                  }
+                }));
+                sessionStorage.setItem('proofready_task', JSON.stringify({
+                  code: latest.task_code || null,
+                  title: latest.task_title || null,
+                  question: latest.question,
+                  course: latest.course,
+                }));
                 window.location.href = 'feedback.html';
               };
               group.appendChild(card);
