@@ -5,58 +5,7 @@ import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { VERB_DEPTH_MAP } from '../data/nesa-reference.js';
 import { generateInlineSuggestions } from '../lib/generate-inline-suggestions.js';
-
-// Multi-word verbs must come first so they match before their single-word parts
-const TASK_VERBS = [
-  'compare and contrast', 'critically analyse', 'critically evaluate', 'account for',
-  'analyse', 'analyze', 'appreciate', 'apply', 'assess',
-  'calculate', 'clarify', 'classify', 'compare', 'construct', 'contrast',
-  'deduce', 'demonstrate', 'describe', 'discuss', 'distinguish',
-  'evaluate', 'examine', 'explain', 'extract', 'extrapolate',
-  'identify', 'interpret', 'investigate', 'justify',
-  'outline', 'predict', 'propose', 'recommend', 'recount',
-];
-
-/**
- * Extract all recognised task verbs from a question, deduplicated.
- * Multi-word verbs consume their single-word parts (e.g. "critically analyse" suppresses "analyse").
- * Returns verbs sorted by position in the question (earliest first).
- */
-function extractTaskVerbs(question: string): string[] {
-  const qLower = question.toLowerCase();
-
-  // Find all matching verbs with their positions
-  const found: { verb: string; index: number }[] = [];
-  for (const v of TASK_VERBS) {
-    const idx = qLower.indexOf(v);
-    if (idx !== -1) {
-      found.push({ verb: v, index: idx });
-    }
-  }
-
-  if (found.length === 0) return [];
-
-  // Remove single-word verbs that are part of a matched multi-word verb
-  // e.g. if "critically analyse" matched, remove "analyse"
-  const filtered = found.filter(f => {
-    return !found.some(other =>
-      other.verb !== f.verb &&
-      other.verb.length > f.verb.length &&
-      other.verb.includes(f.verb)
-    );
-  });
-
-  // Deduplicate and sort by position
-  const seen = new Set<string>();
-  return filtered
-    .sort((a, b) => a.index - b.index)
-    .filter(f => {
-      if (seen.has(f.verb)) return false;
-      seen.add(f.verb);
-      return true;
-    })
-    .map(f => f.verb);
-}
+import { extractTaskVerbs } from '../lib/task-verbs.js';
 
 function buildCriteriaCheckPrompt(courseName?: string): string {
   const subjectLabel = courseName || "this HSC subject";

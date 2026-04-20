@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test-feedback": "npx tsx test/evaluate-sample.ts",
-    "test-inline": "npx tsx test/test-inline-suggestions.ts"
+    "test-inline": "npx tsx test/test-inline-suggestions.ts",
+    "backfill-inline": "npx tsx scripts/backfill-inline-suggestions.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
