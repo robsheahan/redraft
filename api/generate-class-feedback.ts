@@ -31,20 +31,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(404).json({ error: 'Task not found' });
   }
 
-  // Fetch all submissions with feedback
-  const { data: submissions, error: subError } = await supabase
+  // Fetch all submissions with feedback, newest first
+  const { data: allSubmissions, error: subError } = await supabase
     .from('submissions')
-    .select('feedback')
+    .select('student_id, feedback, created_at')
     .eq('task_code', code)
-    .not('feedback', 'is', null);
+    .not('feedback', 'is', null)
+    .order('created_at', { ascending: false });
 
   if (subError) {
     return res.status(500).json({ error: subError.message });
   }
 
-  if (!submissions || submissions.length === 0) {
+  if (!allSubmissions || allSubmissions.length === 0) {
     return res.status(400).json({ error: 'No submissions with feedback found for this task' });
   }
+
+  // Keep only the latest submission per student
+  const seen = new Set<string>();
+  const submissions = allSubmissions.filter(s => {
+    const key = s.student_id || 'unknown';
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 
   const feedbacks = submissions.map(s => s.feedback);
 

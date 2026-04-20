@@ -210,6 +210,10 @@
     }
     .submission-label { font-size: 14px; font-weight: 600; }
     .submission-date { font-size: 12px; color: #9ca3af; }
+    .draft-badge {
+      font-size: 11px; font-weight: 600; color: #ed7615;
+      background: #fef3e6; border-radius: 4px; padding: 2px 8px;
+    }
     .submission-arrow {
       color: #d1d5db; font-size: 18px; transition: transform 0.15s;
     }
@@ -288,6 +292,15 @@
       currentTask = task;
       document.title = (task.title || 'Task') + ' — ProofReady';
 
+      // Group submissions by student
+      const studentMap = {};
+      submissions.forEach(s => {
+        const key = s.student_id || s.student_name;
+        if (!studentMap[key]) studentMap[key] = { name: s.student_name, drafts: [] };
+        studentMap[key].drafts.push(s);
+      });
+      const students = Object.values(studentMap);
+
       let html = '';
 
       // Task header
@@ -298,7 +311,8 @@
       html += '</div><div class="task-code">' + e(task.code) + '</div></div>';
       if (task.question) html += '<div class="task-question">' + e(task.question) + '</div>';
       html += '<div class="task-stats">';
-      html += '<span class="stat"><strong>' + submissions.length + '</strong> submissions</span>';
+      html += '<span class="stat"><strong>' + students.length + '</strong> student' + (students.length !== 1 ? 's' : '') + '</span>';
+      if (submissions.length !== students.length) html += '<span class="stat"><strong>' + submissions.length + '</strong> total submissions</span>';
       if (task.total_marks) html += '<span class="stat"><strong>' + e(String(task.total_marks)) + '</strong> marks</span>';
       if (task.due_date) html += '<span class="stat">Due <strong>' + e(task.due_date) + '</strong></span>';
       html += '<button class="btn-view-details" onclick="toggleDetails()">View details</button>';
@@ -313,11 +327,11 @@
 
       // Generate class feedback button
       html += '<div class="generate-section">';
-      html += '<button class="btn-generate" id="generateBtn" ' + (submissions.length === 0 ? 'disabled' : '') + '>Generate class feedback</button>';
-      if (submissions.length === 0) {
+      html += '<button class="btn-generate" id="generateBtn" ' + (students.length === 0 ? 'disabled' : '') + '>Generate class feedback</button>';
+      if (students.length === 0) {
         html += '<div class="generate-hint">No submissions yet — students need to submit drafts first.</div>';
       } else {
-        html += '<div class="generate-hint">Analyse ' + submissions.length + ' submission' + (submissions.length === 1 ? '' : 's') + ' for a class-level overview.</div>';
+        html += '<div class="generate-hint">Analyse latest submissions from ' + students.length + ' student' + (students.length === 1 ? '' : 's') + ' for a class-level overview.</div>';
       }
       html += '</div>';
 
@@ -327,24 +341,31 @@
       // Submissions list
       html += '<div class="submissions-section">';
       html += '<h2>Submissions</h2>';
-      if (submissions.length === 0) {
+      if (students.length === 0) {
         html += '<div class="submission-card"><div style="padding:16px 20px;font-size:14px;color:#9ca3af">No submissions yet</div></div>';
       } else {
-        submissions.forEach((s, i) => {
-          const date = new Date(s.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-          const preview = s.draft_text ? s.draft_text.substring(0, 150) + (s.draft_text.length > 150 ? '...' : '') : 'No draft text';
+        students.forEach((stu, i) => {
+          const latest = stu.drafts[0];
+          const count = stu.drafts.length;
+          const date = new Date(latest.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          const preview = latest.draft_text ? latest.draft_text.substring(0, 150) + (latest.draft_text.length > 150 ? '...' : '') : 'No draft text';
           html += '<div class="submission-card" id="sub-' + i + '">';
           html += '<div class="submission-card-header" onclick="toggleSubmission(' + i + ')">';
           html += '<div class="submission-header-left">';
-          html += '<span class="submission-label">' + e(s.student_name) + '</span>';
+          html += '<span class="submission-label">' + e(stu.name) + '</span>';
+          if (count > 1) html += '<span class="draft-badge">' + count + ' drafts</span>';
           html += '<span class="submission-date">' + e(date) + '</span>';
           html += '</div>';
           html += '<span class="submission-arrow">›</span>';
           html += '</div>';
           html += '<div class="submission-preview">' + e(preview) + '</div>';
           html += '<div class="submission-draft">';
-          html += '<div class="draft-label">Full draft</div>';
-          html += '<div class="draft-content">' + e(s.draft_text || 'No draft text') + '</div>';
+          stu.drafts.forEach((d, j) => {
+            const dDate = new Date(d.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            const draftLabel = 'Draft ' + (d.draft_version || (count - j)) + (j === 0 ? ' (latest)' : '');
+            html += '<div class="draft-label">' + e(draftLabel) + ' · ' + e(dDate) + '</div>';
+            html += '<div class="draft-content">' + e(d.draft_text || 'No draft text') + '</div>';
+          });
           html += '</div>';
           html += '</div>';
         });

@@ -447,6 +447,11 @@
     .prev-card h4 { font-size: 14px; font-weight: 600; }
     .prev-card p { font-size: 12px; color: #9ca3af; margin-top: 2px; }
     .prev-card-arrow { color: #d1d5db; font-size: 18px; }
+    .draft-badge {
+      display: inline-block; font-size: 11px; font-weight: 600; color: #ed7615;
+      background: #fef3e6; border-radius: 4px; padding: 1px 7px;
+      margin-left: 6px; vertical-align: middle;
+    }
   </style>
 </head>
 <body>
@@ -587,29 +592,34 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           const list = document.getElementById('previousList');
           section.style.display = 'block';
 
-          // Group by course
+          // Group by course, then by task within each course
           const grouped = {};
           subs.forEach(s => {
             const course = s.course || 'Other';
-            if (!grouped[course]) grouped[course] = [];
-            grouped[course].push(s);
+            if (!grouped[course]) grouped[course] = {};
+            const taskKey = s.task_code || s.question || s.id;
+            if (!grouped[course][taskKey]) grouped[course][taskKey] = [];
+            grouped[course][taskKey].push(s);
           });
 
           Object.keys(grouped).forEach(course => {
             const group = document.createElement('div');
             group.className = 'course-group';
             group.innerHTML = '<div class="course-heading">' + escapeHtml(course) + '</div>';
-            grouped[course].forEach(s => {
+            Object.values(grouped[course]).forEach(taskSubs => {
+              const latest = taskSubs[0];
+              const count = taskSubs.length;
               const card = document.createElement('div');
               card.className = 'prev-card';
-              const label = s.task_title || s.question || 'Untitled';
-              const date = new Date(s.created_at).toLocaleDateString();
-              card.innerHTML = '<div><h4>' + escapeHtml(label.substring(0, 60) + (label.length > 60 ? '...' : '')) + '</h4><p>' + date + '</p></div><span class="prev-card-arrow">›</span>';
+              const label = latest.task_title || latest.question || 'Untitled';
+              const date = new Date(latest.created_at).toLocaleDateString();
+              const badgeHtml = count > 1 ? '<span class="draft-badge">' + count + ' drafts</span>' : '';
+              card.innerHTML = '<div><h4>' + escapeHtml(label.substring(0, 60) + (label.length > 60 ? '...' : '')) + ' ' + badgeHtml + '</h4><p>' + date + '</p></div><span class="prev-card-arrow">›</span>';
               card.onclick = () => {
                 const prevVerbs = ['compare and contrast', 'critically analyse', 'critically evaluate', 'account for', 'analyse', 'analyze', 'appreciate', 'apply', 'assess', 'calculate', 'clarify', 'classify', 'compare', 'construct', 'contrast', 'deduce', 'demonstrate', 'describe', 'discuss', 'distinguish', 'evaluate', 'examine', 'explain', 'extract', 'extrapolate', 'identify', 'interpret', 'investigate', 'justify', 'outline', 'predict', 'propose', 'recommend', 'recount'];
-                const qLow = (s.question || '').toLowerCase();
+                const qLow = (latest.question || '').toLowerCase();
                 const detectedVerb = prevVerbs.find(v => qLow.includes(v)) || '';
-                sessionStorage.setItem('proofready_feedback', JSON.stringify({ feedback: s.feedback, meta: { taskVerb: detectedVerb, question: s.question, course: s.course, title: s.task_title || null } }));
+                sessionStorage.setItem('proofready_feedback', JSON.stringify({ feedback: latest.feedback, meta: { taskVerb: detectedVerb, question: latest.question, course: latest.course, title: latest.task_title || null } }));
                 sessionStorage.removeItem('proofready_task');
                 window.location.href = 'feedback.html';
               };
