@@ -71,7 +71,7 @@ async function main() {
   console.log("Calling Claude...\n");
 
   const start = Date.now();
-  const annotations = await generateInlineSuggestions(client, {
+  const result = await generateInlineSuggestions(client, {
     taskDescription: sampleTaskDescription,
     taskVerbs: ["analyse"],
     studentText: sampleDraft,
@@ -82,6 +82,11 @@ async function main() {
   const ms = Date.now() - start;
 
   console.log(`Latency: ${ms}ms`);
+  if (!result.ok) {
+    console.error(`Claude call failed: ${result.error}`);
+    process.exit(1);
+  }
+  const annotations = result.annotations;
   console.log(`Annotations returned: ${annotations.length}\n`);
 
   if (annotations.length === 0) {

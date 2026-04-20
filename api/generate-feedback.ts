@@ -169,7 +169,7 @@ Assess this draft against each marking criterion above. Address every criterion 
       ? initialFeedback.improvements.summary
       : [];
 
-    const [pass2, inlineSuggestions] = await Promise.all([
+    const [pass2, inlineResult] = await Promise.all([
       client.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 3000,
@@ -186,6 +186,7 @@ Assess this draft against each marking criterion above. Address every criterion 
         discipline: discipline || undefined,
       }),
     ]);
+    const inlineSuggestions = inlineResult.annotations; // graceful: empty [] on either failure or no-usable-output
 
     const pass2Text = pass2.content[0].type === 'text' ? pass2.content[0].text : '';
     const pass2Match = pass2Text.match(/\{[\s\S]*\}/);

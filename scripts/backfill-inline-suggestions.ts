@@ -42,6 +42,9 @@ try {
 // --- CLI flags ---
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes('--dry-run');
+// --retry-empty: also reprocess rows whose inline_suggestions is an empty array.
+// Useful after a failed run left rows marked "done but empty" by accident.
+const RETRY_EMPTY = args.includes('--retry-empty');
 const LIMIT = (() => {
   const i = args.indexOf('--limit');
   if (i !== -1 && args[i + 1]) return parseInt(args[i + 1], 10);
@@ -90,14 +93,19 @@ async function main() {
   const all: Row[] = (data || []) as Row[];
   const needsBackfill = all.filter(r => {
     if (!r.feedback || typeof r.feedback !== 'object') return false;
-    if (Array.isArray(r.feedback.inline_suggestions)) return false; // already has it
     if (!r.draft_text) return false;
+    const existing = r.feedback.inline_suggestions;
+    if (Array.isArray(existing)) {
+      // Skip already-populated unless --retry-empty was passed and the array is empty.
+      if (RETRY_EMPTY && existing.length === 0) return true;
+      return false;
+    }
     return true;
   });
 
   console.log(`\nTotal submissions in DB: ${all.length}`);
   console.log(`Already have inline_suggestions: ${all.length - needsBackfill.length}`);
-  console.log(`Need backfill: ${needsBackfill.length}`);
+  console.log(`Need backfill: ${needsBackfill.length}${RETRY_EMPTY ? ' (includes rows with empty annotations due to --retry-empty)' : ''}`);
 
   const toProcess = needsBackfill.slice(0, LIMIT);
   console.log(`Will process this run: ${toProcess.length}${LIMIT !== Infinity ? ` (--limit ${LIMIT})` : ''}`);
@@ -142,7 +150,7 @@ async function main() {
         : `Question:\n${row.question}`;
 
       const t0 = Date.now();
-      const annotations = await generateInlineSuggestions(anthropic, {
+      const result = await generateInlineSuggestions(anthropic, {
         taskDescription,
         taskVerbs: taskVerbs.length > 0 ? taskVerbs : undefined,
         studentText: row.draft_text,
@@ -152,19 +160,23 @@ async function main() {
       });
       const ms = Date.now() - t0;
 
-      const updatedFeedback = { ...row.feedback, inline_suggestions: annotations };
-
-      const { error: updateErr } = await supabase
-        .from('submissions')
-        .update({ feedback: updatedFeedback })
-        .eq('id', row.id);
-
-      if (updateErr) {
-        console.error(`${label} — update failed: ${updateErr.message}`);
+      if (!result.ok) {
+        console.error(`${label} — Claude call failed: ${result.error} — skipping write`);
         failed++;
       } else {
-        console.log(`${label} — ${annotations.length} annotations (${ms}ms)`);
-        ok++;
+        const updatedFeedback = { ...row.feedback, inline_suggestions: result.annotations };
+        const { error: updateErr } = await supabase
+          .from('submissions')
+          .update({ feedback: updatedFeedback })
+          .eq('id', row.id);
+
+        if (updateErr) {
+          console.error(`${label} — DB update failed: ${updateErr.message}`);
+          failed++;
+        } else {
+          console.log(`${label} — ${result.annotations.length} annotations (${ms}ms)`);
+          ok++;
+        }
       }
     } catch (err: any) {
       console.error(`${label} — exception: ${err?.message || err}`);

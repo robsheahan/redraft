@@ -6,8 +6,9 @@
  * in the draft; drops any that don't. Resolves overlapping annotations
  * (keeps the longer, more specific quote).
  *
- * Returns [] on any failure — inline annotations are an enhancement, not a
- * blocker for delivering feedback.
+ * Returns a result object with `ok: false` on API/network failure (so callers
+ * who care — e.g. the backfill script — can distinguish "Claude call failed"
+ * from "Claude responded but produced no usable annotations"). Never throws.
  */
 
 import Anthropic from '@anthropic-ai/sdk';
@@ -47,12 +48,21 @@ interface GenerateInput {
   discipline?: string;
 }
 
+export interface GenerateInlineSuggestionsResult {
+  /** true if Claude responded successfully (even if zero usable annotations); false if the call itself failed (auth, network, etc.). */
+  ok: boolean;
+  annotations: InlineSuggestion[];
+  /** Populated when ok === false. */
+  error?: string;
+}
+
 const MAX_ANNOTATIONS = 20;
 
 export async function generateInlineSuggestions(
   client: Anthropic,
   input: GenerateInput,
-): Promise<InlineSuggestion[]> {
+): Promise<GenerateInlineSuggestionsResult> {
+  let response;
   try {
     const system = buildInlineSuggestionsSystemPrompt(input.courseName, input.discipline);
     const user = buildInlineSuggestionsUserPrompt({
@@ -62,40 +72,43 @@ export async function generateInlineSuggestions(
       holisticImprovements: input.holisticImprovements,
     });
 
-    const response = await client.messages.create({
+    response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 3000,
       temperature: 0.2,
       system,
       messages: [{ role: 'user', content: user }],
     });
-
-    const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) {
-      console.warn('[inline-suggestions] no JSON object in model response');
-      return [];
-    }
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(match[0]);
-    } catch (e) {
-      console.warn('[inline-suggestions] JSON parse failed', e);
-      return [];
-    }
-
-    const raw = (parsed as { inline_suggestions?: unknown })?.inline_suggestions;
-    if (!Array.isArray(raw)) {
-      console.warn('[inline-suggestions] missing or non-array inline_suggestions field');
-      return [];
-    }
-
-    return validateAndResolve(raw, input.studentText, input.holisticImprovements.length);
-  } catch (err) {
-    console.warn('[inline-suggestions] generation failed', err);
-    return [];
+  } catch (err: any) {
+    const message = err?.message || 'unknown error';
+    console.warn('[inline-suggestions] Claude call failed:', message);
+    return { ok: false, annotations: [], error: message };
   }
+
+  // From here the model responded — any "zero annotations" outcome counts as ok: true.
+  const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) {
+    console.warn('[inline-suggestions] no JSON object in model response');
+    return { ok: true, annotations: [] };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(match[0]);
+  } catch (e) {
+    console.warn('[inline-suggestions] JSON parse failed', e);
+    return { ok: true, annotations: [] };
+  }
+
+  const raw = (parsed as { inline_suggestions?: unknown })?.inline_suggestions;
+  if (!Array.isArray(raw)) {
+    console.warn('[inline-suggestions] missing or non-array inline_suggestions field');
+    return { ok: true, annotations: [] };
+  }
+
+  const annotations = validateAndResolve(raw, input.studentText, input.holisticImprovements.length);
+  return { ok: true, annotations };
 }
 
 /**
