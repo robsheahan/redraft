@@ -472,6 +472,16 @@
     // Active view, preserved across switchDraft calls
     var activeView = 'feedback';
 
+    var CATEGORY_LABELS = {
+      strength: 'Strength',
+      clarity: 'Clarity',
+      evidence: 'Evidence',
+      depth: 'Depth',
+      structure: 'Structure',
+      task_alignment: 'Task alignment',
+      mechanics: 'Mechanics'
+    };
+
     function renderFeedback(fb, meta, drafts, currentVersion, draftText) {
       var task = currentTask || {};
       const MAX_DRAFTS = meta.maxDrafts || 3;
@@ -694,16 +704,6 @@
       html += e(draftText.slice(cursor));
       return html;
     }
-
-    var CATEGORY_LABELS = {
-      strength: 'Strength',
-      clarity: 'Clarity',
-      evidence: 'Evidence',
-      depth: 'Depth',
-      structure: 'Structure',
-      task_alignment: 'Task alignment',
-      mechanics: 'Mechanics'
-    };
 
     function renderAnnotationCardsHtml(annotations) {
       return annotations.map(function(a, i) {
