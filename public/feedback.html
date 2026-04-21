@@ -434,6 +434,19 @@
     var currentMeta = null;
     var currentTask = null;
 
+    var CATEGORY_LABELS = {
+      strength: 'Strength',
+      clarity: 'Clarity',
+      evidence: 'Evidence',
+      depth: 'Depth',
+      structure: 'Structure',
+      task_alignment: 'Task alignment',
+      mechanics: 'Mechanics'
+    };
+
+    // Active view, preserved across switchDraft calls (referenced by renderFeedback)
+    var activeView = 'feedback';
+
     if (!feedbackData) {
       container.innerHTML = `
         <div class="empty-state">
@@ -468,19 +481,6 @@
 
       renderFeedback(fb, meta, null, meta.draftVersion || 1, draftText);
     }
-
-    // Active view, preserved across switchDraft calls
-    var activeView = 'feedback';
-
-    var CATEGORY_LABELS = {
-      strength: 'Strength',
-      clarity: 'Clarity',
-      evidence: 'Evidence',
-      depth: 'Depth',
-      structure: 'Structure',
-      task_alignment: 'Task alignment',
-      mechanics: 'Mechanics'
-    };
 
     function renderFeedback(fb, meta, drafts, currentVersion, draftText) {
       var task = currentTask || {};
