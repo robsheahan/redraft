@@ -475,7 +475,8 @@
     function renderFeedback(fb, meta, drafts, currentVersion, draftText) {
       var task = currentTask || {};
       const MAX_DRAFTS = meta.maxDrafts || 3;
-      const annotations = Array.isArray(fb && fb.inline_suggestions) ? fb.inline_suggestions : [];
+      const annotations = (Array.isArray(fb && fb.inline_suggestions) ? fb.inline_suggestions : [])
+        .filter(function(a) { return a && typeof a === 'object' && typeof a.quote === 'string' && typeof a.category === 'string'; });
 
       const getObj = (val) => {
         if (val && typeof val === 'object' && !Array.isArray(val)) return val;
