@@ -41,13 +41,10 @@
     .back-link:hover { background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.18); color: #1f2937; }
 
     .container {
-      max-width: 720px;
+      max-width: 1320px;
       margin: 0 auto;
       padding: 32px 20px 80px;
-      transition: max-width 0.2s ease;
     }
-    /* Annotated view needs room for draft text + 320px sidebar side-by-side */
-    body.view-annotated .container { max-width: 1320px; }
 
     /* Header */
     .header {
@@ -731,7 +728,6 @@
       document.querySelectorAll('.view-tab').forEach(function(t) {
         t.classList.toggle('active', t.getAttribute('data-view') === view);
       });
-      document.body.classList.toggle('view-annotated', view === 'annotated');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
