@@ -493,7 +493,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       const notes = document.querySelector('.step:nth-child(4) textarea').value || null;
 
       try {
-        const res = await authFetch('/api/create-task', {
+        const res = await authFetch('/api/task', {
           method: 'POST',
           body: JSON.stringify({ course, class_name, title, question, task_type, total_marks, due_date, outcomes, criteria_text, notes }),
         });

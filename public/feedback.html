@@ -466,7 +466,7 @@
       // If this was submitted against a task code, load all drafts so we can navigate
       const taskCode = task.code || meta.task_code;
       if (taskCode) {
-        authFetch('/api/my-task-drafts?code=' + encodeURIComponent(taskCode))
+        authFetch('/api/me?resource=task-drafts&code=' + encodeURIComponent(taskCode))
           .then(r => r.json())
           .then(data => {
             if (data.drafts && data.drafts.length > 0) {

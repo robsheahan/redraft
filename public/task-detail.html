@@ -551,7 +551,7 @@
     async function deleteTask() {
       if (!confirm('Are you sure you want to delete this task? This will also remove all student submissions. This cannot be undone.')) return;
       try {
-        const res = await authFetch('/api/delete-task', {
+        const res = await authFetch('/api/task', {
           method: 'DELETE',
           body: JSON.stringify({ code: currentTask.code }),
         });
@@ -589,7 +589,7 @@
       };
 
       try {
-        const res = await authFetch('/api/update-task', {
+        const res = await authFetch('/api/task', {
           method: 'PUT',
           body: JSON.stringify(updated),
         });

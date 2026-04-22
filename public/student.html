@@ -610,7 +610,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
 
       // Load previous submissions
       try {
-        const res = await authFetch('/api/my-submissions');
+        const res = await authFetch('/api/me?resource=submissions');
         const subs = await res.json();
         if (Array.isArray(subs) && subs.length > 0) {
           const section = document.getElementById('previousSection');
@@ -701,7 +701,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
       btn.disabled = true;
 
       try {
-        const res = await fetch('/api/get-task?code=' + encodeURIComponent(code));
+        const res = await fetch('/api/task?code=' + encodeURIComponent(code));
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Task not found');
 

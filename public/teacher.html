@@ -136,7 +136,7 @@
         document.getElementById('pageHeading').textContent = 'Welcome, ' + displayName;
       }
 
-      const res = await authFetch('/api/my-tasks');
+      const res = await authFetch('/api/me?resource=tasks');
       const tasks = await res.json();
       const container = document.getElementById('content');
 
