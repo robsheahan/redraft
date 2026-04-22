@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/proofready/favicon.svg" />
+  <link rel="shortcut icon" href="/proofready/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/proofready/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="Proof Ready" />
+  <link rel="manifest" href="/proofready/site.webmanifest" />
+  <title>Reset password — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #fdf6ee; color: #1f2937; line-height: 1.5; min-height: 100vh; display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; }
+    .nav { padding: 24px 32px; display: flex; align-items: center; }
+    .nav-brand { text-decoration: none; display: flex; align-items: center; }
+    .nav-brand img { height: 40px; width: auto; }
+    .page { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
+    .card { width: 100%; max-width: 400px; padding: 0 32px; }
+    .card h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.6px; margin-bottom: 8px; text-align: center; }
+    .card .sub { font-size: 15px; color: #6b7280; text-align: center; margin-bottom: 28px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #4b5563; }
+    .form-group input { width: 100%; padding: 12px 16px; background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 10px; font-size: 15px; font-family: inherit; outline: none; }
+    .form-group input:focus { border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.1); }
+    .submit-btn { width: 100%; padding: 14px; background: #ed7615; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 2px 8px rgba(237,118,21,0.4); }
+    .submit-btn:hover { background: #d4690f; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .error-msg, .success-msg { border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; display: none; }
+    .error-msg { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+    .success-msg { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+    .visible { display: block; }
+    .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; }
+    .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+  </nav>
+  <div class="page">
+    <div class="card" id="card">
+      <h1>Choose a new password</h1>
+      <p class="sub">Enter and confirm your new password below.</p>
+
+      <div class="error-msg" id="error"></div>
+      <div class="success-msg" id="success"></div>
+
+      <div id="resetForm">
+        <div class="form-group">
+          <label>New password</label>
+          <input type="password" id="pw1" placeholder="At least 6 characters" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label>Confirm new password</label>
+          <input type="password" id="pw2" placeholder="Type it again" autocomplete="new-password">
+        </div>
+        <button class="submit-btn" id="submitBtn" onclick="resetPassword()">Update password</button>
+      </div>
+    </div>
+  </div>
+  <div class="site-footer">
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms &amp; Conditions</a>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    // Supabase password-reset emails arrive with a recovery token in the URL
+    // hash fragment. The Supabase client picks that up automatically and emits
+    // a PASSWORD_RECOVERY event when it does — from that point the user has a
+    // transient session that lets updateUser() set a new password.
+
+    var recoverySessionReady = false;
+
+    sb.auth.onAuthStateChange(function(event) {
+      if (event === 'PASSWORD_RECOVERY') {
+        recoverySessionReady = true;
+      }
+    });
+
+    // If the user lands here without a recovery token (e.g. typed the URL
+    // directly), tell them.
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        if (!recoverySessionReady && !window.location.hash.includes('access_token')) {
+          showError('This page only works when you click the link in a password reset email. Go to the sign-in page and use "Forgot your password?" to request a new link.');
+          document.getElementById('submitBtn').disabled = true;
+        }
+      }, 1500);
+    });
+
+    function showError(msg) {
+      var el = document.getElementById('error');
+      el.textContent = msg;
+      el.classList.add('visible');
+      document.getElementById('success').classList.remove('visible');
+    }
+    function showSuccess(msg) {
+      var el = document.getElementById('success');
+      el.textContent = msg;
+      el.classList.add('visible');
+      document.getElementById('error').classList.remove('visible');
+    }
+
+    async function resetPassword() {
+      var pw1 = document.getElementById('pw1').value;
+      var pw2 = document.getElementById('pw2').value;
+
+      if (!pw1 || pw1.length < 6) { showError('Password must be at least 6 characters.'); return; }
+      if (pw1 !== pw2) { showError("Those two passwords don't match."); return; }
+
+      var btn = document.getElementById('submitBtn');
+      btn.textContent = 'Updating...';
+      btn.disabled = true;
+
+      var result = await sb.auth.updateUser({ password: pw1 });
+      if (result.error) {
+        showError(result.error.message);
+        btn.textContent = 'Update password';
+        btn.disabled = false;
+        return;
+      }
+
+      showSuccess('Password updated. Taking you to sign in...');
+      await sb.auth.signOut();
+      setTimeout(function() { window.location.href = '/auth.html'; }, 1500);
+    }
+
+    document.addEventListener('keydown', function(e) { if (e.key === 'Enter') resetPassword(); });
+  </script>
+</body>
+</html>

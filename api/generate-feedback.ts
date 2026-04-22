@@ -7,6 +7,7 @@ import { VERB_DEPTH_MAP } from '../data/nesa-reference.js';
 import { generateInlineSuggestions } from '../lib/generate-inline-suggestions.js';
 import { extractTaskVerbs } from '../lib/task-verbs.js';
 import { extractFirstJsonObject } from '../lib/extract-json.js';
+import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 
 function buildCriteriaCheckPrompt(courseName?: string): string {
   const subjectLabel = courseName || "this HSC subject";
@@ -51,6 +52,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!question || !draft) {
     return res.status(400).json({ error: 'Question and draft are required' });
+  }
+
+  // Draft sanity limits: cheap rejection before we pay Anthropic for nonsense
+  const draftStr = String(draft);
+  if (draftStr.trim().length < 50) {
+    return res.status(400).json({ error: 'Your draft is too short for meaningful feedback — write at least a paragraph and try again.' });
+  }
+  if (draftStr.length > 30000) {
+    return res.status(400).json({ error: 'Your draft is too long. Please shorten it to under 30,000 characters.' });
+  }
+
+  // Rate limit / spend protection. Logged-in users get a per-user hourly
+  // cap and count toward the global daily cap; anon users only count toward
+  // the global cap (no identity to cap them individually).
+  const rateLimit = await checkAndLogRateLimit(getSupabase(), user?.id || null, {
+    endpoint: 'generate-feedback',
+    perUserPerHour: 10,
+    globalPerDay: 500,
+  });
+  if (!rateLimit.ok) {
+    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded. Please try again later.' });
   }
 
   // Resubmission handling: cap at 3 drafts per student per task
