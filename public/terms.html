@@ -30,16 +30,25 @@
       max-width: 1320px; margin: 0 auto; padding: 60px 24px 80px;
       flex: 1;
     }
+    /* Constrain long-form text for readability while keeping container full-width */
+    .doc-body { max-width: 760px; }
     h1 {
       font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
       margin-bottom: 8px;
     }
     .last-updated { font-size: 13px; color: #9ca3af; margin-bottom: 32px; }
-    h2 { font-size: 17px; font-weight: 700; margin: 28px 0 10px; }
+    h2 { font-size: 17px; font-weight: 700; margin: 28px 0 10px; color: #111827; }
+    h3 { font-size: 15px; font-weight: 700; margin: 18px 0 6px; color: #1f2937; }
     p, li { font-size: 15px; color: #4b5563; margin-bottom: 12px; }
     ul, ol { padding-left: 20px; margin-bottom: 12px; }
     a { color: #ed7615; }
     a:hover { color: #d4690f; }
+    .callout {
+      background: #fff; border-left: 4px solid #ed7615;
+      padding: 14px 18px; margin: 16px 0; border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .callout strong { color: #1f2937; }
 
     .footer {
       text-align: center; padding: 24px; font-size: 13px; color: #9ca3af;
@@ -56,42 +65,106 @@
   </nav>
 
   <div class="container">
+    <div class="doc-body">
     <h1>Terms &amp; Conditions</h1>
-    <p class="last-updated">Last updated: 4 April 2026</p>
+    <p class="last-updated">Last updated: 22 April 2026</p>
 
-    <h2>Acceptance of terms</h2>
-    <p>By accessing or using ProofReady, you agree to be bound by these terms. If you do not agree, you should not use the platform.</p>
+    <div class="callout">
+      <p style="margin:0"><strong>ProofReady is not a place to disclose personal safety concerns.</strong> If you are worried about your safety or the safety of someone you know, please speak to a trusted adult at your school or contact a support service immediately. Australian helplines: Kids Helpline 1800 55 1800, Lifeline 13 11 14, 000 for emergencies. If a student submits concerning content through ProofReady, we cannot guarantee it will be seen by a staff member in time to help — please use the supports listed above.</p>
+    </div>
 
-    <h2>Description of service</h2>
-    <p>ProofReady provides AI-generated formative feedback on student assessment drafts. The platform is designed to support learning and is not a substitute for teacher judgement or formal assessment marking.</p>
+    <h2>1. Acceptance of terms</h2>
+    <p>By accessing or using ProofReady, you agree to be bound by these terms. If you do not agree, you must not use the platform. If you are under 18, you should only use ProofReady with the knowledge and permission of a parent, guardian, or school that has authorised its use.</p>
 
-    <h2>User accounts</h2>
+    <h2>2. Pilot status</h2>
+    <p>ProofReady is currently offered free of charge as a pilot. The service is provided on a best-effort basis without any service level agreement. Features, availability, pricing, and these terms may change without notice during and after the pilot.</p>
+
+    <h2>3. Description of service</h2>
+    <p>ProofReady provides AI-generated formative feedback on student assessment drafts, intended to support learning and revision. The platform:</p>
+    <ul>
+      <li>Is <strong>not</strong> a substitute for teacher judgement, professional marking, or formal assessment outcomes.</li>
+      <li>Is <strong>not</strong> a counselling, crisis-support, or safeguarding reporting mechanism.</li>
+      <li>Does <strong>not</strong> replace a school's existing child-protection, assessment, or academic integrity procedures.</li>
+    </ul>
+
+    <h2>4. Eligibility and minors</h2>
+    <p>ProofReady may be used by secondary school students (typically aged 12–18) and their teachers. Students under 18 use the platform under the authority of their school and, where applicable, their parent or guardian.</p>
+    <p>Schools using ProofReady are responsible for:</p>
+    <ul>
+      <li>Obtaining any parental or guardian consent required under their own policies.</li>
+      <li>Ensuring students understand how to use the platform appropriately.</li>
+      <li>Supervising student use in line with the school's duty of care.</li>
+    </ul>
+
+    <h2>5. User accounts</h2>
     <ul>
       <li>You must provide accurate information when creating an account.</li>
-      <li>You are responsible for maintaining the security of your account credentials.</li>
-      <li>Teachers are responsible for the assessment tasks they create and share with students.</li>
+      <li>You are responsible for maintaining the security of your account credentials and for all activity that occurs under your account.</li>
+      <li>Teachers are responsible for the assessment tasks they create, the instructions they provide, and the student use they enable.</li>
+      <li>You must notify us promptly at <a href="mailto:help@proofready.app">help@proofready.app</a> if you suspect unauthorised access to your account.</li>
     </ul>
 
-    <h2>Acceptable use</h2>
-    <p>You agree not to:</p>
+    <h2>6. Acceptable use</h2>
+    <p>You agree to use ProofReady only for academic formative feedback on your own assessment drafts or, in the case of teachers, for creating academic tasks for your students. You agree <strong>not</strong> to:</p>
     <ul>
       <li>Use the platform for any unlawful purpose.</li>
-      <li>Submit content that is offensive, harmful, or violates the rights of others.</li>
-      <li>Attempt to gain unauthorised access to the platform or its systems.</li>
-      <li>Misrepresent AI-generated feedback as a formal assessment outcome.</li>
+      <li>Submit drafts containing disclosures of harm, abuse, violence, self-harm, or threats to yourself or others — please speak to a trusted adult or use the supports listed above.</li>
+      <li>Submit content that is defamatory, discriminatory, sexually explicit, or that violates the rights of others.</li>
+      <li>Include personal information about third parties (classmates, teachers, family) in your draft beyond what the academic task requires.</li>
+      <li>Attempt to circumvent security controls, scrape the platform, or abuse the AI feedback engine (for example, by using it to generate content unrelated to an assessment draft).</li>
+      <li>Misrepresent ProofReady's AI-generated feedback as a formal assessment outcome, mark, or grade.</li>
+      <li>Use ProofReady to generate text that you then submit as your own unaided work, in breach of your school's academic integrity or plagiarism policy. ProofReady provides feedback on your draft — it does not write your work.</li>
     </ul>
 
-    <h2>Intellectual property</h2>
-    <p>Users retain ownership of the content they submit. ProofReady retains ownership of the platform, its design, and underlying technology.</p>
+    <h2>7. Teachers' duty of care and mandatory reporting</h2>
+    <p>ProofReady does not change or reduce a teacher's existing legal and professional obligations, including mandatory reporting obligations under the <em>Children and Young Persons (Care and Protection) Act 1998</em> (NSW) and equivalent legislation elsewhere in Australia, and obligations under the NSW Child Protection policy framework. Teachers remain solely responsible for identifying and responding to student welfare concerns using their school's established procedures. Concerning content surfaced during or around use of ProofReady should be dealt with through those procedures, not through ProofReady.</p>
 
-    <h2>Limitation of liability</h2>
-    <p>ProofReady is provided on an "as is" basis. We do not guarantee the accuracy, completeness, or suitability of AI-generated feedback. ProofReady shall not be liable for any decisions made on the basis of feedback provided by the platform.</p>
+    <h2>8. AI-generated feedback — how to use it</h2>
+    <p>Feedback is generated by large language models and can be incorrect, incomplete, outdated, or inconsistent. You should:</p>
+    <ul>
+      <li>Treat feedback as a starting point for revision, not as authoritative guidance.</li>
+      <li>Check any specific claims (statistics, NESA references, syllabus outcomes) against primary sources before relying on them.</li>
+      <li>Discuss feedback with your teacher if anything is unclear or seems wrong.</li>
+    </ul>
+    <p>ProofReady does not provide a mark, a band prediction, or a guarantee about assessment outcomes. Any reference to HSC bands in feedback describes the current draft as a point of discussion — it is not a prediction of the mark a final submission will receive.</p>
 
-    <h2>Modifications</h2>
-    <p>We reserve the right to update these terms at any time. Continued use of the platform following changes constitutes acceptance of the revised terms.</p>
+    <h2>9. Content and intellectual property</h2>
+    <p>You retain ownership of the drafts and other content you submit. By submitting content, you grant ProofReady a limited licence to process that content for the purpose of providing feedback to you and, where applicable, storing it so you and your teacher can review it. We do not sell your content, use it for advertising, or use it to train third-party AI models. See our <a href="/privacy.html">Privacy Policy</a> for details.</p>
+    <p>ProofReady retains ownership of the platform itself — its code, interface, branding, prompts, and underlying technology.</p>
 
-    <h2>Contact</h2>
-    <p>For questions about these terms, please email <a href="mailto:help@proofready.app">help@proofready.app</a>.</p>
+    <h2>10. Third-party services</h2>
+    <p>ProofReady relies on third-party providers to deliver the service. Our current sub-processors are:</p>
+    <ul>
+      <li><strong>Anthropic</strong> — provides the AI model used to generate feedback. Per Anthropic's API terms, content submitted via the API is not used to train Anthropic's models.</li>
+      <li><strong>Supabase</strong> — provides authentication and database hosting.</li>
+      <li><strong>Vercel</strong> — provides hosting and content delivery.</li>
+    </ul>
+    <p>Your use of ProofReady is also subject to the terms and privacy policies of these providers.</p>
+
+    <h2>11. Limitation of liability</h2>
+    <p>ProofReady is provided on an "as is" and "as available" basis. To the maximum extent permitted by law:</p>
+    <ul>
+      <li>We do not guarantee the accuracy, completeness, timeliness, or suitability of AI-generated feedback.</li>
+      <li>We do not guarantee uninterrupted or error-free operation of the platform.</li>
+      <li>We are not liable for any academic, disciplinary, or other decision made on the basis of feedback provided by the platform.</li>
+      <li>We are not liable for loss of data, loss of drafts, or any indirect, incidental, or consequential loss.</li>
+    </ul>
+    <p>Nothing in these terms excludes any non-excludable consumer guarantee under the Australian Consumer Law.</p>
+
+    <h2>12. Suspension and termination</h2>
+    <p>You may stop using ProofReady at any time and request deletion of your account and associated data by emailing <a href="mailto:help@proofready.app">help@proofready.app</a>. We may suspend or terminate access for users who breach these terms, or discontinue the service (in whole or in part) with reasonable notice during or after the pilot.</p>
+
+    <h2>13. Changes to these terms</h2>
+    <p>We may update these terms from time to time. Material changes will be announced on the platform. Continued use of ProofReady after changes take effect constitutes acceptance of the updated terms. If you do not accept updated terms, you should stop using the platform and may request deletion of your data.</p>
+
+    <h2>14. Governing law</h2>
+    <p>These terms are governed by the laws of New South Wales, Australia. The courts of New South Wales have exclusive jurisdiction over any dispute arising from or relating to these terms or your use of the platform.</p>
+
+    <h2>15. Contact</h2>
+    <p>For questions about these terms, data requests, or to report a concern, please email <a href="mailto:help@proofready.app">help@proofready.app</a>.</p>
+
+    <p style="font-size: 13px; color: #9ca3af; margin-top: 32px;">These terms are provided in plain English to help users understand their rights and obligations. They are not legal advice. Schools adopting ProofReady should review them with their own legal or procurement advisors before committing to a pilot.</p>
+    </div>
   </div>
 
   <div class="footer">

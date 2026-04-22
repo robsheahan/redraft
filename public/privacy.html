@@ -30,16 +30,34 @@
       max-width: 1320px; margin: 0 auto; padding: 60px 24px 80px;
       flex: 1;
     }
+    /* Constrain long-form text for readability while keeping container full-width */
+    .doc-body { max-width: 760px; }
     h1 {
       font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
       margin-bottom: 8px;
     }
     .last-updated { font-size: 13px; color: #9ca3af; margin-bottom: 32px; }
-    h2 { font-size: 17px; font-weight: 700; margin: 28px 0 10px; }
+    h2 { font-size: 17px; font-weight: 700; margin: 28px 0 10px; color: #111827; }
+    h3 { font-size: 15px; font-weight: 700; margin: 18px 0 6px; color: #1f2937; }
     p, li { font-size: 15px; color: #4b5563; margin-bottom: 12px; }
-    ul { padding-left: 20px; margin-bottom: 12px; }
+    ul, ol { padding-left: 20px; margin-bottom: 12px; }
     a { color: #ed7615; }
     a:hover { color: #d4690f; }
+    table {
+      border-collapse: collapse; width: 100%; margin: 12px 0;
+      font-size: 14px;
+    }
+    th, td {
+      text-align: left; padding: 10px 14px;
+      border-bottom: 1px solid #e8e0d4; vertical-align: top;
+    }
+    th { font-weight: 700; background: #fdf6ee; color: #1f2937; }
+    .callout {
+      background: #fff; border-left: 4px solid #ed7615;
+      padding: 14px 18px; margin: 16px 0; border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .callout strong { color: #1f2937; }
 
     .footer {
       text-align: center; padding: 24px; font-size: 13px; color: #9ca3af;
@@ -56,37 +74,142 @@
   </nav>
 
   <div class="container">
+    <div class="doc-body">
     <h1>Privacy Policy</h1>
-    <p class="last-updated">Last updated: 4 April 2026</p>
+    <p class="last-updated">Last updated: 22 April 2026</p>
 
-    <h2>Overview</h2>
-    <p>ProofReady is an educational feedback tool. We are committed to protecting the privacy of students, teachers, and all users of our platform.</p>
+    <h2>1. Overview</h2>
+    <p>ProofReady is an AI-powered formative feedback tool for NSW secondary school assessment drafts. This policy explains what information we collect, how we use and store it, who can access it, and the choices you have. We handle personal information in accordance with the <em>Privacy Act 1988</em> (Cth) and the Australian Privacy Principles (APPs).</p>
+    <p>Because ProofReady is used by students — including students under 18 — this policy gives particular attention to the handling of minors' data and the role of schools as the authorising body.</p>
 
-    <h2>Information we collect</h2>
+    <h2>2. Who is responsible for your information</h2>
+    <p>ProofReady is operated by the ProofReady team (the "we", "us", or "our" referred to in this policy). For any privacy question, data request, or concern, contact <a href="mailto:help@proofready.app">help@proofready.app</a>.</p>
+
+    <h2>3. What information we collect</h2>
+    <table>
+      <thead>
+        <tr><th>Category</th><th>Examples</th><th>Why we collect it</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Account information</td>
+          <td>Name, email address, role (student or teacher), hashed password</td>
+          <td>To create your account, authenticate you, and keep submissions tied to the right user</td>
+        </tr>
+        <tr>
+          <td>Task information (teachers)</td>
+          <td>Task titles, question text, marking criteria, teacher notes, task codes</td>
+          <td>To deliver tasks to students and provide context to the feedback engine</td>
+        </tr>
+        <tr>
+          <td>Submission content (students)</td>
+          <td>The text of the draft response you submit</td>
+          <td>To generate formative feedback and allow you and your teacher to review earlier drafts</td>
+        </tr>
+        <tr>
+          <td>Generated feedback</td>
+          <td>AI-generated feedback, inline annotations, criteria commentary</td>
+          <td>To display feedback to you and persist it for later review</td>
+        </tr>
+        <tr>
+          <td>Technical information</td>
+          <td>IP address, browser type, timestamps of requests, error logs</td>
+          <td>Security, abuse prevention, and diagnosing problems</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>We do <strong>not</strong> intentionally collect sensitive information as defined by the Privacy Act (such as health, racial or ethnic origin, or sexual orientation). Please do not include sensitive information about yourself or others in your drafts beyond what the academic task strictly requires.</p>
+
+    <h2>4. How we use your information</h2>
     <ul>
-      <li><strong>Account information:</strong> name, email address, and role (teacher or student) provided at registration.</li>
-      <li><strong>Assessment data:</strong> task descriptions, marking criteria, and student draft submissions entered into the platform.</li>
-      <li><strong>Usage data:</strong> basic analytics such as page views and feature usage to improve the service.</li>
+      <li>To generate AI formative feedback on student drafts.</li>
+      <li>To allow teachers to create and manage assessment tasks and to review student submissions for their own tasks.</li>
+      <li>To let students review their own past drafts and feedback.</li>
+      <li>To operate, maintain, secure, and improve the platform.</li>
+      <li>To communicate with you about your account (for example, password resets, service notices).</li>
+      <li>To investigate abuse, fraud, or breaches of the Terms &amp; Conditions.</li>
+    </ul>
+    <p>We do <strong>not</strong> use your information for advertising and we do <strong>not</strong> sell your personal information to any third party.</p>
+
+    <h2>5. Students under 18 and the role of schools</h2>
+    <p>Where ProofReady is used in a school setting, the school is the body that authorises student use and is the entity that determines (in consultation with parents or guardians where appropriate) whether student accounts should be created. By using ProofReady under a school's authorisation:</p>
+    <ul>
+      <li>Students are expected to use the platform only for the academic purpose the school has approved.</li>
+      <li>Parents or guardians may request a copy of their child's data or request that the account be deleted by contacting us at <a href="mailto:help@proofready.app">help@proofready.app</a>. We may verify requests through the student's school.</li>
+      <li>Teachers can see the submissions of students who have submitted to their own tasks, in the same way a teacher would see an essay handed to them in class.</li>
+      <li>We will not contact students for any purpose other than service-related communications (account, support, security).</li>
     </ul>
 
-    <h2>How we use your information</h2>
+    <h2>6. Who can see your information</h2>
     <ul>
-      <li>To provide AI-generated formative feedback on student drafts.</li>
-      <li>To allow teachers to create and manage assessment tasks.</li>
-      <li>To improve and maintain the platform.</li>
+      <li><strong>You</strong> can see all of your own account information, drafts, and feedback.</li>
+      <li><strong>Your teacher</strong> can see submissions you have made against tasks that teacher created. They cannot see submissions you have made to other teachers' tasks, or drafts you have written without a task code.</li>
+      <li><strong>Our sub-processors</strong> process information on our behalf under contract (see section 8 below). They are bound by their own terms and do not use your information for their own purposes.</li>
+      <li><strong>We</strong> access data only as necessary to operate, secure, and support the service.</li>
     </ul>
 
-    <h2>Data storage and security</h2>
-    <p>Data is stored securely using Supabase infrastructure with encryption at rest and in transit. We do not sell or share personal information with third parties for marketing purposes.</p>
+    <h2>7. AI processing of drafts</h2>
+    <p>Drafts and task context are sent to an AI model (provided by Anthropic) to generate feedback. Specifically:</p>
+    <ul>
+      <li>Submissions are transmitted over encrypted connections (HTTPS/TLS) to Anthropic's API.</li>
+      <li>Under Anthropic's API policy, submissions sent via the API are <strong>not used to train Anthropic's AI models</strong>.</li>
+      <li>Anthropic may retain API inputs and outputs for a limited period for abuse detection and legal compliance, in line with their public data policy.</li>
+      <li>AI-generated feedback is stored in our database so you and your teacher can review it later.</li>
+    </ul>
 
-    <h2>AI processing</h2>
-    <p>Student submissions are processed by AI to generate feedback. Submissions are not used to train AI models and are not retained by AI providers beyond the duration of the request.</p>
+    <h2>8. Service providers (sub-processors)</h2>
+    <p>We use the following providers to deliver ProofReady. Each handles only the data necessary for their role.</p>
+    <table>
+      <thead>
+        <tr><th>Provider</th><th>Role</th><th>Location</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Anthropic</td><td>AI feedback generation</td><td>United States</td></tr>
+        <tr><td>Supabase</td><td>Authentication and database hosting</td><td>Your project region — Australia where available</td></tr>
+        <tr><td>Vercel</td><td>Hosting and content delivery</td><td>Global edge network</td></tr>
+      </tbody>
+    </table>
+    <p>Because some sub-processors operate outside Australia, using ProofReady involves overseas disclosure of personal information within the meaning of APP 8. We take reasonable steps to ensure that these providers handle data consistently with the Australian Privacy Principles.</p>
 
-    <h2>Data retention</h2>
-    <p>Account and assessment data is retained for as long as your account is active. You may request deletion of your data at any time by contacting us.</p>
+    <h2>9. Security</h2>
+    <p>We take reasonable steps to protect the information we hold, including:</p>
+    <ul>
+      <li>Encryption of data in transit (HTTPS/TLS) and at rest (managed by Supabase).</li>
+      <li>Access controls so that student drafts are only visible to the student, their authorised teacher, and authorised operators of the service.</li>
+      <li>Password hashing by our authentication provider (Supabase) — we do not store your password in readable form.</li>
+      <li>Routine application of security updates.</li>
+    </ul>
+    <p>No internet-based system is completely secure. You should use a strong, unique password and tell us immediately at <a href="mailto:help@proofready.app">help@proofready.app</a> if you suspect your account has been accessed without your permission.</p>
 
-    <h2>Contact</h2>
-    <p>For privacy-related enquiries, please email <a href="mailto:help@proofready.app">help@proofready.app</a>.</p>
+    <h2>10. Data retention</h2>
+    <p>We retain your account and assessment data for as long as your account is active. When an account is deleted (by you, by your school, or by us at the end of a pilot period) we will delete or de-identify personal information within 30 days, except where we are required by law to retain it or where a limited retention period is needed for security, abuse prevention, or dispute resolution.</p>
+    <p>Short-term operational logs (error logs, access logs) are retained for up to 90 days and then deleted or aggregated.</p>
+
+    <h2>11. Your rights and choices</h2>
+    <p>You can, at any time, contact <a href="mailto:help@proofready.app">help@proofready.app</a> to:</p>
+    <ul>
+      <li>Request a copy of the personal information we hold about you.</li>
+      <li>Ask us to correct information that is inaccurate or out of date.</li>
+      <li>Ask us to delete your account and associated data.</li>
+      <li>Raise a privacy complaint.</li>
+    </ul>
+    <p>We will respond to requests within a reasonable time (usually within 30 days). For students under 18, we may verify requests through the student's school or parent/guardian.</p>
+    <p>If you believe we have not handled your personal information properly, you can contact us first so we can try to resolve it. You may also lodge a complaint with the Office of the Australian Information Commissioner (<a href="https://www.oaic.gov.au/" target="_blank" rel="noopener">oaic.gov.au</a>).</p>
+
+    <h2>12. Cookies and similar technologies</h2>
+    <p>We use session tokens (provided by Supabase) so that you stay logged in between page loads. We do not use third-party advertising or tracking cookies.</p>
+
+    <h2>13. Data breaches</h2>
+    <p>If a data breach that is likely to result in serious harm occurs, we will notify affected users and, where required, the Office of the Australian Information Commissioner, consistent with the Notifiable Data Breaches scheme under the Privacy Act.</p>
+
+    <h2>14. Changes to this policy</h2>
+    <p>We may update this Privacy Policy from time to time. Material changes will be announced on the platform. The date at the top of this page tells you when it was last revised.</p>
+
+    <h2>15. Contact</h2>
+    <p>For any privacy question, data access request, correction or deletion request, or complaint, email <a href="mailto:help@proofready.app">help@proofready.app</a>.</p>
+
+    <p style="font-size: 13px; color: #9ca3af; margin-top: 32px;">This policy is written in plain English so students, parents, and staff can understand it. It is not legal advice. Schools adopting ProofReady should review it with their own legal or privacy advisors.</p>
+    </div>
   </div>
 
   <div class="footer">
