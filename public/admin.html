@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/proofready/favicon.svg" />
+  <link rel="shortcut icon" href="/proofready/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/proofready/apple-touch-icon.png" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Admin — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #faf7f2; color: #111827; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .nav { background: #fdf6ee; border-bottom: 1px solid #f0e6d6; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { text-decoration: none; display: flex; align-items: center; }
+    .nav-brand img { height: 40px; width: auto; }
+    .nav-right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: #6b7280; }
+    .nav-logout { font-size: 13px; font-weight: 500; color: #4b5563; cursor: pointer; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 6px 14px; font-family: inherit; }
+    .container { max-width: 1320px; margin: 0 auto; padding: 32px 20px 80px; }
+    h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 24px; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 32px; }
+    .kpi { background: #fff; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .kpi-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: #9ca3af; margin-bottom: 6px; }
+    .kpi-value { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; color: #111827; line-height: 1.1; }
+    .kpi-sub { font-size: 12px; color: #6b7280; margin-top: 4px; }
+
+    .section { background: #fff; border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .section h2 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+    table { border-collapse: collapse; width: 100%; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f0f0f0; }
+    th { font-weight: 700; color: #6b7280; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; background: #fafafa; }
+    tr:last-child td { border-bottom: none; }
+    .mono { font-family: monospace; font-size: 12px; color: #ed7615; }
+    .loading { padding: 60px; text-align: center; color: #9ca3af; }
+    .error { padding: 40px; text-align: center; color: #dc2626; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+    <div class="nav-right">
+      <span id="navUser"></span>
+      <button class="nav-logout" onclick="logout()">Log out</button>
+    </div>
+  </nav>
+  <div class="container">
+    <h1>Admin</h1>
+    <div id="content"><div class="loading">Loading stats...</div></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+    (async () => {
+      const user = await requireAuth();
+      if (!user) return;
+      document.getElementById('navUser').textContent = user.email;
+
+      const container = document.getElementById('content');
+      const res = await authFetch('/api/admin-stats');
+      if (!res.ok) {
+        container.innerHTML = '<div class="error">Access denied. This page is for administrators only.</div>';
+        return;
+      }
+      const data = await res.json();
+
+      let html = '';
+
+      html += '<div class="kpi-grid">';
+      html += '<div class="kpi"><div class="kpi-label">Users</div><div class="kpi-value">' + data.counts.users.total + '</div>';
+      html += '<div class="kpi-sub">' + data.counts.users.teachers + ' teachers · ' + data.counts.users.students + ' students' + (data.counts.users.unroled ? ' · ' + data.counts.users.unroled + ' unroled' : '') + '</div></div>';
+
+      html += '<div class="kpi"><div class="kpi-label">Tasks</div><div class="kpi-value">' + data.counts.tasks.total + '</div>';
+      html += '<div class="kpi-sub">+' + data.counts.tasks.last7d + ' this week</div></div>';
+
+      html += '<div class="kpi"><div class="kpi-label">Submissions</div><div class="kpi-value">' + data.counts.submissions.total + '</div>';
+      html += '<div class="kpi-sub">+' + data.counts.submissions.last7d + ' this week · ' + data.counts.submissions.last24h + ' today</div></div>';
+
+      html += '<div class="kpi"><div class="kpi-label">Claude calls (24h)</div><div class="kpi-value">' + data.counts.api_calls_24h + '</div>';
+      html += '<div class="kpi-sub">Approx $' + (data.counts.api_calls_24h * 0.09).toFixed(2) + ' spend</div></div>';
+      html += '</div>';
+
+      // Recent submissions
+      html += '<div class="section"><h2>Recent submissions</h2>';
+      if (data.recent_submissions.length === 0) {
+        html += '<p style="color:#9ca3af;font-size:14px">No submissions yet.</p>';
+      } else {
+        html += '<table><thead><tr><th>Time</th><th>Student</th><th>Task</th><th>Draft</th></tr></thead><tbody>';
+        data.recent_submissions.forEach(s => {
+          var dt = new Date(s.created_at);
+          var timeStr = dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) + ' ' + dt.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+          html += '<tr><td>' + e(timeStr) + '</td><td>' + e(s.student_name) + '</td><td><span class="mono">' + e(s.task_code || '—') + '</span></td><td>v' + (s.draft_version || 1) + '</td></tr>';
+        });
+        html += '</tbody></table>';
+      }
+      html += '</div>';
+
+      // Recent tasks
+      html += '<div class="section"><h2>Recent tasks</h2>';
+      if (data.recent_tasks.length === 0) {
+        html += '<p style="color:#9ca3af;font-size:14px">No tasks yet.</p>';
+      } else {
+        html += '<table><thead><tr><th>Code</th><th>Title</th><th>Course</th><th>Teacher</th><th>Created</th></tr></thead><tbody>';
+        data.recent_tasks.forEach(t => {
+          var dt = new Date(t.created_at);
+          var dateStr = dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+          html += '<tr><td><span class="mono">' + e(t.code) + '</span></td><td>' + e(t.title) + '</td><td>' + e(t.course || '—') + '</td><td>' + e(t.teacher_name) + '</td><td>' + e(dateStr) + '</td></tr>';
+        });
+        html += '</tbody></table>';
+      }
+      html += '</div>';
+
+      container.innerHTML = html;
+    })();
+  </script>
+</body>
+</html>

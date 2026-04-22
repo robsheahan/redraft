@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/proofready/favicon.svg" />
+  <link rel="shortcut icon" href="/proofready/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/proofready/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="Proof Ready" />
+  <link rel="manifest" href="/proofready/site.webmanifest" />
+  <title>Compliance &amp; Security — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #faf7f2; color: #1f2937; line-height: 1.6; min-height: 100vh; display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; }
+    .nav { background: #fdf6ee; border-bottom: 1px solid #f0e6d6; padding: 14px 32px; display: flex; align-items: center; }
+    .nav-brand { text-decoration: none; display: flex; align-items: center; }
+    .nav-brand img { height: 40px; width: auto; }
+    .container { max-width: 1320px; margin: 0 auto; padding: 60px 24px 80px; flex: 1; }
+    .doc-body { max-width: 860px; }
+    h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 6px; }
+    .lede { font-size: 16px; color: #4b5563; margin-bottom: 32px; max-width: 640px; }
+    .last-updated { font-size: 13px; color: #9ca3af; margin-bottom: 32px; }
+    h2 { font-size: 19px; font-weight: 700; margin: 36px 0 10px; color: #111827; }
+    h3 { font-size: 15px; font-weight: 700; margin: 22px 0 8px; color: #1f2937; }
+    p, li { font-size: 15px; color: #4b5563; margin-bottom: 12px; }
+    ul, ol { padding-left: 20px; margin-bottom: 12px; }
+    a { color: #ed7615; }
+    a:hover { color: #d4690f; }
+    table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #e8e0d4; vertical-align: top; }
+    th { font-weight: 700; background: #fdf6ee; color: #1f2937; }
+    .callout { background: #fff; border-left: 4px solid #ed7615; padding: 16px 20px; margin: 20px 0; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .callout strong { color: #1f2937; }
+    .toc { background: #fff; border-radius: 10px; padding: 20px 24px; margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .toc h3 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #9ca3af; margin: 0 0 10px; }
+    .toc ol { margin: 0; padding-left: 20px; }
+    .toc li { font-size: 14px; margin-bottom: 4px; }
+    .toc a { text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
+    .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+    .site-footer a:hover { color: #6b7280; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+  </nav>
+  <div class="container">
+    <div class="doc-body">
+    <h1>Compliance &amp; Security</h1>
+    <p class="lede">Information for school IT, privacy, and procurement teams evaluating ProofReady for a pilot.</p>
+    <p class="last-updated">Last updated: 22 April 2026</p>
+
+    <div class="toc">
+      <h3>On this page</h3>
+      <ol>
+        <li><a href="#overview">Service overview</a></li>
+        <li><a href="#data">What we collect</a></li>
+        <li><a href="#subprocessors">Sub-processors &amp; data residency</a></li>
+        <li><a href="#security">Security practices</a></li>
+        <li><a href="#auth">Authentication</a></li>
+        <li><a href="#minors">Minors &amp; school authorisation</a></li>
+        <li><a href="#ai">AI usage &amp; training</a></li>
+        <li><a href="#breach">Breach notification</a></li>
+        <li><a href="#retention">Data retention &amp; deletion</a></li>
+        <li><a href="#dpa">Data Processing Agreement</a></li>
+        <li><a href="#contact">Contact &amp; support</a></li>
+      </ol>
+    </div>
+
+    <h2 id="overview">1. Service overview</h2>
+    <p><strong>ProofReady</strong> is a web-based formative-feedback tool that generates AI feedback on student assessment drafts. It is aligned to the NSW HSC syllabus and produces:</p>
+    <ul>
+      <li>Holistic written feedback (strengths, improvements, key-term check, priority action).</li>
+      <li>Criterion-by-criterion feedback against the teacher's marking criteria.</li>
+      <li>Inline margin annotations on the student's own draft.</li>
+    </ul>
+    <p>ProofReady does <em>not</em> award marks, replace teacher judgement, act as a reporting mechanism for welfare concerns, or replace any school assessment policy.</p>
+
+    <h2 id="data">2. What we collect</h2>
+    <table>
+      <thead><tr><th>Category</th><th>Examples</th><th>Who provides it</th></tr></thead>
+      <tbody>
+        <tr><td>Account data</td><td>Display name, email, role (student/teacher), hashed password</td><td>User at sign-up</td></tr>
+        <tr><td>Task data</td><td>Task title, question, criteria, teacher notes, 6-character task code</td><td>Teacher</td></tr>
+        <tr><td>Submission content</td><td>Draft text and associated metadata (draft version, timestamp)</td><td>Student</td></tr>
+        <tr><td>Generated feedback</td><td>AI-produced feedback, criterion commentary, inline annotations</td><td>Generated by ProofReady</td></tr>
+        <tr><td>Technical data</td><td>IP address, request timestamps, browser user-agent, error logs</td><td>Captured by our platform for security &amp; debugging</td></tr>
+      </tbody>
+    </table>
+    <p>We do not intentionally collect sensitive personal information (health, religion, political opinions, etc.). Users are asked in the Terms &amp; Conditions not to include such information in drafts beyond what the academic task strictly requires.</p>
+
+    <h2 id="subprocessors">3. Sub-processors &amp; data residency</h2>
+    <p>ProofReady relies on three providers. Each handles only the data it needs for its role and is bound by its own published terms.</p>
+    <table>
+      <thead><tr><th>Provider</th><th>Role</th><th>Data handled</th><th>Region</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Anthropic (Claude)</td>
+          <td>AI model that generates feedback</td>
+          <td>Task question + criteria + the submitted draft. No account data.</td>
+          <td>United States</td>
+        </tr>
+        <tr>
+          <td>Supabase</td>
+          <td>Authentication &amp; managed PostgreSQL database</td>
+          <td>All account, task, submission, and feedback data at rest</td>
+          <td>Supabase region — Australia (Sydney) where available</td>
+        </tr>
+        <tr>
+          <td>Vercel</td>
+          <td>Application hosting &amp; content delivery</td>
+          <td>HTTP traffic (transient), request/access logs</td>
+          <td>Global edge network; application functions run in the closest region to the user</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>We also load Google Fonts from Google's CDN for typography. No user data is transmitted to Google beyond what is inherent in loading a public stylesheet (IP, user-agent).</p>
+    <p>We will notify schools in writing if we change or add a sub-processor.</p>
+
+    <h2 id="security">4. Security practices</h2>
+    <ul>
+      <li><strong>Encryption in transit</strong> — all traffic served over HTTPS/TLS 1.2 or higher.</li>
+      <li><strong>Encryption at rest</strong> — database storage is encrypted by our managed provider (Supabase on AWS).</li>
+      <li><strong>Row-level security</strong> — database policies enforce that a student can see only their own submissions and a teacher can see only submissions to tasks they own, regardless of the credential presented by the client.</li>
+      <li><strong>Password storage</strong> — passwords are never stored in plain text; hashing is handled by Supabase Auth.</li>
+      <li><strong>Principle of least privilege</strong> — admin access is limited to named operators.</li>
+      <li><strong>Rate limiting &amp; abuse protection</strong> — per-user and global daily limits are enforced on the feedback endpoint to prevent automated abuse and runaway cost.</li>
+      <li><strong>Dependency hygiene</strong> — security updates are applied regularly to third-party libraries.</li>
+    </ul>
+
+    <h2 id="auth">5. Authentication</h2>
+    <ul>
+      <li><strong>Method:</strong> email + password authentication via Supabase Auth.</li>
+      <li><strong>Password reset:</strong> self-service via an emailed magic link.</li>
+      <li><strong>SSO:</strong> not currently supported; available on request for larger pilots (Google Workspace for Education, Microsoft 365).</li>
+      <li><strong>MFA:</strong> not currently enabled for end users; available on request.</li>
+      <li><strong>Sessions:</strong> short-lived JWT access tokens with refresh tokens, managed by Supabase.</li>
+    </ul>
+
+    <h2 id="minors">6. Minors &amp; school authorisation</h2>
+    <p>ProofReady is used by secondary school students, many of whom are under 18. When a school pilots ProofReady:</p>
+    <ul>
+      <li>The school is the authorising body for student use. The school is responsible for obtaining any parental or guardian consent required under its own policies.</li>
+      <li>Students should only use ProofReady under the direction of a teacher who has created the relevant task.</li>
+      <li>Teachers' existing obligations under NSW Child Protection procedures and the <em>Children and Young Persons (Care and Protection) Act 1998</em> (NSW) are not altered by use of the platform. ProofReady is not a reporting mechanism.</li>
+      <li>The Terms &amp; Conditions instruct students not to include disclosures of harm, abuse, or safety concerns in their drafts, and to use the supports listed (Kids Helpline, Lifeline, 000) or a trusted adult at school for those matters.</li>
+    </ul>
+
+    <h2 id="ai">7. AI usage &amp; training</h2>
+    <ul>
+      <li>AI feedback is generated by Anthropic's Claude models via the Anthropic API.</li>
+      <li>Per Anthropic's published API policy, <strong>API inputs and outputs are not used to train Anthropic's models</strong>. See <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener">anthropic.com/privacy</a>.</li>
+      <li>Anthropic may retain API inputs and outputs for a limited period for abuse detection and legal compliance only.</li>
+      <li>ProofReady does not train or fine-tune any model on user submissions.</li>
+      <li>ProofReady does not use submissions for any purpose other than generating the feedback the user requested and storing it so the user and their teacher can review it.</li>
+    </ul>
+
+    <h2 id="breach">8. Breach notification</h2>
+    <p>In the event of a data breach that is likely to result in serious harm to affected individuals, we will:</p>
+    <ul>
+      <li>Notify affected users within <strong>72 hours</strong> of confirming the breach.</li>
+      <li>For pilot schools, notify the nominated school contact within the same timeframe.</li>
+      <li>Notify the Office of the Australian Information Commissioner (OAIC) as required under the Notifiable Data Breaches scheme.</li>
+      <li>Provide a written description of the breach, the data involved, and the steps users and the school should take.</li>
+    </ul>
+
+    <h2 id="retention">9. Data retention &amp; deletion</h2>
+    <ul>
+      <li>Account and submission data is retained while a user's account is active.</li>
+      <li>On account deletion (by the user, by the school, or at end of pilot), personal data is deleted or de-identified within <strong>30 days</strong>.</li>
+      <li>Short-term operational logs (error logs, access logs) are retained for up to 90 days.</li>
+      <li>Deletion requests can be made at any time by emailing <a href="mailto:help@proofready.app">help@proofready.app</a>.</li>
+      <li>A school administrator ending a pilot can request bulk deletion of all accounts and submissions associated with the school.</li>
+    </ul>
+
+    <h2 id="dpa">10. Data Processing Agreement</h2>
+    <p>For pilots that require a signed Data Processing Agreement (DPA), we can provide one on request. In most cases a simple exchange of letters is sufficient for a pilot; for larger or longer deployments a full DPA is available.</p>
+    <p>The DPA covers:</p>
+    <ul>
+      <li>Roles (ProofReady as processor; the school/teacher as controller of student data).</li>
+      <li>Purpose of processing (generating formative feedback on drafts).</li>
+      <li>Categories of personal data and data subjects.</li>
+      <li>Obligations regarding confidentiality, security, sub-processing, and breach notification.</li>
+      <li>Return or deletion of data at the end of the engagement.</li>
+    </ul>
+
+    <div class="callout">
+      <p style="margin:0"><strong>This is a pilot.</strong> ProofReady is currently offered free of charge. The service is provided on a best-effort basis without a formal SLA. We aim to respond to support requests within one business day and to security incidents within 24 hours.</p>
+    </div>
+
+    <h2 id="contact">11. Contact &amp; support</h2>
+    <p>For compliance, security, procurement, or privacy enquiries:</p>
+    <ul>
+      <li>Email: <a href="mailto:help@proofready.app">help@proofready.app</a></li>
+      <li>Privacy Policy: <a href="/privacy.html">/privacy.html</a></li>
+      <li>Terms &amp; Conditions: <a href="/terms.html">/terms.html</a></li>
+    </ul>
+    </div>
+  </div>
+  <div class="site-footer">
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms &amp; Conditions</a>
+    <a href="/compliance.html">Compliance</a>
+  </div>
+</body>
+</html>
