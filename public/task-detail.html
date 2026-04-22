@@ -138,6 +138,50 @@
     }
     textarea.edit-field { min-height: 80px; resize: vertical; line-height: 1.6; }
 
+    /* Share-code strip */
+    .share-strip {
+      background: #fff; border-radius: 14px; padding: 20px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+      border-left: 4px solid #ed7615;
+    }
+    .share-strip h3 {
+      font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #1f2937;
+    }
+    .share-strip p { font-size: 13px; color: #4b5563; margin-bottom: 12px; }
+    .share-steps {
+      display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap;
+      font-size: 13px; color: #4b5563;
+    }
+    .share-step {
+      flex: 1 1 200px;
+      background: #fdf6ee; border-radius: 8px; padding: 12px 14px;
+    }
+    .share-step strong { color: #111827; display: block; margin-bottom: 4px; }
+    .share-code-big {
+      display: inline-block; font-family: monospace; font-size: 22px;
+      font-weight: 700; color: #ed7615;
+      padding: 4px 12px; background: #fef3e6; border-radius: 6px;
+      letter-spacing: 3px; margin: 4px 0;
+    }
+    .btn-copy-code {
+      font-size: 12px; font-weight: 600; color: #ed7615;
+      background: transparent; border: 1px solid #ed7615;
+      padding: 4px 10px; border-radius: 4px; cursor: pointer; font-family: inherit;
+      margin-left: 8px;
+    }
+    .btn-copy-code:hover { background: #fef3e6; }
+
+    /* Export button */
+    .btn-export {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; background: #fff; color: #374151;
+      border: 1px solid #e8e0d4; border-radius: 6px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: inherit; text-decoration: none; transition: all 0.15s;
+    }
+    .btn-export:hover { background: #f9fafb; border-color: #d1d5db; }
+
     /* Generate button */
     .generate-section { margin-bottom: 24px; }
     .btn-generate {
@@ -324,6 +368,25 @@
       html += '</div>';
 
       html += '</div>';
+
+      // "How to share this task" strip — always visible, more prominent when no submissions yet
+      html += '<div class="share-strip">';
+      html += '<h3>Share this task with your students</h3>';
+      html += '<p>Give students the task code below. They sign in at <strong>proofready.app</strong>, choose "Join with a task code", and paste it in.</p>';
+      html += '<div style="margin-top:6px"><span class="share-code-big" id="shareCodeBig">' + e(task.code) + '</span>';
+      html += '<button class="btn-copy-code" onclick="copyCode()">Copy</button></div>';
+      html += '<div class="share-steps">';
+      html += '<div class="share-step"><strong>1. Send the code</strong>Paste it in Google Classroom, email, or write it on the board.</div>';
+      html += '<div class="share-step"><strong>2. Students join</strong>They log in, click "Join with a task code" and enter it.</div>';
+      html += '<div class="share-step"><strong>3. They get feedback</strong>Up to 3 drafts per student. You see every submission here.</div>';
+      html += '</div></div>';
+
+      // Submissions controls (export)
+      if (submissions.length > 0) {
+        html += '<div style="display:flex;justify-content:flex-end;margin-bottom:10px">';
+        html += '<button type="button" class="btn-export" id="exportBtn" onclick="downloadCsv()">Download as CSV</button>';
+        html += '</div>';
+      }
 
       // Generate class feedback button
       html += '<div class="generate-section">';
@@ -556,6 +619,42 @@
 
     function toggleSubmission(i) {
       document.getElementById('sub-' + i).classList.toggle('expanded');
+    }
+
+    function copyCode() {
+      if (!currentTask || !currentTask.code) return;
+      navigator.clipboard.writeText(currentTask.code).then(function() {
+        var btn = document.querySelector('.btn-copy-code');
+        var original = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function() { btn.textContent = original; }, 1500);
+      });
+    }
+
+    async function downloadCsv() {
+      if (!currentTask || !currentTask.code) return;
+      var btn = document.getElementById('exportBtn');
+      var original = btn.textContent;
+      btn.textContent = 'Preparing...';
+      btn.disabled = true;
+      try {
+        var res = await authFetch('/api/task-csv?code=' + encodeURIComponent(currentTask.code));
+        if (!res.ok) throw new Error('Download failed');
+        var blob = await res.blob();
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'proofready-' + currentTask.code + '-submissions.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.textContent = original;
+        btn.disabled = false;
+      }
     }
 
     function renderClassFeedback(fb, count) {

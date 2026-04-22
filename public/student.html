@@ -61,6 +61,24 @@
     }
 
     /* Entry method toggle */
+    /* "How this works" onboarding strip */
+    .how-strip {
+      display: flex; gap: 12px; margin-bottom: 28px; flex-wrap: wrap;
+    }
+    .how-step {
+      flex: 1 1 200px;
+      background: #fff; border-radius: 10px; padding: 14px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+      position: relative;
+    }
+    .how-step-num {
+      position: absolute; top: 12px; right: 14px;
+      font-size: 22px; font-weight: 800; color: #fef3e6;
+      line-height: 1;
+    }
+    .how-step h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .how-step p { font-size: 13px; color: #6b7280; line-height: 1.5; }
+
     .entry-options {
       display: flex;
       gap: 8px;
@@ -471,6 +489,12 @@
       <h1 id="pageHeading">Welcome</h1>
       <p class="subtitle">Paste your draft and get detailed, criteria-based feedback before you submit.</p>
 
+      <div class="how-strip" id="howStrip">
+        <div class="how-step"><span class="how-step-num">1</span><h4>Join a task</h4><p>Enter the 6-character code your teacher gave you — or paste your own question if you don't have a code.</p></div>
+        <div class="how-step"><span class="how-step-num">2</span><h4>Paste your draft</h4><p>Your draft should be at least a paragraph. You can submit up to 3 drafts per task.</p></div>
+        <div class="how-step"><span class="how-step-num">3</span><h4>Read your feedback</h4><p>You'll get strengths, things to improve, and an annotated copy of your draft with comments.</p></div>
+      </div>
+
       <div class="entry-options">
         <button class="entry-tab active" onclick="showCode()">Join with a task code</button>
         <button class="entry-tab" onclick="showOwn()">Enter my own task</button>
@@ -591,6 +615,9 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           const section = document.getElementById('previousSection');
           const list = document.getElementById('previousList');
           section.style.display = 'block';
+          // Returning student — hide the intro strip; they know how it works.
+          var howStrip = document.getElementById('howStrip');
+          if (howStrip) howStrip.style.display = 'none';
 
           // Group by course, then by task within each course
           const grouped = {};
