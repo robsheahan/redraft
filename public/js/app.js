@@ -36,7 +36,11 @@ async function requireAuth(expectedRole) {
 
 function getUserMeta(user) {
   const role = user.user_metadata?.role || 'student';
-  let displayName = user.user_metadata?.display_name || user.email;
+  // Google OAuth populates full_name/name; email/password signup uses display_name.
+  let displayName = user.user_metadata?.display_name
+    || user.user_metadata?.full_name
+    || user.user_metadata?.name
+    || user.email;
   // Strip role prefix if display_name starts with it (e.g. "Teacher - Rob" → "Rob")
   const roleLabel = role.charAt(0).toUpperCase() + role.slice(1);
   if (displayName.toLowerCase().startsWith(role)) {

@@ -72,7 +72,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const userMap: Record<string, { name: string; email: string }> = {};
   userList.forEach(u => {
     userMap[u.id] = {
-      name: (u.user_metadata?.display_name as string) || u.email || 'unknown',
+      name: (u.user_metadata?.display_name as string)
+        || (u.user_metadata?.full_name as string)
+        || (u.user_metadata?.name as string)
+        || u.email || 'unknown',
       email: u.email || '',
     };
   });

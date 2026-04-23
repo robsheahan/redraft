@@ -57,7 +57,8 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
   if (data.teacher_id) {
     try {
       const { data: teacherData } = await supabase.auth.admin.getUserById(data.teacher_id);
-      teacherName = teacherData?.user?.user_metadata?.display_name || null;
+      const m: any = teacherData?.user?.user_metadata || {};
+      teacherName = m.display_name || m.full_name || m.name || null;
     } catch { /* silently skip */ }
   }
 

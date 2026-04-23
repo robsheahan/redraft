@@ -131,7 +131,8 @@
       document.getElementById('navUser').textContent = user.email;
 
       // Personalise the page heading with the teacher's display name
-      var displayName = user.user_metadata && user.user_metadata.display_name;
+      var meta = user.user_metadata || {};
+      var displayName = meta.display_name || meta.full_name || meta.name || null;
       if (displayName) {
         document.getElementById('pageHeading').textContent = 'Welcome, ' + displayName;
       }

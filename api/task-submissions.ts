@@ -47,7 +47,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   for (const id of studentIds) {
     const { data } = await supabase.auth.admin.getUserById(id);
     if (data?.user) {
-      nameMap[id] = data.user.user_metadata?.display_name || data.user.email || 'Unknown';
+      const meta: any = data.user.user_metadata || {};
+      nameMap[id] = meta.display_name || meta.full_name || meta.name || data.user.email || 'Unknown';
     }
   }
 
