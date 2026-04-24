@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/proofready/favicon.svg" />
+  <link rel="shortcut icon" href="/proofready/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/proofready/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="Proof Ready" />
+  <link rel="manifest" href="/proofready/site.webmanifest" />
+  <title>Class — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #faf7f2; color: #111827; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .nav { background: #fdf6ee; border-bottom: 1px solid #f0e6d6; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { text-decoration: none; display: flex; align-items: center; }
+    .nav-brand img { height: 40px; width: auto; }
+    .back-link { font-size: 13px; font-weight: 500; color: #4b5563; text-decoration: none; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 6px 14px; }
+    .back-link:hover { background: rgba(0,0,0,0.08); color: #1f2937; }
+    .container { max-width: 1320px; margin: 0 auto; padding: 32px 20px 80px; }
+    .header { background: #fff; border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .header h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+    .course-label { font-size: 13px; color: #6b7280; margin-top: 4px; }
+    .code-big { display: inline-block; font-family: monospace; font-size: 22px; font-weight: 700; color: #ed7615; padding: 6px 14px; background: #fef3e6; border-radius: 8px; letter-spacing: 3px; }
+    .btn-copy { font-size: 12px; font-weight: 600; color: #ed7615; background: transparent; border: 1px solid #ed7615; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-family: inherit; margin-left: 8px; vertical-align: middle; }
+    .btn-copy:hover { background: #fef3e6; }
+    .archived-chip { display: inline-block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #9ca3af; background: #f3f4f6; border-radius: 4px; padding: 3px 10px; margin-left: 10px; vertical-align: middle; }
+    .share-strip { background: #fdf6ee; border-radius: 8px; padding: 12px 16px; margin-top: 16px; font-size: 13px; color: #4b5563; }
+    .actions-row { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+    .btn { padding: 9px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; border: 1px solid transparent; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-primary { background: #ed7615; color: #fff; box-shadow: 0 1px 3px rgba(237,118,21,0.3); }
+    .btn-primary:hover { background: #d4690f; }
+    .btn-outline { background: #fff; color: #374151; border-color: #e8e0d4; }
+    .btn-outline:hover { background: #f9fafb; }
+    .btn-danger { background: #fff; color: #dc2626; border-color: #fecaca; }
+    .btn-danger:hover { background: #fef2f2; }
+
+    .section { margin-bottom: 32px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
+    .section-title { font-size: 17px; font-weight: 700; letter-spacing: -0.2px; }
+    .tasks-grid { display: flex; flex-direction: column; gap: 10px; }
+    .task-card { background: #fff; border-radius: 10px; padding: 18px 22px; text-decoration: none; color: inherit; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); transition: box-shadow 0.15s, transform 0.15s; }
+    .task-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
+    .task-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .task-meta { font-size: 13px; color: #6b7280; }
+    .status-chip { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 3px 10px; border-radius: 4px; white-space: nowrap; }
+    .status-draft { color: #92400e; background: #fef3c7; }
+    .status-published { color: #15803d; background: #dcfce7; }
+    .empty { background: #fff; border-radius: 12px; padding: 40px; text-align: center; color: #6b7280; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+
+    .members-list { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); overflow: hidden; }
+    .member-row { padding: 12px 20px; border-bottom: 1px solid #f0f0f0; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+    .member-row:last-child { border-bottom: none; }
+    .member-joined { font-size: 12px; color: #9ca3af; }
+
+    .loading { text-align: center; padding: 60px; color: #9ca3af; }
+    .error-msg { text-align: center; padding: 40px; color: #dc2626; font-size: 14px; }
+    .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
+    .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+    <a href="teacher.html" class="back-link">Back to classes</a>
+  </nav>
+  <div class="container" id="content"><div class="loading">Loading class...</div></div>
+  <div class="site-footer">
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms &amp; Conditions</a>
+    <a href="/compliance.html">Compliance</a>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    let currentClass = null;
+
+    (async () => {
+      const user = await requireAuth();
+      if (!user) return;
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      const container = document.getElementById('content');
+      if (!id) { container.innerHTML = '<div class="error-msg">No class id.</div>'; return; }
+
+      const res = await authFetch('/api/class?id=' + encodeURIComponent(id));
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        container.innerHTML = '<div class="error-msg">' + e(err.error || 'Could not load class.') + '</div>';
+        return;
+      }
+      const data = await res.json();
+      currentClass = data.class;
+      if (data.role !== 'teacher') {
+        // Student viewing the class — redirect to student view
+        window.location.href = '/student.html';
+        return;
+      }
+      render(data);
+    })();
+
+    function render(data) {
+      const c = data.class;
+      const tasks = data.tasks || [];
+      const members = data.members || [];
+      document.title = (c.name || 'Class') + ' — ProofReady';
+
+      const drafts = tasks.filter(t => !t.published_at);
+      const published = tasks.filter(t => t.published_at);
+
+      const archivedChip = c.archived_at ? '<span class="archived-chip">Archived</span>' : '';
+
+      let html = '';
+      html += '<div class="header">';
+      html += '<div class="header-top"><div>';
+      html += '<h1>' + e(c.name) + archivedChip + '</h1>';
+      if (c.course) html += '<div class="course-label">' + e(c.course) + '</div>';
+      html += '</div><div>';
+      html += '<span class="code-big">' + e(c.code) + '</span>';
+      html += '<button class="btn-copy" onclick="copyCode()">Copy</button>';
+      html += '</div></div>';
+      html += '<div class="share-strip">Share this code with your students. They sign in, click <strong>Join a class</strong>, and enter it. They\'ll then see every published task in this class.</div>';
+      html += '<div class="actions-row">';
+      if (!c.archived_at) {
+        html += '<a href="new-task.html?class=' + encodeURIComponent(c.id) + '" class="btn btn-primary">+ New task</a>';
+        html += '<button class="btn btn-outline" onclick="archiveClass()">Archive class</button>';
+      } else {
+        html += '<button class="btn btn-outline" onclick="unarchiveClass()">Unarchive class</button>';
+      }
+      html += '<button class="btn btn-danger" onclick="deleteClass()">Delete class</button>';
+      html += '</div>';
+      html += '</div>';
+
+      html += '<div class="section">';
+      html += '<div class="section-header"><div class="section-title">Tasks</div></div>';
+      if (tasks.length === 0) {
+        html += '<div class="empty">No tasks yet. ';
+        html += c.archived_at ? 'This class is archived.' : '<a href="new-task.html?class=' + encodeURIComponent(c.id) + '">Create your first task</a> to get started.';
+        html += '</div>';
+      } else {
+        html += '<div class="tasks-grid">';
+        tasks.forEach(t => {
+          const chip = t.published_at
+            ? '<span class="status-chip status-published">Published</span>'
+            : '<span class="status-chip status-draft">Draft</span>';
+          html += '<a href="task-detail.html?id=' + encodeURIComponent(t.id) + '" class="task-card">';
+          html += '<div><div class="task-title">' + e(t.title || t.question || 'Untitled task') + '</div>';
+          var metaParts = [];
+          if (t.task_type) metaParts.push(e(t.task_type));
+          if (t.total_marks) metaParts.push(e(String(t.total_marks)) + ' marks');
+          if (t.due_date) metaParts.push('Due ' + e(t.due_date));
+          html += '<div class="task-meta">' + metaParts.join(' · ') + '</div></div>';
+          html += chip;
+          html += '</a>';
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+
+      html += '<div class="section">';
+      html += '<div class="section-header"><div class="section-title">Members (' + members.length + ')</div></div>';
+      if (members.length === 0) {
+        html += '<div class="empty">No students have joined yet. Share the code above.</div>';
+      } else {
+        html += '<div class="members-list">';
+        members.forEach(m => {
+          var joined = new Date(m.joined_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+          html += '<div class="member-row"><span>' + e(m.student_name) + '</span><span class="member-joined">Joined ' + e(joined) + '</span></div>';
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+
+      document.getElementById('content').innerHTML = html;
+    }
+
+    function copyCode() {
+      if (!currentClass) return;
+      navigator.clipboard.writeText(currentClass.code).then(function() {
+        var btn = document.querySelector('.btn-copy');
+        var original = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function() { btn.textContent = original; }, 1500);
+      });
+    }
+
+    async function archiveClass() {
+      if (!confirm('Archive this class? You can unarchive it later; tasks and submissions are preserved.')) return;
+      var res = await authFetch('/api/class', { method: 'POST', body: JSON.stringify({ action: 'archive', class_id: currentClass.id }) });
+      if (!res.ok) { alert('Failed to archive.'); return; }
+      location.reload();
+    }
+    async function unarchiveClass() {
+      var res = await authFetch('/api/class', { method: 'POST', body: JSON.stringify({ action: 'unarchive', class_id: currentClass.id }) });
+      if (!res.ok) { alert('Failed to unarchive.'); return; }
+      location.reload();
+    }
+    async function deleteClass() {
+      if (!confirm('Permanently delete this class, all its tasks, and all student submissions? This cannot be undone.')) return;
+      var res = await authFetch('/api/class', { method: 'DELETE', body: JSON.stringify({ id: currentClass.id }) });
+      if (!res.ok) { alert('Failed to delete.'); return; }
+      window.location.href = 'teacher.html';
+    }
+  </script>
+</body>
+</html>

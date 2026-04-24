@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/proofready/favicon.svg" />
+  <link rel="shortcut icon" href="/proofready/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/proofready/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="Proof Ready" />
+  <link rel="manifest" href="/proofready/site.webmanifest" />
+  <title>New class — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #faf7f2; color: #111827; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .nav { background: #fdf6ee; border-bottom: 1px solid #f0e6d6; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { text-decoration: none; display: flex; align-items: center; }
+    .nav-brand img { height: 40px; width: auto; }
+    .back-link { font-size: 13px; font-weight: 500; color: #4b5563; text-decoration: none; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 6px 14px; }
+    .back-link:hover { background: rgba(0,0,0,0.08); color: #1f2937; }
+    .container { max-width: 720px; margin: 0 auto; padding: 48px 20px 80px; }
+    h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 8px; }
+    .subtitle { font-size: 15px; color: #6b7280; margin-bottom: 32px; }
+    .card { background: #fff; border-radius: 14px; padding: 28px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .form-group { margin-bottom: 24px; }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #374151; }
+    .hint { font-size: 13px; color: #9ca3af; margin-bottom: 8px; }
+    input { width: 100%; padding: 12px 16px; border: 1px solid #e8e0d4; border-radius: 8px; font-size: 15px; font-family: inherit; outline: none; background: #fff; color: #111827; }
+    input:focus { border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.1); }
+    /* Course search */
+    .course-search { position: relative; }
+    .course-suggestions { display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #e8e0d4; border-top: none; border-radius: 0 0 8px 8px; max-height: 240px; overflow-y: auto; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .course-suggestion { padding: 10px 16px; font-size: 14px; cursor: pointer; }
+    .course-suggestion:hover { background: #fef3e6; }
+    .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+    .btn-primary { padding: 12px 28px; background: #ed7615; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+    .btn-primary:hover { background: #d4690f; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-cancel { padding: 12px 22px; background: #fff; color: #374151; border: 1px solid #e8e0d4; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; text-decoration: none; display: inline-flex; align-items: center; }
+    .error-msg { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #dc2626; margin-bottom: 16px; display: none; }
+    .error-msg.visible { display: block; }
+    .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; margin-top: 40px; }
+    .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+    <a href="teacher.html" class="back-link">Back</a>
+  </nav>
+  <div class="container">
+    <h1>Create a class</h1>
+    <p class="subtitle">Every task lives inside a class. Share the class code with your students so they can join once and see all future tasks you create.</p>
+
+    <div class="card">
+      <div class="error-msg" id="error"></div>
+
+      <div class="form-group">
+        <label>Class name</label>
+        <div class="hint">How it will appear to you and your students — e.g. "12 PDHPE — Period 3", "Year 11 English Std".</div>
+        <input type="text" id="className" maxlength="80" placeholder="e.g. 12 PDHPE" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label>Course (optional)</label>
+        <div class="hint">Helps tailor AI feedback. Pick the NESA course if there is one.</div>
+        <div class="course-search">
+          <input type="text" id="courseInput" placeholder="Search for a course..." autocomplete="off">
+          <div class="course-suggestions" id="courseSuggestions"></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <a href="teacher.html" class="btn-cancel">Cancel</a>
+        <button type="button" class="btn-primary" id="createBtn" onclick="createClass()">Create class</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="site-footer">
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms &amp; Conditions</a>
+    <a href="/compliance.html">Compliance</a>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script src="/js/nesa-courses.js"></script>
+  <script>
+    (async () => {
+      const user = await requireAuth('teacher');
+      if (!user) return;
+      if (typeof initCourseSearch === 'function') initCourseSearch('courseInput', 'courseSuggestions');
+    })();
+
+    function showError(msg) {
+      var el = document.getElementById('error');
+      el.textContent = msg;
+      el.classList.add('visible');
+    }
+    function hideError() { document.getElementById('error').classList.remove('visible'); }
+
+    async function createClass() {
+      hideError();
+      var name = document.getElementById('className').value.trim();
+      var course = document.getElementById('courseInput').value.trim();
+      if (!name) { showError('Please give your class a name.'); return; }
+
+      var btn = document.getElementById('createBtn');
+      btn.disabled = true;
+      btn.textContent = 'Creating...';
+
+      try {
+        var res = await authFetch('/api/class', {
+          method: 'POST',
+          body: JSON.stringify({ name: name, course: course || null }),
+        });
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to create class');
+        window.location.href = 'class-detail.html?id=' + encodeURIComponent(data.class.id);
+      } catch (err) {
+        showError(err.message);
+        btn.disabled = false;
+        btn.textContent = 'Create class';
+      }
+    }
+
+    document.addEventListener('keydown', function(e) { if (e.key === 'Enter') createClass(); });
+  </script>
+</body>
+</html>

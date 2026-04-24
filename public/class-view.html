@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/proofready/favicon.svg" />
+  <link rel="shortcut icon" href="/proofready/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/proofready/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="Proof Ready" />
+  <link rel="manifest" href="/proofready/site.webmanifest" />
+  <title>Class — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #faf7f2; color: #111827; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .nav { background: #fdf6ee; border-bottom: 1px solid #f0e6d6; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { text-decoration: none; display: flex; align-items: center; }
+    .nav-brand img { height: 40px; width: auto; }
+    .back-link { font-size: 13px; font-weight: 500; color: #4b5563; text-decoration: none; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 6px 14px; }
+    .back-link:hover { background: rgba(0,0,0,0.08); color: #1f2937; }
+    .container { max-width: 1320px; margin: 0 auto; padding: 32px 20px 80px; }
+    .header { background: #fff; border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+    .header h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+    .header-meta { font-size: 13px; color: #6b7280; margin-top: 4px; }
+    .btn-leave { font-size: 13px; font-weight: 600; color: #dc2626; background: #fff; border: 1px solid #fecaca; border-radius: 6px; padding: 8px 14px; cursor: pointer; font-family: inherit; }
+    .btn-leave:hover { background: #fef2f2; }
+    .section-title { font-size: 17px; font-weight: 700; margin-bottom: 12px; }
+    .task-card { background: #fff; border-radius: 10px; padding: 18px 22px; text-decoration: none; color: inherit; display: flex; justify-content: space-between; align-items: center; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); margin-bottom: 10px; transition: box-shadow 0.15s, transform 0.15s; }
+    .task-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
+    .task-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .task-meta { font-size: 13px; color: #6b7280; }
+    .empty { background: #fff; border-radius: 12px; padding: 40px; text-align: center; color: #6b7280; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .loading { text-align: center; padding: 60px; color: #9ca3af; }
+    .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
+    .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+    <a href="student.html" class="back-link">Back to dashboard</a>
+  </nav>
+  <div class="container" id="content"><div class="loading">Loading class...</div></div>
+  <div class="site-footer">
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms &amp; Conditions</a>
+    <a href="/compliance.html">Compliance</a>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    let currentClass = null;
+
+    (async () => {
+      const user = await requireAuth();
+      if (!user) return;
+      const id = new URLSearchParams(window.location.search).get('id');
+      const container = document.getElementById('content');
+      if (!id) { container.innerHTML = '<div class="empty">No class id.</div>'; return; }
+
+      const res = await authFetch('/api/class?id=' + encodeURIComponent(id));
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        container.innerHTML = '<div class="empty">' + e(err.error || 'Could not load class.') + '</div>';
+        return;
+      }
+      const data = await res.json();
+      currentClass = data.class;
+      if (data.role === 'teacher') {
+        // Teachers get the management view instead
+        window.location.href = 'class-detail.html?id=' + encodeURIComponent(id);
+        return;
+      }
+      render(data);
+    })();
+
+    function render(data) {
+      const c = data.class;
+      const tasks = data.tasks || [];
+      document.title = (c.name || 'Class') + ' — ProofReady';
+
+      let html = '';
+      html += '<div class="header">';
+      html += '<div>';
+      html += '<h1>' + e(c.name) + '</h1>';
+      html += '<div class="header-meta">';
+      if (c.teacher_name) html += e(c.teacher_name);
+      if (c.course) html += ' · ' + e(c.course);
+      html += '</div>';
+      html += '</div>';
+      html += '<button class="btn-leave" onclick="leaveClass()">Leave class</button>';
+      html += '</div>';
+
+      html += '<div class="section-title">Tasks</div>';
+      if (tasks.length === 0) {
+        html += '<div class="empty">Your teacher hasn\'t posted any tasks yet. Check back later.</div>';
+      } else {
+        tasks.forEach(function(t) {
+          var metaParts = [];
+          if (t.task_type) metaParts.push(e(t.task_type));
+          if (t.total_marks) metaParts.push(e(String(t.total_marks)) + ' marks');
+          if (t.due_date) metaParts.push('Due ' + e(t.due_date));
+          html += '<a href="submit.html?task=' + encodeURIComponent(t.id) + '" class="task-card">';
+          html += '<div><div class="task-title">' + e(t.title || t.question || 'Untitled task') + '</div>';
+          html += '<div class="task-meta">' + metaParts.join(' · ') + '</div></div>';
+          html += '<span style="color:#d1d5db;font-size:20px">›</span>';
+          html += '</a>';
+        });
+      }
+
+      document.getElementById('content').innerHTML = html;
+    }
+
+    async function leaveClass() {
+      if (!currentClass) return;
+      if (!confirm('Leave ' + currentClass.name + '? You won\'t see its tasks any more, but your past submissions stay.')) return;
+      const res = await authFetch('/api/class', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'leave', class_id: currentClass.id }),
+      });
+      if (!res.ok) { alert('Could not leave the class.'); return; }
+      window.location.href = 'student.html';
+    }
+  </script>
+</body>
+</html>

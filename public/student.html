@@ -490,23 +490,29 @@
       <p class="subtitle">Paste your draft and get detailed, criteria-based feedback before you submit.</p>
 
       <div class="how-strip" id="howStrip">
-        <div class="how-step"><span class="how-step-num">1</span><h4>Join a task</h4><p>Enter the 6-character code your teacher gave you — or paste your own question if you don't have a code.</p></div>
-        <div class="how-step"><span class="how-step-num">2</span><h4>Paste your draft</h4><p>Your draft should be at least a paragraph. You can submit up to 3 drafts per task.</p></div>
+        <div class="how-step"><span class="how-step-num">1</span><h4>Join a class</h4><p>Enter the 6-character class code your teacher gave you — or paste your own question if you don't have a class.</p></div>
+        <div class="how-step"><span class="how-step-num">2</span><h4>Pick a task</h4><p>You'll see every task your teacher has posted. Paste your draft into the one you're working on.</p></div>
         <div class="how-step"><span class="how-step-num">3</span><h4>Read your feedback</h4><p>You'll get strengths, things to improve, and an annotated copy of your draft with comments.</p></div>
       </div>
 
+      <!-- Joined classes list (shown if student is in any classes) -->
+      <div id="classesSection" style="display:none; margin-bottom:28px">
+        <div style="font-size:13px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:12px">Your classes</div>
+        <div id="classesList" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+
       <div class="entry-options">
-        <button class="entry-tab active" onclick="showCode()">Join with a task code</button>
+        <button class="entry-tab active" onclick="showCode()">Join a class</button>
         <button class="entry-tab" onclick="showOwn()">Enter my own task</button>
       </div>
 
       <!-- Class code entry -->
       <div class="card" id="codeEntry">
-        <h3>Enter your task code</h3>
-        <p>Your teacher will give you a 6-character code for the task.</p>
+        <h3>Enter your class code</h3>
+        <p>Your teacher will give you a 6-character class code. Once you've joined, every task your teacher posts shows up here.</p>
         <div class="code-input-row">
           <input type="text" class="code-input" id="codeInput" placeholder="e.g. XK7M2P" maxlength="6">
-          <button class="btn-primary" onclick="joinTask()">Join</button>
+          <button class="btn-primary" onclick="joinClass()">Join</button>
         </div>
       </div>
 
@@ -545,29 +551,6 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
       </div>
     </div>
 
-    <!-- Task detail screen (shown after joining with code) -->
-    <div class="task-detail" id="taskDetail">
-      <h1 id="taskTitle">Task</h1>
-      <div class="task-meta" id="taskMeta"></div>
-
-      <div class="card">
-        <div class="task-question" id="taskQuestion"></div>
-        <div class="criteria-display" id="criteriaDisplay">
-          <h4>Marking criteria</h4>
-        </div>
-      </div>
-
-      <div class="divider">Your draft</div>
-
-      <div class="card">
-        <h3>Paste your draft response</h3>
-        <p>Paste your draft below exactly as you've written it.</p>
-        <textarea class="draft-textarea" id="codeDraftTextarea" placeholder="Paste your draft response here..."></textarea>
-        <div class="word-count" id="codeWordCount">0 words</div>
-        <button class="submit-btn" onclick="submitCode()">Get feedback</button>
-      </div>
-    </div>
-
     <div class="previous" id="previousSection" style="display:none">
       <h3>Your previous feedback</h3>
       <div id="previousList"></div>
@@ -589,92 +572,108 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
   <script src="/js/nesa-courses.js"></script>
   <script>
     initCourseSearch('ownCourseInput', 'ownCourseSuggestions');
-    // Auth check + load previous submissions
+
     (async () => {
       const user = await requireAuth('student');
       if (!user) return;
       document.getElementById('navUser').textContent = user.email;
 
-      // Personalise the page heading with the student's display name
       var meta = user.user_metadata || {};
       var displayName = meta.display_name || meta.full_name || meta.name || null;
       if (displayName) {
         document.getElementById('pageHeading').textContent = 'Welcome, ' + displayName;
       }
 
-      // Auto-join if ?resubmit=CODE is in the URL
-      var resubmitCode = new URLSearchParams(window.location.search).get('resubmit');
-      if (resubmitCode) {
-        document.getElementById('codeInput').value = resubmitCode.toUpperCase();
-        setTimeout(function() { joinTask(); }, 50);
-      }
+      // Load classes + previous submissions in parallel
+      await Promise.all([loadClasses(), loadPreviousSubmissions()]);
+    })();
 
-      // Load previous submissions
+    async function loadClasses() {
+      try {
+        const res = await authFetch('/api/class');
+        const data = await res.json();
+        if (!res.ok) return;
+        const joined = (data.joined || []);
+        if (joined.length === 0) return;
+
+        var howStrip = document.getElementById('howStrip');
+        if (howStrip) howStrip.style.display = 'none';
+
+        const container = document.getElementById('classesList');
+        container.innerHTML = joined.map(function(c) {
+          return '<a href="class-view.html?id=' + encodeURIComponent(c.id) + '" class="prev-card" style="text-decoration:none;color:inherit">'
+            + '<div><h4>' + escapeHtml(c.name) + '</h4>'
+            + '<p>' + (c.teacher_name ? escapeHtml(c.teacher_name) + ' · ' : '')
+            + c.task_count_published + ' task' + (c.task_count_published === 1 ? '' : 's') + '</p></div>'
+            + '<span class="prev-card-arrow">›</span></a>';
+        }).join('');
+        document.getElementById('classesSection').style.display = 'block';
+      } catch (e) { /* ignore */ }
+    }
+
+    async function loadPreviousSubmissions() {
       try {
         const res = await authFetch('/api/me?resource=submissions');
         const subs = await res.json();
-        if (Array.isArray(subs) && subs.length > 0) {
-          const section = document.getElementById('previousSection');
-          const list = document.getElementById('previousList');
-          section.style.display = 'block';
-          // Returning student — hide the intro strip; they know how it works.
-          var howStrip = document.getElementById('howStrip');
-          if (howStrip) howStrip.style.display = 'none';
+        if (!Array.isArray(subs) || subs.length === 0) return;
+        const section = document.getElementById('previousSection');
+        const list = document.getElementById('previousList');
+        section.style.display = 'block';
+        var howStrip = document.getElementById('howStrip');
+        if (howStrip) howStrip.style.display = 'none';
 
-          // Group by course, then by task within each course
-          const grouped = {};
-          subs.forEach(s => {
-            const course = s.course || 'Other';
-            if (!grouped[course]) grouped[course] = {};
-            const taskKey = s.task_code || s.question || s.id;
-            if (!grouped[course][taskKey]) grouped[course][taskKey] = [];
-            grouped[course][taskKey].push(s);
-          });
+        const grouped = {};
+        subs.forEach(s => {
+          const course = s.course || s.class_name || 'Other';
+          if (!grouped[course]) grouped[course] = {};
+          const taskKey = s.task_id || s.question || s.id;
+          if (!grouped[course][taskKey]) grouped[course][taskKey] = [];
+          grouped[course][taskKey].push(s);
+        });
 
-          Object.keys(grouped).forEach(course => {
-            const group = document.createElement('div');
-            group.className = 'course-group';
-            group.innerHTML = '<div class="course-heading">' + escapeHtml(course) + '</div>';
-            Object.values(grouped[course]).forEach(taskSubs => {
-              const latest = taskSubs[0];
-              const count = taskSubs.length;
-              const card = document.createElement('div');
-              card.className = 'prev-card';
-              const label = latest.task_title || latest.question || 'Untitled';
-              const date = new Date(latest.created_at).toLocaleDateString();
-              const badgeHtml = count > 1 ? '<span class="draft-badge">' + count + ' drafts</span>' : '';
-              card.innerHTML = '<div><h4>' + escapeHtml(label.substring(0, 60) + (label.length > 60 ? '...' : '')) + ' ' + badgeHtml + '</h4><p>' + date + '</p></div><span class="prev-card-arrow">›</span>';
-              card.onclick = () => {
-                const prevVerbs = ['compare and contrast', 'critically analyse', 'critically evaluate', 'account for', 'analyse', 'analyze', 'appreciate', 'apply', 'assess', 'calculate', 'clarify', 'classify', 'compare', 'construct', 'contrast', 'deduce', 'demonstrate', 'describe', 'discuss', 'distinguish', 'evaluate', 'examine', 'explain', 'extract', 'extrapolate', 'identify', 'interpret', 'investigate', 'justify', 'outline', 'predict', 'propose', 'recommend', 'recount'];
-                const qLow = (latest.question || '').toLowerCase();
-                const detectedVerb = prevVerbs.find(v => qLow.includes(v)) || '';
-                sessionStorage.setItem('proofready_feedback', JSON.stringify({
-                  feedback: latest.feedback,
-                  draft_text: latest.draft_text || '',
-                  meta: {
-                    taskVerb: detectedVerb,
-                    question: latest.question,
-                    course: latest.course,
-                    title: latest.task_title || null,
-                    task_code: latest.task_code || null,
-                    draftVersion: latest.draft_version || 1,
-                  }
-                }));
-                sessionStorage.setItem('proofready_task', JSON.stringify({
-                  code: latest.task_code || null,
-                  title: latest.task_title || null,
+        Object.keys(grouped).forEach(course => {
+          const group = document.createElement('div');
+          group.className = 'course-group';
+          group.innerHTML = '<div class="course-heading">' + escapeHtml(course) + '</div>';
+          Object.values(grouped[course]).forEach(taskSubs => {
+            const latest = taskSubs[0];
+            const count = taskSubs.length;
+            const card = document.createElement('div');
+            card.className = 'prev-card';
+            const label = latest.task_title || latest.question || 'Untitled';
+            const date = new Date(latest.created_at).toLocaleDateString();
+            const badgeHtml = count > 1 ? '<span class="draft-badge">' + count + ' drafts</span>' : '';
+            card.innerHTML = '<div><h4>' + escapeHtml(label.substring(0, 60) + (label.length > 60 ? '...' : '')) + ' ' + badgeHtml + '</h4><p>' + date + '</p></div><span class="prev-card-arrow">›</span>';
+            card.onclick = () => {
+              const prevVerbs = ['compare and contrast','critically analyse','critically evaluate','account for','analyse','analyze','appreciate','apply','assess','calculate','clarify','classify','compare','construct','contrast','deduce','demonstrate','describe','discuss','distinguish','evaluate','examine','explain','extract','extrapolate','identify','interpret','investigate','justify','outline','predict','propose','recommend','recount'];
+              const qLow = (latest.question || '').toLowerCase();
+              const detectedVerb = prevVerbs.find(v => qLow.includes(v)) || '';
+              sessionStorage.setItem('proofready_feedback', JSON.stringify({
+                feedback: latest.feedback,
+                draft_text: latest.draft_text || '',
+                meta: {
+                  taskVerb: detectedVerb,
                   question: latest.question,
                   course: latest.course,
-                }));
-                window.location.href = 'feedback.html';
-              };
-              group.appendChild(card);
-            });
-            list.appendChild(group);
+                  title: latest.task_title || null,
+                  task_id: latest.task_id || null,
+                  draftVersion: latest.draft_version || 1,
+                }
+              }));
+              sessionStorage.setItem('proofready_task', JSON.stringify({
+                task_id: latest.task_id || null,
+                title: latest.task_title || null,
+                question: latest.question,
+                course: latest.course,
+              }));
+              window.location.href = 'feedback.html';
+            };
+            group.appendChild(card);
           });
-        }
-      } catch (e) {}
-    })();
+          list.appendChild(group);
+        });
+      } catch (e) { /* ignore */ }
+    }
 
     // Current task data (populated after joining)
     let currentTask = null;
@@ -692,83 +691,29 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
       document.querySelectorAll('.entry-tab')[0].classList.remove('active');
     }
 
-    // --- Join with task code ---
-    async function joinTask() {
+    // --- Join a class by code ---
+    async function joinClass() {
       const code = document.getElementById('codeInput').value.trim().toUpperCase();
       if (!code) return;
 
       const btn = document.querySelector('#codeEntry .btn-primary');
+      const original = btn.textContent;
       btn.textContent = 'Joining...';
       btn.disabled = true;
 
       try {
-        const res = await fetch('/api/task?code=' + encodeURIComponent(code));
+        const res = await authFetch('/api/class', {
+          method: 'POST',
+          body: JSON.stringify({ action: 'join', code: code }),
+        });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Task not found');
-
-        currentTask = data;
-
-        // Populate task detail — title with teacher name next to it, course in grey underneath
-        var title = data.title || null;
-        var courseName = data.course || null;
-        var teacherName = data.teacher_name || null;
-        var titleEl = document.getElementById('taskTitle');
-        if (title) {
-          titleEl.innerHTML = escapeHtml(title) + (teacherName ? '<span class="task-teacher"> — ' + escapeHtml(teacherName) + '</span>' : '');
-        } else {
-          titleEl.innerHTML = escapeHtml(courseName || 'Task') + (teacherName ? '<span class="task-teacher"> — ' + escapeHtml(teacherName) + '</span>' : '');
-        }
-        var metaParts = [];
-        if (title && courseName && courseName !== title) metaParts.push(courseName);
-        if (data.class_name) metaParts.push(data.class_name);
-        if (data.total_marks) metaParts.push(data.total_marks + ' marks');
-        document.getElementById('taskMeta').textContent = metaParts.join(' — ');
-
-        // Question — convert * bullets to • dot points
-        var questionText = (data.question || '').replace(/^\*\s/gm, '• ').replace(/\n\*\s/g, '\n• ');
-        document.getElementById('taskQuestion').textContent = questionText;
-
-        // Criteria — render as structured rubric table or formatted text block
-        const criteriaDiv = document.getElementById('criteriaDisplay');
-        var criteriaText = data.criteria_text
-          || (data.criteria && data.criteria.length > 0
-            ? data.criteria.map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n')
-            : null);
-        if (criteriaText) {
-          criteriaDiv.innerHTML = '<h4>Marking criteria</h4>' + renderRubric(criteriaText, escapeHtml);
-          criteriaDiv.style.display = 'block';
-        } else {
-          criteriaDiv.style.display = 'none';
-        }
-
-        // Show task detail screen
-        document.getElementById('entryScreen').style.display = 'none';
-        document.getElementById('taskDetail').classList.add('visible');
+        if (!res.ok) throw new Error(data.error || 'Could not join that class.');
+        window.location.href = 'class-view.html?id=' + encodeURIComponent(data.class_id);
       } catch (err) {
         alert(err.message);
-        btn.textContent = 'Join';
+        btn.textContent = original;
         btn.disabled = false;
       }
-    }
-
-    // --- Submit draft (code flow) ---
-    async function submitCode() {
-      if (!currentTask) return;
-      const draft = document.getElementById('codeDraftTextarea').value.trim();
-      if (!draft) { alert('Paste your draft first.'); return; }
-
-      await generateFeedback({
-        question: currentTask.question,
-        course: currentTask.course,
-        criteria: currentTask.criteria,
-        criteria_text: currentTask.criteria_text,
-        outcomes: currentTask.outcomes,
-        draft,
-        notes: currentTask.notes,
-        task_code: currentTask.code,
-        task_title: currentTask.title,
-        task_type: currentTask.task_type,
-      }, document.querySelector('#taskDetail .submit-btn'));
     }
 
     // --- Submit draft (own task flow) ---

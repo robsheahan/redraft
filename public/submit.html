@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/proofready/favicon.svg" />
+  <link rel="shortcut icon" href="/proofready/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/proofready/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="Proof Ready" />
+  <link rel="manifest" href="/proofready/site.webmanifest" />
+  <title>Submit — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #faf7f2; color: #111827; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .nav { background: #fdf6ee; border-bottom: 1px solid #f0e6d6; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { text-decoration: none; display: flex; align-items: center; }
+    .nav-brand img { height: 40px; width: auto; }
+    .back-link { font-size: 13px; font-weight: 500; color: #4b5563; text-decoration: none; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 6px 14px; }
+    .back-link:hover { background: rgba(0,0,0,0.08); color: #1f2937; }
+    .container { max-width: 1320px; margin: 0 auto; padding: 32px 20px 80px; }
+    h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 4px; }
+    .task-teacher { font-size: 16px; font-weight: 500; color: #6b7280; letter-spacing: 0; }
+    .task-meta { font-size: 13px; color: #6b7280; margin-bottom: 18px; }
+    .card { background: #fff; border-radius: 14px; padding: 26px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .task-question { padding: 14px 16px; background: #f9fafb; border-radius: 8px; font-size: 14px; font-weight: 500; line-height: 1.6; margin-bottom: 14px; white-space: pre-line; }
+    .criteria-display h4 { font-size: 12px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px; }
+    .criteria-block { padding: 14px 16px; background: #f9fafb; border-radius: 8px; font-size: 14px; line-height: 1.7; white-space: pre-line; color: #374151; }
+    .divider { font-size: 12px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 12px; }
+    .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .card > p { font-size: 14px; color: #6b7280; margin-bottom: 20px; }
+    .draft-textarea { width: 100%; min-height: 300px; padding: 16px; border: 1px solid #e8e0d4; border-radius: 8px; font-size: 15px; font-family: inherit; line-height: 1.7; outline: none; resize: vertical; background: #fff; color: #111827; }
+    .draft-textarea:focus { border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.1); }
+    .word-count { font-size: 13px; color: #9ca3af; margin-top: 6px; margin-bottom: 16px; }
+    .word-count.warning { color: #d97706; }
+    .submit-btn { width: 100%; padding: 14px; background: #ed7615; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 2px 6px rgba(237,118,21,0.3); }
+    .submit-btn:hover { background: #d4690f; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .loading-overlay { display: none; text-align: center; padding: 48px 20px; }
+    .loading-overlay.visible { display: block; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #e8e0d4; border-top-color: #ed7615; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 4px; }
+    .loading-hint { font-size: 13px; color: #9ca3af; }
+    .loading { text-align: center; padding: 60px; color: #9ca3af; }
+    .empty { background: #fff; border-radius: 12px; padding: 40px; text-align: center; color: #6b7280; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
+    .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+    <a href="student.html" class="back-link">Back</a>
+  </nav>
+  <div class="container" id="content"><div class="loading">Loading task...</div></div>
+  <div class="site-footer">
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms &amp; Conditions</a>
+    <a href="/compliance.html">Compliance</a>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script src="/js/rubric.js"></script>
+  <script>
+    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    let currentTask = null;
+
+    (async () => {
+      const user = await requireAuth();
+      if (!user) return;
+      const taskId = new URLSearchParams(window.location.search).get('task');
+      const container = document.getElementById('content');
+      if (!taskId) { container.innerHTML = '<div class="empty">No task selected.</div>'; return; }
+
+      const res = await authFetch('/api/task?id=' + encodeURIComponent(taskId));
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        container.innerHTML = '<div class="empty">' + e(err.error || 'Could not load task.') + '</div>';
+        return;
+      }
+      const data = await res.json();
+      currentTask = data.task;
+      currentTask.class = data.class;
+      if (data.role === 'teacher') {
+        window.location.href = 'task-detail.html?id=' + encodeURIComponent(taskId);
+        return;
+      }
+      render();
+    })();
+
+    function render() {
+      const t = currentTask;
+      document.title = (t.title || 'Task') + ' — ProofReady';
+      const questionText = (t.question || '').replace(/^\*\s/gm, '• ').replace(/\n\*\s/g, '\n• ');
+      const criteriaText = t.criteria_text
+        || (t.criteria && t.criteria.length > 0
+          ? t.criteria.map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n')
+          : null);
+
+      let html = '';
+      html += '<h1>' + e(t.title || t.question || 'Task') + '</h1>';
+      var metaParts = [];
+      if (t.class && t.class.name) metaParts.push(e(t.class.name));
+      if (t.total_marks) metaParts.push(e(String(t.total_marks)) + ' marks');
+      if (t.due_date) metaParts.push('Due ' + e(t.due_date));
+      html += '<div class="task-meta">' + metaParts.join(' · ') + '</div>';
+
+      html += '<div class="card">';
+      html += '<div class="task-question">' + e(questionText) + '</div>';
+      if (criteriaText) {
+        html += '<div class="criteria-display"><h4>Marking criteria</h4>' + renderRubric(criteriaText, e) + '</div>';
+      }
+      html += '</div>';
+
+      html += '<div class="divider">Your draft</div>';
+      html += '<div class="card" id="draftCard">';
+      html += '<h3>Paste your draft response</h3>';
+      html += '<p>Paste your draft below exactly as you\'ve written it.</p>';
+      html += '<textarea class="draft-textarea" id="draftTextarea" placeholder="Paste your draft response here..." oninput="updateWordCount()"></textarea>';
+      html += '<div class="word-count" id="wordCount">0 words</div>';
+      html += '<button class="submit-btn" onclick="submit()">Get feedback</button>';
+      html += '</div>';
+
+      document.getElementById('content').innerHTML = html;
+    }
+
+    function updateWordCount() {
+      var el = document.getElementById('draftTextarea');
+      var countEl = document.getElementById('wordCount');
+      if (!el || !countEl) return;
+      var words = el.value.trim() ? el.value.trim().split(/\s+/).length : 0;
+      if (words > 3000) { countEl.textContent = words + ' words — very long draft, feedback may not cover everything'; countEl.classList.add('warning'); }
+      else if (words > 2000) { countEl.textContent = words + ' words — long draft'; countEl.classList.add('warning'); }
+      else { countEl.textContent = words + ' words'; countEl.classList.remove('warning'); }
+    }
+
+    async function submit() {
+      const draft = document.getElementById('draftTextarea').value.trim();
+      if (!draft) { alert('Paste your draft first.'); return; }
+      if (draft.length < 50) { alert('Your draft is too short for meaningful feedback — write at least a paragraph.'); return; }
+
+      const btn = document.querySelector('.submit-btn');
+      btn.style.display = 'none';
+      const card = document.getElementById('draftCard');
+      const overlay = document.createElement('div');
+      overlay.className = 'loading-overlay visible';
+      overlay.innerHTML = '<div class="spinner"></div><div class="loading-text" id="loadingText">Reading your draft...</div><div class="loading-hint">Please be patient — feedback can take up to a minute to generate</div>';
+      card.appendChild(overlay);
+
+      var loadingMessages = ['Reading your draft...','Checking against the marking criteria...','Analysing response depth...','Identifying strengths...','Finding areas to improve...','Checking key term alignment...','Reviewing against syllabus outcomes...','Putting it all together...','Almost there...'];
+      var msgIndex = 0;
+      var loadingInterval = setInterval(function() {
+        msgIndex++;
+        if (msgIndex < loadingMessages.length) {
+          var el = document.getElementById('loadingText');
+          if (el) el.textContent = loadingMessages[msgIndex];
+        }
+      }, 7000);
+
+      try {
+        const res = await authFetch('/api/generate-feedback', {
+          method: 'POST',
+          body: JSON.stringify({ task_id: currentTask.id, draft: draft }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to generate feedback');
+
+        sessionStorage.setItem('proofready_feedback', JSON.stringify(data));
+        sessionStorage.setItem('proofready_task', JSON.stringify({
+          task_id: currentTask.id,
+          title: currentTask.title,
+          question: currentTask.question,
+          course: currentTask.course,
+          teacher_name: currentTask.class ? currentTask.class.teacher_name : null,
+          class_name: currentTask.class ? currentTask.class.name : null,
+        }));
+        clearInterval(loadingInterval);
+        window.location.href = 'feedback.html';
+      } catch (err) {
+        clearInterval(loadingInterval);
+        alert(err.message);
+        overlay.remove();
+        btn.style.display = '';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -463,10 +463,10 @@
       const draftText = parsed.draft_text || '';
       const task = currentTask;
 
-      // If this was submitted against a task code, load all drafts so we can navigate
-      const taskCode = task.code || meta.task_code;
-      if (taskCode) {
-        authFetch('/api/me?resource=task-drafts&code=' + encodeURIComponent(taskCode))
+      // If this was submitted against a task, load all drafts so we can navigate
+      const taskId = task.task_id || meta.task_id;
+      if (taskId) {
+        authFetch('/api/me?resource=task-drafts&task_id=' + encodeURIComponent(taskId))
           .then(r => r.json())
           .then(data => {
             if (data.drafts && data.drafts.length > 0) {
@@ -533,12 +533,13 @@
 
       // Resubmit bar — shown if under the cap
       var draftsUsed = drafts ? drafts.length : (meta.draftVersion || 1);
-      if (task.code && draftsUsed < MAX_DRAFTS) {
+      var tId = task.task_id || meta.task_id;
+      if (tId && draftsUsed < MAX_DRAFTS) {
         html += '<div class="resubmit-bar">';
         html += '<div class="resubmit-bar-text">You\'ve used <strong>' + draftsUsed + ' of ' + MAX_DRAFTS + '</strong> drafts. Want to revise and resubmit?</div>';
-        html += '<a href="student.html?resubmit=' + encodeURIComponent(task.code) + '" class="btn-resubmit">Submit new draft</a>';
+        html += '<a href="submit.html?task=' + encodeURIComponent(tId) + '" class="btn-resubmit">Submit new draft</a>';
         html += '</div>';
-      } else if (task.code && draftsUsed >= MAX_DRAFTS) {
+      } else if (tId && draftsUsed >= MAX_DRAFTS) {
         html += '<div class="resubmit-bar">';
         html += '<div class="resubmit-bar-text">You\'ve used all <strong>' + MAX_DRAFTS + ' of ' + MAX_DRAFTS + '</strong> drafts for this task.</div>';
         html += '</div>';

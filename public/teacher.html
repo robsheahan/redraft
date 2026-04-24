@@ -116,7 +116,7 @@
   <div class="container">
     <div class="page-header">
       <h1 id="pageHeading">Welcome</h1>
-      <a href="new-task.html" class="btn-primary">+ New task</a>
+      <a href="new-class.html" class="btn-primary">+ New class</a>
     </div>
     <div id="content"><div class="loading">Loading...</div></div>
   </div>
@@ -127,63 +127,69 @@
     (async () => {
       const user = await requireAuth('teacher');
       if (!user) return;
-
       document.getElementById('navUser').textContent = user.email;
 
-      // Personalise the page heading with the teacher's display name
       var meta = user.user_metadata || {};
       var displayName = meta.display_name || meta.full_name || meta.name || null;
       if (displayName) {
         document.getElementById('pageHeading').textContent = 'Welcome, ' + displayName;
       }
 
-      const res = await authFetch('/api/me?resource=tasks');
-      const tasks = await res.json();
+      const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
       const container = document.getElementById('content');
 
-      if (!Array.isArray(tasks) || tasks.length === 0) {
+      const res = await authFetch('/api/class');
+      const data = await res.json();
+      if (!res.ok) {
+        container.innerHTML = '<div class="empty-state"><h3>Could not load your classes</h3><p>' + e(data.error || 'Unknown error') + '</p></div>';
+        return;
+      }
+      const owned = data.owned || [];
+
+      if (owned.length === 0) {
         container.innerHTML = `
           <div class="empty-state">
             <div class="empty-icon">📋</div>
-            <h3>No tasks yet</h3>
-            <p>Create your first assessment task and share a code with your students.</p>
-            <a href="new-task.html" class="btn-primary">+ Create a task</a>
+            <h3>No classes yet</h3>
+            <p>Create a class, share its code with your students, then add as many tasks to it as you like.</p>
+            <a href="new-class.html" class="btn-primary">+ Create your first class</a>
           </div>`;
         return;
       }
 
-      const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+      const active = owned.filter(c => !c.archived_at);
+      const archived = owned.filter(c => c.archived_at);
 
-      // Group tasks by course + class name (so different classes are shown separately)
-      const grouped = {};
-      tasks.forEach(t => {
-        const course = t.course || 'Other';
-        const key = t.class_name ? course + ' — ' + t.class_name : course;
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(t);
-      });
+      function renderClassCard(c) {
+        var courseLine = c.course ? '<div class="task-stats"><span class="stat">' + e(c.course) + '</span></div>' : '';
+        return '<a href="class-detail.html?id=' + encodeURIComponent(c.id) + '" class="task-card">'
+          + '<div class="task-card-header">'
+          + '<div><h3>' + e(c.name) + '</h3></div>'
+          + '<div class="task-code">' + e(c.code) + '</div>'
+          + '</div>'
+          + courseLine
+          + '<div class="task-stats">'
+          + '<span class="stat"><strong>' + c.member_count + '</strong> student' + (c.member_count === 1 ? '' : 's') + '</span>'
+          + '<span class="stat"><strong>' + c.task_count_total + '</strong> task' + (c.task_count_total === 1 ? '' : 's')
+          + (c.task_count_total > c.task_count_published ? ' <em style="font-style:normal;color:#9ca3af">(' + (c.task_count_total - c.task_count_published) + ' draft)</em>' : '')
+          + '</span>'
+          + '</div>'
+          + '</a>';
+      }
 
       let html = '';
-      Object.keys(grouped).forEach(groupKey => {
+      if (active.length > 0) {
         html += '<div class="course-group">';
-        html += '<div class="course-heading">' + e(groupKey) + '</div>';
-        html += '<div class="tasks-grid">';
-        grouped[groupKey].forEach(t => {
-          html += `<a href="task-detail.html?code=${encodeURIComponent(t.code)}" class="task-card">
-            <div class="task-card-header">
-              <div>
-                <h3>${e(t.title || t.question || 'Untitled task')}</h3>
-              </div>
-              <div class="task-code">${e(t.code)}</div>
-            </div>
-            <div class="task-stats">
-              <span class="stat"><strong>${t.submission_count}</strong> submissions</span>
-              ${t.total_marks ? '<span class="stat"><strong>' + e(t.total_marks) + '</strong> marks</span>' : ''}
-            </div>
-          </a>`;
-        });
-        html += '</div></div>';
-      });
+        html += '<div class="course-heading">Your classes</div>';
+        html += '<div class="tasks-grid">' + active.map(renderClassCard).join('') + '</div>';
+        html += '</div>';
+      }
+      if (archived.length > 0) {
+        html += '<div class="course-group">';
+        html += '<div class="course-heading">Archived</div>';
+        html += '<div class="tasks-grid">' + archived.map(renderClassCard).join('') + '</div>';
+        html += '</div>';
+      }
       container.innerHTML = html;
     })();
   </script>
