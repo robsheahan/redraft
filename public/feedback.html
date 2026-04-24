@@ -579,8 +579,14 @@
       const verb = getObj(fb.task_verb_check);
       if (verb.summary || verb.detail) {
         const id = 'd' + (detailIdx++);
-        const verbLabel = meta.taskVerb ? ' — "' + e(capVerb(meta.taskVerb)) + '"' : '';
-        html += '<div class="section verb-check"><div class="section-title">Key term check' + verbLabel + '</div>';
+        const verbsList = Array.isArray(meta.taskVerbs) && meta.taskVerbs.length > 0
+          ? meta.taskVerbs
+          : (meta.taskVerb ? [meta.taskVerb] : []);
+        const verbLabel = verbsList.length > 0
+          ? ' — ' + verbsList.map(function(v) { return '"' + e(capVerb(v)) + '"'; }).join(', ')
+          : '';
+        const heading = verbsList.length > 1 ? 'Key terms check' : 'Key term check';
+        html += '<div class="section verb-check"><div class="section-title">' + heading + verbLabel + '</div>';
         if (verb.summary) html += '<p class="summary-text">' + e(typeof verb.summary === 'string' ? verb.summary : '') + '</p>';
         if (verb.detail && verb.detail !== verb.summary) {
           html += '<button class="detail-toggle" onclick="toggleDetail(\'' + id + '\', this)"><span class="detail-toggle-arrow">›</span> Show detail</button>';
