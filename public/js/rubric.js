@@ -16,33 +16,45 @@
     // Normalise bullet points to • for consistency
     cleaned = cleaned.replace(/^\*\s/gm, '• ').replace(/\n\*\s/g, '\n• ');
 
-    // Skip common header noise
-    var headerPatterns = [
+    // Strip common header noise up front so it doesn't end up as a criterion
+    var headerStrips = [
       /marking\s*(rubric|criteria|guidelines?)\s*(\(\s*\d+\s*marks?\s*\))?/gi,
-      /range\s*criteria/gi,
-      /criterion\s*(range|marks?)/gi,
+      /band\s*descriptors?/gi,
+      /band\s*\/?\s*descriptor/gi,
+      /range\s*\/?\s*criteria/gi,
+      /criterion\s*\/?\s*(range|marks?)/gi,
     ];
+    headerStrips.forEach(function(p) { cleaned = cleaned.replace(p, '\n'); });
 
     // Split by newlines first
     var lines = cleaned.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l; });
 
-    // If we have fewer than 3 lines, try to split the blob by mark range patterns
+    // If we have fewer than 3 lines, try to split the blob by rubric-shaped patterns
     if (lines.length < 3) {
       var blob = lines.join(' ') || cleaned;
-      // Insert line breaks before mark ranges followed by bullet markers or capitalised text
-      // This catches patterns like "Criteria13–15*" or ")13-15 Examines"
+
+      // 1. Letter-band headers: "A (17–20)", "B (13-16)", "Band A (17-20)", etc.
+      //    Insert a newline before each occurrence so the header lands on its own line.
+      blob = blob.replace(/\s*(?:Band\s+)?([A-F])\s*\(\s*(\d{1,2})\s*[–\-]\s*(\d{1,2})\s*\)\s*/g, '\n$1 ($2–$3) ');
+
+      // 2. Mark-range headers followed by a bullet or capitalised word
       blob = blob.replace(/(\S)(\d{1,2}\s*[–\-]\s*\d{1,2})(\s*[•*\-])/g, '$1\n$2$3');
       blob = blob.replace(/(\S)(\d{1,2}\s*[–\-]\s*\d{1,2})(\s+[A-Z])/g, '$1\n$2$3');
-      // Also handle mark ranges at the start of the remaining text
       blob = blob.replace(/(\S)(\d{1,2}\s*[–\-]\s*\d{1,2}\s*marks?)/gi, '$1\n$2');
-      // Insert line breaks before bullet markers
+
+      // 3. Bullet markers inline
       blob = blob.replace(/([^\n])(\s*•\s)/g, '$1\n$2');
       blob = blob.replace(/([^\n])(\s*\*\s)/g, '$1\n• ');
+
+      // 4. "Criterion N:" / "Criteria N:" / "N." inline
+      blob = blob.replace(/([^\n])\s*((?:Criteri[ao]\s+)\d+[\.\):]\s*)/gi, '$1\n$2');
+
       lines = blob.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l; });
     }
 
-    // Detect band-based rubric: lines that look like mark ranges
-    var markRangeRegex = /^\(?\s*(\d{1,2})\s*[–\-]\s*(\d{1,2})\s*\)?\s*(marks?)?\s*$/i;
+    // Detect band-based rubric: lines that look like mark ranges,
+    // optionally prefixed with a band letter ("A", "Band A") or label.
+    var markRangeRegex = /^(?:Band\s+)?(?:[A-F]\s*)?\(?\s*(\d{1,2})\s*[–\-]\s*(\d{1,2})\s*\)?\s*(marks?)?\s*$/i;
     var bands = [];
     var currentBand = null;
 
@@ -72,15 +84,15 @@
         continue;
       }
 
-      // Also detect inline band headers like "13-15 marks" followed by content on same line
-      var inlineBandMatch = line.match(/^\(?\s*(\d{1,2})\s*[–\-]\s*(\d{1,2})\s*\)?\s*(marks?)?\s*[:\-]?\s*(.+)$/i);
+      // Also detect inline band headers like "13-15 marks Description..." or
+      // "A (17–20) Description..." followed by content on the same line.
+      var inlineBandMatch = line.match(/^(?:Band\s+)?(?:[A-F]\s*)?\(?\s*(\d{1,2})\s*[–\-]\s*(\d{1,2})\s*\)?\s*(marks?)?\s*[:\-]?\s*(.+)$/i);
       if (inlineBandMatch && !line.match(/^•/)) {
         currentBand = {
           range: inlineBandMatch[1] + '–' + inlineBandMatch[2],
           criteria: [],
         };
         bands.push(currentBand);
-        // If there's content after the band marker, add it as a criterion
         var rest = inlineBandMatch[4].trim().replace(/^[•*\-]\s*/, '');
         if (rest) currentBand.criteria.push(rest);
         continue;
