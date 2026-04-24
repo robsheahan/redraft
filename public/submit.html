@@ -173,15 +173,79 @@
       overlay.innerHTML = '<div class="spinner"></div><div class="loading-text" id="loadingText">Reading your draft...</div><div class="loading-hint">Please be patient — feedback can take up to a minute to generate</div>';
       card.appendChild(overlay);
 
-      var loadingMessages = ['Reading your draft...','Checking against the marking criteria...','Analysing response depth...','Identifying strengths...','Finding areas to improve...','Checking key term alignment...','Reviewing against syllabus outcomes...','Putting it all together...','Almost there...'];
+      var loadingMessages = shuffleArray([
+        'Reading your draft...',
+        'Getting a feel for your argument...',
+        'Checking against the marking criteria...',
+        'Analysing response depth...',
+        'Looking at paragraph structure...',
+        'Identifying your strengths...',
+        'Finding areas to improve...',
+        'Checking key term alignment...',
+        'Reviewing against the syllabus outcomes...',
+        'Looking for specific examples and data...',
+        'Weighing up your evidence...',
+        'Checking whether you\'ve answered the question...',
+        'Mapping your ideas to the criteria...',
+        'Checking sentence-by-sentence flow...',
+        'Looking for depth of analysis...',
+        'Running the task verb check...',
+        'Calibrating against HSC band descriptors...',
+        'Looking for cause-and-effect reasoning...',
+        'Checking your introduction and thesis...',
+        'Looking at how your conclusion lands...',
+        'Checking for repetition and redundancy...',
+        'Looking for vague claims that need evidence...',
+        'Weighing claim against support...',
+        'Looking for discipline-specific language...',
+        'Checking whether you\'ve integrated your sources...',
+        'Looking for the "so what"...',
+        'Testing whether your argument holds together...',
+        'Checking the balance of description and analysis...',
+        'Looking for missed opportunities to go deeper...',
+        'Pulling together observations across paragraphs...',
+        'Writing your top-priority focus area...',
+        'Drafting specific, actionable revision steps...',
+        'Double-checking criterion-by-criterion...',
+        'Refining the phrasing of your feedback...',
+        'Making sure every point is specific...',
+        'Tightening the wording so it\'s concrete...',
+        'Picking inline moments worth flagging...',
+        'Highlighting strong sentences to keep...',
+        'Highlighting spots where depth is missing...',
+        'Cross-checking Australian context is accurate...',
+        'Looking for misused or confused terms...',
+        'Checking that each claim has a reason...',
+        'Checking that each reason has an example...',
+        'Assembling your inline annotations...',
+        'Linking your annotations back to the big picture...',
+        'Running a final consistency pass...',
+        'Looking for anything missed...',
+        'Polishing the final feedback...',
+        'Putting it all together...',
+        'Almost there — finalising your feedback...'
+      ]);
       var msgIndex = 0;
       var loadingInterval = setInterval(function() {
         msgIndex++;
-        if (msgIndex < loadingMessages.length) {
-          var el = document.getElementById('loadingText');
-          if (el) el.textContent = loadingMessages[msgIndex];
+        if (msgIndex >= loadingMessages.length) {
+          // Reshuffle so students watching a slow response don't see a
+          // repeating cycle of identical order.
+          loadingMessages = shuffleArray(loadingMessages);
+          msgIndex = 0;
         }
-      }, 7000);
+        var el = document.getElementById('loadingText');
+        if (el) el.textContent = loadingMessages[msgIndex];
+      }, 5000);
+
+      function shuffleArray(arr) {
+        var a = arr.slice();
+        for (var i = a.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+        }
+        return a;
+      }
 
       try {
         const res = await authFetch('/api/generate-feedback', {
