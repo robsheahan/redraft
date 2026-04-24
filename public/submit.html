@@ -27,6 +27,17 @@
     .task-question { padding: 14px 16px; background: #f9fafb; border-radius: 8px; font-size: 14px; font-weight: 500; line-height: 1.6; margin-bottom: 14px; white-space: pre-line; }
     .criteria-display h4 { font-size: 12px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px; }
     .criteria-block { padding: 14px 16px; background: #f9fafb; border-radius: 8px; font-size: 14px; line-height: 1.7; white-space: pre-line; color: #374151; }
+    /* Structured rubric table */
+    .rubric-table { border: 1px solid #e8e0d4; border-radius: 8px; overflow: hidden; }
+    .rubric-row { display: flex; border-bottom: 1px solid #e8e0d4; }
+    .rubric-row:last-child { border-bottom: none; }
+    .rubric-row:nth-child(odd) { background: #fdf6ee; }
+    .rubric-band { flex: 0 0 80px; padding: 14px 12px; font-weight: 700; font-size: 14px; color: #ed7615; border-right: 1px solid #e8e0d4; display: flex; align-items: flex-start; justify-content: center; text-align: center; }
+    .rubric-criteria { flex: 1; padding: 12px 16px; font-size: 13px; color: #374151; line-height: 1.6; }
+    .rubric-criteria ul { list-style: none; padding: 0; margin: 0; }
+    .rubric-criteria li { padding-left: 16px; position: relative; margin-bottom: 6px; }
+    .rubric-criteria li:last-child { margin-bottom: 0; }
+    .rubric-criteria li::before { content: '•'; position: absolute; left: 0; color: #ed7615; font-weight: 700; }
     .divider { font-size: 12px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 12px; }
     .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
     .card > p { font-size: 14px; color: #6b7280; margin-bottom: 20px; }
