@@ -464,9 +464,6 @@
     function renderDetailsView(task) {
       let html = '';
 
-      html += '<div class="detail-row"><div class="detail-label">Class</div>';
-      html += '<div class="detail-value' + (!task.class_name ? ' empty' : '') + '">' + e(task.class_name || 'Not set') + '</div></div>';
-
       html += '<div class="detail-row"><div class="detail-label">Task type</div>';
       html += '<div class="detail-value' + (!task.task_type ? ' empty' : '') + '">' + e(task.task_type || 'Not set') + '</div></div>';
 
