@@ -21,10 +21,14 @@
     .back-link:hover { background: rgba(0,0,0,0.08); color: #1f2937; }
     .container { max-width: 1320px; margin: 0 auto; padding: 32px 20px 80px; }
     .header { background: #fff; border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
-    .header-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
-    .header-left { flex: 1 1 240px; min-width: 0; }
-    .header-centre { flex: 0 0 auto; }
-    .header-right { flex: 0 0 auto; display: flex; gap: 6px; }
+    .header-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; }
+    .header-left { min-width: 0; }
+    .header-centre { justify-self: center; }
+    .header-right { justify-self: end; display: flex; gap: 6px; }
+    @media (max-width: 720px) {
+      .header-top { grid-template-columns: 1fr; }
+      .header-centre, .header-right { justify-self: start; }
+    }
     .header h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
     .course-label { font-size: 13px; color: #6b7280; margin-top: 4px; }
     .code-pill { display: inline-flex; align-items: center; background: #fef3e6; border-radius: 8px; padding: 6px 6px 6px 14px; gap: 10px; }
