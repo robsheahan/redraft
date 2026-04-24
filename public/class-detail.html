@@ -24,9 +24,11 @@
     .header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
     .header h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
     .course-label { font-size: 13px; color: #6b7280; margin-top: 4px; }
-    .code-big { display: inline-block; font-family: monospace; font-size: 22px; font-weight: 700; color: #ed7615; padding: 6px 14px; background: #fef3e6; border-radius: 8px; letter-spacing: 3px; }
-    .btn-copy { font-size: 12px; font-weight: 600; color: #ed7615; background: transparent; border: 1px solid #ed7615; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-family: inherit; margin-left: 8px; vertical-align: middle; }
-    .btn-copy:hover { background: #fef3e6; }
+    .code-pill { display: inline-flex; align-items: center; background: #fef3e6; border-radius: 6px; padding: 4px 4px 4px 12px; gap: 4px; }
+    .code-pill-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #b45309; margin-right: 6px; }
+    .code-pill .code { font-family: monospace; font-size: 16px; font-weight: 700; color: #ed7615; letter-spacing: 2px; }
+    .btn-copy { font-size: 11px; font-weight: 600; color: #ed7615; background: transparent; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-family: inherit; }
+    .btn-copy:hover { background: #fcd9b6; }
     .archived-chip { display: inline-block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #9ca3af; background: #f3f4f6; border-radius: 4px; padding: 3px 10px; margin-left: 10px; vertical-align: middle; }
     .share-strip { background: #fdf6ee; border-radius: 8px; padding: 12px 16px; margin-top: 16px; font-size: 13px; color: #4b5563; }
     .actions-row { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
@@ -124,8 +126,7 @@
       html += '<h1>' + e(c.name) + archivedChip + '</h1>';
       if (c.course) html += '<div class="course-label">' + e(c.course) + '</div>';
       html += '</div><div class="header-actions">';
-      html += '<div><span class="code-big">' + e(c.code) + '</span>';
-      html += '<button class="btn-copy" onclick="copyCode()">Copy</button></div>';
+      html += '<div class="code-pill"><span class="code-pill-label">Code</span><span class="code">' + e(c.code) + '</span><button class="btn-copy" onclick="copyCode()">Copy</button></div>';
       html += '<div class="header-actions-row">';
       if (!c.archived_at) {
         html += '<button class="btn btn-outline btn-sm" onclick="archiveClass()">Archive</button>';
