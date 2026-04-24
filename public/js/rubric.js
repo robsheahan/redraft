@@ -101,8 +101,42 @@
         var bHigh = parseInt(b.range.split('–')[1]);
         return bHigh - aHigh;
       });
-      return { bands: bands };
+      return { bands: bands, format: 'band' };
     }
+
+    // Second try: criterion-list format — lines like
+    //   "Criterion 1: Knowledge (3-5 marks)"
+    //   "Criteria 1: Use of examples (3-5)"
+    //   "1. Analysis 2-4 marks"
+    // each followed by an optional bullet-pointed description.
+    var criterionHeaderRegex = /^(?:criterion|criteria)?\s*\d+\s*[\.\):\-]\s*(.+)$/i;
+    var criteria = [];
+    var currentCriterion = null;
+    for (var k = 0; k < lines.length; k++) {
+      var line2 = lines[k];
+      var isHeaderNoise = headerPatterns.some(function(p) { var r = p.test(line2); p.lastIndex = 0; return r; });
+      if (isHeaderNoise) continue;
+
+      var mCrit = line2.match(criterionHeaderRegex);
+      // Need the rest of the line to look like a criterion name (not a mark range line)
+      if (mCrit && !markRangeRegex.test(line2)) {
+        // Extract mark range if present within the criterion name
+        var rest = mCrit[1];
+        var rangeMatch = rest.match(/\(?\s*(\d{1,2}\s*[–\-]\s*\d{1,2})\s*\)?\s*marks?\s*\)?/i);
+        var range = rangeMatch ? rangeMatch[1].replace(/-/g, '–') : '';
+        var name = rest.replace(/\s*\(?\s*\d{1,2}\s*[–\-]\s*\d{1,2}\s*\)?\s*marks?\s*\)?/i, '').trim();
+        currentCriterion = { name: name || rest.trim(), range: range, details: [] };
+        criteria.push(currentCriterion);
+        continue;
+      }
+
+      if (currentCriterion) {
+        var detail = line2.replace(/^[•*\-]\s*/, '').trim();
+        if (detail) currentCriterion.details.push(detail);
+      }
+    }
+
+    if (criteria.length >= 2) return { criteria: criteria, format: 'criterion' };
 
     return null;
   }
@@ -115,7 +149,7 @@
     if (!text) return '';
 
     var parsed = parseRubric(text);
-    if (parsed && parsed.bands.length >= 2) {
+    if (parsed && parsed.format === 'band') {
       var html = '<div class="rubric-table">';
       parsed.bands.forEach(function(band) {
         html += '<div class="rubric-row">';
@@ -123,9 +157,7 @@
         html += '<div class="rubric-criteria">';
         if (band.criteria.length > 0) {
           html += '<ul>';
-          band.criteria.forEach(function(c) {
-            html += '<li>' + e(c) + '</li>';
-          });
+          band.criteria.forEach(function(c) { html += '<li>' + e(c) + '</li>'; });
           html += '</ul>';
         }
         html += '</div>';
@@ -133,6 +165,25 @@
       });
       html += '</div>';
       return html;
+    }
+
+    if (parsed && parsed.format === 'criterion') {
+      var html2 = '<div class="rubric-table">';
+      parsed.criteria.forEach(function(crit, i) {
+        html2 += '<div class="rubric-row">';
+        html2 += '<div class="rubric-band">' + (crit.range ? e(crit.range) : (i + 1)) + '</div>';
+        html2 += '<div class="rubric-criteria">';
+        html2 += '<div style="font-weight:700;color:#1f2937;margin-bottom:' + (crit.details.length > 0 ? '6px' : '0') + '">' + e(crit.name) + '</div>';
+        if (crit.details.length > 0) {
+          html2 += '<ul>';
+          crit.details.forEach(function(d) { html2 += '<li>' + e(d) + '</li>'; });
+          html2 += '</ul>';
+        }
+        html2 += '</div>';
+        html2 += '</div>';
+      });
+      html2 += '</div>';
+      return html2;
     }
 
     // Fallback: formatted text block, converting * to •
