@@ -36,7 +36,7 @@ var NESA_COURSES = [
 ];
 
 function searchCourses(query) {
-  if (!query || query.length < 2) return [];
+  if (!query) return NESA_COURSES.slice(0, 10);
   var q = query.toLowerCase();
   return NESA_COURSES.filter(function(c) {
     return c.toLowerCase().indexOf(q) !== -1;
@@ -79,8 +79,6 @@ function initCourseSearch(inputId, suggestionsId) {
   });
 
   input.addEventListener('focus', function() {
-    if (input.value.length >= 2) {
-      input.dispatchEvent(new Event('input'));
-    }
+    input.dispatchEvent(new Event('input'));
   });
 }
