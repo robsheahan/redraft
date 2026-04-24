@@ -48,10 +48,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const user = await verifyAuth(req);
-  const { question, course, criteria, criteria_text, outcomes, draft, notes, task_code, task_title, task_type } = req.body;
+  const { question, course, criteria, criteria_text, outcomes, draft, notes, task_id, task_title, task_type } = req.body;
 
-  if (!question || !draft) {
-    return res.status(400).json({ error: 'Question and draft are required' });
+  if (!draft) return res.status(400).json({ error: 'A draft is required.' });
+  // When submitting against a task, only the task_id is needed — we read the
+  // question, criteria and other fields from the DB. The "own task" flow
+  // requires question + criteria_text directly.
+  if (!task_id && !question) {
+    return res.status(400).json({ error: 'Task id or a question is required.' });
   }
 
   // Draft sanity limits: cheap rejection before we pay Anthropic for nonsense
@@ -80,13 +84,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const MAX_DRAFTS = 3;
   let draftVersion = 1;
   let priorDrafts: Array<{ draft_text: string; feedback: any; draft_version: number }> = [];
-  if (user && task_code) {
+
+  // If a task_id was provided, load task + verify access + pull server-side fields
+  let resolvedTask: any = null;
+  let teacherNotes = notes || null;
+  let resolvedQuestion = question || null;
+  let resolvedCourse = course || null;
+  let resolvedCriteriaText = criteria_text || null;
+  let resolvedTaskType = req.body?.task_type || null;
+  let resolvedCriteria = criteria || [];
+  let resolvedOutcomes = outcomes || [];
+  let resolvedTitle = task_title || null;
+
+  if (user && task_id) {
     const supabase = getSupabase();
+    const { data: task } = await supabase.from('tasks').select('*').eq('id', task_id).maybeSingle();
+    if (!task) return res.status(404).json({ error: 'Task not found.' });
+    if (!task.published_at) return res.status(400).json({ error: 'This task is a draft and not yet open for submissions.' });
+
+    // Student must be a member of the task's class
+    const { data: membership } = await supabase
+      .from('class_members').select('student_id').eq('class_id', task.class_id).eq('student_id', user.id).maybeSingle();
+    if (!membership) return res.status(403).json({ error: 'You are not a member of this task\'s class.' });
+
+    resolvedTask = task;
+    resolvedQuestion = task.question;
+    resolvedCourse = task.course || null;
+    resolvedCriteriaText = task.criteria_text || null;
+    resolvedCriteria = task.criteria || [];
+    resolvedOutcomes = task.outcomes || [];
+    resolvedTaskType = task.task_type || null;
+    resolvedTitle = task.title || null;
+    teacherNotes = task.notes || null;
+
     const { data: priorSubs } = await supabase
       .from('submissions')
       .select('draft_text, feedback, draft_version')
       .eq('student_id', user.id)
-      .eq('task_code', task_code)
+      .eq('task_id', task_id)
       .order('draft_version', { ascending: true });
     if (priorSubs) {
       priorDrafts = priorSubs;
@@ -99,37 +134,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  // If submitting against a teacher's task, fetch notes server-side (they're not exposed to students)
-  let teacherNotes = notes || null;
-  if (task_code && !teacherNotes) {
-    const supabase = getSupabase();
-    const { data: taskData } = await supabase.from('tasks').select('notes').eq('code', task_code).single();
-    if (taskData?.notes) teacherNotes = taskData.notes;
-  }
-
-  const taskVerbs = extractTaskVerbs(question as string);
+  const taskVerbs = extractTaskVerbs(String(resolvedQuestion || ''));
   const taskVerb = taskVerbs[0] || null;
 
-  const taskDescription = course
-    ? `${course}\n\nQuestion:\n${question}`
-    : `Question:\n${question}`;
+  const taskDescription = resolvedCourse
+    ? `${resolvedCourse}\n\nQuestion:\n${resolvedQuestion}`
+    : `Question:\n${resolvedQuestion}`;
 
-  // Support both structured criteria (old) and raw text (new)
-  const rawCriteriaText = criteria_text || null;
-  const mappedCriteria = !rawCriteriaText && Array.isArray(criteria)
-    ? criteria.map((c: any) => {
+  const rawCriteriaText = resolvedCriteriaText || null;
+  const mappedCriteria = !rawCriteriaText && Array.isArray(resolvedCriteria)
+    ? resolvedCriteria.map((c: any) => {
         const marksStr = String(c.marks || '0');
         const maxMarks = parseInt(marksStr.includes('-') ? marksStr.split('-')[1] : marksStr) || 0;
         return { name: c.name || '', description: c.name || '', maxMarks };
       })
     : [];
 
-  const outcomesList = (outcomes || []).map((o: any) =>
+  const outcomesList = (resolvedOutcomes || []).map((o: any) =>
     typeof o === 'string' ? o : o.code || ''
   );
 
-  const discipline = course ? getDisciplineForCourse(course as string) : null;
-  const systemPrompt = buildSystemPrompt(course as string || undefined, discipline || undefined);
+  const discipline = resolvedCourse ? getDisciplineForCourse(resolvedCourse as string) : null;
+  const systemPrompt = buildSystemPrompt(resolvedCourse as string || undefined, discipline || undefined);
   const userPrompt = buildUserPrompt({
     taskDescription,
     taskVerb: taskVerb || undefined,
@@ -139,7 +165,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     criteriaText: rawCriteriaText || undefined,
     studentText: draft,
     teacherNotes: teacherNotes || undefined,
-    taskType: task_type || undefined,
+    taskType: resolvedTaskType || undefined,
     priorDrafts: priorDrafts.length > 0 ? priorDrafts : undefined,
     draftVersion,
   });
@@ -168,9 +194,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // --- Pass 2: Independent criteria-coverage check ---
     // This is a fresh assessment — Pass 2 does NOT see Pass 1's output.
     // It evaluates the draft against each marking criterion independently.
-    const criteriaBlock = rawCriteriaText
-      || mappedCriteria.map((c, i) => `${i + 1}. ${c.name} (${c.maxMarks} marks): ${c.description}`).join('\n')
-      || 'No specific criteria provided — assess against general HSC standards';
+    const criteriaBlock: string = rawCriteriaText
+      || (mappedCriteria.length > 0
+          ? mappedCriteria.map((c, i) => `${i + 1}. ${c.name} (${c.maxMarks} marks): ${c.description}`).join('\n')
+          : 'No specific criteria provided — assess against general HSC standards');
 
     const criteriaCheckPrompt = `ASSESSMENT TASK:
 ${taskDescription}
@@ -200,7 +227,7 @@ Assess this draft against each marking criterion above. Address every criterion 
         model: 'claude-sonnet-4-6',
         max_tokens: 3000,
         temperature: 0.3,
-        system: buildCriteriaCheckPrompt(course as string || undefined),
+        system: buildCriteriaCheckPrompt(resolvedCourse as string || undefined),
         messages: [{ role: 'user', content: criteriaCheckPrompt }],
       }),
       generateInlineSuggestions(client, {
@@ -208,7 +235,7 @@ Assess this draft against each marking criterion above. Address every criterion 
         taskVerbs: taskVerbs.length > 0 ? taskVerbs : undefined,
         studentText: draft,
         holisticImprovements: improvementsSummary,
-        courseName: course as string || undefined,
+        courseName: resolvedCourse as string || undefined,
         discipline: discipline || undefined,
       }),
     ]);
@@ -237,9 +264,9 @@ Assess this draft against each marking criterion above. Address every criterion 
       const supabase = getSupabase();
       await supabase.from('submissions').insert({
         student_id: user.id,
-        task_code: task_code || null,
-        question,
-        course: course || null,
+        task_id: task_id || null,
+        question: resolvedQuestion,
+        course: resolvedCourse || null,
         draft_text: draft,
         feedback,
         draft_version: draftVersion,
@@ -249,7 +276,16 @@ Assess this draft against each marking criterion above. Address every criterion 
     return res.status(200).json({
       feedback,
       draft_text: draft,
-      meta: { taskVerb, taskVerbs, question, course, title: task_title || null, draftVersion, maxDrafts: MAX_DRAFTS },
+      meta: {
+        taskVerb,
+        taskVerbs,
+        question: resolvedQuestion,
+        course: resolvedCourse,
+        title: resolvedTitle,
+        task_id: task_id || null,
+        draftVersion,
+        maxDrafts: MAX_DRAFTS,
+      },
     });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || 'Failed to generate feedback' });

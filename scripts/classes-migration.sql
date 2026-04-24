@@ -37,7 +37,15 @@ create table if not exists public.class_members (
 create index if not exists class_members_student_idx on public.class_members (student_id);
 
 -- =========================================================================
--- 3. Reshape tasks: add class_id + published_at, drop code + class_name
+-- 3. Drop old RLS policies that reference tasks.code, so we can drop the column.
+--    The new versions are recreated in section 6 below against the new schema.
+-- =========================================================================
+
+drop policy if exists "teachers read submissions to own tasks" on public.submissions;
+drop policy if exists "students insert own submissions"        on public.submissions;
+
+-- =========================================================================
+-- 4. Reshape tasks: add class_id + published_at, drop code + class_name
 -- =========================================================================
 
 alter table public.tasks add column if not exists class_id uuid references public.classes(id) on delete cascade;

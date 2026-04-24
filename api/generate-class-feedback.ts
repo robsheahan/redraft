@@ -12,30 +12,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
-  const { code } = req.body;
-  if (!code) {
-    return res.status(400).json({ error: 'Task code is required' });
-  }
+  const taskId = (req.body?.task_id as string || '').trim();
+  if (!taskId) return res.status(400).json({ error: 'task_id is required.' });
 
   const supabase = getSupabase();
 
-  // Verify teacher owns the task
   const { data: task, error: taskError } = await supabase
     .from('tasks')
-    .select('*')
-    .eq('code', code)
-    .eq('teacher_id', user.id)
+    .select('*, classes(teacher_id)')
+    .eq('id', taskId)
     .single();
 
-  if (taskError || !task) {
-    return res.status(404).json({ error: 'Task not found' });
-  }
+  if (taskError || !task) return res.status(404).json({ error: 'Task not found' });
+  const teacherId = (task.classes as any)?.teacher_id;
+  if (teacherId !== user.id) return res.status(403).json({ error: 'Not authorised.' });
 
-  // Fetch all submissions with feedback, newest first
   const { data: allSubmissions, error: subError } = await supabase
     .from('submissions')
     .select('student_id, feedback, created_at')
-    .eq('task_code', code)
+    .eq('task_id', taskId)
     .not('feedback', 'is', null)
     .order('created_at', { ascending: false });
 
