@@ -63,14 +63,14 @@
 
       // Skip noise headers
       var isNoise = false;
-      for (var j = 0; j < headerPatterns.length; j++) {
-        if (headerPatterns[j].test(line)) {
+      for (var j = 0; j < headerStrips.length; j++) {
+        if (headerStrips[j].test(line)) {
           isNoise = true;
           break;
         }
       }
       // Reset regex state (global flag)
-      headerPatterns.forEach(function(p) { p.lastIndex = 0; });
+      headerStrips.forEach(function(p) { p.lastIndex = 0; });
       if (isNoise) continue;
 
       // Check if this line is a band marker
@@ -126,7 +126,7 @@
     var currentCriterion = null;
     for (var k = 0; k < lines.length; k++) {
       var line2 = lines[k];
-      var isHeaderNoise = headerPatterns.some(function(p) { var r = p.test(line2); p.lastIndex = 0; return r; });
+      var isHeaderNoise = headerStrips.some(function(p) { var r = p.test(line2); p.lastIndex = 0; return r; });
       if (isHeaderNoise) continue;
 
       var mCrit = line2.match(criterionHeaderRegex);
