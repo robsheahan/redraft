@@ -21,10 +21,17 @@
     }
     .nav {
       background: #fdf6ee; border-bottom: 1px solid #f0e6d6;
-      padding: 14px 32px; display: flex; align-items: center;
+      padding: 14px 32px; display: flex; align-items: center; justify-content: space-between;
     }
     .nav-brand { text-decoration: none; display: flex; align-items: center; }
     .nav-brand img { height: 40px; width: auto; }
+    .nav-home {
+      font-size: 13px; font-weight: 500; color: #4b5563;
+      text-decoration: none; background: rgba(0,0,0,0.04);
+      border: 1px solid rgba(0,0,0,0.1); border-radius: 6px;
+      padding: 6px 14px; transition: all 0.15s;
+    }
+    .nav-home:hover { background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.18); color: #1f2937; }
 
     .container {
       max-width: 1320px; margin: 0 auto; padding: 60px 24px 80px;
@@ -71,6 +78,7 @@
 
   <nav class="nav">
     <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+    <a href="/" class="nav-home">Home</a>
   </nav>
 
   <div class="container">
