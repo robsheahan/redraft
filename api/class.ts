@@ -156,20 +156,36 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
   const allClassIds = [ ...((owned || []) as any[]).map(c => c.id), ...joined.map(c => c.id) ];
   const taskCountMap: Record<string, { total: number; published: number }> = {};
   const memberCountMap: Record<string, number> = {};
+  let allTasksByClass: Record<string, any[]> = {};
   if (allClassIds.length > 0) {
     const { data: allTasks } = await supabase
-      .from('tasks').select('class_id, published_at').in('class_id', allClassIds);
+      .from('tasks')
+      .select('id, class_id, title, question, task_type, total_marks, due_date, published_at, created_at')
+      .in('class_id', allClassIds)
+      .order('created_at', { ascending: false });
     (allTasks || []).forEach((t: any) => {
       const agg = taskCountMap[t.class_id] || { total: 0, published: 0 };
       agg.total++;
       if (t.published_at) agg.published++;
       taskCountMap[t.class_id] = agg;
+      if (!allTasksByClass[t.class_id]) allTasksByClass[t.class_id] = [];
+      allTasksByClass[t.class_id].push(t);
     });
     const { data: allMembers } = await supabase
       .from('class_members').select('class_id').in('class_id', allClassIds);
     (allMembers || []).forEach((m: any) => {
       memberCountMap[m.class_id] = (memberCountMap[m.class_id] || 0) + 1;
     });
+  }
+
+  // Student's own submission counts by task_id, for inline draft-progress indicator
+  let myCounts: Record<string, number> = {};
+  const studentTaskIds: string[] = [];
+  Object.values(allTasksByClass).forEach(ts => ts.forEach((t: any) => { if (t.published_at) studentTaskIds.push(t.id); }));
+  if (studentTaskIds.length > 0) {
+    const { data: subs } = await supabase
+      .from('submissions').select('task_id').eq('student_id', userId).in('task_id', studentTaskIds);
+    (subs || []).forEach((s: any) => { if (s.task_id) myCounts[s.task_id] = (myCounts[s.task_id] || 0) + 1; });
   }
 
   const decorate = (c: any) => ({
@@ -182,7 +198,14 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
   const joinedVisible = joined.filter(c => !c.archived_at);
   const joinedOut: any[] = [];
   for (const c of joinedVisible) {
-    joinedOut.push({ ...decorate(c), teacher_name: await nameFor(supabase, c.teacher_id) });
+    const tasks = (allTasksByClass[c.id] || [])
+      .filter((t: any) => t.published_at)
+      .map((t: any) => ({ ...t, my_submission_count: myCounts[t.id] || 0 }));
+    joinedOut.push({
+      ...decorate(c),
+      teacher_name: await nameFor(supabase, c.teacher_id),
+      tasks,
+    });
   }
 
   return res.status(200).json({

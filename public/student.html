@@ -465,6 +465,30 @@
     .prev-card h4 { font-size: 14px; font-weight: 600; }
     .prev-card p { font-size: 12px; color: #9ca3af; margin-top: 2px; }
     .prev-card-arrow { color: #d1d5db; font-size: 18px; }
+
+    /* Class sections on student home */
+    .class-section { }
+    .class-heading { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; gap: 12px; flex-wrap: wrap; }
+    .class-heading-name { font-size: 16px; font-weight: 700; color: #111827; }
+    .class-heading-sub { font-size: 13px; color: #9ca3af; margin-top: 2px; }
+    .class-heading-actions { display: flex; gap: 8px; align-items: center; }
+    .class-heading a { font-size: 12px; font-weight: 600; color: #ed7615; text-decoration: none; }
+    .class-heading a:hover { color: #d4690f; }
+    .class-empty { background: #fff; border-radius: 10px; padding: 18px; font-size: 13px; color: #9ca3af; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .task-card-row { display: flex; flex-direction: column; gap: 8px; }
+    .task-row { background: #fff; border-radius: 10px; padding: 14px 18px; text-decoration: none; color: inherit; display: flex; justify-content: space-between; align-items: center; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); transition: box-shadow 0.15s, transform 0.15s; }
+    .task-row:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
+    .task-row-title { font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 2px; }
+    .task-row-meta { font-size: 12px; color: #9ca3af; }
+    /* Draft progress dots */
+    .draft-progress { display: inline-flex; align-items: center; gap: 10px; }
+    .draft-dots { display: inline-flex; gap: 4px; }
+    .draft-dot { width: 9px; height: 9px; border-radius: 50%; background: #e8e0d4; }
+    .draft-dot.filled { background: #ed7615; }
+    .draft-label { font-size: 11px; font-weight: 600; color: #6b7280; white-space: nowrap; }
+    .draft-label.none { color: #9ca3af; }
+    .draft-label.done { color: #d4690f; }
+    .task-row-arrow { color: #d1d5db; font-size: 18px; }
     .draft-badge {
       display: inline-block; font-size: 11px; font-weight: 600; color: #ed7615;
       background: #fef3e6; border-radius: 4px; padding: 1px 7px;
@@ -493,12 +517,6 @@
         <div class="how-step"><span class="how-step-num">1</span><h4>Join a class</h4><p>Enter the 6-character class code your teacher gave you — or paste your own question if you don't have a class.</p></div>
         <div class="how-step"><span class="how-step-num">2</span><h4>Pick a task</h4><p>You'll see every task your teacher has posted. Paste your draft into the one you're working on.</p></div>
         <div class="how-step"><span class="how-step-num">3</span><h4>Read your feedback</h4><p>You'll get strengths, things to improve, and an annotated copy of your draft with comments.</p></div>
-      </div>
-
-      <!-- Joined classes list (shown if student is in any classes) -->
-      <div id="classesSection" style="display:none; margin-bottom:28px">
-        <div style="font-size:13px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:12px">Your classes</div>
-        <div id="classesList" style="display:flex;flex-direction:column;gap:10px"></div>
       </div>
 
       <div class="entry-options">
@@ -548,6 +566,11 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           <div class="word-count" id="ownWordCount">0 words</div>
           <button class="submit-btn" onclick="submitOwn()">Get feedback</button>
         </div>
+      </div>
+
+      <!-- Joined classes (below the entry options, grouped by class) -->
+      <div id="classesSection" style="display:none; margin-top:40px">
+        <div id="classesList" style="display:flex;flex-direction:column;gap:24px"></div>
       </div>
     </div>
 
@@ -600,15 +623,54 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         if (howStrip) howStrip.style.display = 'none';
 
         const container = document.getElementById('classesList');
-        container.innerHTML = joined.map(function(c) {
-          return '<a href="class-view.html?id=' + encodeURIComponent(c.id) + '" class="prev-card" style="text-decoration:none;color:inherit">'
-            + '<div><h4>' + escapeHtml(c.name) + '</h4>'
-            + '<p>' + (c.teacher_name ? escapeHtml(c.teacher_name) + ' · ' : '')
-            + c.task_count_published + ' task' + (c.task_count_published === 1 ? '' : 's') + '</p></div>'
-            + '<span class="prev-card-arrow">›</span></a>';
-        }).join('');
+        container.innerHTML = joined.map(renderClassSection).join('');
         document.getElementById('classesSection').style.display = 'block';
       } catch (e) { /* ignore */ }
+    }
+
+    function renderClassSection(c) {
+      const tasks = c.tasks || [];
+      var html = '<div class="class-section">';
+      html += '<div class="class-heading">';
+      html += '<div><div class="class-heading-name">' + escapeHtml(c.name) + '</div>';
+      var sub = [];
+      if (c.teacher_name) sub.push(escapeHtml(c.teacher_name));
+      if (c.course) sub.push(escapeHtml(c.course));
+      html += '<div class="class-heading-sub">' + (sub.length ? sub.join(' · ') : '') + '</div></div>';
+      html += '<div class="class-heading-actions"><a href="class-view.html?id=' + encodeURIComponent(c.id) + '">Open class →</a></div>';
+      html += '</div>';
+      if (tasks.length === 0) {
+        html += '<div class="class-empty">No tasks yet — your teacher will post some soon.</div>';
+      } else {
+        html += '<div class="task-card-row">';
+        tasks.forEach(function(t) {
+          var metaParts = [];
+          if (t.task_type) metaParts.push(escapeHtml(t.task_type));
+          if (t.total_marks) metaParts.push(escapeHtml(String(t.total_marks)) + ' marks');
+          if (t.due_date) metaParts.push('Due ' + escapeHtml(t.due_date));
+          html += '<a href="submit.html?task=' + encodeURIComponent(t.id) + '" class="task-row">';
+          html += '<div style="flex:1;min-width:0"><div class="task-row-title">' + escapeHtml(t.title || t.question || 'Untitled task') + '</div>';
+          html += '<div class="task-row-meta">' + metaParts.join(' · ') + '</div></div>';
+          html += renderDraftProgress(t.my_submission_count || 0);
+          html += '<span class="task-row-arrow">›</span>';
+          html += '</a>';
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function renderDraftProgress(count) {
+      const MAX = 3;
+      var n = Math.min(Math.max(0, count), MAX);
+      var dots = '';
+      for (var i = 0; i < MAX; i++) {
+        dots += '<span class="draft-dot ' + (i < n ? 'filled' : '') + '"></span>';
+      }
+      var labelClass = 'draft-label' + (n === 0 ? ' none' : (n >= MAX ? ' done' : ''));
+      var labelText = n === 0 ? 'Not started' : (n >= MAX ? 'All 3 used' : n + '/' + MAX);
+      return '<div class="draft-progress"><span class="draft-dots">' + dots + '</span><span class="' + labelClass + '">' + labelText + '</span></div>';
     }
 
     async function loadPreviousSubmissions() {
