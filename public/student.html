@@ -489,6 +489,13 @@
     .draft-label.none { color: #9ca3af; }
     .draft-label.done { color: #d4690f; }
     .task-row-arrow { color: #d1d5db; font-size: 18px; }
+    .btn-view-feedback {
+      font-size: 12px; font-weight: 600; color: #ed7615; background: #fef3e6;
+      border: 1px solid transparent; border-radius: 6px; padding: 6px 12px;
+      cursor: pointer; font-family: inherit; text-decoration: none;
+      white-space: nowrap; transition: background 0.15s;
+    }
+    .btn-view-feedback:hover { background: #fcd9b6; }
     .draft-badge {
       display: inline-block; font-size: 11px; font-weight: 600; color: #ed7615;
       background: #fef3e6; border-radius: 4px; padding: 1px 7px;
@@ -596,6 +603,9 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
   <script>
     initCourseSearch('ownCourseInput', 'ownCourseSuggestions');
 
+    // Populated in the main IIFE; keyed by task_id, value = latest submission for that task
+    var latestSubmissionByTask = {};
+
     (async () => {
       const user = await requireAuth('student');
       if (!user) return;
@@ -607,26 +617,36 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         document.getElementById('pageHeading').textContent = 'Welcome, ' + displayName;
       }
 
-      // Load classes + previous submissions in parallel
-      await Promise.all([loadClasses(), loadPreviousSubmissions()]);
-    })();
+      // Fetch classes + submissions in parallel
+      const [classesRes, subsRes] = await Promise.all([
+        authFetch('/api/class').catch(() => null),
+        authFetch('/api/me?resource=submissions').catch(() => null),
+      ]);
+      const classesData = classesRes && classesRes.ok ? await classesRes.json() : { joined: [] };
+      const subs = subsRes && subsRes.ok ? await subsRes.json() : [];
 
-    async function loadClasses() {
-      try {
-        const res = await authFetch('/api/class');
-        const data = await res.json();
-        if (!res.ok) return;
-        const joined = (data.joined || []);
-        if (joined.length === 0) return;
+      // Build per-task latest-submission map (skip own-task submissions — no task_id)
+      if (Array.isArray(subs)) {
+        subs.forEach(function(s) {
+          if (!s.task_id) return;
+          var cur = latestSubmissionByTask[s.task_id];
+          if (!cur || new Date(s.created_at) > new Date(cur.created_at)) {
+            latestSubmissionByTask[s.task_id] = s;
+          }
+        });
+      }
 
+      const joined = classesData.joined || [];
+      if (joined.length > 0) {
         var howStrip = document.getElementById('howStrip');
         if (howStrip) howStrip.style.display = 'none';
-
-        const container = document.getElementById('classesList');
-        container.innerHTML = joined.map(renderClassSection).join('');
+        document.getElementById('classesList').innerHTML = joined.map(renderClassSection).join('');
         document.getElementById('classesSection').style.display = 'block';
-      } catch (e) { /* ignore */ }
-    }
+      }
+
+      // Own-task (task_id === null) submissions get a small list at the bottom
+      if (Array.isArray(subs)) renderOwnTaskHistory(subs);
+    })();
 
     function renderClassSection(c) {
       const tasks = c.tasks || [];
@@ -648,17 +668,87 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           if (t.task_type) metaParts.push(escapeHtml(t.task_type));
           if (t.total_marks) metaParts.push(escapeHtml(String(t.total_marks)) + ' marks');
           if (t.due_date) metaParts.push('Due ' + escapeHtml(t.due_date));
+          const hasSubmission = (t.my_submission_count || 0) > 0;
           html += '<a href="submit.html?task=' + encodeURIComponent(t.id) + '" class="task-row">';
           html += '<div style="flex:1;min-width:0"><div class="task-row-title">' + escapeHtml(t.title || t.question || 'Untitled task') + '</div>';
           html += '<div class="task-row-meta">' + metaParts.join(' · ') + '</div></div>';
           html += renderDraftProgress(t.my_submission_count || 0);
-          html += '<span class="task-row-arrow">›</span>';
+          if (hasSubmission) {
+            html += '<button type="button" class="btn-view-feedback" onclick="openFeedback(event, \'' + encodeURIComponent(t.id) + '\')">View feedback</button>';
+          } else {
+            html += '<span class="task-row-arrow">›</span>';
+          }
           html += '</a>';
         });
         html += '</div>';
       }
       html += '</div>';
       return html;
+    }
+
+    function renderOwnTaskHistory(subs) {
+      const ownTask = subs.filter(function(s) { return !s.task_id; });
+      if (ownTask.length === 0) return;
+      const section = document.getElementById('previousSection');
+      const list = document.getElementById('previousList');
+      section.style.display = 'block';
+      section.querySelector('h3').textContent = 'Your own tasks';
+
+      // Group by question text
+      const grouped = {};
+      ownTask.forEach(function(s) {
+        var key = s.question || s.id;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(s);
+      });
+
+      list.innerHTML = '';
+      Object.values(grouped).forEach(function(taskSubs) {
+        const latest = taskSubs[0];
+        const count = taskSubs.length;
+        const card = document.createElement('div');
+        card.className = 'prev-card';
+        const label = latest.question || 'Untitled';
+        const date = new Date(latest.created_at).toLocaleDateString();
+        const badgeHtml = count > 1 ? '<span class="draft-badge">' + count + ' drafts</span>' : '';
+        card.innerHTML = '<div><h4>' + escapeHtml(label.substring(0, 60) + (label.length > 60 ? '...' : '')) + ' ' + badgeHtml + '</h4><p>' + date + '</p></div><span class="prev-card-arrow">›</span>';
+        card.onclick = function() { openSubmissionInFeedback(latest); };
+        list.appendChild(card);
+      });
+    }
+
+    function openFeedback(event, taskIdEncoded) {
+      event.preventDefault();
+      event.stopPropagation();
+      const taskId = decodeURIComponent(taskIdEncoded);
+      const s = latestSubmissionByTask[taskId];
+      if (!s) { window.location.href = 'submit.html?task=' + taskIdEncoded; return; }
+      openSubmissionInFeedback(s);
+    }
+
+    function openSubmissionInFeedback(latest) {
+      const prevVerbs = ['compare and contrast','critically analyse','critically evaluate','account for','analyse','analyze','appreciate','apply','assess','calculate','clarify','classify','compare','construct','contrast','deduce','demonstrate','describe','discuss','distinguish','evaluate','examine','explain','extract','extrapolate','identify','interpret','investigate','justify','outline','predict','propose','recommend','recount'];
+      const qLow = (latest.question || '').toLowerCase();
+      const detectedVerb = prevVerbs.find(function(v) { return qLow.indexOf(v) !== -1; }) || '';
+      sessionStorage.setItem('proofready_feedback', JSON.stringify({
+        feedback: latest.feedback,
+        draft_text: latest.draft_text || '',
+        meta: {
+          taskVerb: detectedVerb,
+          question: latest.question,
+          course: latest.course,
+          title: latest.task_title || null,
+          task_id: latest.task_id || null,
+          draftVersion: latest.draft_version || 1,
+        }
+      }));
+      sessionStorage.setItem('proofready_task', JSON.stringify({
+        task_id: latest.task_id || null,
+        title: latest.task_title || null,
+        question: latest.question,
+        course: latest.course,
+      }));
+      window.location.href = 'feedback.html';
     }
 
     function renderDraftProgress(count) {
