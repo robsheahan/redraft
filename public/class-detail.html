@@ -21,14 +21,22 @@
     .back-link:hover { background: rgba(0,0,0,0.08); color: #1f2937; }
     .container { max-width: 1320px; margin: 0 auto; padding: 32px 20px 80px; }
     .header { background: #fff; border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
-    .header-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; }
-    .header-left { min-width: 0; }
-    .header-centre { justify-self: center; }
-    .header-right { justify-self: end; display: flex; gap: 6px; }
-    @media (max-width: 720px) {
-      .header-top { grid-template-columns: 1fr; }
-      .header-centre, .header-right { justify-self: start; }
-    }
+    .header-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+    .header-left { min-width: 0; flex: 1 1 260px; }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+
+    /* Kebab menu */
+    .menu-wrap { position: relative; }
+    .btn-menu { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: #fff; color: #4b5563; border: 1px solid #e8e0d4; border-radius: 6px; cursor: pointer; padding: 0; font-family: inherit; }
+    .btn-menu:hover { background: #f9fafb; color: #111827; }
+    .btn-menu svg { display: block; }
+    .menu-dropdown { display: none; position: absolute; top: calc(100% + 6px); right: 0; background: #fff; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05); min-width: 160px; overflow: hidden; z-index: 10; }
+    .menu-dropdown.open { display: block; }
+    .menu-item { display: block; width: 100%; text-align: left; padding: 10px 14px; font-size: 13px; font-weight: 500; color: #1f2937; background: transparent; border: none; cursor: pointer; font-family: inherit; }
+    .menu-item:hover { background: #f9fafb; }
+    .menu-item.danger { color: #dc2626; }
+    .menu-item.danger:hover { background: #fef2f2; }
+    .menu-sep { height: 1px; background: #f0e6d6; }
     .header h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
     .course-label { font-size: 13px; color: #6b7280; margin-top: 4px; }
     .code-pill { display: inline-flex; align-items: center; background: #fef3e6; border-radius: 8px; padding: 6px 6px 6px 14px; gap: 10px; }
@@ -128,6 +136,7 @@
       const archivedChip = c.archived_at ? '<span class="archived-chip">Archived</span>' : '';
 
       const copyIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+      const kebabIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>';
       let html = '';
       html += '<div class="header">';
       html += '<div class="header-top">';
@@ -135,16 +144,20 @@
       html += '<h1>' + e(c.name) + archivedChip + '</h1>';
       if (c.course) html += '<div class="course-label">' + e(c.course) + '</div>';
       html += '</div>';
-      html += '<div class="header-centre">';
-      html += '<div class="code-pill"><span class="code-pill-label">Student code</span><span class="code">' + e(c.code) + '</span><button class="btn-copy" id="copyBtn" onclick="copyCode()" aria-label="Copy code" title="Copy code">' + copyIcon + '</button></div>';
-      html += '</div>';
       html += '<div class="header-right">';
+      html += '<div class="code-pill"><span class="code-pill-label">Student code</span><span class="code">' + e(c.code) + '</span><button class="btn-copy" id="copyBtn" onclick="copyCode()" aria-label="Copy code" title="Copy code">' + copyIcon + '</button></div>';
+      html += '<div class="menu-wrap">';
+      html += '<button class="btn-menu" id="classMenuBtn" onclick="toggleMenu(event)" aria-label="Class options" title="Class options">' + kebabIcon + '</button>';
+      html += '<div class="menu-dropdown" id="classMenu">';
       if (!c.archived_at) {
-        html += '<button class="btn btn-outline btn-sm" onclick="archiveClass()">Archive</button>';
+        html += '<button class="menu-item" onclick="archiveClass()">Archive class</button>';
       } else {
-        html += '<button class="btn btn-outline btn-sm" onclick="unarchiveClass()">Unarchive</button>';
+        html += '<button class="menu-item" onclick="unarchiveClass()">Unarchive class</button>';
       }
-      html += '<button class="btn btn-danger btn-sm" onclick="deleteClass()">Delete</button>';
+      html += '<div class="menu-sep"></div>';
+      html += '<button class="menu-item danger" onclick="deleteClass()">Delete class</button>';
+      html += '</div>';
+      html += '</div>';
       html += '</div>';
       html += '</div>';
       if (!c.archived_at) {
@@ -196,6 +209,27 @@
 
       document.getElementById('content').innerHTML = html;
     }
+
+    function toggleMenu(ev) {
+      if (ev) ev.stopPropagation();
+      var menu = document.getElementById('classMenu');
+      if (!menu) return;
+      menu.classList.toggle('open');
+    }
+    document.addEventListener('click', function(e) {
+      var menu = document.getElementById('classMenu');
+      var btn = document.getElementById('classMenuBtn');
+      if (!menu || !menu.classList.contains('open')) return;
+      if (btn && btn.contains(e.target)) return;
+      if (menu.contains(e.target)) return;
+      menu.classList.remove('open');
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var menu = document.getElementById('classMenu');
+        if (menu) menu.classList.remove('open');
+      }
+    });
 
     function copyCode() {
       if (!currentClass) return;
