@@ -20,10 +20,15 @@
     .back-link { font-size: 13px; font-weight: 500; color: #4b5563; text-decoration: none; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 6px 14px; }
     .back-link:hover { background: rgba(0,0,0,0.08); color: #1f2937; }
     .container { max-width: 1320px; margin: 0 auto; padding: 32px 20px 80px; }
-    .header { background: #fff; border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
-    .header-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
-    .header-left { min-width: 0; flex: 1 1 260px; }
-    .header-right { display: flex; align-items: center; gap: 8px; }
+    .header { background: #fff; border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); position: relative; min-height: 110px; }
+    .header-top { min-width: 0; padding-right: 160px; }
+    .header-code { position: absolute; top: 22px; right: 22px; }
+    .header-menu { position: absolute; bottom: 22px; right: 22px; }
+    @media (max-width: 600px) {
+      .header { min-height: 0; }
+      .header-top { padding-right: 0; }
+      .header-code, .header-menu { position: static; display: inline-block; margin-top: 12px; }
+    }
 
     /* Kebab menu */
     .menu-wrap { position: relative; }
@@ -140,13 +145,13 @@
       let html = '';
       html += '<div class="header">';
       html += '<div class="header-top">';
-      html += '<div class="header-left">';
       html += '<h1>' + e(c.name) + archivedChip + '</h1>';
       if (c.course) html += '<div class="course-label">' + e(c.course) + '</div>';
       html += '</div>';
-      html += '<div class="header-right">';
+      html += '<div class="header-code">';
       html += '<div class="code-pill"><span class="code-pill-label">Student code</span><span class="code">' + e(c.code) + '</span><button class="btn-copy" id="copyBtn" onclick="copyCode()" aria-label="Copy code" title="Copy code">' + copyIcon + '</button></div>';
-      html += '<div class="menu-wrap">';
+      html += '</div>';
+      html += '<div class="header-menu menu-wrap">';
       html += '<button class="btn-menu" id="classMenuBtn" onclick="toggleMenu(event)" aria-label="Class options" title="Class options">' + kebabIcon + '</button>';
       html += '<div class="menu-dropdown" id="classMenu">';
       if (!c.archived_at) {
@@ -156,7 +161,6 @@
       }
       html += '<div class="menu-sep"></div>';
       html += '<button class="menu-item danger" onclick="deleteClass()">Delete class</button>';
-      html += '</div>';
       html += '</div>';
       html += '</div>';
       html += '</div>';
