@@ -30,6 +30,15 @@
     .task-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
     .task-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
     .task-meta { font-size: 13px; color: #6b7280; }
+    /* Draft progress indicator */
+    .draft-progress { display: inline-flex; align-items: center; gap: 10px; margin-right: 12px; }
+    .draft-dots { display: inline-flex; gap: 4px; }
+    .draft-dot { width: 10px; height: 10px; border-radius: 50%; background: #e8e0d4; box-sizing: border-box; }
+    .draft-dot.filled { background: #ed7615; }
+    .draft-dot.cap { background: #fff; border: 2px solid #ed7615; }
+    .draft-label { font-size: 12px; font-weight: 600; color: #6b7280; white-space: nowrap; }
+    .draft-label.none { color: #9ca3af; }
+    .draft-label.done { color: #d4690f; }
     .empty { background: #fff; border-radius: 12px; padding: 40px; text-align: center; color: #6b7280; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
     .loading { text-align: center; padding: 60px; color: #9ca3af; }
     .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
@@ -104,14 +113,27 @@
           if (t.total_marks) metaParts.push(e(String(t.total_marks)) + ' marks');
           if (t.due_date) metaParts.push('Due ' + e(t.due_date));
           html += '<a href="submit.html?task=' + encodeURIComponent(t.id) + '" class="task-card">';
-          html += '<div><div class="task-title">' + e(t.title || t.question || 'Untitled task') + '</div>';
+          html += '<div style="flex:1"><div class="task-title">' + e(t.title || t.question || 'Untitled task') + '</div>';
           html += '<div class="task-meta">' + metaParts.join(' · ') + '</div></div>';
+          html += renderDraftProgress(t.my_submission_count || 0);
           html += '<span style="color:#d1d5db;font-size:20px">›</span>';
           html += '</a>';
         });
       }
 
       document.getElementById('content').innerHTML = html;
+    }
+
+    function renderDraftProgress(count) {
+      const MAX = 3;
+      var n = Math.min(Math.max(0, count), MAX);
+      var dots = '';
+      for (var i = 0; i < MAX; i++) {
+        dots += '<span class="draft-dot ' + (i < n ? 'filled' : '') + '"></span>';
+      }
+      var labelClass = 'draft-label' + (n === 0 ? ' none' : (n >= MAX ? ' done' : ''));
+      var labelText = n === 0 ? 'Not started' : (n >= MAX ? 'All 3 drafts used' : n + ' of ' + MAX + ' drafts');
+      return '<div class="draft-progress"><span class="draft-dots">' + dots + '</span><span class="' + labelClass + '">' + labelText + '</span></div>';
     }
 
     async function leaveClass() {

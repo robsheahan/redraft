@@ -90,10 +90,24 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
   if (!isOwner) taskQuery = taskQuery.not('published_at', 'is', null);
   const { data: tasks } = await taskQuery;
 
+  // For students, decorate each task with how many drafts they've submitted
+  let studentSubmissionCounts: Record<string, number> = {};
+  if (!isOwner && (tasks || []).length > 0) {
+    const taskIds = (tasks || []).map((t: any) => t.id);
+    const { data: subs } = await supabase
+      .from('submissions')
+      .select('task_id')
+      .eq('student_id', user.id)
+      .in('task_id', taskIds);
+    (subs || []).forEach((s: any) => {
+      if (s.task_id) studentSubmissionCounts[s.task_id] = (studentSubmissionCounts[s.task_id] || 0) + 1;
+    });
+  }
+
   const scrubbedTasks = (tasks || []).map((t: any) => {
     if (isOwner) return t;
     const { notes, ...rest } = t;
-    return rest;
+    return { ...rest, my_submission_count: studentSubmissionCounts[t.id] || 0 };
   });
 
   let members: Array<{ student_id: string; student_name: string; joined_at: string }> | undefined;
