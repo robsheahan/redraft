@@ -126,7 +126,7 @@
       html += '<h1>' + e(c.name) + archivedChip + '</h1>';
       if (c.course) html += '<div class="course-label">' + e(c.course) + '</div>';
       html += '</div><div class="header-actions">';
-      html += '<div class="code-pill"><span class="code">' + e(c.code) + '</span><button class="btn-copy" onclick="copyCode()">Copy</button></div>';
+      html += '<div class="code-pill"><span class="code-pill-label">Student code</span><span class="code">' + e(c.code) + '</span><button class="btn-copy" onclick="copyCode()">Copy</button></div>';
       html += '<div class="header-actions-row">';
       if (!c.archived_at) {
         html += '<button class="btn btn-outline btn-sm" onclick="archiveClass()">Archive</button>';
@@ -136,7 +136,6 @@
       html += '<button class="btn btn-danger btn-sm" onclick="deleteClass()">Delete</button>';
       html += '</div>';
       html += '</div></div>';
-      html += '<div class="share-strip">Share this code with your students. They sign in, click <strong>Join a class</strong>, and enter it. They\'ll then see every published task in this class.</div>';
       if (!c.archived_at) {
         html += '<div class="actions-row">';
         html += '<a href="new-task.html?class=' + encodeURIComponent(c.id) + '" class="btn btn-primary">+ New task</a>';
