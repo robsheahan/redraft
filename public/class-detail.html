@@ -22,6 +22,8 @@
     .container { max-width: 1320px; margin: 0 auto; padding: 32px 20px 80px; }
     .header { background: #fff; border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); position: relative; min-height: 110px; }
     .header-top { min-width: 0; padding-right: 160px; }
+    /* Kebab menu base (listed first so .header-menu's position:absolute wins) */
+    .menu-wrap { position: relative; }
     .header-code { position: absolute; top: 22px; right: 22px; }
     .header-menu { position: absolute; bottom: 22px; right: 22px; }
     @media (max-width: 600px) {
@@ -30,8 +32,6 @@
       .header-code, .header-menu { position: static; display: inline-block; margin-top: 12px; }
     }
 
-    /* Kebab menu */
-    .menu-wrap { position: relative; }
     .btn-menu { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: #fff; color: #4b5563; border: 1px solid #e8e0d4; border-radius: 6px; cursor: pointer; padding: 0; font-family: inherit; }
     .btn-menu:hover { background: #f9fafb; color: #111827; }
     .btn-menu svg { display: block; }
