@@ -216,11 +216,16 @@ Assess this draft against each marking criterion above. Address every criterion 
     // Runs in parallel with Pass 2. Pass 3 references Pass 1's improvements so
     // inline notes stay coherent with the holistic feedback, but it can't run
     // until Pass 1 has returned.
+    //
+    // Pass 2 and Pass 3 are both BEST-EFFORT. If either throws (Anthropic
+    // 5xx, timeout, etc.) we still return the Pass 1 holistic feedback to
+    // the student rather than discarding the work. The Promise.allSettled
+    // pattern + per-pass try/catch keeps the pipeline degraded-but-useful.
     const improvementsSummary = Array.isArray(initialFeedback?.improvements?.summary)
       ? initialFeedback.improvements.summary
       : [];
 
-    const [pass2, inlineResult] = await Promise.all([
+    const [pass2Settled, inlineSettled] = await Promise.allSettled([
       client.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 3000,
@@ -237,18 +242,28 @@ Assess this draft against each marking criterion above. Address every criterion 
         discipline: discipline || undefined,
       }),
     ]);
-    const inlineSuggestions = inlineResult.annotations; // graceful: empty [] on either failure or no-usable-output
 
-    const pass2Text = pass2.content[0].type === 'text' ? pass2.content[0].text : '';
-    const pass2Json = extractFirstJsonObject(pass2Text);
-
-    // Merge Pass 1 (general feedback) with Pass 2 (criteria-specific feedback)
-    let criteriaFeedback = null;
-    if (pass2Json) {
+    let criteriaFeedback: any = null;
+    if (pass2Settled.status === 'fulfilled') {
       try {
-        const pass2Data = JSON.parse(pass2Json);
-        criteriaFeedback = pass2Data.criteria_feedback || null;
-      } catch { /* criteria check failed, continue without it */ }
+        const pass2Text = pass2Settled.value.content[0].type === 'text' ? pass2Settled.value.content[0].text : '';
+        const pass2Json = extractFirstJsonObject(pass2Text);
+        if (pass2Json) {
+          const pass2Data = JSON.parse(pass2Json);
+          criteriaFeedback = pass2Data.criteria_feedback || null;
+        }
+      } catch (e: any) {
+        console.warn('[generate-feedback] Pass 2 parse failed:', e?.message || e);
+      }
+    } else {
+      console.warn('[generate-feedback] Pass 2 rejected:', pass2Settled.reason?.message || pass2Settled.reason);
+    }
+
+    let inlineSuggestions: any[] = [];
+    if (inlineSettled.status === 'fulfilled') {
+      inlineSuggestions = inlineSettled.value.annotations;
+    } else {
+      console.warn('[generate-feedback] Pass 3 rejected:', inlineSettled.reason?.message || inlineSettled.reason);
     }
 
     const feedback = {

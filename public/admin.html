@@ -75,14 +75,22 @@
       html += '<div class="kpi"><div class="kpi-label">Users</div><div class="kpi-value">' + data.counts.users.total + '</div>';
       html += '<div class="kpi-sub">' + data.counts.users.teachers + ' teachers · ' + data.counts.users.students + ' students' + (data.counts.users.unroled ? ' · ' + data.counts.users.unroled + ' unroled' : '') + '</div></div>';
 
+      var classesCounts = data.counts.classes || { total: 0, last7d: 0 };
+      html += '<div class="kpi"><div class="kpi-label">Classes</div><div class="kpi-value">' + classesCounts.total + '</div>';
+      html += '<div class="kpi-sub">+' + classesCounts.last7d + ' this week</div></div>';
+
       html += '<div class="kpi"><div class="kpi-label">Tasks</div><div class="kpi-value">' + data.counts.tasks.total + '</div>';
       html += '<div class="kpi-sub">+' + data.counts.tasks.last7d + ' this week</div></div>';
 
       html += '<div class="kpi"><div class="kpi-label">Submissions</div><div class="kpi-value">' + data.counts.submissions.total + '</div>';
       html += '<div class="kpi-sub">+' + data.counts.submissions.last7d + ' this week · ' + data.counts.submissions.last24h + ' today</div></div>';
 
-      html += '<div class="kpi"><div class="kpi-label">Claude calls (24h)</div><div class="kpi-value">' + data.counts.api_calls_24h + '</div>';
-      html += '<div class="kpi-sub">Approx $' + (data.counts.api_calls_24h * 0.09).toFixed(2) + ' spend</div></div>';
+      var dailyCap = 500;
+      var calls24h = data.counts.api_calls_24h;
+      var pct = Math.min(100, Math.round(calls24h / dailyCap * 100));
+      var capColor = pct >= 80 ? '#dc2626' : (pct >= 50 ? '#d97706' : '#9ca3af');
+      html += '<div class="kpi"><div class="kpi-label">Claude calls (24h)</div><div class="kpi-value">' + calls24h + '</div>';
+      html += '<div class="kpi-sub">Approx $' + (calls24h * 0.09).toFixed(2) + ' spend · <span style="color:' + capColor + '">' + pct + '% of daily cap</span></div></div>';
       html += '</div>';
 
       // Recent submissions
@@ -94,7 +102,8 @@
         data.recent_submissions.forEach(s => {
           var dt = new Date(s.created_at);
           var timeStr = dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) + ' ' + dt.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
-          html += '<tr><td>' + e(timeStr) + '</td><td>' + e(s.student_name) + '</td><td><span class="mono">' + e(s.task_code || '—') + '</span></td><td>v' + (s.draft_version || 1) + '</td></tr>';
+          var taskLabel = s.task_id ? s.task_id.toString().slice(0, 8) : 'own task';
+          html += '<tr><td>' + e(timeStr) + '</td><td>' + e(s.student_name) + '</td><td><span class="mono">' + e(taskLabel) + '</span></td><td>v' + (s.draft_version || 1) + '</td></tr>';
         });
         html += '</tbody></table>';
       }
@@ -105,11 +114,11 @@
       if (data.recent_tasks.length === 0) {
         html += '<p style="color:#9ca3af;font-size:14px">No tasks yet.</p>';
       } else {
-        html += '<table><thead><tr><th>Code</th><th>Title</th><th>Course</th><th>Teacher</th><th>Created</th></tr></thead><tbody>';
+        html += '<table><thead><tr><th>Title</th><th>Class</th><th>Course</th><th>Teacher</th><th>Created</th></tr></thead><tbody>';
         data.recent_tasks.forEach(t => {
           var dt = new Date(t.created_at);
           var dateStr = dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-          html += '<tr><td><span class="mono">' + e(t.code) + '</span></td><td>' + e(t.title) + '</td><td>' + e(t.course || '—') + '</td><td>' + e(t.teacher_name) + '</td><td>' + e(dateStr) + '</td></tr>';
+          html += '<tr><td>' + e(t.title) + '</td><td>' + e(t.class_name || '—') + '</td><td>' + e(t.course || '—') + '</td><td>' + e(t.teacher_name) + '</td><td>' + e(dateStr) + '</td></tr>';
         });
         html += '</tbody></table>';
       }

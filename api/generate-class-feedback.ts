@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -15,7 +16,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const taskId = (req.body?.task_id as string || '').trim();
   if (!taskId) return res.status(400).json({ error: 'task_id is required.' });
 
+  // Rate limit / spend protection — same pattern as generate-feedback but
+  // tighter, since class-feedback fans out across every student in a class.
   const supabase = getSupabase();
+  const rateLimit = await checkAndLogRateLimit(supabase, user.id, {
+    endpoint: 'generate-class-feedback',
+    perUserPerHour: 5,
+    globalPerDay: 100,
+  });
+  if (!rateLimit.ok) {
+    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded. Please try again later.' });
+  }
 
   const { data: task, error: taskError } = await supabase
     .from('tasks')

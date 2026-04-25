@@ -35,8 +35,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const [
+    totalClasses,
     totalTasks,
     totalSubmissions,
+    classesLast7d,
     tasksLast7d,
     submissionsLast24h,
     submissionsLast7d,
@@ -45,15 +47,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     { data: recentSubmissions },
     { data: recentTasks },
   ] = await Promise.all([
+    supabase.from('classes').select('id', { count: 'exact', head: true }),
     supabase.from('tasks').select('id', { count: 'exact', head: true }),
     supabase.from('submissions').select('id', { count: 'exact', head: true }),
+    supabase.from('classes').select('id', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
     supabase.from('tasks').select('id', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
     supabase.from('submissions').select('id', { count: 'exact', head: true }).gte('created_at', oneDayAgo),
     supabase.from('submissions').select('id', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
     supabase.from('api_call_log').select('id', { count: 'exact', head: true }).gte('created_at', oneDayAgo),
     supabase.auth.admin.listUsers({ perPage: 1000 }),
-    supabase.from('submissions').select('id, task_code, draft_version, created_at, student_id').order('created_at', { ascending: false }).limit(25),
-    supabase.from('tasks').select('code, title, course, teacher_id, created_at').order('created_at', { ascending: false }).limit(10),
+    supabase.from('submissions').select('id, task_id, draft_version, created_at, student_id').order('created_at', { ascending: false }).limit(25),
+    supabase.from('tasks').select('id, title, course, class_id, created_at, classes(name, teacher_id)').order('created_at', { ascending: false }).limit(10),
   ]);
 
   // User role breakdown
@@ -82,19 +86,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const recentSubmissionsAnnotated = (recentSubmissions || []).map(s => ({
     id: s.id,
-    task_code: s.task_code,
+    task_id: s.task_id,
     draft_version: s.draft_version,
     created_at: s.created_at,
     student_name: s.student_id ? userMap[s.student_id]?.name || 'unknown' : 'anon',
   }));
 
-  const recentTasksAnnotated = (recentTasks || []).map(t => ({
-    code: t.code,
-    title: t.title || '(untitled)',
-    course: t.course,
-    created_at: t.created_at,
-    teacher_name: t.teacher_id ? userMap[t.teacher_id]?.name || 'unknown' : 'unknown',
-  }));
+  const recentTasksAnnotated = (recentTasks || []).map((t: any) => {
+    const cls = t.classes || {};
+    const teacherId = cls.teacher_id;
+    return {
+      id: t.id,
+      title: t.title || '(untitled)',
+      course: t.course,
+      class_name: cls.name || null,
+      created_at: t.created_at,
+      teacher_name: teacherId ? userMap[teacherId]?.name || 'unknown' : 'unknown',
+    };
+  });
 
   return res.status(200).json({
     counts: {
@@ -103,6 +112,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         teachers: teacherCount,
         students: studentCount,
         unroled: unroledCount,
+      },
+      classes: {
+        total: totalClasses.count || 0,
+        last7d: classesLast7d.count || 0,
       },
       tasks: {
         total: totalTasks.count || 0,
