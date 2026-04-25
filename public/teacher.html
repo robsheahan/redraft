@@ -13,6 +13,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible {
+      outline: 2px solid #ed7615; outline-offset: 2px; border-radius: 4px;
+    }
     body {
       font-family: 'Inter', -apple-system, sans-serif;
       background: #faf7f2; color: #111827; line-height: 1.5;
@@ -100,6 +103,17 @@
     }
     .footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
     .footer a:hover { color: #6b7280; }
+
+    @media (max-width: 720px) {
+      .nav { padding: 12px 16px; }
+      .container { padding: 24px 14px 16px; }
+      .page-header h1 { font-size: 22px; }
+      .task-card { padding: 16px 18px; }
+      .task-card h3 { font-size: 14px; }
+      .task-stats { gap: 10px; }
+      .stat { font-size: 12px; }
+      .footer a { display: inline-block; margin: 4px 8px; }
+    }
   </style>
 </head>
 <body>

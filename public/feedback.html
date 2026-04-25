@@ -325,9 +325,10 @@
       transition: box-shadow 0.15s, filter 0.15s;
       border-bottom: 2px solid;
     }
-    .annotation:hover, .annotation.focused {
+    .annotation:hover, .annotation.focused, .annotation:focus-visible {
       filter: brightness(0.96);
       box-shadow: 0 0 0 2px currentColor;
+      outline: none;
     }
     .annotation-num {
       display: inline-block; margin-left: 2px;

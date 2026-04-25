@@ -74,12 +74,21 @@ export async function checkAndLogRateLimit(
 
     if (error) {
       console.warn('[rate-limit] global check failed, continuing:', error.message);
-    } else if ((count ?? 0) >= config.globalPerDay) {
-      return {
-        ok: false,
-        reason: 'ProofReady has hit its daily capacity. Please try again tomorrow — we are working to increase capacity.',
-        retryAfterSeconds: 60 * 60 * 12,
-      };
+    } else {
+      const used = count ?? 0;
+      if (used >= config.globalPerDay) {
+        return {
+          ok: false,
+          reason: 'ProofReady has hit its daily capacity. Please try again tomorrow — we are working to increase capacity.',
+          retryAfterSeconds: 60 * 60 * 12,
+        };
+      }
+      // Early-warning log so operational monitoring can pick it up before
+      // we actually hit the cap. 80% threshold matches the admin dashboard.
+      const pct = used / config.globalPerDay;
+      if (pct >= 0.8) {
+        console.warn('[rate-limit] DAILY CAP NEARING for endpoint', config.endpoint, '— used', used, 'of', config.globalPerDay, '(' + Math.round(pct * 100) + '%)');
+      }
     }
   } catch (e: any) {
     console.warn('[rate-limit] global check threw, continuing:', e?.message || e);

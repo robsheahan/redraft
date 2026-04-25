@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getUserInfoBatch } from '../lib/user-names.js';
 
 /**
  * Teacher view of all submissions for one of their tasks.
@@ -28,18 +29,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (error) return res.status(500).json({ error: error.message });
 
   const studentIds = [...new Set((submissions || []).map(s => s.student_id).filter(Boolean))] as string[];
-  const nameMap: Record<string, string> = {};
-  for (const id of studentIds) {
-    const { data } = await supabase.auth.admin.getUserById(id);
-    if (data?.user) {
-      const meta: any = data.user.user_metadata || {};
-      nameMap[id] = meta.display_name || meta.full_name || meta.name || data.user.email || 'Unknown';
-    }
-  }
+  const userInfo = await getUserInfoBatch(supabase, studentIds);
 
   const enriched = (submissions || []).map(s => ({
     ...s,
-    student_name: nameMap[s.student_id] || 'Unknown student',
+    student_name: userInfo[s.student_id]?.name || 'Unknown student',
   }));
 
   return res.status(200).json({ task, submissions: enriched });

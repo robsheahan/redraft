@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { createClient } from '@supabase/supabase-js';
+import { getUserInfoBatch } from '../lib/user-names.js';
 
 /**
  * Unified classes endpoint.
@@ -111,23 +112,26 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
   });
 
   let members: Array<{ student_id: string; student_name: string; joined_at: string }> | undefined;
+  let teacher_name: string | null = null;
   if (isOwner) {
     const { data: rows } = await supabase
       .from('class_members')
       .select('student_id, joined_at')
       .eq('class_id', idParam)
       .order('joined_at', { ascending: true });
-    members = [];
-    for (const r of rows || []) {
-      members.push({
-        student_id: r.student_id,
-        student_name: (await nameFor(supabase, r.student_id)) || 'Unknown',
-        joined_at: r.joined_at,
-      });
-    }
+    const studentIds = (rows || []).map(r => r.student_id);
+    const ids = [...studentIds];
+    if (cls.teacher_id) ids.push(cls.teacher_id);
+    const userInfo = await getUserInfoBatch(supabase, ids);
+    members = (rows || []).map(r => ({
+      student_id: r.student_id,
+      student_name: userInfo[r.student_id]?.name || 'Unknown',
+      joined_at: r.joined_at,
+    }));
+    teacher_name = userInfo[cls.teacher_id]?.name || null;
+  } else {
+    teacher_name = await nameFor(supabase, cls.teacher_id);
   }
-
-  const teacher_name = await nameFor(supabase, cls.teacher_id);
 
   return res.status(200).json({
     class: { ...cls, teacher_name },
@@ -196,17 +200,18 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
   });
 
   const joinedVisible = joined.filter(c => !c.archived_at);
-  const joinedOut: any[] = [];
-  for (const c of joinedVisible) {
+  const teacherIds = [...new Set(joinedVisible.map((c: any) => c.teacher_id).filter(Boolean))] as string[];
+  const teacherInfo = teacherIds.length ? await getUserInfoBatch(supabase, teacherIds) : {};
+  const joinedOut: any[] = joinedVisible.map((c: any) => {
     const tasks = (allTasksByClass[c.id] || [])
       .filter((t: any) => t.published_at)
       .map((t: any) => ({ ...t, my_submission_count: myCounts[t.id] || 0 }));
-    joinedOut.push({
+    return {
       ...decorate(c),
-      teacher_name: await nameFor(supabase, c.teacher_id),
+      teacher_name: teacherInfo[c.teacher_id]?.name || null,
       tasks,
-    });
-  }
+    };
+  });
 
   return res.status(200).json({
     owned: (owned || []).map(decorate),

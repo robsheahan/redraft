@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getUserInfoBatch } from '../lib/user-names.js';
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return '';
@@ -49,24 +50,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (error) return res.status(500).json({ error: error.message });
 
   const studentIds = [...new Set((submissions || []).map(s => s.student_id).filter(Boolean))] as string[];
-  const nameMap: Record<string, string> = {};
-  const emailMap: Record<string, string> = {};
-  for (const id of studentIds) {
-    const { data } = await supabase.auth.admin.getUserById(id);
-    if (data?.user) {
-      const meta: any = data.user.user_metadata || {};
-      nameMap[id] = meta.display_name || meta.full_name || meta.name || '';
-      emailMap[id] = data.user.email || '';
-    }
-  }
+  const userInfo = await getUserInfoBatch(supabase, studentIds);
 
   const headers = ['student_name','student_email','draft_version','submitted_at','overall','top_priority','improvements','strengths','draft_text'];
   const rows: string[] = [headers.join(',')];
   for (const s of (submissions || [])) {
     const summary = summariseFeedback(s.feedback);
     rows.push([
-      nameMap[s.student_id] || 'Unknown',
-      emailMap[s.student_id] || '',
+      userInfo[s.student_id]?.name || 'Unknown',
+      userInfo[s.student_id]?.email || '',
       s.draft_version || 1,
       s.created_at,
       summary.overall,
