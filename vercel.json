@@ -1,3 +1,7 @@
 {
-  "outputDirectory": "public"
+  "outputDirectory": "public",
+  "functions": {
+    "api/generate-feedback.ts": { "maxDuration": 60 },
+    "api/generate-class-feedback.ts": { "maxDuration": 60 }
+  }
 }

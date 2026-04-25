@@ -85,7 +85,7 @@
       html += '<div class="kpi"><div class="kpi-label">Submissions</div><div class="kpi-value">' + data.counts.submissions.total + '</div>';
       html += '<div class="kpi-sub">+' + data.counts.submissions.last7d + ' this week · ' + data.counts.submissions.last24h + ' today</div></div>';
 
-      var dailyCap = 500;
+      var dailyCap = 5000;
       var calls24h = data.counts.api_calls_24h;
       var pct = Math.min(100, Math.round(calls24h / dailyCap * 100));
       var capColor = pct >= 80 ? '#dc2626' : (pct >= 50 ? '#d97706' : '#9ca3af');

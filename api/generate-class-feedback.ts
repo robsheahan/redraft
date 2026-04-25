@@ -22,7 +22,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const rateLimit = await checkAndLogRateLimit(supabase, user.id, {
     endpoint: 'generate-class-feedback',
     perUserPerHour: 5,
-    globalPerDay: 100,
+    globalPerDay: 500,
   });
   if (!rateLimit.ok) {
     if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
