@@ -24,6 +24,7 @@ import {
   FEEDBACK_PRINCIPLES,
 } from "../data/nesa-reference.js";
 import { buildMarkerVoiceReference } from "../data/marker-voice-loader.js";
+import { getSubjectGlossary } from "../data/subject-glossaries.js";
 
 export const DISCIPLINE_PERSONAS: Record<string, string> = {
   English: "English teacher with extensive experience in textual analysis, essay writing, and HSC marking",
@@ -224,6 +225,19 @@ ${(() => {
 
 Check for these specific pitfalls in the student's response and flag any that apply.
 ${buildMarkerVoiceReference(courseName, discipline)}
+${(() => {
+    const subjectGlossary = getSubjectGlossary(courseName);
+    if (!subjectGlossary || subjectGlossary.length === 0) return '';
+    const lines = subjectGlossary
+      .map(g => `- "${g.term}": ${g.definition}${g.watchFor ? ` Watch for: ${g.watchFor}` : ''}`)
+      .join('\n');
+    return `
+
+SUBJECT-SPECIFIC TERMINOLOGY for ${subjectLabel}:
+The following are syllabus-defined terms students in this subject commonly misuse. If the student's draft uses any of these terms incorrectly — or uses a colloquial substitute where the precise term is required — flag it explicitly in the improvements section. Quote the student's actual wording when you do.
+
+${lines}`;
+  })()}
 
 OUTPUT FORMAT:
 Respond in the following JSON structure. Each section has a "summary" (short bullet points — the headline takeaway a student sees first) and "detail" (the full explanation). Write in natural, personable language throughout.
