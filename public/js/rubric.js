@@ -16,6 +16,45 @@
     // Normalise bullet points to • for consistency
     cleaned = cleaned.replace(/^\*\s/gm, '• ').replace(/\n\*\s/g, '\n• ');
 
+    // First-pass: structured pipe-table parsing. Many teachers paste rubrics
+    // as a 2-column markdown table with EITHER (band-range | descriptor) OR
+    // (criterion text | marks). The naive pipe→newline approach loses this
+    // structure. Detect a real pipe table and return it as criterion-list
+    // format directly.
+    var pipeRows = [];
+    cleaned.split('\n').forEach(function(raw) {
+      var line = raw.trim();
+      if (!line.startsWith('|') || !line.endsWith('|')) return;
+      var cells = line.split('|').slice(1, -1).map(function(c) { return c.trim(); });
+      if (cells.length < 2) return;
+      // Skip separator rows (only -, :, space, |)
+      if (cells.every(function(c) { return /^[\s\-:]*$/.test(c); })) return;
+      // Skip empty rows
+      if (cells.every(function(c) { return !c; })) return;
+      pipeRows.push(cells);
+    });
+    if (pipeRows.length >= 2) {
+      // First row is the header if its cells look like header words
+      var TABLE_HEADER_WORDS = /^(range|descriptor|description|band|bands?|criteria|criterion|marks?|grade|level|guidelines?)$/i;
+      var firstLooksLikeHeader = pipeRows[0].every(function(c) {
+        return TABLE_HEADER_WORDS.test(c) || c.length === 0;
+      });
+      var dataRows = firstLooksLikeHeader ? pipeRows.slice(1) : pipeRows;
+      if (dataRows.length >= 2 && dataRows[0].length >= 2) {
+        // Detect which column holds short numeric values ("6", "(13-15)", "13-15 marks")
+        var col0Numeric = dataRows.every(function(r) { return /^\(?\s*\d{1,2}(\s*[–\-]\s*\d{1,2})?\s*\)?\s*(marks?)?$/i.test(r[0]); });
+        var col1Numeric = dataRows.every(function(r) { return /^\(?\s*\d{1,2}(\s*[–\-]\s*\d{1,2})?\s*\)?\s*(marks?)?$/i.test(r[1]); });
+        var marksCol = col1Numeric && !col0Numeric ? 1 : 0;
+        var descCol = marksCol === 0 ? 1 : 0;
+        var criteria = dataRows.map(function(row) {
+          var marks = (row[marksCol] || '').replace(/\s+marks?$/i, '').replace(/-/g, '–').trim();
+          var desc = row.slice(0).filter(function(_, i) { return i !== marksCol; }).join(' ').trim();
+          return { name: desc, range: marks, details: [] };
+        }).filter(function(c) { return c.name; });
+        if (criteria.length >= 2) return { criteria: criteria, format: 'criterion' };
+      }
+    }
+
     // Strip common header noise up front so it doesn't end up as a criterion
     var headerStrips = [
       /marking\s*(rubric|criteria|guidelines?)\s*(\(\s*\d+\s*marks?\s*\))?/gi,

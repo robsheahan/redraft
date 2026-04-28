@@ -96,6 +96,27 @@
       padding: 3px 10px; background: #fef3e6; border-radius: 4px;
       font-size: 12px; font-weight: 600; color: #ed7615;
     }
+    /* Outcome list (one outcome per line, no pills) */
+    .outcome-list { list-style: none; padding: 0; margin: 0; }
+    .outcome-list li {
+      font-size: 14px; line-height: 1.6; color: #374151;
+      padding: 6px 0 6px 18px; position: relative;
+    }
+    .outcome-list li::before {
+      content: '•'; position: absolute; left: 4px; color: #ed7615; font-weight: 700;
+    }
+    /* Structured rubric table (matches submit page) */
+    .rubric-table { border: 1px solid #e8e0d4; border-radius: 8px; overflow: hidden; }
+    .rubric-row { display: flex; border-bottom: 1px solid #e8e0d4; }
+    .rubric-row:last-child { border-bottom: none; }
+    .rubric-row:nth-child(odd) { background: #fdf6ee; }
+    .rubric-band { flex: 0 0 80px; padding: 14px 12px; font-weight: 700; font-size: 14px; color: #ed7615; border-right: 1px solid #e8e0d4; display: flex; align-items: flex-start; justify-content: center; text-align: center; }
+    .rubric-criteria { flex: 1; padding: 12px 16px; font-size: 13px; color: #374151; line-height: 1.6; }
+    .rubric-criteria ul { list-style: none; padding: 0; margin: 0; }
+    .rubric-criteria li { padding-left: 16px; position: relative; margin-bottom: 6px; }
+    .rubric-criteria li:last-child { margin-bottom: 0; }
+    .rubric-criteria li::before { content: '•'; position: absolute; left: 0; color: #ed7615; font-weight: 700; }
+    .criteria-block { padding: 14px 16px; background: #fdf6ee; border: 1px solid #e8e0d4; border-radius: 8px; font-size: 14px; line-height: 1.7; white-space: pre-line; color: #374151; }
 
     /* Edit mode */
     .edit-actions {
@@ -309,6 +330,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/app.js"></script>
+  <script src="/js/rubric.js"></script>
   <script>
     const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     let currentTask = null;
@@ -469,17 +491,27 @@
 
       html += '<div class="detail-row"><div class="detail-label">Marking criteria</div>';
       if (task.criteria_text) {
-        html += '<div class="detail-value" style="white-space:pre-line">' + e(task.criteria_text) + '</div>';
+        html += renderRubric(task.criteria_text, e);
       } else if (task.criteria && task.criteria.length > 0) {
-        html += '<div class="detail-value">' + task.criteria.map(c => e(c.name) + (c.marks ? ' (' + e(c.marks) + ' marks)' : '')).join('<br>') + '</div>';
+        var fallback = task.criteria.map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n');
+        html += renderRubric(fallback, e);
       } else {
         html += '<div class="detail-value empty">Not set</div>';
       }
       html += '</div>';
 
       html += '<div class="detail-row"><div class="detail-label">Syllabus outcomes</div>';
-      if (task.outcomes && task.outcomes.length > 0) {
-        html += '<div class="detail-pills">' + task.outcomes.map(o => '<span class="detail-pill">' + e(o) + '</span>').join('') + '</div>';
+      var outcomes = (task.outcomes || []).map(function(o) {
+        return String(o || '')
+          .replace(/^\s*[-*•]\s*/, '')   // strip leading bullet markers
+          .trim();
+      }).filter(function(o) {
+        if (!o) return false;
+        // Drop heading-only lines that got included as if they were outcomes
+        return !/^(nesa\s+outcomes\s+assessed|outcomes\s+assessed|syllabus\s+outcomes|outcomes)\s*:?\s*$/i.test(o);
+      });
+      if (outcomes.length > 0) {
+        html += '<ul class="outcome-list">' + outcomes.map(function(o) { return '<li>' + e(o) + '</li>'; }).join('') + '</ul>';
       } else {
         html += '<div class="detail-value empty">None selected</div>';
       }
