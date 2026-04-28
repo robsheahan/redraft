@@ -75,7 +75,7 @@ export async function generateInlineSuggestions(
 
     response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
+      max_tokens: 3000,
       temperature: 0.2,
       system,
       messages: [{ role: 'user', content: user }],

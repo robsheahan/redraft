@@ -172,12 +172,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
     // --- Pass 1: Generate initial feedback ---
-    // max_tokens kept tight to avoid 60s Vercel timeout — Pass 1 output is
-    // typically 1500-2500 tokens; 3000 leaves headroom without risking a
-    // runaway long generation that pushes the whole pipeline past 60s.
     const pass1 = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 3000,
+      max_tokens: 4000,
       temperature: 0.2,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
@@ -231,7 +228,7 @@ Assess this draft against each marking criterion above. Address every criterion 
     const [pass2Settled, inlineSettled] = await Promise.allSettled([
       client.messages.create({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2000,
+        max_tokens: 3000,
         temperature: 0.3,
         system: buildCriteriaCheckPrompt(resolvedCourse as string || undefined),
         messages: [{ role: 'user', content: criteriaCheckPrompt }],
