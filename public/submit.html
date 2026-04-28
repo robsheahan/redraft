@@ -302,8 +302,15 @@
       const card = document.getElementById('draftCard');
       const overlay = document.createElement('div');
       overlay.className = 'loading-overlay visible';
-      overlay.innerHTML = '<div class="spinner"></div><div class="loading-text" id="loadingText">Reading your draft...</div><div class="loading-hint">Please be patient — feedback can take up to a minute to generate</div>';
+      overlay.innerHTML = '<div class="spinner"></div><div class="loading-text" id="loadingText">Reading your draft...</div><div class="loading-hint" id="loadingHint">Please be patient — feedback can take up to a minute to generate</div>';
       card.appendChild(overlay);
+
+      // After 90 seconds, swap the hint to a calmer "long draft" message so
+      // the student doesn't think the system has hung.
+      var nudgeTimer = setTimeout(function() {
+        var hint = document.getElementById('loadingHint');
+        if (hint) hint.textContent = "This is a long draft — full feedback can take up to 3 minutes. Please don't refresh or resubmit.";
+      }, 90000);
 
       var loadingMessages = shuffleArray([
         'Reading your draft...',
@@ -413,9 +420,11 @@
           class_name: currentTask.class ? currentTask.class.name : null,
         }));
         clearInterval(loadingInterval);
+        clearTimeout(nudgeTimer);
         window.location.href = 'feedback.html';
       } catch (err) {
         clearInterval(loadingInterval);
+        clearTimeout(nudgeTimer);
         alert(err.message);
         overlay.remove();
         btn.style.display = '';

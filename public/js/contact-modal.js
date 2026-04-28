@@ -11,6 +11,14 @@
   var TO_ADDRESS = 'help@proofready.app';
   var mountPoint = null;
 
+  // Local apiUrl helper — contact-modal is loaded on legal/marketing pages
+  // that don't include app.js, so we can't rely on the global apiUrl().
+  function localApiUrl(path) {
+    var host = window.location.hostname;
+    if (host === 'proofready.app' || host === 'www.proofready.app') return 'https://api.proofready.app' + path;
+    return path;
+  }
+
   function injectStyles() {
     if (document.getElementById('contact-modal-styles')) return;
     var style = document.createElement('style');
@@ -137,7 +145,7 @@
     btn.textContent = 'Sending...';
 
     try {
-      var res = await fetch('/api/contact', {
+      var res = await fetch(localApiUrl('/api/contact'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name, email: email, subject: subject, message: message }),

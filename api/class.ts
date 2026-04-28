@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { createClient } from '@supabase/supabase-js';
 import { getUserInfoBatch } from '../lib/user-names.js';
@@ -38,6 +39,7 @@ async function nameFor(supabase: any, userId: string | null | undefined): Promis
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (applyCors(req, res)) return;
   switch (req.method) {
     case 'GET':    return handleGet(req, res);
     case 'POST':   return handlePost(req, res);

@@ -286,7 +286,7 @@
 
       try {
         // Create account via server (bypasses email confirmation)
-        const res = await fetch('/api/signup', {
+        const res = await fetch(apiUrl('/api/signup'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password, display_name }),

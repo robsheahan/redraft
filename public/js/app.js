@@ -1,6 +1,22 @@
 const SUPABASE_URL = 'https://jcxcbqsxshlwwvxlyyfd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjeGNicXN4c2hsd3d2eGx5eWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1OTI1OTAsImV4cCI6MjA5MDE2ODU5MH0.v-jfhkGiknFQylRnX94c4yFYL2qd3Th_nVq8u8b5GsM';
 
+// API base. Production routes /api/* through api.proofready.app (DNS-only,
+// not Cloudflare-proxied) so requests can hold a connection longer than
+// Cloudflare's 100s edge timeout. Local dev and Vercel preview deployments
+// keep relative paths since they're already direct-to-Vercel.
+const API_BASE = (function() {
+  var host = window.location.hostname;
+  if (host === 'proofready.app' || host === 'www.proofready.app') return 'https://api.proofready.app';
+  return '';
+})();
+
+function apiUrl(path) {
+  if (!path) return path;
+  if (/^https?:\/\//.test(path)) return path;
+  return API_BASE + path;
+}
+
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 async function getCurrentUser() {
@@ -17,7 +33,7 @@ async function authFetch(url, options = {}) {
   const token = await getAccessToken();
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (token) headers['Authorization'] = 'Bearer ' + token;
-  return fetch(url, { ...options, headers });
+  return fetch(apiUrl(url), { ...options, headers });
 }
 
 async function requireAuth(expectedRole) {

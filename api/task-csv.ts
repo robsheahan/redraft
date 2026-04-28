@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { getUserInfoBatch } from '../lib/user-names.js';
 
@@ -28,6 +29,7 @@ function summariseFeedback(fb: any): { overall: string; priority: string; improv
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (applyCors(req, res)) return;
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const user = await verifyAuth(req);
