@@ -656,7 +656,9 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         });
       }
 
-      const joined = classesData.joined || [];
+      const joined = (classesData.joined || []).slice().sort(function(a, b) {
+        return (a.name || '').localeCompare(b.name || '', 'en-AU', { sensitivity: 'base' });
+      });
       if (joined.length > 0) {
         var howStrip = document.getElementById('howStrip');
         if (howStrip) howStrip.style.display = 'none';

@@ -157,7 +157,9 @@
         container.innerHTML = '<div class="empty-state"><h3>Could not load your classes</h3><p>' + e(data.error || 'Unknown error') + '</p></div>';
         return;
       }
-      const owned = data.owned || [];
+      const owned = (data.owned || []).slice().sort(function(a, b) {
+        return (a.name || '').localeCompare(b.name || '', 'en-AU', { sensitivity: 'base' });
+      });
 
       if (owned.length === 0) {
         container.innerHTML = `
