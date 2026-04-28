@@ -27,7 +27,7 @@
       gap: 16px; padding-bottom: 12px; border-bottom: 1px solid #e8e0d4;
       margin-bottom: 18px;
     }
-    .brand { font-size: 22pt; font-weight: 800; letter-spacing: -1px; color: #ed7615; }
+    .brand img { height: 56px; width: auto; display: block; }
     .doc-title {
       font-size: 10.5pt; color: #1f2937; font-weight: 600; text-align: right;
     }
@@ -64,9 +64,9 @@
 <body>
 
   <header>
-    <div>
-      <div class="brand">ProofReady</div>
-      <div style="font-size:10.5pt;color:#1f2937;font-weight:600;margin-top:2px">
+    <div class="brand">
+      <img src="../public/proofreadybanner.png" alt="ProofReady">
+      <div style="font-size:10.5pt;color:#1f2937;font-weight:600;margin-top:6px">
         Briefing notes for school leadership
       </div>
     </div>
@@ -77,73 +77,58 @@
   </header>
 
   <div class="lede">
-    <strong>The honest framing:</strong> ProofReady is not a teacher-replacement, a marking tool, or a writing assistant. It's a <strong>formative-feedback tool for drafts</strong> — designed to give every student the kind of detailed, criteria-based written feedback an experienced teacher would give if they had time to read every draft a week before it's due. The questions below are the ones we expect — and the answers we stand behind.
+    <strong>The honest framing:</strong> ProofReady is not a teacher-replacement, a marking tool, or a writing assistant. It's a <strong>formative-feedback tool for drafts</strong>, designed to give every student the kind of detailed, criteria-based written feedback an experienced teacher would give if they had time to read every draft a week before it's due. The questions below are the ones we expect, and the answers we stand behind.
   </div>
 
   <h2>Pedagogy &amp; teacher value</h2>
 
   <div class="qa">
     <div class="q">Can't students just use ChatGPT on their own?</div>
-    <div class="a">They already do — quietly, with no syllabus alignment, no marking criteria, no NESA verb depth, and often with feedback that's wrong or generic. ProofReady is a controlled, teacher-set context: the teacher provides the question and the marking criteria, and the feedback is anchored to those. It's the difference between a student asking a stranger on the bus to read their essay versus their teacher reading it.</div>
+    <div class="a">They already do, quietly, with no syllabus alignment, no marking criteria, no NESA verb depth, and often with feedback that's wrong or generic. ProofReady is a controlled, teacher-set context: the teacher provides the question and the marking criteria, and the feedback is anchored to those.</div>
   </div>
 
   <div class="qa">
     <div class="q">Isn't a teacher's feedback better than AI feedback?</div>
-    <div class="a">Yes — for the drafts a teacher actually has time to read. The reality of HSC marking is that most students don't get individualised written feedback on a draft before they submit. ProofReady doesn't compete with the teacher giving thoughtful feedback in class; it competes with <em>nothing</em>, which is what most students currently get on the day before they submit at 11pm.</div>
+    <div class="a">Yes, for the drafts a teacher has time to read carefully. The reality of HSC marking is that many students don't get individualised written feedback on a draft before they submit. ProofReady doesn't compete with the teacher giving thoughtful feedback in class; it simply provides all students with high-quality feedback, even if they submit their draft the day before it's due at 11pm.</div>
   </div>
 
   <div class="qa">
     <div class="q">Won't this de-skill teachers?</div>
-    <div class="a">It removes the lowest-leverage part of marking — pointing out the same paragraph-3-needs-evidence comment for the 17th time — and frees the teacher to do the highest-leverage part: targeted in-class teaching of the gaps that show up across the cohort. ProofReady includes a <strong>class-level synthesis</strong> view exactly for this: it identifies common weaknesses across the class so the teacher can address them in one lesson rather than 30 individual margins.</div>
+    <div class="a">It removes the lowest-leverage part of marking, pointing out the same paragraph-3-needs-evidence comment for the 17th time, and frees the teacher to do the highest-leverage part: targeted in-class teaching of the gaps that show up across the cohort. ProofReady includes a <strong>class-level synthesis</strong> view exactly for this: it identifies common weaknesses across the class so the teacher can address them in one lesson rather than 30 individual margins.</div>
   </div>
 
   <div class="qa">
     <div class="q">Won't students use it to polish their work without actually reading the feedback?</div>
-    <div class="a">ProofReady does not rewrite the student's work, suggest replacement sentences, or produce text the student can paste in. The feedback explicitly tells the student <em>what</em> needs work and <em>why</em>, not how to fix it. To polish, the student has to read, understand, and act — which is the point of formative feedback.</div>
+    <div class="a">ProofReady does not rewrite the student's work, suggest replacement sentences, or produce text the student can paste in. The feedback explicitly tells the student <em>what</em> needs work and <em>why</em>, not how to fix it. To polish, the student has to read, understand, and act. That's the point of formative feedback.</div>
   </div>
 
   <div class="qa">
     <div class="q">How is this different from a writing assistant or a plagiarism tool?</div>
-    <div class="a">A writing assistant generates content; ProofReady refuses to generate content (this is hard-coded in the prompt rules). A plagiarism tool detects copying after the fact; ProofReady acts before submission to help students improve their own work. The closest analogue is what a good marking teacher does in the margin of a draft — but every student gets it, and within a minute.</div>
+    <div class="a">A writing assistant generates content; ProofReady refuses to generate content (this is hard-coded in the prompt rules). A plagiarism tool detects copying after the fact; ProofReady acts before submission to help students improve their own work. The closest analogue is what a good marking teacher does in the margin of a draft. But every student gets it, and within a minute.</div>
   </div>
 
   <div class="qa">
-    <div class="q">Won't students cheat — submit AI-generated work and get feedback that polishes it?</div>
-    <div class="a">Academic integrity is the school's policy domain — ProofReady doesn't change it. Three things help: (1) feedback is on the <em>draft</em>, not the final, so it complements the school's existing process; (2) the tool refuses to rewrite content, so it can't "polish" anything; (3) teacher visibility — every submission is visible to the teacher, draft history is preserved, so a student who suddenly produces vastly better work shows it in their draft trail.</div>
+    <div class="q">Won't students cheat by submitting AI-generated work and getting feedback that polishes it?</div>
+    <div class="a">Academic integrity is the school's policy domain. ProofReady doesn't change it. Three things help: (1) feedback is on the <em>draft</em>, not the final, so it complements the school's existing process; (2) the tool refuses to rewrite content, so it can't "polish" anything; (3) teacher visibility: every submission is visible to the teacher, draft history is preserved, so a student who suddenly produces vastly better work shows it in their draft trail.</div>
   </div>
 
   <h2>Quality &amp; accuracy</h2>
 
   <div class="qa">
     <div class="q">AI is generally bad at English feedback. What makes yours different?</div>
-    <div class="a">Three concrete things. <strong>One:</strong> the system prompt loads English-Advanced-specific terminology with definitions and common misuses (persona vs. author, theme vs. motif, characterisation as construction not description). <strong>Two:</strong> the marker-voice layer is calibrated against NESA Notes from the Marking Centre 2021–2024 specifically for English Advanced and English Standard. <strong>Three:</strong> three independent passes — holistic feedback, criterion-by-criterion, and inline annotations on the student's actual sentences — so a generic answer can't survive all three.</div>
+    <div class="a">Three concrete things. <strong>One:</strong> the system prompt loads English-Advanced-specific terminology with definitions and common misuses (persona vs. author, theme vs. motif, characterisation as construction not description). <strong>Two:</strong> the marker-voice layer is calibrated against NESA Notes from the Marking Centre 2021–2024 specifically for English Advanced and English Standard. <strong>Three:</strong> three independent passes (holistic feedback, criterion-by-criterion, and inline annotations on the student's actual sentences), so a generic answer can't survive all three.</div>
   </div>
 
   <div class="qa">
     <div class="q">AI hallucinates. What if it cites a NESA outcome that doesn't exist?</div>
-    <div class="a">The model is given the actual NESA glossary, the student's actual marking criteria (provided by the teacher), and explicit instructions never to invent references. The teacher's criteria are the ground truth — feedback is anchored to those, not to the model's training data. We've also forbidden the model from making band predictions or mark estimates, which is where most low-quality AI feedback creates problems.</div>
-  </div>
-
-  <div class="qa">
-    <div class="q">How do you know the feedback is actually good for my subject?</div>
-    <div class="a">We don't, until the pilot tells us. That's the point of a free pilot. We provide the data — every submission and its feedback is visible to the teacher — and we'd like 30 minutes mid-pilot to hear what's working and what isn't. The system improves subject by subject; we're transparent about which subjects have deeper calibration (currently English, Biology, Chemistry, Modern History, PDHPE, Health and Movement Science, Mathematics, Economics, Physics, Geography, Legal Studies, Business Studies) and which are using shared cross-subject reference.</div>
+    <div class="a">The model is given the actual NESA glossary, the student's actual marking criteria (provided by the teacher), and explicit instructions never to invent references. The teacher's criteria are the ground truth; feedback is anchored to those, not to the model's training data. We've also forbidden the model from making band predictions or mark estimates, which is where most low-quality AI feedback creates problems.</div>
   </div>
 
   <h2>Safety &amp; wellbeing</h2>
 
   <div class="qa">
-    <div class="q">What happens if a student writes about self-harm or abuse in their draft?</div>
-    <div class="a">The Terms &amp; Conditions and the welfare callout on every page direct students to speak to a trusted adult or contact Kids Helpline / Lifeline / 000 — ProofReady is explicit that it is <em>not</em> a reporting mechanism. Teacher mandatory-reporting obligations under NSW Child Protection are unchanged and explicit in the Terms. We're upfront with schools that this is a formative-feedback tool, not a welfare service.</div>
-  </div>
-
-  <div class="qa">
     <div class="q">Won't students become dependent on AI feedback?</div>
-    <div class="a">A real concern, which is why ProofReady caps drafts at <strong>three</strong> per task. After that, the next conversation is with the teacher. The feedback also includes a <em>self-check</em> question on every submission — designed to push the student to develop their own revision instinct rather than wait for the system to tell them what to fix.</div>
-  </div>
-
-  <div class="qa">
-    <div class="q">Are students under 18 supposed to be using generative AI?</div>
-    <div class="a">Yes — under appropriate teacher direction. The NSW Department of Education's AI guidance (and the federal AI in schools framework) supports the use of AI as a learning tool when it's transparent, teacher-directed, and aligned with curriculum. ProofReady is all three: students access it through their teacher's task, the AI use is disclosed, and feedback is curriculum-aligned. It is the model schools are asked to choose, not the unsupervised use that happens otherwise.</div>
+    <div class="a">A real concern, which is why ProofReady caps drafts at <strong>three</strong> per task. After that, the next conversation is with the teacher. The feedback also includes a <em>self-check</em> question on every submission, designed to push the student to develop their own revision instinct rather than wait for the system to tell them what to fix.</div>
   </div>
 
   <h2>Privacy, data &amp; continuity</h2>
@@ -154,30 +139,20 @@
   </div>
 
   <div class="qa">
-    <div class="q">What if you go out of business — what happens to our data?</div>
-    <div class="a">Schools own their data and can request a full export or deletion at any time during or after the pilot. If ProofReady ever wound down, the same applies — we'd notify schools, give 60 days' notice, and provide a full export. Nothing is locked in.</div>
-  </div>
-
-  <div class="qa">
-    <div class="q">Can parents opt out? Do we need parental consent?</div>
-    <div class="a">The school is the authorising body for student use, in line with the Privacy Act 1988 and the school's existing consent process for third-party tools. We support whatever consent model your school uses. Parents (or students) can request data export or deletion at any time at <a href="mailto:help@proofready.app">help@proofready.app</a>.</div>
+    <div class="q">What if you go out of business? What happens to our data?</div>
+    <div class="a">Schools own their data and can request a full export or deletion at any time during or after the pilot. If ProofReady ever wound down, the same applies: we'd notify schools, give 60 days' notice, and provide a full export. Nothing is locked in.</div>
   </div>
 
   <h2>Logistics &amp; rollout</h2>
 
   <div class="qa">
     <div class="q">Won't this just be more work for teachers to learn?</div>
-    <div class="a">Setup is about ten minutes per teacher: create a class, paste the question and marking criteria, click publish. Students join with a code. There is no other configuration, no integration with the school's LMS, and no IT involvement required. If a teacher uses it once and decides it isn't useful, no harm done.</div>
-  </div>
-
-  <div class="qa">
-    <div class="q">What does a pilot look like, and what's the cost after?</div>
-    <div class="a"><strong>Pilot:</strong> free for one term or one assessment cycle, no commitment. <strong>Post-pilot:</strong> we'll discuss with you based on what worked. Likely a per-student or per-faculty model — the priority is making sure schools that contribute pilot feedback aren't penalised on price. We're transparent that this is a teacher-built product, not a venture-backed one — there's no pressure to monetise aggressively.</div>
+    <div class="a">Setup is about ten minutes per teacher: create a class, paste the question and marking criteria, click publish. Students join with a code. There is no other configuration, no integration with the school's LMS, and no IT involvement required.</div>
   </div>
 
   <footer>
     <div>
-      <strong style="color:#1f2937">Rob Sheahan</strong> · Founder &amp; PDHPE teacher
+      <strong style="color:#1f2937">Rob Sheahan</strong> · Founder
     </div>
     <div style="text-align:right">
       <a href="mailto:help@proofready.app">help@proofready.app</a> ·
