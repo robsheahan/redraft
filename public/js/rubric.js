@@ -212,6 +212,17 @@
   /**
    * Render rubric as HTML — either a structured table or a formatted text block.
    */
+  // Normalise any range string to "X - Y" format (spaced hyphen).
+  // Handles "17 to 20", "17-20", "17–20", "(17-20)", "17 marks", etc.
+  function formatRange(s) {
+    if (!s) return '';
+    return String(s)
+      .replace(/[()]/g, '')
+      .replace(/(\d{1,2})\s*(?:to|[–\-])\s*(\d{1,2})/i, '$1 - $2')
+      .replace(/\s+marks?$/i, '')
+      .trim();
+  }
+
   function renderRubric(text, escapeFn) {
     var e = escapeFn || function(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     if (!text) return '';
@@ -221,7 +232,7 @@
       var html = '<div class="rubric-table">';
       parsed.bands.forEach(function(band) {
         html += '<div class="rubric-row">';
-        html += '<div class="rubric-band">' + e(band.range) + '</div>';
+        html += '<div class="rubric-band">' + e(formatRange(band.range)) + '</div>';
         html += '<div class="rubric-criteria">';
         if (band.criteria.length > 0) {
           html += '<ul>';
@@ -239,7 +250,7 @@
       var html2 = '<div class="rubric-table">';
       parsed.criteria.forEach(function(crit, i) {
         html2 += '<div class="rubric-row">';
-        html2 += '<div class="rubric-band">' + (crit.range ? e(crit.range) : (i + 1)) + '</div>';
+        html2 += '<div class="rubric-band">' + (crit.range ? e(formatRange(crit.range)) : (i + 1)) + '</div>';
         html2 += '<div class="rubric-criteria">';
         html2 += '<div style="font-weight:700;color:#1f2937;margin-bottom:' + (crit.details.length > 0 ? '6px' : '0') + '">' + e(crit.name) + '</div>';
         if (crit.details.length > 0) {
