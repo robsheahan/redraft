@@ -415,8 +415,9 @@
       }
 
       // Generate class feedback button
+      const hasSavedClassFeedback = !!(task.class_feedback && Object.keys(task.class_feedback).length);
       html += '<div class="generate-section">';
-      html += '<button class="btn-generate" id="generateBtn" ' + (students.length === 0 ? 'disabled' : '') + '>Generate class feedback</button>';
+      html += '<button class="btn-generate" id="generateBtn" ' + (students.length === 0 ? 'disabled' : '') + '>' + (hasSavedClassFeedback ? 'Regenerate class feedback' : 'Generate class feedback') + '</button>';
       if (students.length === 0) {
         html += '<div class="generate-hint">No submissions yet — students need to submit drafts first.</div>';
       } else {
@@ -462,6 +463,11 @@
       html += '</div>';
 
       container.innerHTML = html;
+
+      // Re-render previously saved class feedback so it survives a refresh.
+      if (hasSavedClassFeedback) {
+        renderClassFeedback(task.class_feedback, task.class_feedback_count || 0, { scroll: false });
+      }
 
       // Generate class feedback handler
       const btn = document.getElementById('generateBtn');
@@ -743,7 +749,7 @@
       }
     }
 
-    function renderClassFeedback(fb, count) {
+    function renderClassFeedback(fb, count, opts) {
       const target = document.getElementById('classFeedback');
       let html = '';
 
@@ -776,7 +782,9 @@
 
       html += '<div class="footer">Based on ' + count + ' student submission' + (count === 1 ? '' : 's') + '.</div>';
       target.innerHTML = html;
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (!opts || opts.scroll !== false) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   </script>
 

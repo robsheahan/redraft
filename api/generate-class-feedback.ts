@@ -128,6 +128,16 @@ Synthesise the above into a class-level overview. Look for patterns — what com
     }
 
     const classFeedback = JSON.parse(jsonMatch[0]);
+
+    await supabase
+      .from('tasks')
+      .update({
+        class_feedback: classFeedback,
+        class_feedback_count: feedbacks.length,
+        class_feedback_generated_at: new Date().toISOString(),
+      })
+      .eq('id', taskId);
+
     return res.status(200).json({ feedback: classFeedback, submission_count: feedbacks.length });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || 'Failed to generate class feedback' });
