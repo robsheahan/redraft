@@ -237,7 +237,7 @@
         html += '<h3>Paste your draft response</h3>';
         const subtitle = used === 0
           ? "Paste your draft below exactly as you've written it."
-          : "Paste your revised draft below. The AI will compare it to your previous draft and acknowledge what's improved.";
+          : "Paste your revised draft below. ProofReady will compare it to your previous draft and acknowledge what's improved.";
         html += '<p>' + e(subtitle) + '</p>';
         html += '<textarea class="draft-textarea" id="draftTextarea" placeholder="Paste your draft response here..." oninput="updateWordCount()"></textarea>';
         html += '<div class="word-count" id="wordCount">0 words</div>';
