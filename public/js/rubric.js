@@ -206,6 +206,71 @@
 
     if (criteria.length >= 2) return { criteria: criteria, format: 'criterion' };
 
+    // Third try: multi-part rubric (HSC short-answer-style)
+    //   Part (a) - 3 marks: Identifies relevant features...
+    //   Part (b) - 5 marks: Considers both usefulness AND limitations...
+    //   Part (c) - 12 marks:
+    //   - 10 to 12: Sustained evaluation...
+    //   - 7 to 9: Some evaluation...
+    // Each "Part" becomes a criterion. Sub-bands underneath a part become
+    // detail bullets within that part's row.
+    var partHeaderRegex = /^part\s*\(?([a-z]|[ivxlcdm]+)\)?\s*[-–:]\s*(\d+)\s*marks?\s*[:\-]?\s*(.*)$/i;
+    var subBandRegex = /^(\d{1,2})\s*(?:to|[–\-])\s*(\d{1,2})\s*[:\-]\s*(.+)$/i;
+    var parts = [];
+    var currentPart = null;
+    for (var p = 0; p < lines.length; p++) {
+      var pline = lines[p];
+      var pIsHeaderNoise = headerStrips.some(function(pat) { var r = pat.test(pline); pat.lastIndex = 0; return r; });
+      if (pIsHeaderNoise) continue;
+
+      var pm = pline.match(partHeaderRegex);
+      if (pm) {
+        if (currentPart) parts.push(currentPart);
+        currentPart = {
+          letter: pm[1],
+          marks: pm[2],
+          description: pm[3] ? pm[3].trim() : '',
+          subBands: [],
+        };
+        continue;
+      }
+      if (!currentPart) continue;
+
+      // Strip leading bullet markers, then test as a sub-band line
+      var stripped = pline.replace(/^[\-•*]\s*/, '').trim();
+      var sm = stripped.match(subBandRegex);
+      if (sm) {
+        currentPart.subBands.push({
+          range: sm[1] + '-' + sm[2],
+          text: sm[3].trim(),
+        });
+        continue;
+      }
+      // Otherwise extend the part's description
+      if (currentPart.description) {
+        currentPart.description += ' ' + stripped;
+      } else if (stripped) {
+        currentPart.description = stripped;
+      }
+    }
+    if (currentPart) parts.push(currentPart);
+
+    if (parts.length >= 2) {
+      var partCriteria = parts.map(function(part) {
+        var details = [];
+        if (part.description) details.push(part.description);
+        part.subBands.forEach(function(b) {
+          details.push(b.range + ': ' + b.text);
+        });
+        return {
+          name: 'Part (' + part.letter + ')',
+          range: part.marks,
+          details: details,
+        };
+      });
+      return { criteria: partCriteria, format: 'criterion' };
+    }
+
     return null;
   }
 
