@@ -214,6 +214,13 @@
     }
     .btn-generate:hover { background: #d4690f; box-shadow: 0 4px 12px rgba(237,118,21,0.35); }
     .btn-generate:disabled { background: #9ca3af; cursor: not-allowed; box-shadow: none; }
+    /* Loading overlay (mirrors the student submit page) */
+    .loading-overlay { display: none; text-align: center; padding: 48px 20px; }
+    .loading-overlay.visible { display: block; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #e8e0d4; border-top-color: #ed7615; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 4px; }
+    .loading-hint { font-size: 13px; color: #9ca3af; }
     .generate-hint {
       font-size: 13px; color: #9ca3af; margin-top: 8px; text-align: center;
     }
@@ -463,7 +470,57 @@
       if (btn && submissions.length > 0) {
         btn.addEventListener('click', async () => {
           btn.disabled = true;
-          btn.textContent = 'Generating class feedback...';
+
+          // Spinner + rotating loading messages, same pattern as the student
+          // submit page but with teacher-flavoured phrasing.
+          const generateSection = btn.parentElement;
+          const overlay = document.createElement('div');
+          overlay.className = 'loading-overlay visible';
+          overlay.innerHTML = '<div class="spinner"></div><div class="loading-text" id="cfLoadingText">Gathering submissions across the class...</div><div class="loading-hint" id="cfLoadingHint">Synthesising class-level feedback usually takes 20-40 seconds.</div>';
+          generateSection.appendChild(overlay);
+
+          var loadingMessages = shuffleClassMsgs([
+            'Gathering submissions across the class...',
+            'Reading every student\'s feedback...',
+            'Looking for patterns across the cohort...',
+            'Identifying common strengths...',
+            'Identifying common gaps...',
+            'Checking how the class handled the key term...',
+            'Comparing depth of analysis across responses...',
+            'Looking at how students used evidence...',
+            'Mapping common misconceptions...',
+            'Spotting where most students lost ground...',
+            'Spotting where most students did well...',
+            'Surfacing teachable moments for the next lesson...',
+            'Checking criterion-by-criterion patterns...',
+            'Noting structural strengths and weaknesses...',
+            'Cross-referencing the marker voice...',
+            'Drafting your class snapshot...',
+            'Writing top priorities for the cohort...',
+            'Tightening the wording so it\'s actionable...',
+            'Pulling together the cohort overview...',
+            'Almost there...'
+          ]);
+          var msgIndex = 0;
+          var loadingInterval = setInterval(function() {
+            msgIndex++;
+            if (msgIndex >= loadingMessages.length) {
+              loadingMessages = shuffleClassMsgs(loadingMessages);
+              msgIndex = 0;
+            }
+            var el = document.getElementById('cfLoadingText');
+            if (el) el.textContent = loadingMessages[msgIndex];
+          }, 5000);
+
+          function shuffleClassMsgs(arr) {
+            var a = arr.slice();
+            for (var i = a.length - 1; i > 0; i--) {
+              var j = Math.floor(Math.random() * (i + 1));
+              var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+            }
+            return a;
+          }
+
           try {
             const res = await authFetch('/api/generate-class-feedback', {
               method: 'POST',
@@ -471,10 +528,14 @@
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to generate class feedback');
+            clearInterval(loadingInterval);
+            overlay.remove();
             renderClassFeedback(data.feedback, data.submission_count);
             btn.textContent = 'Regenerate class feedback';
             btn.disabled = false;
           } catch (err) {
+            clearInterval(loadingInterval);
+            overlay.remove();
             alert(err.message);
             btn.textContent = 'Generate class feedback';
             btn.disabled = false;
