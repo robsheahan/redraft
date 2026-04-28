@@ -172,12 +172,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
     // --- Pass 1: Generate initial feedback ---
-    // max_tokens kept tight to fit under Cloudflare's 100s proxy timeout
-    // (Vercel Pro allows 300s but Cloudflare gives up first). Pass 1 output
-    // is typically 1500-2500 tokens so 3000 leaves comfortable headroom.
+    // 4000 tokens — Pass 1 produces the bulk of the feedback (strengths,
+    // improvements, top priority, etc.) so it needs more headroom than
+    // the secondary passes. Cutting this lower causes mid-JSON truncation
+    // on long drafts which makes the JSON unparseable.
     const pass1 = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 3000,
+      max_tokens: 4000,
       temperature: 0.2,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
@@ -187,10 +188,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const pass1Json = extractFirstJsonObject(pass1Text);
 
     if (!pass1Json) {
-      return res.status(500).json({ error: 'Failed to parse feedback response' });
+      // Most common cause: max_tokens reached → JSON truncated mid-write.
+      // Log the stop_reason and a sample of the text so we can diagnose.
+      const stopReason = (pass1 as any).stop_reason || 'unknown';
+      const sample = pass1Text.slice(-400);
+      console.error('[generate-feedback] Pass 1 unparseable. stop_reason=', stopReason, 'tail=', sample);
+      const friendly = stopReason === 'max_tokens'
+        ? 'Feedback generation ran out of room before finishing. Try shortening your draft slightly and resubmitting.'
+        : 'Could not parse the feedback response. Please try again — your draft was not lost.';
+      return res.status(502).json({ error: friendly });
     }
 
-    const initialFeedback = JSON.parse(pass1Json);
+    let initialFeedback;
+    try {
+      initialFeedback = JSON.parse(pass1Json);
+    } catch (e: any) {
+      console.error('[generate-feedback] Pass 1 JSON.parse failed:', e?.message, 'raw=', pass1Json.slice(0, 600));
+      return res.status(502).json({ error: 'Could not parse the feedback response. Please try again — your draft was not lost.' });
+    }
 
     // --- Pass 2: Independent criteria-coverage check ---
     // This is a fresh assessment — Pass 2 does NOT see Pass 1's output.
