@@ -171,45 +171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    // --- Pass 1: Generate initial feedback ---
-    // 4000 tokens — Pass 1 produces the bulk of the feedback (strengths,
-    // improvements, top priority, etc.) so it needs more headroom than
-    // the secondary passes. Cutting this lower causes mid-JSON truncation
-    // on long drafts which makes the JSON unparseable.
-    const pass1 = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4000,
-      temperature: 0.2,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
-    });
-
-    const pass1Text = pass1.content[0].type === 'text' ? pass1.content[0].text : '';
-    const pass1Json = extractFirstJsonObject(pass1Text);
-
-    if (!pass1Json) {
-      // Most common cause: max_tokens reached → JSON truncated mid-write.
-      // Log the stop_reason and a sample of the text so we can diagnose.
-      const stopReason = (pass1 as any).stop_reason || 'unknown';
-      const sample = pass1Text.slice(-400);
-      console.error('[generate-feedback] Pass 1 unparseable. stop_reason=', stopReason, 'tail=', sample);
-      const friendly = stopReason === 'max_tokens'
-        ? 'Feedback generation ran out of room before finishing. Try shortening your draft slightly and resubmitting.'
-        : 'Could not parse the feedback response. Please try again — your draft was not lost.';
-      return res.status(502).json({ error: friendly });
-    }
-
-    let initialFeedback;
-    try {
-      initialFeedback = JSON.parse(pass1Json);
-    } catch (e: any) {
-      console.error('[generate-feedback] Pass 1 JSON.parse failed:', e?.message, 'raw=', pass1Json.slice(0, 600));
-      return res.status(502).json({ error: 'Could not parse the feedback response. Please try again — your draft was not lost.' });
-    }
-
-    // --- Pass 2: Independent criteria-coverage check ---
-    // This is a fresh assessment — Pass 2 does NOT see Pass 1's output.
-    // It evaluates the draft against each marking criterion independently.
+    // Pass 2 prompt (independent — doesn't depend on Pass 1)
     const criteriaBlock: string = rawCriteriaText
       || (mappedCriteria.length > 0
           ? mappedCriteria.map((c, i) => `${i + 1}. ${c.name} (${c.maxMarks} marks): ${c.description}`).join('\n')
@@ -230,20 +192,26 @@ ${draft}
 
 Assess this draft against each marking criterion above. Address every criterion individually.`;
 
-    // --- Pass 3: Inline annotations ---
-    // Runs in parallel with Pass 2. Pass 3 references Pass 1's improvements so
-    // inline notes stay coherent with the holistic feedback, but it can't run
-    // until Pass 1 has returned.
+    // All 3 passes in parallel. Total time = max(Pass1, Pass2, Pass3)
+    // instead of Pass1 + max(Pass2, Pass3) = roughly half the wall clock.
+    // Pass 3 used to receive Pass 1's improvements as context for its
+    // linked_improvement_index field; we drop that to allow parallel
+    // execution. The trade-off is that annotations no longer cross-link
+    // back to specific holistic improvements, but they still anchor to
+    // exact draft quotes which is the more important coherence signal.
     //
-    // Pass 2 and Pass 3 are both BEST-EFFORT. If either throws (Anthropic
-    // 5xx, timeout, etc.) we still return the Pass 1 holistic feedback to
-    // the student rather than discarding the work. The Promise.allSettled
-    // pattern + per-pass try/catch keeps the pipeline degraded-but-useful.
-    const improvementsSummary = Array.isArray(initialFeedback?.improvements?.summary)
-      ? initialFeedback.improvements.summary
-      : [];
-
-    const [pass2Settled, inlineSettled] = await Promise.allSettled([
+    // Pass 1 max_tokens raised to 5000 — diagnostic logs showed the model
+    // hitting 4000 mid-self_check on rich drafts (the prompt asks for
+    // exhaustive feedback). 5000 leaves comfortable closing-brace headroom.
+    const t0 = Date.now();
+    const [pass1Settled, pass2Settled, inlineSettled] = await Promise.allSettled([
+      client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 5000,
+        temperature: 0.2,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
       client.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 2000,
@@ -255,11 +223,37 @@ Assess this draft against each marking criterion above. Address every criterion 
         taskDescription,
         taskVerbs: taskVerbs.length > 0 ? taskVerbs : undefined,
         studentText: draft,
-        holisticImprovements: improvementsSummary,
+        holisticImprovements: [],
         courseName: resolvedCourse as string || undefined,
         discipline: discipline || undefined,
       }),
     ]);
+    console.log('[generate-feedback] all 3 passes settled in', (Date.now() - t0) + 'ms');
+
+    // Pass 1 is load-bearing — without it we have no feedback to return
+    if (pass1Settled.status !== 'fulfilled') {
+      console.error('[generate-feedback] Pass 1 rejected:', pass1Settled.reason?.message || pass1Settled.reason);
+      return res.status(502).json({ error: 'Could not generate feedback. Please try again — your draft was not lost.' });
+    }
+    const pass1 = pass1Settled.value;
+    const pass1Text = pass1.content[0].type === 'text' ? pass1.content[0].text : '';
+    const pass1Json = extractFirstJsonObject(pass1Text);
+    if (!pass1Json) {
+      const stopReason = (pass1 as any).stop_reason || 'unknown';
+      console.error('[generate-feedback] Pass 1 unparseable. stop_reason=', stopReason, 'tail=', pass1Text.slice(-400));
+      const friendly = stopReason === 'max_tokens'
+        ? 'Feedback generation ran out of room before finishing. Try shortening your draft slightly and resubmitting.'
+        : 'Could not parse the feedback response. Please try again — your draft was not lost.';
+      return res.status(502).json({ error: friendly });
+    }
+
+    let initialFeedback;
+    try {
+      initialFeedback = JSON.parse(pass1Json);
+    } catch (e: any) {
+      console.error('[generate-feedback] Pass 1 JSON.parse failed:', e?.message, 'raw=', pass1Json.slice(0, 600));
+      return res.status(502).json({ error: 'Could not parse the feedback response. Please try again — your draft was not lost.' });
+    }
 
     let criteriaFeedback: any = null;
     if (pass2Settled.status === 'fulfilled') {
