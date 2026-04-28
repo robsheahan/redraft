@@ -176,12 +176,16 @@
       else { countEl.textContent = words + ' words'; countEl.classList.remove('warning'); }
     }
 
+    var submissionInFlight = false;
     async function submit() {
+      if (submissionInFlight) return;
       const draft = document.getElementById('draftTextarea').value.trim();
       if (!draft) { alert('Paste your draft first.'); return; }
       if (draft.length < 50) { alert('Your draft is too short for meaningful feedback — write at least a paragraph.'); return; }
 
+      submissionInFlight = true;
       const btn = document.querySelector('.submit-btn');
+      btn.disabled = true;
       btn.style.display = 'none';
       const card = document.getElementById('draftCard');
       const overlay = document.createElement('div');
@@ -303,6 +307,8 @@
         alert(err.message);
         overlay.remove();
         btn.style.display = '';
+        btn.disabled = false;
+        submissionInFlight = false;
       }
     }
   </script>

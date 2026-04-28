@@ -902,7 +902,11 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
     }
 
     // --- Call feedback API ---
+    var ownTaskInFlight = false;
     async function generateFeedback(payload, btn) {
+      if (ownTaskInFlight) return;
+      ownTaskInFlight = true;
+      btn.disabled = true;
       btn.style.display = 'none';
       const card = btn.closest('.card') || btn.closest('#ownTask') || btn.parentElement;
       const overlay = document.createElement('div');
@@ -1022,6 +1026,8 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         alert(err.message);
         overlay.remove();
         btn.style.display = '';
+        btn.disabled = false;
+        ownTaskInFlight = false;
       }
     }
 
