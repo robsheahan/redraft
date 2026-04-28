@@ -252,12 +252,10 @@
     .weaknesses .section-dot { background: #f59e0b; }
     .weaknesses .section-title { color: #b45309; }
     .weaknesses .feedback-list li { background: #fffbeb; color: #78350f; }
-    .verb-adherence .section-dot { background: #8b5cf6; }
-    .verb-adherence .section-title { color: #6d28d9; }
-    .priorities { background: #fefce8; border-color: #fef08a; }
-    .priorities .section-dot { background: #eab308; }
-    .priorities .section-title { color: #a16207; }
-    .priorities .feedback-list li { background: #fef9c3; color: #713f12; }
+    .verb-adherence .section-dot { background: #f08a2e; }
+    .verb-adherence .section-title { color: #d4690f; }
+    .priorities .section-dot { background: #f08a2e; }
+    .priorities .section-title { color: #d4690f; }
     .snapshot .section-dot { background: #f08a2e; }
     .snapshot .section-title { color: #d4690f; }
 
@@ -719,18 +717,8 @@
       document.getElementById('sub-' + i).classList.toggle('expanded');
     }
 
-    function copyCode() {
-      if (!currentTask || !currentTask.code) return;
-      navigator.clipboard.writeText(currentTask.code).then(function() {
-        var btn = document.querySelector('.btn-copy-code');
-        var original = btn.textContent;
-        btn.textContent = 'Copied!';
-        setTimeout(function() { btn.textContent = original; }, 1500);
-      });
-    }
-
     async function downloadCsv() {
-      if (!currentTask || !currentTask.code) return;
+      if (!currentTask || !currentTask.id) return;
       var btn = document.getElementById('exportBtn');
       var original = btn.textContent;
       btn.textContent = 'Preparing...';
