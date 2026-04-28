@@ -276,7 +276,7 @@
           // 504 = gateway timeout (function took >60s); 502 = bad gateway
           let msg = data.error;
           if (!msg) {
-            if (res.status === 504 || res.status === 502) {
+            if (res.status === 504 || res.status === 502 || res.status === 524) {
               msg = 'Feedback is taking longer than usual to generate. Please try again — your draft was not lost.';
             } else if (res.status === 429) {
               msg = 'Too many requests right now. Please wait a minute and try again.';
