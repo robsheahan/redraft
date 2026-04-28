@@ -26,8 +26,25 @@
     ];
     headerStrips.forEach(function(p) { cleaned = cleaned.replace(p, '\n'); });
 
+    // Markdown pipe-table support. Many teachers paste rubrics in this shape:
+    //   | Range | Descriptor |
+    //   |---|---|
+    //   | 13 to 15 | Sophisticated evaluation... |
+    //   | 10 to 12 | Effective evaluation...     |
+    // Normalise "X to Y" to "X–Y", drop separator rows, and replace pipes
+    // with newlines so each cell ends up on its own line for the regular
+    // parser below.
+    cleaned = cleaned.replace(/(\d{1,2})\s+to\s+(\d{1,2})/gi, '$1–$2');
+    cleaned = cleaned.replace(/^[\s|:\-]+$/gm, '');
+    cleaned = cleaned.replace(/\|/g, '\n');
+
     // Split by newlines first
     var lines = cleaned.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l; });
+
+    // Drop pure markdown-table header cells ("Range", "Descriptor", etc.)
+    // These are usually one-word lines after the pipe-split above.
+    var TABLE_HEADERS = /^(range|descriptor|band|criteria|criterion|marks?|description|grade|level|guidelines?|standards?)$/i;
+    lines = lines.filter(function(l) { return !TABLE_HEADERS.test(l); });
 
     // If we have fewer than 3 lines, try to split the blob by rubric-shaped patterns
     if (lines.length < 3) {
