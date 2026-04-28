@@ -26,9 +26,9 @@
       gap: 16px; padding-bottom: 14px; border-bottom: 1px solid #e8e0d4;
       margin-bottom: 18px;
     }
-    .brand {
-      font-size: 26pt; font-weight: 800; letter-spacing: -1px;
-      color: #ed7615;
+    .brand img { height: 64px; width: auto; display: block; margin-left: -18px; }
+    .brand-tag {
+      font-size: 10.5pt; color: #1f2937; font-weight: 600; margin-top: 6px;
     }
     .tagline {
       font-size: 10.5pt; color: #6b7280; max-width: 320px; text-align: right;
@@ -68,52 +68,38 @@
     }
     .safety {
       background: #fff; border-radius: 8px;
-      padding: 12px 16px; border: 1px solid #e8e0d4;
+      padding: 14px 18px; border: 1px solid #e8e0d4;
       display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px;
     }
     .safety h3 { grid-column: 1 / -1; margin-bottom: 4px; }
     .safety .item { font-size: 9.5pt; }
     .safety .item strong { color: #111827; }
-    .pilot {
-      background: linear-gradient(135deg, #fef7ed 0%, #fef3e6 100%);
-      border-radius: 8px; padding: 14px 16px;
-      border: 1px solid #fcd9b6;
-      margin-bottom: 14px;
-    }
-    .pilot h3 { color: #b45309; margin-bottom: 6px; }
-    .pilot-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px;
-      font-size: 9.5pt;
-    }
-    .pilot-grid strong { color: #111827; }
     footer {
       display: flex; align-items: center; justify-content: space-between;
       gap: 14px; padding-top: 12px; border-top: 1px solid #e8e0d4;
+      margin-top: 18px;
       font-size: 9.5pt; color: #4b5563;
     }
     footer a { color: #ed7615; text-decoration: none; font-weight: 600; }
-    .who { color: #6b7280; }
     em.note { color: #6b7280; font-style: normal; font-size: 9pt; }
   </style>
 </head>
 <body>
 
   <header>
-    <div>
-      <div class="brand">ProofReady</div>
-      <div style="font-size:10.5pt;color:#1f2937;font-weight:600;margin-top:2px">
-        AI-powered formative feedback, aligned to the NESA syllabus.
-      </div>
+    <div class="brand">
+      <img src="../public/proofreadybanner.png" alt="ProofReady">
+      <div class="brand-tag">AI-powered formative feedback, aligned to the NESA syllabus.</div>
     </div>
     <div class="tagline">
-      Built by an NSW teacher for NSW HSC students.<br>
-      Designed to mimic the feedback an experienced marker would give — before final submission.
+      Built for NSW HSC students.<br>
+      Designed to mimic the feedback an experienced marker would give, before final submission.
     </div>
   </header>
 
   <p class="lede">
     Students rarely get individual, criteria-based feedback on a draft before they submit it for marking.
-    Teachers don't have time to read 30 drafts in the week before a deadline. ProofReady fills that gap:
+    Teachers don't always have time to read 30 drafts in the week before a deadline. ProofReady fills that gap:
     every student gets specific, written feedback on their draft within a minute, in the voice of an experienced HSC marker.
   </p>
 
@@ -122,9 +108,9 @@
       <h3>For students</h3>
       <ul>
         <li>Paste a draft, get back strengths, areas to improve, and a key-term check (e.g. <em>analyse</em> vs. <em>describe</em>)</li>
-        <li>An <strong>annotated copy</strong> of their own draft with margin comments — like a teacher's pen marks</li>
+        <li>An <strong>annotated copy</strong> of their own draft with margin comments, like a teacher's pen marks</li>
         <li>Up to 3 drafts per task, so they see their work improve</li>
-        <li>No marks, no grades — only feedback to act on</li>
+        <li>No marks, no grades; only feedback to act on</li>
       </ul>
     </div>
     <div class="card">
@@ -141,7 +127,7 @@
       <ul>
         <li>Reduces draft-marking workload without removing teacher judgement</li>
         <li>Surfaces common cohort gaps you can address in one lesson</li>
-        <li>Subject-specific calibration — English Advanced feedback differs from Biology</li>
+        <li>Subject-specific calibration: English Advanced feedback differs from Biology</li>
         <li>Australian context, NESA verbs, syllabus-aligned</li>
       </ul>
     </div>
@@ -150,7 +136,7 @@
   <section>
     <h2>What makes the feedback usable</h2>
     <p style="font-size:10pt">
-      ProofReady runs three independent passes on every draft: a holistic NESA-marker-voice review, a criterion-by-criterion check against the marking criteria you provide, and inline annotations attached to specific quotes from the student's writing. Subject-specific calibration draws on a curated bank of <strong>NESA Notes from the Marking Centre</strong> (2021–2024) and syllabus-defined glossaries — so an English Advanced response is engaged on textual integrity and persona, while a Biology response is held to scientific reasoning, validity, and evidence.
+      ProofReady runs three independent passes on every draft: a holistic NESA-marker-voice review, a criterion-by-criterion check against the marking criteria you provide, and inline annotations attached to specific quotes from the student's writing. Subject-specific calibration draws on a curated bank of <strong>NESA Notes from the Marking Centre</strong> (2021–2024) and syllabus-defined glossaries, so an English Advanced response is engaged on textual integrity and persona, while a Biology response is held to scientific reasoning, validity, and evidence.
     </p>
     <div class="pill-row">
       <span class="pill">No mark predictions</span>
@@ -164,13 +150,7 @@
     <div class="safety">
       <h3>Built with safety, privacy and policy fit in mind</h3>
       <div class="item">
-        <strong>NSW Child Protection unchanged.</strong> Teacher mandatory-reporting obligations are explicit in the Terms. ProofReady is not a reporting mechanism.
-      </div>
-      <div class="item">
         <strong>No AI training on student work.</strong> Anthropic's API policy excludes API inputs and outputs from model training.
-      </div>
-      <div class="item">
-        <strong>Hosted in Australia.</strong> Database in Supabase Sydney region; data is encrypted at rest and in transit.
       </div>
       <div class="item">
         <strong>Privacy Act 1988 / APPs aligned.</strong> Full compliance pack at <a href="https://proofready.app/compliance.html" style="color:#ed7615;text-decoration:none;font-weight:600">proofready.app/compliance</a>.
@@ -178,22 +158,9 @@
     </div>
   </section>
 
-  <section class="pilot">
-    <h3>What the pilot looks like</h3>
-    <div class="pilot-grid">
-      <div><strong>Cost:</strong> Free for one term.</div>
-      <div><strong>Length:</strong> One term (or one assessment cycle).</div>
-      <div><strong>Setup:</strong> 10 minutes per teacher. No IT integration.</div>
-      <div><strong>Scale:</strong> Any class size; faculty or whole-school.</div>
-      <div><strong>What we'd ask:</strong> 30 minutes of teacher feedback mid-pilot.</div>
-      <div><strong>What stays yours:</strong> All student data — exportable, deletable on request.</div>
-    </div>
-  </section>
-
   <footer>
     <div>
-      <strong style="color:#1f2937">Rob Sheahan</strong> · Founder &amp; PDHPE teacher<br>
-      <span class="who">Built ProofReady after marking too many drafts at midnight.</span>
+      <strong style="color:#1f2937">Rob Sheahan</strong> · Founder
     </div>
     <div style="text-align:right">
       <a href="mailto:help@proofready.app">help@proofready.app</a><br>
