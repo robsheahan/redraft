@@ -73,13 +73,15 @@ export async function generateInlineSuggestions(
       holisticImprovements: input.holisticImprovements,
     });
 
+    const t0 = Date.now();
     response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
+      max_tokens: 2500,
       temperature: 0.2,
       system,
       messages: [{ role: 'user', content: user }],
     });
+    console.log('[inline-suggestions] Anthropic OK in', (Date.now() - t0) + 'ms', 'stop_reason=', (response as any).stop_reason);
   } catch (err: any) {
     const message = err?.message || 'unknown error';
     console.warn('[inline-suggestions] Claude call failed:', message);
@@ -90,25 +92,29 @@ export async function generateInlineSuggestions(
   const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
   const jsonText = extractFirstJsonObject(text);
   if (!jsonText) {
-    console.warn('[inline-suggestions] no JSON object in model response');
+    const stopReason = (response as any).stop_reason || 'unknown';
+    console.warn('[inline-suggestions] no JSON object in response. stop_reason=', stopReason, 'tail=', text.slice(-300));
     return { ok: true, annotations: [] };
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(jsonText);
-  } catch (e) {
-    console.warn('[inline-suggestions] JSON parse failed', e);
+  } catch (e: any) {
+    console.warn('[inline-suggestions] JSON parse failed:', e?.message, 'raw_head=', jsonText.slice(0, 300));
     return { ok: true, annotations: [] };
   }
 
   const raw = (parsed as { inline_suggestions?: unknown })?.inline_suggestions;
   if (!Array.isArray(raw)) {
-    console.warn('[inline-suggestions] missing or non-array inline_suggestions field');
+    console.warn('[inline-suggestions] missing or non-array inline_suggestions field. parsed=', JSON.stringify(parsed).slice(0, 200));
     return { ok: true, annotations: [] };
   }
 
   const annotations = validateAndResolve(raw, input.studentText, input.holisticImprovements.length);
+  if (annotations.length === 0 && raw.length > 0) {
+    console.warn('[inline-suggestions] all', raw.length, 'raw annotations rejected during validation (quotes did not match draft, invalid categories, or all overlapped)');
+  }
   return { ok: true, annotations };
 }
 
