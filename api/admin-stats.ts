@@ -86,12 +86,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
   });
 
-  const recentSubmissionsAnnotated = (recentSubmissions || []).map(s => ({
+  const recentSubmissionsWithEmail = (recentSubmissions || []).map(s => ({
     id: s.id,
     task_id: s.task_id,
     draft_version: s.draft_version,
     created_at: s.created_at,
     student_name: s.student_id ? userMap[s.student_id]?.name || 'unknown' : 'anon',
+    student_email: s.student_id ? userMap[s.student_id]?.email || '' : '',
   }));
 
   const recentTasksAnnotated = (recentTasks || []).map((t: any) => {
@@ -104,8 +105,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       class_name: cls.name || null,
       created_at: t.created_at,
       teacher_name: teacherId ? userMap[teacherId]?.name || 'unknown' : 'unknown',
+      teacher_email: teacherId ? userMap[teacherId]?.email || '' : '',
     };
   });
+
+  // Full user roster for "who's signed up" view. Sorted by created_at desc.
+  const allUsers = userList
+    .map(u => ({
+      id: u.id,
+      email: u.email || '',
+      name: userMap[u.id]?.name || u.email || 'unknown',
+      role: (u.user_metadata?.role as string) || null,
+      created_at: u.created_at,
+      last_sign_in_at: u.last_sign_in_at || null,
+      email_domain: (u.email || '').split('@')[1] || '',
+    }))
+    .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+
+  // Aggregate by email domain so Rob can see uptake by school at a glance.
+  const domainCounts: Record<string, { total: number; teachers: number; students: number }> = {};
+  for (const u of allUsers) {
+    const d = u.email_domain || '(unknown)';
+    if (!domainCounts[d]) domainCounts[d] = { total: 0, teachers: 0, students: 0 };
+    domainCounts[d].total++;
+    if (u.role === 'teacher') domainCounts[d].teachers++;
+    else if (u.role === 'student') domainCounts[d].students++;
+  }
+  const byDomain = Object.entries(domainCounts)
+    .map(([domain, c]) => ({ domain, ...c }))
+    .sort((a, b) => b.total - a.total);
 
   return res.status(200).json({
     counts: {
@@ -130,7 +158,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       api_calls_24h: apiCalls24h.count || 0,
     },
-    recent_submissions: recentSubmissionsAnnotated,
+    recent_submissions: recentSubmissionsWithEmail,
     recent_tasks: recentTasksAnnotated,
+    users: allUsers,
+    by_domain: byDomain,
   });
 }
