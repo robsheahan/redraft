@@ -284,12 +284,14 @@ Keep every sentence purposeful. Summaries are punchy and scannable. Detail secti
 
 export function buildUserPrompt(input: FeedbackPromptInput): string {
   let criteriaBlock: string;
-  if (input.criteriaText) {
+  if (input.criteriaText && input.criteriaText.trim()) {
     criteriaBlock = input.criteriaText;
-  } else {
+  } else if (input.criteria && input.criteria.length > 0) {
     criteriaBlock = input.criteria
       .map((c, i) => `${i + 1}. ${c.name} (${c.maxMarks} marks): ${c.description}`)
       .join("\n");
+  } else {
+    criteriaBlock = "No specific marking criteria were provided by the teacher. Assess this draft against general HSC standards for the subject — the question's key term, the syllabus outcomes assessed, and what an experienced marker would expect of a strong response at this level.";
   }
 
   const outcomesBlock = input.outcomes.length > 0

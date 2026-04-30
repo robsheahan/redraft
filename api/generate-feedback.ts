@@ -174,7 +174,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
     // Pass 2 prompt (independent — doesn't depend on Pass 1)
-    const criteriaBlock: string = rawCriteriaText
+    const hasCriteria = !!(rawCriteriaText && rawCriteriaText.trim()) || mappedCriteria.length > 0;
+    const criteriaBlock: string = (rawCriteriaText && rawCriteriaText.trim())
       || (mappedCriteria.length > 0
           ? mappedCriteria.map((c, i) => `${i + 1}. ${c.name} (${c.maxMarks} marks): ${c.description}`).join('\n')
           : 'No specific criteria provided — assess against general HSC standards');
@@ -206,6 +207,15 @@ Assess this draft against each marking criterion above. Address every criterion 
     // hitting 4000 mid-self_check on rich drafts (the prompt asks for
     // exhaustive feedback). 5000 leaves comfortable closing-brace headroom.
     const t0 = Date.now();
+    const pass2Promise = hasCriteria
+      ? client.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2000,
+          temperature: 0.3,
+          system: buildCriteriaCheckPrompt(resolvedCourse as string || undefined),
+          messages: [{ role: 'user', content: criteriaCheckPrompt }],
+        })
+      : Promise.resolve(null);
     const [pass1Settled, pass2Settled, inlineSettled] = await Promise.allSettled([
       client.messages.create({
         model: 'claude-sonnet-4-6',
@@ -214,13 +224,7 @@ Assess this draft against each marking criterion above. Address every criterion 
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
       }),
-      client.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2000,
-        temperature: 0.3,
-        system: buildCriteriaCheckPrompt(resolvedCourse as string || undefined),
-        messages: [{ role: 'user', content: criteriaCheckPrompt }],
-      }),
+      pass2Promise,
       generateInlineSuggestions(client, {
         taskDescription,
         taskVerbs: taskVerbs.length > 0 ? taskVerbs : undefined,
@@ -258,7 +262,7 @@ Assess this draft against each marking criterion above. Address every criterion 
     }
 
     let criteriaFeedback: any = null;
-    if (pass2Settled.status === 'fulfilled') {
+    if (pass2Settled.status === 'fulfilled' && pass2Settled.value) {
       try {
         const pass2Text = pass2Settled.value.content[0].type === 'text' ? pass2Settled.value.content[0].text : '';
         const pass2Json = extractFirstJsonObject(pass2Text);
@@ -269,7 +273,7 @@ Assess this draft against each marking criterion above. Address every criterion 
       } catch (e: any) {
         console.warn('[generate-feedback] Pass 2 parse failed:', e?.message || e);
       }
-    } else {
+    } else if (pass2Settled.status === 'rejected') {
       console.warn('[generate-feedback] Pass 2 rejected:', pass2Settled.reason?.message || pass2Settled.reason);
     }
 
