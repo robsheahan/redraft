@@ -60,8 +60,10 @@
       /marking\s*(rubric|criteria|guidelines?)\s*(\(\s*\d+\s*marks?\s*\))?/gi,
       /band\s*descriptors?/gi,
       /band\s*\/?\s*descriptor/gi,
+      /range\s*\/?\s*descriptors?/gi,
       /range\s*\/?\s*criteria/gi,
       /criterion\s*\/?\s*(range|marks?)/gi,
+      /\(\s*out\s+of\s+\d+\s*\)/gi,
     ];
     headerStrips.forEach(function(p) { cleaned = cleaned.replace(p, '\n'); });
 
@@ -97,6 +99,13 @@
       blob = blob.replace(/(\S)(\d{1,2}\s*[–\-]\s*\d{1,2})(\s*[•*\-])/g, '$1\n$2$3');
       blob = blob.replace(/(\S)(\d{1,2}\s*[–\-]\s*\d{1,2})(\s+[A-Z])/g, '$1\n$2$3');
       blob = blob.replace(/(\S)(\d{1,2}\s*[–\-]\s*\d{1,2}\s*marks?)/gi, '$1\n$2');
+
+      // 2b. Flattened-table rescue: range glued to text on either side with
+      // no whitespace ("...terms.16–20Effective..."). Split before the range
+      // when it follows a letter/punctuation, and after the range when
+      // followed by an uppercase letter. Keeps the range on its own line.
+      blob = blob.replace(/([a-zA-Z\.\)])(\d{1,2}\s*[–\-]\s*\d{1,2})/g, '$1\n$2');
+      blob = blob.replace(/(\d{1,2}\s*[–\-]\s*\d{1,2})([A-Z])/g, '$1\n$2');
 
       // 3. Bullet markers inline
       blob = blob.replace(/([^\n])(\s*•\s)/g, '$1\n$2');
