@@ -3,6 +3,7 @@ import { applyCors } from '../lib/cors.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
+import { captureError } from '../lib/sentry.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (applyCors(req, res)) return;
@@ -140,6 +141,7 @@ Synthesise the above into a class-level overview. Look for patterns — what com
 
     return res.status(200).json({ feedback: classFeedback, submission_count: feedbacks.length });
   } catch (err: any) {
+    captureError(err, { stage: 'class-feedback', task_id: taskId, user_id: user.id });
     return res.status(500).json({ error: err.message || 'Failed to generate class feedback' });
   }
 }

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
+    "@sentry/node": "^8.55.2",
     "@supabase/supabase-js": "^2.100.1"
   },
   "devDependencies": {

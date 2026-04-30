@@ -9,6 +9,7 @@ import { generateInlineSuggestions } from '../lib/generate-inline-suggestions.js
 import { extractTaskVerbs } from '../lib/task-verbs.js';
 import { extractFirstJsonObject } from '../lib/extract-json.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
+import { captureError } from '../lib/sentry.js';
 
 function buildCriteriaCheckPrompt(courseName?: string): string {
   const subjectLabel = courseName || "this HSC subject";
@@ -239,6 +240,7 @@ Assess this draft against each marking criterion above. Address every criterion 
     // Pass 1 is load-bearing — without it we have no feedback to return
     if (pass1Settled.status !== 'fulfilled') {
       console.error('[generate-feedback] Pass 1 rejected:', pass1Settled.reason?.message || pass1Settled.reason);
+      captureError(pass1Settled.reason, { stage: 'pass1', task_id, user_id: user?.id });
       return res.status(502).json({ error: 'Could not generate feedback. Please try again — your draft was not lost.' });
     }
     const pass1 = pass1Settled.value;
@@ -247,6 +249,7 @@ Assess this draft against each marking criterion above. Address every criterion 
     if (!pass1Json) {
       const stopReason = (pass1 as any).stop_reason || 'unknown';
       console.error('[generate-feedback] Pass 1 unparseable. stop_reason=', stopReason, 'tail=', pass1Text.slice(-400));
+      captureError(new Error('Pass 1 unparseable'), { stage: 'pass1-parse', stopReason, tail: pass1Text.slice(-400), task_id, user_id: user?.id });
       const friendly = stopReason === 'max_tokens'
         ? 'Feedback generation ran out of room before finishing. Try shortening your draft slightly and resubmitting.'
         : 'Could not parse the feedback response. Please try again — your draft was not lost.';
@@ -319,6 +322,7 @@ Assess this draft against each marking criterion above. Address every criterion 
       },
     });
   } catch (err: any) {
+    captureError(err, { stage: 'top-level', task_id, user_id: user?.id });
     return res.status(500).json({ error: err.message || 'Failed to generate feedback' });
   }
 }

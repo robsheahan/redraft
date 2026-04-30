@@ -1,3 +1,24 @@
+// Sentry browser SDK — DSN is safe to expose by design. Loads from the
+// Sentry CDN so we don't need a build step. Skipped on localhost.
+(function() {
+  if (typeof window === 'undefined') return;
+  var host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1' || host === '') return;
+  var s = document.createElement('script');
+  s.src = 'https://browser.sentry-cdn.com/8.42.0/bundle.tracing.min.js';
+  s.crossOrigin = 'anonymous';
+  s.onload = function() {
+    if (!window.Sentry) return;
+    window.Sentry.init({
+      dsn: 'https://483d2cc6da6e5f258448ca84900aee01@o4510830359937024.ingest.us.sentry.io/4511308025233408',
+      environment: host.indexOf('proofready.app') >= 0 ? 'production' : 'preview',
+      tracesSampleRate: 0,
+      sendDefaultPii: false,
+    });
+  };
+  document.head.appendChild(s);
+})();
+
 const SUPABASE_URL = 'https://jcxcbqsxshlwwvxlyyfd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjeGNicXN4c2hsd3d2eGx5eWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1OTI1OTAsImV4cCI6MjA5MDE2ODU5MH0.v-jfhkGiknFQylRnX94c4yFYL2qd3Th_nVq8u8b5GsM';
 
