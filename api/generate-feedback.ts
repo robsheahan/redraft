@@ -11,6 +11,7 @@ import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
 import { callTool } from '../lib/anthropic-tool-call.js';
 import { HOLISTIC_FEEDBACK_TOOL, CRITERIA_CHECK_TOOL } from '../lib/feedback-tools.js';
+import { looksLikeBandRubric, stripBandLabels } from '../lib/rubric-detect.js';
 
 function buildCriteriaCheckPrompt(courseName?: string): string {
   const subjectLabel = courseName || "this HSC subject";
@@ -152,6 +153,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     : [];
 
+  // Band-style rubrics ("Grade A (21–25 marks): …", "Band 5 (17–20): …")
+  // describe quality levels of the overall response, not separable
+  // criteria. Two consequences:
+  //   1. We strip the band labels and mark ranges before the criteria
+  //      reach the model — otherwise it occasionally copy-pastes the
+  //      label back at the student, violating the no-bands rule.
+  //   2. We skip Pass 2 (per-criterion strengths/improvements) entirely,
+  //      because applying it band-by-band produces incoherent output.
+  const isBandRubric = looksLikeBandRubric(rawCriteriaText);
+  const criteriaTextForModel = rawCriteriaText && isBandRubric
+    ? stripBandLabels(rawCriteriaText)
+    : rawCriteriaText;
+
   const outcomesList = (resolvedOutcomes || []).map((o: any) =>
     typeof o === 'string' ? o : o.code || ''
   );
@@ -164,7 +178,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     taskVerbs: taskVerbs.length > 0 ? taskVerbs : undefined,
     outcomes: outcomesList,
     criteria: mappedCriteria,
-    criteriaText: rawCriteriaText || undefined,
+    criteriaText: criteriaTextForModel || undefined,
     studentText: draft,
     teacherNotes: teacherNotes || undefined,
     taskType: resolvedTaskType || undefined,
@@ -175,9 +189,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    // Pass 2 prompt (independent — doesn't depend on Pass 1)
-    const hasCriteria = !!(rawCriteriaText && rawCriteriaText.trim()) || mappedCriteria.length > 0;
-    const criteriaBlock: string = (rawCriteriaText && rawCriteriaText.trim())
+    // Pass 2 prompt (independent — doesn't depend on Pass 1).
+    // Skipped entirely for band-style rubrics (see isBandRubric note above).
+    const hasCriteria = !isBandRubric
+      && (!!(rawCriteriaText && rawCriteriaText.trim()) || mappedCriteria.length > 0);
+    const criteriaBlock: string = (criteriaTextForModel && criteriaTextForModel.trim())
       || (mappedCriteria.length > 0
           ? mappedCriteria.map((c, i) => `${i + 1}. ${c.name} (${c.maxMarks} marks): ${c.description}`).join('\n')
           : 'No specific criteria provided — assess against general HSC standards');
