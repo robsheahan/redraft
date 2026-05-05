@@ -194,7 +194,7 @@
       html += '<div class="task-question-wrap"><h4>Task description</h4>';
       html += '<div class="task-question">' + e(questionText) + '</div></div>';
       if (criteriaText) {
-        html += '<div class="criteria-display"><h4>Marking criteria</h4>' + renderRubric(criteriaText, e) + '</div>';
+        html += '<div class="criteria-display"><h4>Marking criteria</h4>' + renderRubric(criteriaText, e, t.criteria_structured) + '</div>';
       }
       html += '</div>';
 

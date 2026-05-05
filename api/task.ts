@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { parseRubricWithAI } from '../lib/parse-rubric-with-ai.js';
 
 /**
  * Task CRUD under the classes redesign.
@@ -81,6 +82,11 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
   if (!cls) return res.status(404).json({ error: 'Class not found.' });
   if (cls.teacher_id !== user.id) return res.status(403).json({ error: 'You can only add tasks to your own classes.' });
 
+  // AI-parse the rubric synchronously so the renderer never has to. Returns
+  // null on any failure — the renderer falls back to the client-side regex
+  // parser in that case.
+  const criteriaStructured = criteria_text ? await parseRubricWithAI(String(criteria_text)) : null;
+
   const { data, error } = await supabase.from('tasks').insert({
     class_id,
     teacher_id: user.id,
@@ -93,6 +99,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     outcomes: outcomes || [],
     criteria: criteria || [],
     criteria_text: criteria_text || null,
+    criteria_structured: criteriaStructured,
     notes: notes || null,
     published_at: publish ? new Date().toISOString() : null,
   }).select('*').single();
@@ -128,6 +135,14 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     notes: notes ?? undefined,
   };
   Object.keys(patch).forEach(k => patch[k] === undefined && delete patch[k]);
+
+  // Re-run AI parse whenever criteria_text is part of the patch — a teacher
+  // might have rewritten the rubric, so the cached structure is stale.
+  if (Object.prototype.hasOwnProperty.call(patch, 'criteria_text')) {
+    patch.criteria_structured = patch.criteria_text
+      ? await parseRubricWithAI(String(patch.criteria_text))
+      : null;
+  }
 
   if (typeof publish === 'boolean') {
     patch.published_at = publish ? (existing.published_at || new Date().toISOString()) : null;

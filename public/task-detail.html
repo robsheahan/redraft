@@ -562,7 +562,7 @@
 
       html += '<div class="detail-row"><div class="detail-label">Marking criteria</div>';
       if (task.criteria_text) {
-        html += renderRubric(task.criteria_text, e);
+        html += renderRubric(task.criteria_text, e, task.criteria_structured);
       } else if (task.criteria && task.criteria.length > 0) {
         var fallback = task.criteria.map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n');
         html += renderRubric(fallback, e);

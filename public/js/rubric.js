@@ -314,11 +314,21 @@
       .trim();
   }
 
-  function renderRubric(text, escapeFn) {
+  function renderRubric(textOrStructured, escapeFn, structured) {
     var e = escapeFn || function(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
-    if (!text) return '';
 
-    var parsed = parseRubric(text);
+    // New signature: renderRubric(rawText, escapeFn, structuredRubric).
+    // If a server-parsed structured rubric is supplied, use it directly —
+    // skip the regex parser entirely. Falls back to the regex parser when
+    // no structured rubric is available (legacy tasks, AI parse failed).
+    var parsed = (structured && (structured.format === 'band' || structured.format === 'criterion'))
+      ? structured
+      : null;
+    var text = textOrStructured;
+    if (!parsed) {
+      if (!text) return '';
+      parsed = parseRubric(text);
+    }
     if (parsed && parsed.format === 'band') {
       var html = '<div class="rubric-table">';
       parsed.bands.forEach(function(band) {

@@ -144,6 +144,56 @@ export const INLINE_SUGGESTIONS_TOOL: Tool = {
   },
 };
 
+export const RUBRIC_PARSE_TOOL: Tool = {
+  name: 'parse_rubric',
+  description:
+    "Parse a teacher's marking rubric into structured form. Output the renderer-compatible shape used by the ProofReady UI. Choose 'band' format when the rubric organises descriptors by overall quality level / mark range (Band 5, Grade A, 17-20, etc.). Choose 'criterion' format when the rubric lists separable assessment dimensions (Knowledge, Analysis, Communication, etc.). PRESERVE the teacher's wording verbatim — do not paraphrase, summarise, or merge. Drop pure table-header rows (Marks | Criteria, Range | Descriptor, Marking Criteria) — those are formatting noise, not content. For band format, list highest range first.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      format: {
+        type: 'string',
+        enum: ['band', 'criterion'],
+        description: "'band' = quality levels of overall response (highest first); 'criterion' = separable assessment dimensions",
+      },
+      bands: {
+        type: 'array',
+        description: "Populated only when format='band'. One entry per band, highest range first.",
+        items: {
+          type: 'object',
+          properties: {
+            range: { type: 'string', description: 'Mark range as written, e.g. "17–20" or "21-25 marks"' },
+            criteria: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Descriptor sentences for this band (one entry per bullet, or a single entry if the descriptor is one paragraph)',
+            },
+          },
+          required: ['range', 'criteria'],
+        },
+      },
+      criteria: {
+        type: 'array',
+        description: "Populated only when format='criterion'. Preserve the teacher's order.",
+        items: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', description: 'Criterion name as written (e.g. "Knowledge and understanding")' },
+            range: { type: 'string', description: 'Marks allocation, e.g. "3" or "3-5". Empty string if not specified.' },
+            details: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Bullet points or detail sentences for this criterion (empty array if none).',
+            },
+          },
+          required: ['name', 'range', 'details'],
+        },
+      },
+    },
+    required: ['format'],
+  },
+};
+
 export const CLASS_FEEDBACK_TOOL: Tool = {
   name: 'provide_class_feedback',
   description: 'Return aggregated class-level feedback synthesised from individual student feedbacks.',
