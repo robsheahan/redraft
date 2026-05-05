@@ -7,9 +7,10 @@ import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { VERB_DEPTH_MAP } from '../data/nesa-reference.js';
 import { generateInlineSuggestions } from '../lib/generate-inline-suggestions.js';
 import { extractTaskVerbs } from '../lib/task-verbs.js';
-import { extractFirstJsonObject } from '../lib/extract-json.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
+import { callTool } from '../lib/anthropic-tool-call.js';
+import { HOLISTIC_FEEDBACK_TOOL, CRITERIA_CHECK_TOOL } from '../lib/feedback-tools.js';
 
 function buildCriteriaCheckPrompt(courseName?: string): string {
   const subjectLabel = courseName || "this HSC subject";
@@ -204,26 +205,32 @@ Assess this draft against each marking criterion above. Address every criterion 
     // back to specific holistic improvements, but they still anchor to
     // exact draft quotes which is the more important coherence signal.
     //
-    // Pass 1 max_tokens raised to 5000 — diagnostic logs showed the model
-    // hitting 4000 mid-self_check on rich drafts (the prompt asks for
-    // exhaustive feedback). 5000 leaves comfortable closing-brace headroom.
+    // Each pass uses forced tool-use (`tool_choice` pinned to a named tool)
+    // so the SDK returns structured input that conforms to the tool schema —
+    // no JSON parsing, no "model wrote prose first" failure mode. callTool
+    // also retries once on transient errors (429, 5xx, network blips,
+    // missing tool_use block).
     const t0 = Date.now();
     const pass2Promise = hasCriteria
-      ? client.messages.create({
+      ? callTool<{ criteria_feedback: any }>({
+          client,
           model: 'claude-sonnet-4-6',
           max_tokens: 2000,
           temperature: 0.3,
           system: buildCriteriaCheckPrompt(resolvedCourse as string || undefined),
-          messages: [{ role: 'user', content: criteriaCheckPrompt }],
+          user: criteriaCheckPrompt,
+          tool: CRITERIA_CHECK_TOOL,
         })
       : Promise.resolve(null);
     const [pass1Settled, pass2Settled, inlineSettled] = await Promise.allSettled([
-      client.messages.create({
+      callTool<Record<string, any>>({
+        client,
         model: 'claude-sonnet-4-6',
         max_tokens: 5000,
         temperature: 0.2,
         system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }],
+        user: userPrompt,
+        tool: HOLISTIC_FEEDBACK_TOOL,
       }),
       pass2Promise,
       generateInlineSuggestions(client, {
@@ -237,47 +244,23 @@ Assess this draft against each marking criterion above. Address every criterion 
     ]);
     console.log('[generate-feedback] all 3 passes settled in', (Date.now() - t0) + 'ms');
 
-    // Pass 1 is load-bearing — without it we have no feedback to return
+    // Pass 1 is load-bearing — without it we have no feedback to return.
+    // With forced tool use + 1 retry, the only failure modes left are
+    // hard API errors (auth, sustained outage, content filter). Surface
+    // a friendly retry message in those cases.
     if (pass1Settled.status !== 'fulfilled') {
-      console.error('[generate-feedback] Pass 1 rejected:', pass1Settled.reason?.message || pass1Settled.reason);
-      captureError(pass1Settled.reason, { stage: 'pass1', task_id, user_id: user?.id });
+      const reason = pass1Settled.reason;
+      console.error('[generate-feedback] Pass 1 rejected after retries:', reason?.message || reason);
+      captureError(reason, { stage: 'pass1', task_id, user_id: user?.id });
       return res.status(502).json({ error: 'Could not generate feedback. Please try again — your draft was not lost.' });
     }
-    const pass1 = pass1Settled.value;
-    const pass1Text = pass1.content[0].type === 'text' ? pass1.content[0].text : '';
-    const pass1Json = extractFirstJsonObject(pass1Text);
-    if (!pass1Json) {
-      const stopReason = (pass1 as any).stop_reason || 'unknown';
-      console.error('[generate-feedback] Pass 1 unparseable. stop_reason=', stopReason, 'tail=', pass1Text.slice(-400));
-      captureError(new Error('Pass 1 unparseable'), { stage: 'pass1-parse', stopReason, tail: pass1Text.slice(-400), task_id, user_id: user?.id });
-      const friendly = stopReason === 'max_tokens'
-        ? 'Feedback generation ran out of room before finishing. Try shortening your draft slightly and resubmitting.'
-        : 'Could not parse the feedback response. Please try again — your draft was not lost.';
-      return res.status(502).json({ error: friendly });
-    }
-
-    let initialFeedback;
-    try {
-      initialFeedback = JSON.parse(pass1Json);
-    } catch (e: any) {
-      console.error('[generate-feedback] Pass 1 JSON.parse failed:', e?.message, 'raw=', pass1Json.slice(0, 600));
-      return res.status(502).json({ error: 'Could not parse the feedback response. Please try again — your draft was not lost.' });
-    }
+    const initialFeedback = pass1Settled.value.value;
 
     let criteriaFeedback: any = null;
     if (pass2Settled.status === 'fulfilled' && pass2Settled.value) {
-      try {
-        const pass2Text = pass2Settled.value.content[0].type === 'text' ? pass2Settled.value.content[0].text : '';
-        const pass2Json = extractFirstJsonObject(pass2Text);
-        if (pass2Json) {
-          const pass2Data = JSON.parse(pass2Json);
-          criteriaFeedback = pass2Data.criteria_feedback || null;
-        }
-      } catch (e: any) {
-        console.warn('[generate-feedback] Pass 2 parse failed:', e?.message || e);
-      }
+      criteriaFeedback = pass2Settled.value.value?.criteria_feedback || null;
     } else if (pass2Settled.status === 'rejected') {
-      console.warn('[generate-feedback] Pass 2 rejected:', pass2Settled.reason?.message || pass2Settled.reason);
+      console.warn('[generate-feedback] Pass 2 rejected after retries:', pass2Settled.reason?.message || pass2Settled.reason);
     }
 
     let inlineSuggestions: any[] = [];

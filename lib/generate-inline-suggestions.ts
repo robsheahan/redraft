@@ -14,7 +14,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { buildInlineSuggestionsSystemPrompt } from '../prompts/inline-suggestions-system.js';
 import { buildInlineSuggestionsUserPrompt } from '../prompts/inline-suggestions-user.js';
-import { extractFirstJsonObject } from './extract-json.js';
+import { callTool } from './anthropic-tool-call.js';
+import { INLINE_SUGGESTIONS_TOOL } from './feedback-tools.js';
 
 export type InlineCategory =
   | 'strength'
@@ -63,51 +64,36 @@ export async function generateInlineSuggestions(
   client: Anthropic,
   input: GenerateInput,
 ): Promise<GenerateInlineSuggestionsResult> {
-  let response;
-  try {
-    const system = buildInlineSuggestionsSystemPrompt(input.courseName, input.discipline);
-    const user = buildInlineSuggestionsUserPrompt({
-      taskDescription: input.taskDescription,
-      taskVerbs: input.taskVerbs,
-      studentText: input.studentText,
-      holisticImprovements: input.holisticImprovements,
-    });
+  const system = buildInlineSuggestionsSystemPrompt(input.courseName, input.discipline);
+  const user = buildInlineSuggestionsUserPrompt({
+    taskDescription: input.taskDescription,
+    taskVerbs: input.taskVerbs,
+    studentText: input.studentText,
+    holisticImprovements: input.holisticImprovements,
+  });
 
+  let toolResult;
+  try {
     const t0 = Date.now();
-    response = await client.messages.create({
+    toolResult = await callTool<{ inline_suggestions?: unknown }>({
+      client,
       model: 'claude-sonnet-4-6',
       max_tokens: 2500,
       temperature: 0.2,
       system,
-      messages: [{ role: 'user', content: user }],
+      user,
+      tool: INLINE_SUGGESTIONS_TOOL,
     });
-    console.log('[inline-suggestions] Anthropic OK in', (Date.now() - t0) + 'ms', 'stop_reason=', (response as any).stop_reason);
+    console.log('[inline-suggestions] Anthropic OK in', (Date.now() - t0) + 'ms', 'attempts=', toolResult.attempts, 'stop_reason=', toolResult.stop_reason);
   } catch (err: any) {
     const message = err?.message || 'unknown error';
-    console.warn('[inline-suggestions] Claude call failed:', message);
+    console.warn('[inline-suggestions] Claude call failed after retries:', message);
     return { ok: false, annotations: [], error: message };
   }
 
-  // From here the model responded — any "zero annotations" outcome counts as ok: true.
-  const text = response.content[0]?.type === 'text' ? response.content[0].text : '';
-  const jsonText = extractFirstJsonObject(text);
-  if (!jsonText) {
-    const stopReason = (response as any).stop_reason || 'unknown';
-    console.warn('[inline-suggestions] no JSON object in response. stop_reason=', stopReason, 'tail=', text.slice(-300));
-    return { ok: true, annotations: [] };
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonText);
-  } catch (e: any) {
-    console.warn('[inline-suggestions] JSON parse failed:', e?.message, 'raw_head=', jsonText.slice(0, 300));
-    return { ok: true, annotations: [] };
-  }
-
-  const raw = (parsed as { inline_suggestions?: unknown })?.inline_suggestions;
+  const raw = toolResult.value?.inline_suggestions;
   if (!Array.isArray(raw)) {
-    console.warn('[inline-suggestions] missing or non-array inline_suggestions field. parsed=', JSON.stringify(parsed).slice(0, 200));
+    console.warn('[inline-suggestions] tool returned non-array inline_suggestions. value=', JSON.stringify(toolResult.value).slice(0, 200));
     return { ok: true, annotations: [] };
   }
 

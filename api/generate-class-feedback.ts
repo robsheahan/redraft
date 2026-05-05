@@ -4,6 +4,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
+import { callTool } from '../lib/anthropic-tool-call.js';
+import { CLASS_FEEDBACK_TOOL } from '../lib/feedback-tools.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (applyCors(req, res)) return;
@@ -113,22 +115,16 @@ Synthesise the above into a class-level overview. Look for patterns — what com
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const response = await client.messages.create({
+    const result = await callTool<Record<string, any>>({
+      client,
       model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       temperature: 0.2,
       system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
+      user: userPrompt,
+      tool: CLASS_FEEDBACK_TOOL,
     });
-
-    const outputText = response.content[0].type === 'text' ? response.content[0].text : '';
-    const jsonMatch = outputText.match(/\{[\s\S]*\}/);
-
-    if (!jsonMatch) {
-      return res.status(500).json({ error: 'Failed to parse class feedback response' });
-    }
-
-    const classFeedback = JSON.parse(jsonMatch[0]);
+    const classFeedback = result.value;
 
     await supabase
       .from('tasks')
