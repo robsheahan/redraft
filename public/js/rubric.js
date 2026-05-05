@@ -79,6 +79,15 @@
     // Normalise multi-hyphen ranges ("21--25", "21 -- 25") to en-dash —
     // some teacher rubrics come out of Word/markdown with double hyphens.
     cleaned = cleaned.replace(/(\d{1,2})\s*-{2,}\s*(\d{1,2})/g, '$1–$2');
+    // Flattened-table rescue: when a rubric was pasted from a table that
+    // lost its column breaks, the highest band's range can end up glued to
+    // a leading "MarksCriteria" header — e.g. "MarksCriteria17–20Provides
+    // a sustained...". Insert a newline whenever a mark-range is glued
+    // directly to a letter on either side (no whitespace). Lines that
+    // already have whitespace around the range are unaffected, so this is
+    // safe to run unconditionally.
+    cleaned = cleaned.replace(/([a-zA-Z\.\)])(\d{1,2}\s*[–\-]\s*\d{1,2})/g, '$1\n$2');
+    cleaned = cleaned.replace(/(\d{1,2}\s*[–\-]\s*\d{1,2})([A-Z])/g, '$1\n$2');
     cleaned = cleaned.replace(/^[\s|:\-]+$/gm, '');
     cleaned = cleaned.replace(/\|/g, '\n');
 
