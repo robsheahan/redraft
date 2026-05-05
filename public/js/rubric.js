@@ -76,6 +76,9 @@
     // with newlines so each cell ends up on its own line for the regular
     // parser below.
     cleaned = cleaned.replace(/(\d{1,2})\s+to\s+(\d{1,2})/gi, '$1–$2');
+    // Normalise multi-hyphen ranges ("21--25", "21 -- 25") to en-dash —
+    // some teacher rubrics come out of Word/markdown with double hyphens.
+    cleaned = cleaned.replace(/(\d{1,2})\s*-{2,}\s*(\d{1,2})/g, '$1–$2');
     cleaned = cleaned.replace(/^[\s|:\-]+$/gm, '');
     cleaned = cleaned.replace(/\|/g, '\n');
 
@@ -91,9 +94,10 @@
     if (lines.length < 3) {
       var blob = lines.join(' ') || cleaned;
 
-      // 1. Letter-band headers: "A (17–20)", "B (13-16)", "Band A (17-20)", etc.
-      //    Insert a newline before each occurrence so the header lands on its own line.
-      blob = blob.replace(/\s*(?:Band\s+)?([A-F])\s*\(\s*(\d{1,2})\s*[–\-]\s*(\d{1,2})\s*\)\s*/g, '\n$1 ($2–$3) ');
+      // 1. Letter-band headers: "A (17–20)", "B (13-16)", "Band A (17-20)",
+      //    "Grade A (21-25)", etc. Insert a newline before each occurrence
+      //    so the header lands on its own line.
+      blob = blob.replace(/\s*(?:(?:Band|Grade)\s+)?([A-G])\s*\(\s*(\d{1,2})\s*[–\-]\s*(\d{1,2})\s*\)\s*/g, '\n$1 ($2–$3) ');
 
       // 2. Mark-range headers followed by a bullet or capitalised word
       blob = blob.replace(/(\S)(\d{1,2}\s*[–\-]\s*\d{1,2})(\s*[•*\-])/g, '$1\n$2$3');
@@ -118,8 +122,10 @@
     }
 
     // Detect band-based rubric: lines that look like mark ranges,
-    // optionally prefixed with a band letter ("A", "Band A") or label.
-    var markRangeRegex = /^(?:Band\s+)?(?:[A-F]\s*)?\(?\s*(\d{1,2})\s*[–\-]\s*(\d{1,2})\s*\)?\s*(marks?)?\s*$/i;
+    // optionally prefixed with a band letter ("A", "Band A", "Grade A").
+    // The "marks" word can appear either inside the parens — "(13-15 marks)"
+    // — or outside — "(13-15) marks", so allow it in either position.
+    var markRangeRegex = /^(?:(?:Band|Grade)\s+)?(?:[A-G]\s*)?\(?\s*(\d{1,2})\s*[–\-]\s*(\d{1,2})\s*(?:marks?)?\s*\)?\s*(?:marks?)?\s*$/i;
     var bands = [];
     var currentBand = null;
 
@@ -150,15 +156,17 @@
       }
 
       // Also detect inline band headers like "13-15 marks Description..." or
-      // "A (17–20) Description..." followed by content on the same line.
-      var inlineBandMatch = line.match(/^(?:Band\s+)?(?:[A-F]\s*)?\(?\s*(\d{1,2})\s*[–\-]\s*(\d{1,2})\s*\)?\s*(marks?)?\s*[:\-]?\s*(.+)$/i);
+      // "A (17–20) Description..." or "Grade A (21–25 marks) Description..."
+      // followed by content on the same line. "marks" may sit either inside
+      // or outside the parens — allow either.
+      var inlineBandMatch = line.match(/^(?:(?:Band|Grade)\s+)?(?:[A-G]\s*)?\(?\s*(\d{1,2})\s*[–\-]\s*(\d{1,2})\s*(?:marks?)?\s*\)?\s*(?:marks?)?\s*[:\-]?\s*(.+)$/i);
       if (inlineBandMatch && !line.match(/^•/)) {
         currentBand = {
           range: inlineBandMatch[1] + '–' + inlineBandMatch[2],
           criteria: [],
         };
         bands.push(currentBand);
-        var rest = inlineBandMatch[4].trim().replace(/^[•*\-]\s*/, '');
+        var rest = inlineBandMatch[3].trim().replace(/^[•*\-]\s*/, '');
         if (rest) currentBand.criteria.push(rest);
         continue;
       }
