@@ -579,7 +579,8 @@
       }).filter(function(o) {
         if (!o) return false;
         // Drop heading-only lines that got included as if they were outcomes
-        return !/^(nesa\s+outcomes\s+assessed|outcomes\s+assessed|syllabus\s+outcomes|outcomes)\s*:?\s*$/i.test(o);
+        // (e.g. "NESA Outcomes", "Syllabus Outcomes Assessed", bare "Outcomes")
+        return !/^(nesa\s+|syllabus\s+)?outcomes(\s+assessed)?\s*:?\s*$/i.test(o);
       });
       if (outcomes.length > 0) {
         html += '<ul class="outcome-list">' + outcomes.map(function(o) { return '<li>' + e(o) + '</li>'; }).join('') + '</ul>';
