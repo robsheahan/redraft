@@ -166,7 +166,7 @@ export const RUBRIC_PARSE_TOOL: Tool = {
             criteria: {
               type: 'array',
               items: { type: 'string' },
-              description: 'Descriptor sentences for this band (one entry per bullet, or a single entry if the descriptor is one paragraph)',
+              description: 'Descriptor points for this band — ONE point per array entry. If the band descriptor contains multiple distinct sentences/clauses (e.g. one about analysis, one about evidence, one about communication), split them into separate entries. The renderer shows each entry as its own bullet, so multiple distinct points must be separate entries even if the teacher wrote them as a continuous paragraph. Only return a single entry if the descriptor is genuinely one indivisible point. Preserve the teacher\'s wording verbatim.',
             },
           },
           required: ['range', 'criteria'],

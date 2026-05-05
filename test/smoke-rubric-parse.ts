@@ -47,7 +47,8 @@ async function check(label: string, raw: string) {
   console.log(`\n✓ ${label} — ${ms}ms, format=${parsed.format}`);
   if (parsed.format === 'band' && parsed.bands) {
     parsed.bands.forEach(b => {
-      console.log(`    ${b.range}: ${(b.criteria[0] || '').slice(0, 70)}${(b.criteria[0] || '').length > 70 ? '…' : ''}`);
+      console.log(`    ${b.range} (${b.criteria.length} bullets)`);
+      b.criteria.forEach((c, i) => console.log(`      ${i + 1}. ${c.slice(0, 90)}${c.length > 90 ? '…' : ''}`));
     });
   } else if (parsed.format === 'criterion' && parsed.criteria) {
     parsed.criteria.forEach(c => {

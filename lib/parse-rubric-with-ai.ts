@@ -38,7 +38,7 @@ Rules:
 1. PRESERVE the teacher's wording exactly. Do not paraphrase, summarise, or rewrite. Each descriptor must be verbatim from the input.
 2. Choose 'band' format when the rubric organises descriptors by overall quality level with mark ranges (e.g. "17-20", "Band 5", "Grade A").
 3. Choose 'criterion' format when the rubric lists separable assessment criteria (e.g. Knowledge, Analysis, Communication).
-4. For band format, list bands HIGHEST range first. Each band's "criteria" array holds the descriptor sentences for that band — usually one entry per band unless the teacher wrote distinct bullets.
+4. For band format, list bands HIGHEST range first. Each band's "criteria" array holds the descriptor points for that band — SPLIT each distinct point/sentence into its own array entry. If the teacher wrote a band's descriptor as a continuous paragraph that covers multiple separable qualities (e.g. one sentence about analysis, one about evidence, one about communication), split those into separate entries. The renderer shows each entry as a bullet, so multi-point descriptors must be multi-entry arrays. Only collapse into a single entry if the descriptor is genuinely one indivisible idea. Preserve the teacher's exact wording — split, don't paraphrase.
 5. For criterion format, preserve the teacher's order. Each criterion's "details" array holds bullet/detail points (empty array if none).
 6. Drop pure header rows like "Marks | Criteria", "Range | Descriptor", "Marking Criteria" — these are table headers, not content.
 7. Normalise mark ranges so the dash is "–" (en-dash) — accept any of "21-25", "21–25", "21--25", "21 to 25" and output "21–25".
