@@ -630,9 +630,15 @@
         html += '</div>';
       }
 
-      // Criteria-specific feedback (from independent Pass 2)
+      // Criteria-specific feedback (from independent Pass 2). Heading
+      // switches when the source rubric was band-style — in that case the
+      // model returned synthesised quality dimensions rather than named
+      // criteria, so "by marking criterion" reads oddly.
       if (fb.criteria_feedback && Array.isArray(fb.criteria_feedback) && fb.criteria_feedback.length) {
-        html += '<div class="section criteria-section"><div class="section-title">Feedback by marking criterion</div>';
+        var criteriaHeading = fb.is_band_rubric
+          ? 'Feedback by quality dimension'
+          : 'Feedback by marking criterion';
+        html += '<div class="section criteria-section"><div class="section-title">' + criteriaHeading + '</div>';
         fb.criteria_feedback.forEach(function(cf) {
           html += '<div class="criterion-card">';
           html += '<div class="criterion-name">' + e(cf.criterion || '') + '</div>';

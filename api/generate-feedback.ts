@@ -336,6 +336,11 @@ Assess this draft against each marking criterion above. Address every criterion 
       ...initialFeedback,
       criteria_feedback: criteriaFeedback,
       inline_suggestions: inlineSuggestions,
+      // Lets the renderer label the criteria_feedback section appropriately
+      // — "Feedback by quality dimension" for band rubrics (where the model
+      // synthesises dimensions from band descriptors), "Feedback by marking
+      // criterion" for everything else.
+      is_band_rubric: isBandRubric,
     };
 
     // Save submission if user is authenticated
