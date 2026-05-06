@@ -13,8 +13,52 @@ import { callTool } from '../lib/anthropic-tool-call.js';
 import { HOLISTIC_FEEDBACK_TOOL, CRITERIA_CHECK_TOOL } from '../lib/feedback-tools.js';
 import { looksLikeBandRubric, stripBandLabels } from '../lib/rubric-detect.js';
 
-function buildCriteriaCheckPrompt(courseName?: string): string {
+function buildCriteriaCheckPrompt(courseName?: string, isBandRubric?: boolean): string {
   const subjectLabel = courseName || "this HSC subject";
+
+  if (isBandRubric) {
+    // Band-style rubrics describe quality levels of the overall response, not
+    // separable criteria. Asking the model to assess "per criterion" against a
+    // band rubric produces incoherent "strengths/improvements at Band 5"
+    // output. Instead, have the model SYNTHESISE the distinct quality
+    // dimensions described across the bands (e.g. "depth of analysis", "use
+    // of evidence") and give feedback per dimension — no band labels, no
+    // mark predictions.
+    return `You are a senior ${subjectLabel} marker. The teacher has provided a band-style rubric — descriptors at different performance levels rather than separate criteria. You are independently assessing a student's draft. You have NOT seen any other feedback — you are making a fresh assessment.
+
+YOUR TASK:
+Identify 3–5 distinct QUALITY DIMENSIONS embedded in the band descriptors (e.g. "Depth of analysis", "Use of evidence", "Communication and structure", "Integration across the question"). For EACH dimension, give the student specific feedback on their draft.
+
+For each dimension, provide:
+- "criterion": The dimension name in your own plain-English words (e.g. "Depth of analysis"). Do NOT quote the rubric's wording verbatim. Do NOT include any band/grade label or mark range in this field.
+- "strengths": What the student does well on this dimension. Genuine and specific — reference their actual text.
+- "improvements": What needs to change on this dimension. Reference their actual text, give an actionable step.
+
+VOICE: Write directly to the student using "you/your". Be warm but honest. Australian English spelling.
+
+Keep each point tight — one sentence for the observation, one for the action. No padding.
+
+ABSOLUTE RULES — do NOT do any of the following anywhere in your response:
+- Reference any band, grade label, mark range, mark count, or quality level by name (e.g. "Band 5", "Grade A", "high-band", "21-25 range", "this would sit at the top band").
+- Quote band descriptors verbatim. Synthesise the dimension yourself in plain language.
+- Predict where the student would land in the rubric, or which level they're "currently at".
+- Make any mark or band prediction whatsoever.
+
+The band descriptors are reference material for YOUR judgement of quality — they are not something to share with the student. Describe what is working and what would strengthen the response in plain language.
+
+OUTPUT FORMAT:
+Respond in JSON:
+{
+  "criteria_feedback": [
+    {
+      "criterion": "Dimension name",
+      "strengths": "what's working on this dimension",
+      "improvements": "specific actions to strengthen the response on this dimension"
+    }
+  ]
+}`;
+  }
+
   return `You are a senior ${subjectLabel} marker. You are independently assessing a student's draft response against the marking criteria provided by their teacher. You have NOT seen any other feedback — you are making a fresh assessment.
 
 YOUR TASK:
@@ -159,8 +203,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   //   1. We strip the band labels and mark ranges before the criteria
   //      reach the model — otherwise it occasionally copy-pastes the
   //      label back at the student, violating the no-bands rule.
-  //   2. We skip Pass 2 (per-criterion strengths/improvements) entirely,
-  //      because applying it band-by-band produces incoherent output.
+  //   2. Pass 2 still runs, but with a band-aware prompt that asks the
+  //      model to synthesise the distinct quality dimensions described
+  //      across the bands (e.g. "depth of analysis", "use of evidence")
+  //      and give per-dimension strengths/improvements — no band labels.
   const isBandRubric = looksLikeBandRubric(rawCriteriaText);
   const criteriaTextForModel = rawCriteriaText && isBandRubric
     ? stripBandLabels(rawCriteriaText)
@@ -189,10 +235,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    // Pass 2 prompt (independent — doesn't depend on Pass 1).
-    // Skipped entirely for band-style rubrics (see isBandRubric note above).
-    const hasCriteria = !isBandRubric
-      && (!!(rawCriteriaText && rawCriteriaText.trim()) || mappedCriteria.length > 0);
+    // Pass 2 prompt (independent — doesn't depend on Pass 1). Runs for both
+    // band-style and per-criterion rubrics; the system prompt switches on
+    // isBandRubric (see buildCriteriaCheckPrompt above).
+    const hasCriteria = !!(rawCriteriaText && rawCriteriaText.trim()) || mappedCriteria.length > 0;
     const criteriaBlock: string = (criteriaTextForModel && criteriaTextForModel.trim())
       || (mappedCriteria.length > 0
           ? mappedCriteria.map((c, i) => `${i + 1}. ${c.name} (${c.maxMarks} marks): ${c.description}`).join('\n')
@@ -233,7 +279,7 @@ Assess this draft against each marking criterion above. Address every criterion 
           model: 'claude-sonnet-4-6',
           max_tokens: 2000,
           temperature: 0.3,
-          system: buildCriteriaCheckPrompt(resolvedCourse as string || undefined),
+          system: buildCriteriaCheckPrompt(resolvedCourse as string || undefined, isBandRubric),
           user: criteriaCheckPrompt,
           tool: CRITERIA_CHECK_TOOL,
         })
