@@ -117,9 +117,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Rate limit / spend protection. Logged-in users get a per-user hourly
   // cap and count toward the global daily cap; anon users only count toward
   // the global cap (no identity to cap them individually).
+  //
+  // Own-task submissions (no task_id) get an additional per-user daily cap
+  // and a separate endpoint key — without it, a student could bypass the
+  // per-task 3-draft cap by spinning up a new "own task" for each new
+  // attempt at the same draft. Teacher-task drafts have no daily user cap
+  // because the per-task draft cap already protects against abuse.
+  const isOwnTaskSubmission = !task_id;
   const rateLimit = await checkAndLogRateLimit(getSupabase(), user?.id || null, {
-    endpoint: 'generate-feedback',
+    endpoint: isOwnTaskSubmission ? 'generate-feedback-own' : 'generate-feedback',
     perUserPerHour: 10,
+    perUserPerDay: isOwnTaskSubmission ? 5 : undefined,
+    perUserPerDayMessage: isOwnTaskSubmission
+      ? "You've reached your daily limit of 5 own-task submissions. To get more feedback today, submit through a class task your teacher has posted, or try again tomorrow."
+      : undefined,
     globalPerDay: 5000,
   });
   if (!rateLimit.ok) {

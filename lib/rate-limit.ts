@@ -20,7 +20,16 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 export interface RateLimitConfig {
   endpoint: string;
   perUserPerHour: number;
+  /**
+   * Optional per-user daily cap. Used by the own-task path to stop students
+   * gaming the per-task 3-draft cap by spinning up new "own tasks" each
+   * time. Counts only calls to this same endpoint (so other endpoints'
+   * traffic doesn't eat into this quota).
+   */
+  perUserPerDay?: number;
   globalPerDay: number;
+  /** Optional override message for the per-user-per-day cap. */
+  perUserPerDayMessage?: string;
 }
 
 export interface RateLimitResult {
@@ -61,6 +70,34 @@ export async function checkAndLogRateLimit(
         reason: `You've hit the hourly limit of ${config.perUserPerHour} feedback requests. Please wait before submitting again.`,
         retryAfterSeconds: 60 * 60,
       };
+    }
+
+    // 1b. Per-user daily check (fail-closed). Only when caller asked for it
+    //     — most endpoints rely on the per-hour cap alone.
+    if (config.perUserPerDay !== undefined) {
+      const { count: dayCount, error: dayError } = await supabase
+        .from('api_call_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('endpoint', config.endpoint)
+        .gte('created_at', oneDayAgo);
+
+      if (dayError) {
+        console.error('[rate-limit] per-user-per-day check failed, rejecting request:', dayError.message);
+        return {
+          ok: false,
+          reason: "We couldn't verify your usage quota right now. Please try again in a minute.",
+        };
+      }
+
+      if ((dayCount ?? 0) >= config.perUserPerDay) {
+        return {
+          ok: false,
+          reason: config.perUserPerDayMessage
+            || `You've reached your daily limit of ${config.perUserPerDay} requests. Please try again tomorrow.`,
+          retryAfterSeconds: 60 * 60 * 12,
+        };
+      }
     }
   }
 
