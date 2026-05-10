@@ -656,7 +656,14 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         });
       }
 
+      // Sort by most recent published task first; classes with no
+      // published tasks fall to the bottom and order alphabetically.
       const joined = (classesData.joined || []).slice().sort(function(a, b) {
+        const ad = a.last_task_published_at;
+        const bd = b.last_task_published_at;
+        if (ad && bd) return bd.localeCompare(ad);
+        if (ad) return -1;
+        if (bd) return 1;
         return (a.name || '').localeCompare(b.name || '', 'en-AU', { sensitivity: 'base' });
       });
       if (joined.length > 0) {

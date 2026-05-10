@@ -194,12 +194,24 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
     (subs || []).forEach((s: any) => { if (s.task_id) myCounts[s.task_id] = (myCounts[s.task_id] || 0) + 1; });
   }
 
-  const decorate = (c: any) => ({
-    ...c,
-    task_count_total: taskCountMap[c.id]?.total || 0,
-    task_count_published: taskCountMap[c.id]?.published || 0,
-    member_count: memberCountMap[c.id] || 0,
-  });
+  const decorate = (c: any) => {
+    // Latest published task date for the class — used by the dashboards
+    // to sort classes with the most recently active class first.
+    const tasks = allTasksByClass[c.id] || [];
+    let lastTaskPublishedAt: string | null = null;
+    for (const t of tasks) {
+      if (t.published_at && (!lastTaskPublishedAt || t.published_at > lastTaskPublishedAt)) {
+        lastTaskPublishedAt = t.published_at;
+      }
+    }
+    return {
+      ...c,
+      task_count_total: taskCountMap[c.id]?.total || 0,
+      task_count_published: taskCountMap[c.id]?.published || 0,
+      member_count: memberCountMap[c.id] || 0,
+      last_task_published_at: lastTaskPublishedAt,
+    };
+  };
 
   const joinedVisible = joined.filter(c => !c.archived_at);
   const teacherIds = [...new Set(joinedVisible.map((c: any) => c.teacher_id).filter(Boolean))] as string[];

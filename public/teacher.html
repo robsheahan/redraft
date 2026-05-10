@@ -157,7 +157,15 @@
         container.innerHTML = '<div class="empty-state"><h3>Could not load your classes</h3><p>' + e(data.error || 'Unknown error') + '</p></div>';
         return;
       }
+      // Sort by most recent published task first; classes with no
+      // published tasks fall to the bottom and order alphabetically among
+      // themselves.
       const owned = (data.owned || []).slice().sort(function(a, b) {
+        const ad = a.last_task_published_at;
+        const bd = b.last_task_published_at;
+        if (ad && bd) return bd.localeCompare(ad);
+        if (ad) return -1;
+        if (bd) return 1;
         return (a.name || '').localeCompare(b.name || '', 'en-AU', { sensitivity: 'base' });
       });
 
