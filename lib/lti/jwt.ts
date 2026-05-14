@@ -7,7 +7,19 @@ let cachedPublicJwk: { kty: string; n: string; e: string; kid: string; alg: stri
 function pem(): string {
   const raw = process.env.LTI_PRIVATE_KEY;
   if (!raw) throw new Error('LTI_PRIVATE_KEY env var is not set');
-  return raw.includes('\\n') ? raw.replace(/\\n/g, '\n') : raw;
+  let s = raw.includes('\\n') ? raw.replace(/\\n/g, '\n') : raw;
+  if (!s.includes('\n')) {
+    const begin = '-----BEGIN PRIVATE KEY-----';
+    const end = '-----END PRIVATE KEY-----';
+    const bi = s.indexOf(begin);
+    const ei = s.indexOf(end);
+    if (bi !== -1 && ei !== -1) {
+      const body = s.slice(bi + begin.length, ei).replace(/\s/g, '');
+      const wrapped = body.match(/.{1,64}/g)?.join('\n') ?? body;
+      s = `${begin}\n${wrapped}\n${end}\n`;
+    }
+  }
+  return s;
 }
 
 function kid(): string {
