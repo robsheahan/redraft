@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ProofReady Insights — Leader Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    @page { size: A4; margin: 12mm; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: #1f2937; line-height: 1.5;
+      background: #faf7f2;
+      -webkit-font-smoothing: antialiased;
+      padding: 24mm 22mm;
+      max-width: 210mm;
+      margin: 0 auto;
+      font-size: 10.5pt;
+    }
+    @media print {
+      body { background: #fff; padding: 0; max-width: 100%; }
+      .page-break { page-break-before: always; }
+      section { page-break-inside: avoid; }
+      h2 { page-break-after: avoid; }
+      .mockup-frame { page-break-inside: avoid; }
+      .principles { page-break-inside: avoid; }
+    }
+    header {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 16px; padding-bottom: 14px; border-bottom: 1px solid #e8e0d4;
+      margin-bottom: 18px;
+    }
+    .brand img { height: 64px; width: auto; display: block; margin-left: -18px; }
+    .brand-tag {
+      font-size: 10.5pt; color: #1f2937; font-weight: 600; margin-top: 6px;
+    }
+    .tagline {
+      font-size: 10.5pt; color: #6b7280; max-width: 340px; text-align: right;
+      font-weight: 500;
+    }
+    h2 {
+      font-size: 9pt; text-transform: uppercase; letter-spacing: 1.2px;
+      color: #b45309; font-weight: 700;
+      margin-bottom: 10px;
+    }
+    h3 {
+      font-size: 11pt; font-weight: 700; color: #111827; margin-bottom: 4px;
+    }
+    h4 {
+      font-size: 10pt; font-weight: 700; color: #111827; margin-bottom: 2px;
+    }
+    p { margin-bottom: 8px; }
+    p.lede {
+      font-size: 11.5pt; color: #1f2937; margin-bottom: 18px;
+      line-height: 1.55;
+    }
+    section { margin-bottom: 20px; }
+    section.tight { margin-bottom: 14px; }
+    .group-intro {
+      font-size: 10pt; color: #4b5563; margin-bottom: 10px; max-width: 640px;
+    }
+    .two-col {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .three-col {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+    .tile {
+      background: #fff; border-radius: 8px; padding: 11px 14px;
+      border-left: 3px solid #ed7615;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .tile p {
+      font-size: 9.5pt; color: #4b5563; margin: 0;
+    }
+    .tile.dim {
+      border-left-color: #d1d5db;
+    }
+    .pill-row {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;
+    }
+    .pill {
+      font-size: 8.5pt; font-weight: 600; color: #b45309; background: #fef3e6;
+      padding: 3px 10px; border-radius: 100px;
+    }
+    .pill.neg {
+      color: #6b7280; background: #f3f4f6;
+    }
+    .callout {
+      background: #fff8ed; border-left: 3px solid #ed7615;
+      padding: 14px 18px; border-radius: 6px;
+      font-size: 10pt; line-height: 1.55; color: #1f2937;
+      margin: 10px 0;
+    }
+    .callout .label {
+      font-size: 8.5pt; text-transform: uppercase; letter-spacing: 1px;
+      color: #b45309; font-weight: 700; display: block; margin-bottom: 6px;
+    }
+    .callout em {
+      font-style: normal; color: #111827; font-weight: 600;
+    }
+    .safety {
+      background: #fff; border-radius: 8px;
+      padding: 14px 18px; border: 1px solid #e8e0d4;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px;
+    }
+    .safety h3 { grid-column: 1 / -1; margin-bottom: 4px; }
+    .safety .item { font-size: 9.5pt; }
+    .safety .item strong { color: #111827; }
+    footer {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 14px; padding: 14px 0 0; border-top: 1px solid #e8e0d4;
+      margin-top: 22px;
+      font-size: 9.5pt; color: #4b5563;
+    }
+    footer a { color: #ed7615; text-decoration: none; font-weight: 600; }
+    .principles {
+      background: #fff; border-radius: 8px;
+      padding: 14px 18px; border: 1px solid #e8e0d4;
+      margin-bottom: 18px;
+    }
+    .principles h4 { margin-bottom: 8px; }
+    .principles ul {
+      list-style: none; padding: 0; display: grid;
+      grid-template-columns: 1fr 1fr; gap: 4px 18px;
+    }
+    .principles li {
+      font-size: 9.5pt; color: #374151; padding-left: 14px; position: relative;
+    }
+    .principles li::before {
+      content: "·"; position: absolute; left: 4px; color: #ed7615;
+      font-weight: 700; font-size: 14pt; line-height: 1;
+    }
+    .mockup-page-intro {
+      font-size: 10pt; color: #4b5563; margin-bottom: 14px; max-width: 640px;
+    }
+    .mockup-frame {
+      background: #fff; border: 1px solid #d1d5db; border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08); overflow: hidden;
+      margin: 10px 0;
+    }
+    .mockup-chrome {
+      background: #f3f4f6; padding: 7px 12px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .mockup-chrome .dot {
+      width: 9px; height: 9px; border-radius: 50%; background: #d1d5db;
+    }
+    .mockup-chrome .dot.r { background: #fca5a5; }
+    .mockup-chrome .dot.y { background: #fcd34d; }
+    .mockup-chrome .dot.g { background: #86efac; }
+    .mockup-chrome .url {
+      font-size: 8.5pt; color: #6b7280; margin-left: 14px;
+      background: #fff; padding: 3px 12px; border-radius: 100px;
+      border: 1px solid #e5e7eb;
+    }
+    .mockup-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; border-bottom: 1px solid #e5e7eb;
+      background: #fff;
+    }
+    .mockup-topbar .brand-mini {
+      font-weight: 800; color: #1f2937; font-size: 11pt;
+    }
+    .mockup-topbar .brand-mini span { color: #ed7615; }
+    .mockup-topbar .topnav {
+      display: flex; gap: 16px; font-size: 9pt; color: #6b7280;
+    }
+    .mockup-topbar .topnav .active { color: #ed7615; font-weight: 700; }
+    .mockup-topbar .term-pill {
+      font-size: 8.5pt; color: #374151; background: #f3f4f6;
+      padding: 4px 10px; border-radius: 100px; border: 1px solid #e5e7eb;
+    }
+    .mockup-faculty-bar {
+      padding: 12px 18px; background: #faf7f2;
+      border-bottom: 1px solid #e8e0d4;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .mockup-faculty-bar h3 {
+      font-size: 12pt; color: #111827; margin: 0;
+    }
+    .mockup-faculty-bar .stats {
+      display: flex; gap: 16px; font-size: 8.5pt; color: #6b7280;
+    }
+    .mockup-faculty-bar .stats strong { color: #111827; font-weight: 700; }
+    .mockup-body {
+      padding: 14px 16px; background: #fff;
+      display: grid; gap: 10px;
+    }
+    .mockup-row { display: grid; gap: 10px; }
+    .mockup-row.three { grid-template-columns: 1fr 1fr 1fr; }
+    .mockup-row.two { grid-template-columns: 1.4fr 1fr; }
+    .mockup-card {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .mockup-card .label {
+      font-size: 7.5pt; text-transform: uppercase; letter-spacing: 1px;
+      color: #b45309; font-weight: 700; margin-bottom: 4px;
+    }
+    .mockup-card .title {
+      font-size: 9.5pt; font-weight: 700; color: #111827; margin-bottom: 4px;
+    }
+    .mockup-card .body {
+      font-size: 8.5pt; color: #4b5563; line-height: 1.5;
+    }
+    .mockup-card.hero {
+      background: #fff8ed; border-color: #f5d3a3;
+    }
+    .mockup-bars { display: grid; gap: 4px; margin-top: 4px; }
+    .mockup-bar {
+      display: grid; grid-template-columns: 56px 1fr 18px;
+      align-items: center; font-size: 8pt; color: #4b5563; gap: 8px;
+    }
+    .mockup-bar .fill {
+      height: 6px; background: #fef3e6; border-radius: 100px; overflow: hidden;
+    }
+    .mockup-bar .fill > div {
+      height: 100%; background: #ed7615; border-radius: 100px;
+    }
+    .mockup-bar .num { text-align: right; font-weight: 600; color: #111827; }
+    .mockup-list { list-style: none; padding: 0; margin: 4px 0 0; }
+    .mockup-list li {
+      font-size: 8.5pt; color: #374151; padding: 5px 0;
+      border-bottom: 1px solid #f3f4f6;
+      display: grid; grid-template-columns: 1fr 36px;
+      align-items: center; gap: 8px;
+    }
+    .mockup-list li:last-child { border-bottom: none; }
+    .mockup-list li .pct {
+      font-size: 8pt; color: #b45309; font-weight: 700; text-align: right;
+    }
+    .mockup-trend { display: grid; gap: 0; margin-top: 4px; }
+    .mockup-trend .row {
+      display: grid; grid-template-columns: 1fr auto auto;
+      gap: 8px; align-items: center;
+      font-size: 8.5pt; color: #374151;
+      padding: 5px 0; border-bottom: 1px solid #f3f4f6;
+    }
+    .mockup-trend .row:last-child { border-bottom: none; }
+    .mockup-trend .from-to { font-size: 7.5pt; color: #9ca3af; }
+    .mockup-trend .arrow { font-weight: 700; font-size: 11pt; line-height: 1; }
+    .mockup-trend .arrow.down { color: #059669; }
+    .mockup-trend .arrow.flat { color: #6b7280; }
+    .mockup-trend .arrow.up { color: #b91c1c; }
+    .mockup-caption {
+      font-size: 8.5pt; color: #6b7280; margin-top: 8px;
+      text-align: center; font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <img src="../public/proofreadybanner.png" alt="ProofReady">
+      <div class="brand-tag">Insights for school leadership.</div>
+    </div>
+    <div class="tagline">
+      A descriptive, school-wide view drawn from the feedback your students already receive.<br>
+      No grading. No teacher rankings. No predictions.
+    </div>
+  </header>
+
+  <p class="lede">
+    ProofReady already gives every student criteria-anchored feedback in the voice of an experienced HSC marker.
+    The <strong>Insights dashboard</strong> turns those thousands of individual feedback events into a school-wide picture
+    for Heads of Department, deputies and principals — surfacing patterns in <em>what students are being asked to do</em>,
+    <em>how they're engaging with it</em>, and <em>what their writing keeps showing</em>. Every tile is descriptive.
+    Every claim is grounded in retrievable data. None of it grades a student or ranks a teacher.
+  </p>
+
+  <section class="principles">
+    <h4>What ProofReady Insights is &mdash; and isn't</h4>
+    <ul>
+      <li><strong>Descriptive, not evaluative.</strong> Shows what's happening, not who to praise or blame.</li>
+      <li><strong>No marks or band predictions.</strong> Ever.</li>
+      <li><strong>No teacher league tables.</strong> Class-level views describe student work, not teacher quality.</li>
+      <li><strong>No student rankings.</strong> Cohort-level patterns, not individual scoreboards.</li>
+      <li><strong>One source of evidence among many.</strong> Supports professional judgement; never replaces it.</li>
+      <li><strong>Role-scoped access.</strong> Leaders see their own school only; teachers retain their existing view.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The Assessment Programme View</h2>
+    <p class="group-intro">What you're asking of students this year. Drawn from the tasks faculties create in ProofReady.</p>
+    <div class="three-col">
+      <div class="tile">
+        <h4>Syllabus outcome coverage</h4>
+        <p>Which NESA outcomes have been assessed, by whom, and how often — across a course, a faculty, or the school.</p>
+      </div>
+      <div class="tile">
+        <h4>Coverage gaps</h4>
+        <p>Syllabus-mandated outcomes that haven't appeared in any assessment this year, flagged before the term ends.</p>
+      </div>
+      <div class="tile">
+        <h4>Over-assessment</h4>
+        <p>Outcomes hit repeatedly while others are neglected. Useful evidence for assessment programme review.</p>
+      </div>
+      <div class="tile">
+        <h4>Directive verb mix</h4>
+        <p>The balance of <em>describe</em>, <em>explain</em>, <em>analyse</em>, <em>evaluate</em>, <em>assess</em> and others across this term's tasks.</p>
+      </div>
+      <div class="tile">
+        <h4>Task type balance</h4>
+        <p>Distribution of essay, source analysis, report, research and other task types across the year.</p>
+      </div>
+      <div class="tile">
+        <h4>Assessment load distribution</h4>
+        <p>When assessments cluster, when there are gaps, and how the calendar lands on students.</p>
+      </div>
+      <div class="tile">
+        <h4>Task verb alignment</h4>
+        <p>Does the task wording actually elicit what its directive verb asks? A check on task pitch and clarity.</p>
+      </div>
+      <div class="tile">
+        <h4>Assessment programme balance</h4>
+        <p>Outcomes &times; verbs &times; task types &mdash; a single grid showing what's covered and what isn't.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The Student Engagement View</h2>
+    <p class="group-intro">How students are working &mdash; without grading them. Patterns of timing, iteration, and follow-through.</p>
+    <div class="three-col">
+      <div class="tile">
+        <h4>Submission timing</h4>
+        <p>How early or late students submit relative to due dates. Cohort and class-level patterns.</p>
+      </div>
+      <div class="tile">
+        <h4>Draft progression</h4>
+        <p>How many students reach a second or third draft, and which tasks prompt the most iteration.</p>
+      </div>
+      <div class="tile">
+        <h4>Resubmission patterns</h4>
+        <p>Rate and frequency of resubmission across the cohort &mdash; an indicator of feedback uptake.</p>
+      </div>
+      <div class="tile">
+        <h4>Time-to-resubmission</h4>
+        <p>How quickly students return to their work after feedback. A signal of momentum and motivation.</p>
+      </div>
+      <div class="tile">
+        <h4>Feedback engagement rate</h4>
+        <p>Whether students view their feedback before submitting a next draft.</p>
+      </div>
+      <div class="tile">
+        <h4>Engagement consistency</h4>
+        <p>Students using ProofReady regularly vs sporadically &mdash; cohort patterns, not individual surveillance.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The Feedback Theme View</h2>
+    <p class="group-intro">
+      The pattern layer underneath the numbers. ProofReady reads across every piece of feedback the AI has produced
+      and surfaces what it keeps saying &mdash; per class, per cohort, per faculty.
+    </p>
+    <div class="two-col">
+      <div class="tile">
+        <h4>Recurring class-level themes</h4>
+        <p>The five or ten issues the AI keeps flagging in this class's drafts. Anchored to specific student work, so the patterns are verifiable.</p>
+      </div>
+      <div class="tile">
+        <h4>Theme evolution over the term</h4>
+        <p>What's resolving, what's persisting, what's newly emerging. Week-3 themes vs Week-10 themes, side by side.</p>
+      </div>
+      <div class="tile">
+        <h4>Verb-specific pitfall patterns</h4>
+        <p>When the task asks students to <em>evaluate</em>, what do they actually do instead? Cohort-wide misalignment, surfaced.</p>
+      </div>
+      <div class="tile">
+        <h4>Subject-terminology adherence</h4>
+        <p>Are students using the technical vocabulary the syllabus expects? Drawn from ProofReady's subject glossaries.</p>
+      </div>
+      <div class="tile">
+        <h4>NESA key term miscue patterns</h4>
+        <p>Common substitutions: students treating <em>assess</em> as <em>describe</em>, <em>analyse</em> as <em>list</em>. Specific and actionable.</p>
+      </div>
+      <div class="tile">
+        <h4>Cross-class theme distinctiveness</h4>
+        <p>What's unusual about this class compared to others in the faculty? Surfaces differentiation needs without ranking.</p>
+      </div>
+      <div class="tile">
+        <h4>Cross-faculty literacy patterns</h4>
+        <p>The same writing weakness appearing across History, English, Biology &mdash; the evidence base for whole-school literacy initiatives.</p>
+      </div>
+      <div class="tile">
+        <h4>Theme &times; outcome correlation</h4>
+        <p>Which feedback themes attach to which syllabus outcomes &mdash; useful when planning targeted teaching.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The AI Narrative Layer</h2>
+    <p class="group-intro">
+      The distinctive feature. Most education analytics tools produce numbers; ProofReady produces prose &mdash; short,
+      grounded narratives written for time-poor school leaders. Every claim is anchored in the underlying data, so the
+      reader can verify any sentence by drilling down.
+    </p>
+    <div class="callout">
+      <span class="label">Example &mdash; Term summary narrative, Year 11 Modern History</span>
+      Across 28 student responses to the Term 1 source analysis task, the cohort consistently identifies sources
+      well but struggles to <em>weigh sources against each other</em>. When the task verb is <em>assess</em>, responses
+      are dominated by description and explanation; explicit judgement language appears in fewer than a third of drafts.
+      The pattern is consistent across all three Year 11 classes, suggesting it's a programme-level rather than
+      class-level concern. Worth a faculty conversation about explicit modelling of evaluative phrases before the
+      Week 7 source-based task.
+    </div>
+    <div class="two-col">
+      <div class="tile">
+        <h4>Term summary narrative</h4>
+        <p>A one-page exec read of what happened across the term, per faculty or for the whole school.</p>
+      </div>
+      <div class="tile">
+        <h4>Class-specific recommendations</h4>
+        <p>Concrete, descriptive next-step suggestions for each class, drawn from its actual feedback patterns.</p>
+      </div>
+      <div class="tile">
+        <h4>PD focus suggestions</h4>
+        <p>Three suggested professional learning topics based on the term's most common feedback themes.</p>
+      </div>
+      <div class="tile">
+        <h4>Differentiation grouping suggestions</h4>
+        <p>"These six students across the cohort share a thesis-clarity issue and could be grouped for a targeted workshop."</p>
+      </div>
+      <div class="tile">
+        <h4>Comparative analysis narrative</h4>
+        <p>This cohort vs the same cohort earlier in the year &mdash; what's shifted, what hasn't, what to make of it.</p>
+      </div>
+      <div class="tile">
+        <h4>Anomaly explainer</h4>
+        <p>When a pattern shifts, the AI offers candidate explanations grounded in the timeline of tasks and feedback.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="page-break"></div>
+
+  <section>
+    <h2>Dashboard Preview</h2>
+    <p class="mockup-page-intro">
+      A leader's view of one faculty in Term 1. The figures are illustrative; the structure, content shape and language
+      are what's being designed with pilot schools.
+    </p>
+
+    <div class="mockup-frame">
+      <div class="mockup-chrome">
+        <span class="dot r"></span>
+        <span class="dot y"></span>
+        <span class="dot g"></span>
+        <span class="url">insights.proofready.app &middot; faculty view &middot; modern history</span>
+      </div>
+      <div class="mockup-topbar">
+        <div class="brand-mini">ProofReady <span>Insights</span></div>
+        <div class="topnav">
+          <span>School overview</span>
+          <span class="active">By faculty</span>
+          <span>By class</span>
+          <span>By task</span>
+          <span>Reports</span>
+        </div>
+        <div class="term-pill">Year 11 &middot; Term 1, 2026</div>
+      </div>
+      <div class="mockup-faculty-bar">
+        <h3>Modern History</h3>
+        <div class="stats">
+          <span><strong>4</strong> tasks</span>
+          <span><strong>82</strong> students</span>
+          <span><strong>214</strong> drafts</span>
+          <span><strong>87%</strong> on-time</span>
+        </div>
+      </div>
+      <div class="mockup-body">
+
+        <div class="mockup-card hero">
+          <div class="label">AI narrative &middot; Term 1 summary</div>
+          <div class="title">Cohort handling sources well, struggling to weigh them</div>
+          <div class="body">
+            Across 28 Year 11 responses to the Term 1 source analysis task, the cohort consistently identifies sources
+            well but struggles to <strong>weigh sources against each other</strong>. When the task verb is
+            <em>assess</em>, responses are dominated by description and explanation; explicit judgement language
+            appears in fewer than a third of drafts. The pattern is consistent across all three Year 11 classes,
+            suggesting it's a programme-level rather than class-level concern. Worth a faculty conversation about
+            explicit modelling of evaluative phrases before the Week 7 source-based task.
+          </div>
+        </div>
+
+        <div class="mockup-row three">
+          <div class="mockup-card">
+            <div class="label">Directive verbs &middot; this term</div>
+            <div class="mockup-bars">
+              <div class="mockup-bar"><span>describe</span><span class="fill"><div style="width:25%"></div></span><span class="num">1</span></div>
+              <div class="mockup-bar"><span>explain</span><span class="fill"><div style="width:50%"></div></span><span class="num">2</span></div>
+              <div class="mockup-bar"><span>analyse</span><span class="fill"><div style="width:0%"></div></span><span class="num">0</span></div>
+              <div class="mockup-bar"><span>assess</span><span class="fill"><div style="width:25%"></div></span><span class="num">1</span></div>
+              <div class="mockup-bar"><span>evaluate</span><span class="fill"><div style="width:0%"></div></span><span class="num">0</span></div>
+            </div>
+          </div>
+          <div class="mockup-card">
+            <div class="label">Outcome coverage &middot; YTD</div>
+            <div class="title">8 of 12 outcomes assessed</div>
+            <div class="body">
+              <strong>4 outcomes</strong> not yet appearing in any task this year:
+              MH11-2, MH11-6, MH11-8, MH11-10. Coverage gap report ready for faculty review.
+            </div>
+          </div>
+          <div class="mockup-card">
+            <div class="label">Engagement &middot; this faculty</div>
+            <div class="body" style="line-height:1.7">
+              <strong>87%</strong> submitted on time<br>
+              <strong>64%</strong> used 2+ drafts<br>
+              <strong>41%</strong> viewed feedback before resubmit<br>
+              <strong>3</strong> students at zero engagement
+            </div>
+          </div>
+        </div>
+
+        <div class="mockup-row two">
+          <div class="mockup-card">
+            <div class="label">Recurring feedback themes &middot; faculty-wide</div>
+            <ul class="mockup-list">
+              <li><span>Source weighing weak when verb is "assess"</span><span class="pct">78%</span></li>
+              <li><span>Description supplants judgement language</span><span class="pct">64%</span></li>
+              <li><span>Quoting without follow-up analysis</span><span class="pct">52%</span></li>
+              <li><span>Underuse of historiographical vocabulary</span><span class="pct">44%</span></li>
+              <li><span>Conclusions restate rather than synthesise</span><span class="pct">37%</span></li>
+            </ul>
+          </div>
+          <div class="mockup-card">
+            <div class="label">Theme evolution &middot; Wk 3 &rarr; Wk 10</div>
+            <div class="mockup-trend">
+              <div class="row">
+                <span>Source weighing<br><span class="from-to">86% &rarr; 78% &middot; resolving</span></span>
+                <span class="arrow down">&darr;</span>
+              </div>
+              <div class="row">
+                <span>Quoting without analysis<br><span class="from-to">51% &rarr; 52% &middot; persistent</span></span>
+                <span class="arrow flat">&rarr;</span>
+              </div>
+              <div class="row">
+                <span>Historiographical vocabulary<br><span class="from-to">22% &rarr; 44% &middot; emerging</span></span>
+                <span class="arrow up">&uarr;</span>
+              </div>
+              <div class="row">
+                <span>Thesis clarity<br><span class="from-to">31% &rarr; 18% &middot; resolving</span></span>
+                <span class="arrow down">&darr;</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mockup-row three">
+          <div class="mockup-card">
+            <div class="label">11MHIS.1 &middot; class pattern</div>
+            <div class="body">Strong on source identification. Recurring theme: chronology takes precedence over argument structure.</div>
+          </div>
+          <div class="mockup-card">
+            <div class="label">11MHIS.2 &middot; class pattern</div>
+            <div class="body">Strong terminology use. Recurring theme: thesis clarity weakens after the first body paragraph.</div>
+          </div>
+          <div class="mockup-card">
+            <div class="label">11MHIS.3 &middot; class pattern</div>
+            <div class="body">Lower engagement signal: drafts arrive close to deadline, fewer resubmissions than peer classes.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <p class="mockup-caption">
+      Illustrative preview. Tile selection, layout and language are customisable per school during pilot.
+    </p>
+  </section>
+
+  <div class="page-break"></div>
+
+  <section>
+    <h2>Reporting &amp; Evidence</h2>
+    <p class="group-intro">
+      Insights you already need to produce, with the evidence trail done for you. Every export cites the underlying
+      tasks and feedback events so the reasoning is auditable.
+    </p>
+    <div class="three-col">
+      <div class="tile">
+        <h4>Faculty review evidence pack</h4>
+        <p>Coverage, themes, engagement and narrative for a single faculty across a period &mdash; ready for faculty review meetings.</p>
+      </div>
+      <div class="tile">
+        <h4>ASIP supporting data</h4>
+        <p>Annual School Improvement Plan evidence on literacy, assessment programme balance and feedback culture.</p>
+      </div>
+      <div class="tile">
+        <h4>A&ndash;E grade decision support</h4>
+        <p>Qualitative evidence supporting the teacher's grade decision. ProofReady never proposes a grade.</p>
+      </div>
+      <div class="tile">
+        <h4>Parent-teacher interview prep</h4>
+        <p>Cohort-level patterns a teacher can refer to when discussing a student's progress with parents.</p>
+      </div>
+      <div class="tile">
+        <h4>Accreditation evidence</h4>
+        <p>Evidence packs aligned to registration and accreditation cycles &mdash; literacy, assessment, feedback practices.</p>
+      </div>
+      <div class="tile">
+        <h4>Programme review evidence</h4>
+        <p>What worked, what didn't, what's missing &mdash; the data side of a programme review, formatted for the conversation.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Access, Scope &amp; Privacy</h2>
+    <div class="two-col">
+      <div class="tile">
+        <h4>Who can see what</h4>
+        <p>Insights access is granted to a defined school leadership group &mdash; not all staff. Teachers retain their existing class view. Students never see leader-level data.</p>
+      </div>
+      <div class="tile">
+        <h4>School-scoped</h4>
+        <p>Every leader sees their own school's data only. No cross-school comparisons. No external benchmarking against schools you don't recognise.</p>
+      </div>
+      <div class="tile">
+        <h4>Faculty-respectful</h4>
+        <p>Class-level views describe the student work, not the teacher's performance. Comparisons are framed as patterns to explore, not judgements to act on.</p>
+      </div>
+      <div class="tile">
+        <h4>No AI training on student work</h4>
+        <p>Anthropic's API policy excludes API inputs and outputs from model training. Insights aggregates existing feedback &mdash; no additional data leaves the system.</p>
+      </div>
+      <div class="tile">
+        <h4>Auditable</h4>
+        <p>Every aggregate tile and every AI narrative claim is traceable to the underlying tasks and feedback events that produced it.</p>
+      </div>
+      <div class="tile">
+        <h4>Opt-in by tile</h4>
+        <p>The school chooses which Insights tiles are enabled. Start with assessment programme and themes; add others as the leadership team finds use for them.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What this isn't</h2>
+    <div class="pill-row">
+      <span class="pill neg">No mark predictions</span>
+      <span class="pill neg">No band judgements</span>
+      <span class="pill neg">No teacher rankings</span>
+      <span class="pill neg">No student league tables</span>
+      <span class="pill neg">No cross-school benchmarking</span>
+      <span class="pill neg">No demographic profiling without policy</span>
+      <span class="pill neg">No content rewriting</span>
+    </div>
+  </section>
+
+  <footer>
+    <div>
+      <strong style="color:#1f2937">Rob Sheahan</strong> &middot; Founder &middot; Insights is in development with pilot schools.
+    </div>
+    <div style="text-align:right">
+      <a href="mailto:help@proofready.app">help@proofready.app</a><br>
+      <a href="https://proofready.app">proofready.app</a>
+    </div>
+  </footer>
+
+</body>
+</html>
