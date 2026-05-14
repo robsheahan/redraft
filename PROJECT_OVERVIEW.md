@@ -137,7 +137,7 @@ A NESA-aligned formative-feedback tool for NSW HSC student drafts. Teachers crea
 - **`scale-indexes.sql`** — Indexes added for pilot-scale read performance.
 - **`backfill-inline-suggestions.ts`** — One-off: regenerate Pass 3 annotations for old submissions that predate Pass 3.
 - **`scrape-nesa-feedback.ts`** — One-off: scrapes NESA Notes from the Marking Centre into the JSON files.
-- **`lti-migration.sql`** — Creates LTI tables (`lti_platforms`, `lti_nonces`, `lti_user_mappings`, `lti_course_mappings`, `lti_dl_sessions`) + AGS columns on tasks. Includes seed row for Pittwater Christian School (PCS).
+- **`lti-migration.sql`** — Creates LTI tables (`lti_platforms`, `lti_nonces`, `lti_user_mappings`, `lti_course_mappings`, `lti_dl_sessions`) + AGS columns on tasks. Includes seed row for Penrith Christian School (PCS).
 - **`generate-lti-keypair.ts`** — One-off: generates an RSA-2048 keypair, prints PEM private key (for `LTI_PRIVATE_KEY` env var) + kid (for `LTI_KEY_ID`) + the public JWK we'll serve. Run via `npm run generate-lti-keypair`.
 
 ### `test/` — local QA harnesses (not CI)

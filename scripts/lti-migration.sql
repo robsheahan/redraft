@@ -117,14 +117,14 @@ create policy "user reads own lti mapping"
   using (auth.uid() = user_id);
 
 -- =========================================================================
--- 7. Seed: Pittwater Christian School (PCS) — Canvas Cloud
+-- 7. Seed: Penrith Christian School (PCS) — Canvas Cloud
 -- =========================================================================
 
 insert into public.lti_platforms (
   school_name, issuer, client_id, deployment_id, hostname,
   jwks_url, auth_login_url, auth_token_url
 ) values (
-  'Pittwater Christian School',
+  'Penrith Christian School',
   'https://canvas.instructure.com',
   '277420000000000006',
   '238:4918899f387deeb8c2a566f759e392996b5535f4',
@@ -132,4 +132,5 @@ insert into public.lti_platforms (
   'https://sso.canvaslms.com/api/lti/security/jwks',
   'https://sso.canvaslms.com/api/lti/authorize_redirect',
   'https://sso.canvaslms.com/login/oauth2/token'
-) on conflict (issuer, client_id, deployment_id) do nothing;
+) on conflict (issuer, client_id, deployment_id) do update
+  set school_name = excluded.school_name;
