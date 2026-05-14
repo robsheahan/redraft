@@ -1,5 +1,6 @@
 import { generateKeyPair, exportPKCS8, exportJWK } from 'jose';
 import { randomUUID } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 
 const { publicKey, privateKey } = await generateKeyPair('RS256', { modulusLength: 2048, extractable: true });
 
@@ -23,3 +24,12 @@ console.log(privatePem.trim());
 console.log();
 console.log('=== Public JWK — served at /lti/jwks once env vars are set ===');
 console.log(JSON.stringify({ keys: [publicJwk] }, null, 2));
+console.log();
+
+const hex = Buffer.from(privatePem, 'utf8').toString('hex');
+const pb = spawnSync('pbcopy', { input: hex });
+if (pb.status === 0) {
+  console.log(`✓ LTI_PRIVATE_KEY_HEX copied to clipboard (${hex.length} chars). Paste directly into Vercel.`);
+} else {
+  console.log(`(pbcopy unavailable — copy the hex value above manually; length ${hex.length} chars)`);
+}
