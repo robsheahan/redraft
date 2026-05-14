@@ -7,19 +7,18 @@ let cachedPublicJwk: { kty: string; n: string; e: string; kid: string; alg: stri
 function pem(): string {
   const raw = process.env.LTI_PRIVATE_KEY;
   if (!raw) throw new Error('LTI_PRIVATE_KEY env var is not set');
-  let s = raw.includes('\\n') ? raw.replace(/\\n/g, '\n') : raw;
-  if (!s.includes('\n')) {
-    const begin = '-----BEGIN PRIVATE KEY-----';
-    const end = '-----END PRIVATE KEY-----';
-    const bi = s.indexOf(begin);
-    const ei = s.indexOf(end);
-    if (bi !== -1 && ei !== -1) {
-      const body = s.slice(bi + begin.length, ei).replace(/\s/g, '');
-      const wrapped = body.match(/.{1,64}/g)?.join('\n') ?? body;
-      s = `${begin}\n${wrapped}\n${end}\n`;
-    }
+  const s = raw.includes('\\n') ? raw.replace(/\\n/g, '\n') : raw;
+  const match = s.match(/-----\s*BEGIN[A-Z\s]*KEY\s*-----([A-Za-z0-9+/=\s]+)-----\s*END[A-Z\s]*KEY\s*-----/);
+  let body: string;
+  if (match) {
+    body = match[1].replace(/\s/g, '');
+  } else if (/^[A-Za-z0-9+/=\s]+$/.test(s)) {
+    body = s.replace(/\s/g, '');
+  } else {
+    return s;
   }
-  return s;
+  const wrapped = body.match(/.{1,64}/g)?.join('\n') ?? body;
+  return `-----BEGIN PRIVATE KEY-----\n${wrapped}\n-----END PRIVATE KEY-----\n`;
 }
 
 function kid(): string {
