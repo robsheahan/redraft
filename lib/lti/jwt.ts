@@ -5,6 +5,10 @@ let cachedPrivateKey: KeyLike | null = null;
 let cachedPublicJwk: { kty: string; n: string; e: string; kid: string; alg: string; use: string } | null = null;
 
 function pem(): string {
+  const hex = process.env.LTI_PRIVATE_KEY_HEX;
+  if (hex) {
+    return Buffer.from(hex.replace(/\s/g, ''), 'hex').toString('utf8');
+  }
   const raw = process.env.LTI_PRIVATE_KEY;
   if (!raw) throw new Error('LTI_PRIVATE_KEY env var is not set');
   const s = raw.includes('\\n') ? raw.replace(/\\n/g, '\n') : raw;
