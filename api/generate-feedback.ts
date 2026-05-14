@@ -12,6 +12,7 @@ import { captureError } from '../lib/sentry.js';
 import { callTool } from '../lib/anthropic-tool-call.js';
 import { HOLISTIC_FEEDBACK_TOOL, CRITERIA_CHECK_TOOL } from '../lib/feedback-tools.js';
 import { looksLikeBandRubric, stripBandLabels } from '../lib/rubric-detect.js';
+import { postCompletionIfLinked } from '../lib/lti/ags.js';
 
 function buildCriteriaCheckPrompt(courseName?: string, isBandRubric?: boolean): string {
   const subjectLabel = courseName || "this HSC subject";
@@ -366,6 +367,14 @@ Assess this draft against each marking criterion above. Address every criterion 
         feedback,
         draft_version: draftVersion,
       });
+
+      if (task_id) {
+        postCompletionIfLinked({
+          taskId: task_id,
+          studentId: user.id,
+          comment: `Draft ${draftVersion} submitted via ProofReady`,
+        }).catch(err => captureError(err, { stage: 'ags-passback', task_id, user_id: user.id }));
+      }
     }
 
     return res.status(200).json({

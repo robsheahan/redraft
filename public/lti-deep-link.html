@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add ProofReady Task — Canvas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #faf7f2; color: #111827; line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      padding: 32px 24px;
+    }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 22px; margin-bottom: 6px; }
+    p.lede { color: #4b5563; margin-bottom: 20px; }
+    .card {
+      background: #fff; border: 1px solid #e8e0d4; border-radius: 10px;
+      padding: 18px 20px; margin-bottom: 14px;
+    }
+    .task-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0; border-bottom: 1px solid #f3f4f6;
+    }
+    .task-row:last-child { border-bottom: none; }
+    .task-row .title { font-weight: 600; color: #111827; }
+    button {
+      background: #ed7615; color: white; border: 0; border-radius: 6px;
+      padding: 8px 16px; font-weight: 600; font-size: 14px; cursor: pointer;
+      font-family: inherit;
+    }
+    button:hover { background: #d96b13; }
+    button:disabled { background: #d1d5db; cursor: not-allowed; }
+    .empty {
+      text-align: center; padding: 24px 0; color: #6b7280;
+    }
+    .empty a {
+      color: #ed7615; font-weight: 600; text-decoration: none;
+    }
+    .error {
+      background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
+      padding: 12px 14px; border-radius: 6px; margin-bottom: 14px;
+    }
+    .spinner { text-align: center; padding: 24px; color: #6b7280; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Add a ProofReady task to Canvas</h1>
+    <p class="lede">Pick an existing task in this class, or create a new one first and come back.</p>
+
+    <div id="error" class="error" style="display:none"></div>
+    <div id="content" class="spinner">Loading...</div>
+
+    <form id="autopost" method="POST" style="display:none">
+      <input type="hidden" name="JWT" value="">
+    </form>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+
+    async function run() {
+      const user = await requireAuth('teacher');
+      if (!user) return;
+      if (!token) return showError('Missing deep-link session token. Re-launch from Canvas.');
+
+      try {
+        const res = await authFetch('/api/lti/deep-link?token=' + encodeURIComponent(token));
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: 'Request failed' }));
+          return showError(err.error || 'Failed to load deep-link session');
+        }
+        const data = await res.json();
+        renderPicker(data);
+      } catch (err) {
+        showError('Network error: ' + err.message);
+      }
+    }
+
+    function renderPicker(data) {
+      const content = document.getElementById('content');
+      content.className = '';
+      if (!data.tasks || data.tasks.length === 0) {
+        content.innerHTML = '<div class="card"><div class="empty">' +
+          '<p>No tasks yet in this class.</p>' +
+          (data.classId
+            ? '<p style="margin-top:10px"><a href="/new-task.html?class_id=' + data.classId + '">Create a task</a>, then come back here.</p>'
+            : '<p style="margin-top:10px">This Canvas course is not yet linked to a ProofReady class.</p>') +
+          '</div></div>';
+        return;
+      }
+      const rows = data.tasks.map(t =>
+        '<div class="task-row">' +
+          '<span class="title">' + escapeHtml(t.title) + '</span>' +
+          '<button data-task-id="' + t.id + '">Add to Canvas</button>' +
+        '</div>'
+      ).join('');
+      content.innerHTML = '<div class="card">' + rows + '</div>';
+      content.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => selectTask(btn.dataset.taskId, btn));
+      });
+    }
+
+    async function selectTask(taskId, btn) {
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+      try {
+        const res = await authFetch('/api/lti/deep-link', {
+          method: 'POST',
+          body: JSON.stringify({ token, taskId }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: 'Submission failed' }));
+          showError(err.error || 'Failed to submit deep link');
+          btn.disabled = false;
+          btn.textContent = 'Add to Canvas';
+          return;
+        }
+        const data = await res.json();
+        autopost(data.autopost.url, data.autopost.fields);
+      } catch (err) {
+        showError('Network error: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Add to Canvas';
+      }
+    }
+
+    function autopost(url, fields) {
+      const form = document.getElementById('autopost');
+      form.action = url;
+      form.querySelector('input[name="JWT"]').value = fields.JWT;
+      form.submit();
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error');
+      el.textContent = msg;
+      el.style.display = 'block';
+      document.getElementById('content').style.display = 'none';
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    }
+
+    run();
+  </script>
+</body>
+</html>

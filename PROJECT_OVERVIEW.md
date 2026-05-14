@@ -10,8 +10,9 @@ A NESA-aligned formative-feedback tool for NSW HSC student drafts. Teachers crea
 - **Database / auth:** Supabase (Sydney region, project ref `jcxcbqsxshlwwvxlyyfd`).
 - **AI:** Anthropic Claude Sonnet 4.6 via `@anthropic-ai/sdk`. Three parallel passes per submission.
 - **Email:** Resend (outbound, custom proofready.app domain). Cloudflare Email Routing (inbound help@).
-- **Auth providers:** Supabase email/password + Google OAuth.
+- **Auth providers:** Supabase email/password + Google OAuth + LTI 1.3 launch (Canvas).
 - **Observability:** Sentry (browser + Node.js projects).
+- **LTI 1.3:** Integrated with Canvas LMS via JWT-based launch + JWKS. Supports OIDC initiation, resource link launch, deep linking, NRPS roster sync, AGS grade passback (completion only).
 
 ## Data model (Supabase)
 
@@ -21,6 +22,12 @@ A NESA-aligned formative-feedback tool for NSW HSC student drafts. Teachers crea
 - `tasks` — `id`, `class_id`, `title`, `question`, `course`, `task_type`, `total_marks`, `due_date`, `outcomes` (jsonb), `criteria` (jsonb), `criteria_text`, `notes`, `published_at`, `created_at`, plus `class_feedback`, `class_feedback_count`, `class_feedback_generated_at` for cached class-level synthesis.
 - `submissions` — `id`, `student_id`, `task_id`, `question`, `course`, `draft_text`, `feedback` (jsonb), `draft_version`, `created_at`. Capped at 3 drafts per student per task.
 - `api_call_log` — rate-limit + spend tracking. `user_id`, `endpoint`, `created_at`.
+- `lti_platforms` — one row per Canvas instance (issuer, client_id, deployment_id, hostname, JWKS + auth URLs, school_name).
+- `lti_nonces` — short-lived OIDC handshake nonces with state, expiry, consumed_at.
+- `lti_user_mappings` — Canvas user_id ↔ auth.users.id, per platform.
+- `lti_course_mappings` — Canvas course_id ↔ classes.id, per platform.
+- `lti_dl_sessions` — short-lived deep-linking sessions (token, platform, user, class, deep_linking_settings jsonb).
+- `tasks` extensions for LTI: `lti_platform_id`, `lti_resource_link_id`, `lti_line_item_url`, `lti_ags_lineitems_url`.
 
 ## Key decisions
 
@@ -50,6 +57,13 @@ A NESA-aligned formative-feedback tool for NSW HSC student drafts. Teachers crea
 - **`contact.ts`** — Receives contact-form posts and forwards to help@proofready.app.
 - **`admin-stats.ts`** — Admin-only dashboard data: counts, recent activity, full user roster, sign-ups by email domain. Gated by `ADMIN_EMAILS` env var.
 
+### `api/lti/` — LTI 1.3 endpoints (exposed at `/lti/*` via `vercel.json` rewrite)
+
+- **`jwks.ts`** — Serves our public JWK at `/lti/jwks`. Canvas fetches this to verify our DeepLinkingResponse JWTs.
+- **`login.ts`** — OIDC initiation at `/lti/login`. Receives iss/client_id/login_hint, generates nonce+state, redirects to platform's auth_login_url.
+- **`launch.ts`** — Main launch handler at `/lti/launch`. Verifies platform id_token against Canvas JWKS, validates nonce, provisions user + class, kicks off async NRPS roster sync for teacher launches, redirects to magic-link session URL targeting student/teacher/task page based on context.
+- **`deep-link.ts`** — GET serves picker session info; POST signs DeepLinkingResponse JWT and returns auto-post payload. Picker UI at `/lti-deep-link.html`.
+
 ### `lib/` — server-side helpers
 
 - **`auth.ts`** — `getSupabase()` (service-role client), `verifyAuth(req)` (validates Bearer token, returns user).
@@ -60,6 +74,18 @@ A NESA-aligned formative-feedback tool for NSW HSC student drafts. Teachers crea
 - **`sentry.ts`** — Sentry init + `captureError(err, context)` helper. No-op when `SENTRY_DSN` is unset.
 - **`task-verbs.ts`** — Extracts NESA directive verbs ("analyse", "evaluate" etc.) from a question string. Used to anchor verb-depth checks in feedback.
 - **`user-names.ts`** — `getUserInfoBatch()` — batched listUsers lookup with 30s cache. Avoids per-row auth calls.
+
+### `lib/lti/` — LTI 1.3 helpers
+
+- **`config.ts`** — `findPlatform(iss, clientId, deploymentId?)` and `getPlatformById()` lookup against `lti_platforms`.
+- **`jwt.ts`** — `getPublicJwks()`, `verifyPlatformIdToken()` (against Canvas's remote JWKS, cached), `signClientAssertion()` (client_credentials flow), `signDeepLinkingResponse()`.
+- **`nonce.ts`** — `createNonce()` + `consumeNonce()` for the OIDC handshake.
+- **`roles.ts`** — Maps LTI role URIs to `teacher`/`student`.
+- **`user-provision.ts`** — `provisionUser()` finds-or-creates auth user + `lti_user_mappings` row. `generateLoginUrl()` mints a Supabase magic link for session creation post-launch.
+- **`course-provision.ts`** — `provisionClass()` creates a class + course mapping on teacher launch. `enrolStudent()` adds class_members idempotently.
+- **`service-auth.ts`** — client_credentials JWT flow to obtain Canvas service tokens for NRPS + AGS. In-memory token cache per (platform, scope).
+- **`nrps.ts`** — `syncRoster()` paginates Canvas's NRPS endpoint and auto-enrols students into the ProofReady class. Triggered on teacher launch.
+- **`ags.ts`** — `createLineItem()`, `postCompletionScore()`, plus `postCompletionIfLinked()` helper called from `generate-feedback.ts` to push "draft completed" back to Canvas SpeedGrader on submission save.
 
 ### `prompts/` — system & user prompt builders
 
@@ -111,6 +137,8 @@ A NESA-aligned formative-feedback tool for NSW HSC student drafts. Teachers crea
 - **`scale-indexes.sql`** — Indexes added for pilot-scale read performance.
 - **`backfill-inline-suggestions.ts`** — One-off: regenerate Pass 3 annotations for old submissions that predate Pass 3.
 - **`scrape-nesa-feedback.ts`** — One-off: scrapes NESA Notes from the Marking Centre into the JSON files.
+- **`lti-migration.sql`** — Creates LTI tables (`lti_platforms`, `lti_nonces`, `lti_user_mappings`, `lti_course_mappings`, `lti_dl_sessions`) + AGS columns on tasks. Includes seed row for Pittwater Christian School (PCS).
+- **`generate-lti-keypair.ts`** — One-off: generates an RSA-2048 keypair, prints PEM private key (for `LTI_PRIVATE_KEY` env var) + kid (for `LTI_KEY_ID`) + the public JWK we'll serve. Run via `npm run generate-lti-keypair`.
 
 ### `test/` — local QA harnesses (not CI)
 
@@ -119,9 +147,18 @@ A NESA-aligned formative-feedback tool for NSW HSC student drafts. Teachers crea
 
 ### Config
 
-- **`vercel.json`** — Sets `maxDuration: 300` on serverless functions (Pro plan).
+- **`vercel.json`** — Sets `maxDuration: 300` on serverless functions (Pro plan). Rewrites `/lti/*` → `/api/lti/*` so PCS's pre-registered LTI URLs (no `/api/` prefix) resolve.
 - **`tsconfig.json`** — TypeScript config (NodeNext modules to match Vercel runtime).
-- **`package.json`** — `@anthropic-ai/sdk`, `@supabase/supabase-js`, `@sentry/node`, `@vercel/node`.
+- **`package.json`** — `@anthropic-ai/sdk`, `@supabase/supabase-js`, `@sentry/node`, `@vercel/node`, `jose` (for LTI JWT).
+
+### Env vars
+
+- `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` (service_role).
+- `SENTRY_DSN` — optional; observability no-ops without it.
+- `ADMIN_EMAILS` — comma-separated list for admin-stats access.
+- `LTI_PRIVATE_KEY` — RSA-2048 PEM (PKCS#8). Generated via `npm run generate-lti-keypair`. Newlines as `\n` if set via one-line env entry, or paste multi-line in Vercel.
+- `LTI_KEY_ID` — UUID `kid` for the public JWK. Same generator script outputs it.
+- `SITE_ORIGIN` — frontend origin for redirects after LTI launch. Defaults to `https://proofready.app`.
 
 ### Docs
 

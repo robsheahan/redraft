@@ -3,5 +3,8 @@
   "functions": {
     "api/generate-feedback.ts": { "maxDuration": 300 },
     "api/generate-class-feedback.ts": { "maxDuration": 300 }
-  }
+  },
+  "rewrites": [
+    { "source": "/lti/:path*", "destination": "/api/lti/:path*" }
+  ]
 }
