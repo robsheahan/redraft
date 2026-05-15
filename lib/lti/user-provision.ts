@@ -34,15 +34,13 @@ export async function provisionUser(opts: {
   let userId: string;
   let isNew = false;
 
-  const { data: existingRow } = await supabase
-    .schema('auth').from('users')
-    .select('id, raw_user_meta_data')
-    .ilike('email', opts.email)
-    .maybeSingle();
+  const { data: existingRows } = await supabase
+    .rpc('lti_find_user_by_email', { p_email: opts.email });
+  const existing = (existingRows as Array<{ id: string; raw_user_meta_data: Record<string, unknown> | null }> | null)?.[0];
 
-  if (existingRow) {
-    userId = existingRow.id as string;
-    const meta = (existingRow.raw_user_meta_data as Record<string, unknown>) || {};
+  if (existing) {
+    userId = existing.id;
+    const meta = existing.raw_user_meta_data || {};
     if (!meta.role) {
       await supabase.auth.admin.updateUserById(userId, {
         user_metadata: {

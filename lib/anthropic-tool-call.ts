@@ -24,7 +24,7 @@ interface CallToolOptions {
   system: string;
   user: string;
   tool: Anthropic.Messages.Tool;
-  /** Number of additional attempts after the first (default 1 → 2 attempts total). */
+  /** Number of additional attempts after the first (default 3 → 4 attempts total). */
   retries?: number;
 }
 
@@ -35,7 +35,7 @@ export interface ToolCallResult<T> {
 }
 
 export async function callTool<T = unknown>(opts: CallToolOptions): Promise<ToolCallResult<T>> {
-  const { client, model, max_tokens, temperature, system, user, tool, retries = 1 } = opts;
+  const { client, model, max_tokens, temperature, system, user, tool, retries = 3 } = opts;
   const totalAttempts = retries + 1;
   let lastErr: unknown;
 
@@ -65,8 +65,9 @@ export async function callTool<T = unknown>(opts: CallToolOptions): Promise<Tool
       lastErr = err;
       if (attempt >= totalAttempts) break;
       if (!isTransient(err)) break;
-      // Linear backoff (400ms, 800ms, …) — tiny, matters mainly for 429s.
-      await new Promise((r) => setTimeout(r, 400 * attempt));
+      const base = 1000 * 2 ** (attempt - 1);
+      const jitter = Math.floor(Math.random() * 500);
+      await new Promise((r) => setTimeout(r, base + jitter));
     }
   }
 
