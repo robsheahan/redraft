@@ -6,7 +6,16 @@ const envFile = join(process.cwd(), '.env.local');
 if (existsSync(envFile)) {
   for (const line of readFileSync(envFile, 'utf8').split('\n')) {
     const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
-    if (m) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+    if (!m) continue;
+    let value = m[2];
+    if (value.startsWith('"') && value.endsWith('"') && value.length >= 2) {
+      value = value.slice(1, -1)
+        .replace(/\\n/g, '\n').replace(/\\r/g, '\r')
+        .replace(/\\t/g, '\t').replace(/\\\\/g, '\\');
+    } else if (value.startsWith("'") && value.endsWith("'") && value.length >= 2) {
+      value = value.slice(1, -1);
+    }
+    process.env[m[1]] = value.trim();
   }
 }
 
