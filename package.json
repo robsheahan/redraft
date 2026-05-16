@@ -7,7 +7,8 @@
     "test-feedback": "npx tsx test/evaluate-sample.ts",
     "test-inline": "npx tsx test/test-inline-suggestions.ts",
     "backfill-inline": "npx tsx scripts/backfill-inline-suggestions.ts",
-    "generate-lti-keypair": "npx tsx scripts/generate-lti-keypair.ts"
+    "generate-lti-keypair": "npx tsx scripts/generate-lti-keypair.ts",
+    "lti-smoke-test": "npx tsx scripts/lti-smoke-test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
