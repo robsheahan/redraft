@@ -316,6 +316,19 @@
       font-size: 14px; line-height: 1.8; color: #374151; white-space: pre-wrap;
       max-height: 400px; overflow-y: auto;
     }
+    .typing-summary {
+      margin-top: 8px; padding: 8px 12px; background: #fdf6ee; border: 1px solid #f0e6d6;
+      border-radius: 6px; font-size: 12.5px; color: #6b7280; display: flex;
+      align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .typing-summary strong { color: #111827; font-weight: 600; }
+    .typing-summary .ts-icon {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+      color: #ed7615; background: #fef3e6; padding: 2px 7px; border-radius: 100px;
+    }
+    .typing-summary .ts-help {
+      margin-left: auto; color: #9ca3af; cursor: help; font-size: 12px;
+    }
 
     .loading { text-align: center; padding: 60px; color: #9ca3af; font-size: 14px; }
     .error-msg { text-align: center; padding: 40px; color: #dc2626; font-size: 14px; }
@@ -461,6 +474,7 @@
             const draftLabel = 'Draft ' + (d.draft_version || (count - j)) + (j === 0 ? ' (latest)' : '');
             html += '<div class="draft-label">' + e(draftLabel) + ' · ' + e(dDate) + '</div>';
             html += '<div class="draft-content">' + e(d.draft_text || 'No draft text') + '</div>';
+            html += renderTypingSummary(d);
           });
           html += '</div>';
           html += '</div>';
@@ -728,6 +742,30 @@
 
     function toggleSubmission(i) {
       document.getElementById('sub-' + i).classList.toggle('expanded');
+    }
+
+    function renderTypingSummary(d) {
+      if (typeof d.keystroke_count !== 'number') return '';
+      const parts = [];
+      const sessions = d.typing_session_count;
+      const totalMs  = d.total_typing_time_ms;
+      if (typeof sessions === 'number' && typeof totalMs === 'number' && totalMs > 0) {
+        const minutes = Math.round(totalMs / 60000);
+        const sessionLabel = sessions === 1 ? 'session' : 'sessions';
+        parts.push('<strong>' + sessions + ' ' + sessionLabel + '</strong> over <strong>' + minutes + ' min</strong>');
+      }
+      parts.push('<strong>' + d.keystroke_count.toLocaleString() + '</strong> keystrokes');
+      const blocked = d.paste_attempts_blocked;
+      if (typeof blocked === 'number' && blocked > 0) {
+        parts.push('<strong>' + blocked + '</strong> paste ' + (blocked === 1 ? 'attempt' : 'attempts') + ' blocked');
+      } else if (typeof blocked === 'number') {
+        parts.push('no paste attempts');
+      }
+      const help = 'Captured when typed-only mode is on. A high keystroke count with no paste attempts is strong evidence the student wrote this themselves.';
+      return '<div class="typing-summary"><span class="ts-icon">Typing</span>' +
+        '<span>' + parts.join(' · ') + '</span>' +
+        '<span class="ts-help" title="' + help.replace(/"/g, '&quot;') + '">?</span>' +
+        '</div>';
     }
 
     async function downloadCsv() {

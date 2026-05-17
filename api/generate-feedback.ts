@@ -96,7 +96,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const user = await verifyAuth(req);
-  const { question, course, criteria, criteria_text, outcomes, draft, notes, task_id, task_title, task_type } = req.body;
+  const { question, course, criteria, criteria_text, outcomes, draft, notes, task_id, task_title, task_type,
+    keystroke_count, paste_attempts_blocked, typing_session_count, total_typing_time_ms, time_to_first_keystroke_ms } = req.body;
 
   if (!draft) return res.status(400).json({ error: 'A draft is required.' });
   // When submitting against a task, only the task_id is needed — we read the
@@ -366,9 +367,22 @@ Assess this draft against each marking criterion above. Address every criterion 
         draft_text: draft,
         feedback,
         draft_version: draftVersion,
+        keystroke_count: typeof keystroke_count === 'number' ? keystroke_count : null,
+        paste_attempts_blocked: typeof paste_attempts_blocked === 'number' ? paste_attempts_blocked : null,
+        typing_session_count: typeof typing_session_count === 'number' ? typing_session_count : null,
+        total_typing_time_ms: typeof total_typing_time_ms === 'number' ? total_typing_time_ms : null,
+        time_to_first_keystroke_ms: typeof time_to_first_keystroke_ms === 'number' ? time_to_first_keystroke_ms : null,
       });
 
       if (task_id) {
+        supabase.from('draft_autosaves')
+          .delete()
+          .eq('student_id', user.id)
+          .eq('task_id', task_id)
+          .then(({ error }) => {
+            if (error) captureError(error, { stage: 'autosave-clear', task_id, user_id: user.id });
+          });
+
         postCompletionIfLinked({
           taskId: task_id,
           studentId: user.id,

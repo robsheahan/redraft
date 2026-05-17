@@ -45,10 +45,44 @@
     .divider { font-size: 12px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 12px; }
     .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
     .card > p { font-size: 14px; color: #6b7280; margin-bottom: 20px; }
-    .draft-textarea { width: 100%; min-height: 300px; padding: 16px; border: 1px solid #e8e0d4; border-radius: 8px; font-size: 15px; font-family: inherit; line-height: 1.7; outline: none; resize: vertical; background: #fff; color: #111827; }
+    .draft-textarea { width: 100%; min-height: 500px; padding: 18px; border: 1px solid #e8e0d4; border-radius: 8px; font-size: 15.5px; font-family: inherit; line-height: 1.75; outline: none; resize: vertical; background: #fff; color: #111827; tab-size: 4; }
     .draft-textarea:focus { border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.1); }
-    .word-count { font-size: 13px; color: #9ca3af; margin-top: 6px; margin-bottom: 16px; }
+    .draft-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; margin-bottom: 16px; }
+    .word-count { font-size: 13px; color: #9ca3af; }
     .word-count.warning { color: #d97706; }
+    .save-indicator { font-size: 12.5px; color: #9ca3af; }
+    .save-indicator.saved   { color: #16a34a; }
+    .save-indicator.saving  { color: #6b7280; }
+    .save-indicator.failed  { color: #b91c1c; }
+
+    /* Typed-only banner */
+    .typed-only-banner {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; margin-bottom: 14px;
+      background: #fef3e6; border: 1px solid #fcd9b6; border-radius: 8px;
+      font-size: 13.5px; color: #7c2d12; font-weight: 500;
+    }
+    .typed-only-banner .pill {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+      background: #ed7615; color: #fff; padding: 3px 8px; border-radius: 100px;
+      flex-shrink: 0;
+    }
+
+    /* Toast (paste-blocked notice) */
+    .toast {
+      position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%) translateY(20px);
+      background: #111827; color: #fff; padding: 12px 20px; border-radius: 8px;
+      font-size: 14px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 100;
+    }
+    .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Mobile guard for typed-only tasks */
+    .mobile-guard {
+      padding: 32px 24px; text-align: center;
+    }
+    .mobile-guard h3 { font-size: 17px; margin-bottom: 8px; }
+    .mobile-guard p { font-size: 14px; color: #6b7280; line-height: 1.6; }
     .submit-btn { width: 100%; padding: 14px; background: #ed7615; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 2px 6px rgba(237,118,21,0.3); }
     .submit-btn:hover { background: #d4690f; }
     .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -99,7 +133,7 @@
       .container { padding: 20px 14px 32px; }
       h1 { font-size: 20px; }
       .card { padding: 18px; }
-      .draft-textarea { min-height: 240px; font-size: 15px; padding: 14px; }
+      .draft-textarea { min-height: 380px; font-size: 15.5px; padding: 14px; line-height: 1.75; }
       .task-question { font-size: 13px; padding: 12px 14px; }
       .rubric-band { flex: 0 0 60px; padding: 10px 8px; font-size: 13px; }
       .rubric-criteria { padding: 10px 12px; font-size: 12px; }
@@ -233,19 +267,48 @@
         html += '<button type="button" class="submit-btn" style="max-width:280px;margin:0 auto;display:block" onclick="viewLatestFeedback()">View latest feedback</button>';
         html += '</div>';
       } else {
-        html += '<div class="card" id="draftCard">';
-        html += '<h3>Paste your draft response</h3>';
-        const subtitle = used === 0
-          ? "Paste your draft below exactly as you've written it."
-          : "Paste your revised draft below. ProofReady will compare it to your previous draft and acknowledge what's improved.";
-        html += '<p>' + e(subtitle) + '</p>';
-        html += '<textarea class="draft-textarea" id="draftTextarea" placeholder="Paste your draft response here..." oninput="updateWordCount()"></textarea>';
-        html += '<div class="word-count" id="wordCount">0 words</div>';
-        html += '<button class="submit-btn" onclick="submit()">Get feedback</button>';
-        html += '</div>';
+        const typedOnly = t.typed_response_only !== false;
+        const isSmall = window.innerWidth < 768;
+        const blockForMobile = typedOnly && isSmall;
+
+        if (blockForMobile) {
+          html += '<div class="card mobile-guard">';
+          html += '<h3>Open this on a laptop or desktop</h3>';
+          html += '<p>This task requires you to <strong>type your response</strong> rather than paste it. Open ProofReady on a larger screen with a keyboard to draft your response. The task details above are still visible so you can plan ahead.</p>';
+          html += '</div>';
+        } else {
+          html += '<div class="card" id="draftCard">';
+          if (typedOnly) {
+            html += '<div class="typed-only-banner"><span class="pill">Typed only</span><span>Pasting is disabled for this task. ProofReady records your typing for your teacher.</span></div>';
+          }
+          const heading = typedOnly ? 'Write your draft response' : 'Paste your draft response';
+          html += '<h3>' + e(heading) + '</h3>';
+          let subtitle;
+          if (used === 0) {
+            subtitle = typedOnly
+              ? "Type your draft below. Your work autosaves every few seconds — you can close the tab and come back."
+              : "Paste your draft below exactly as you've written it.";
+          } else {
+            subtitle = typedOnly
+              ? "Type your revised draft below. ProofReady will compare it to your previous draft and acknowledge what's improved."
+              : "Paste your revised draft below. ProofReady will compare it to your previous draft and acknowledge what's improved.";
+          }
+          html += '<p>' + e(subtitle) + '</p>';
+          const placeholder = typedOnly
+            ? 'Start typing your response here...'
+            : 'Paste your draft response here...';
+          html += '<textarea class="draft-textarea" id="draftTextarea" placeholder="' + e(placeholder) + '"></textarea>';
+          html += '<div class="draft-meta-row">';
+          html += '<div class="word-count" id="wordCount">0 words</div>';
+          html += '<div class="save-indicator" id="saveIndicator"></div>';
+          html += '</div>';
+          html += '<button class="submit-btn" onclick="submit()">Get feedback</button>';
+          html += '</div>';
+        }
       }
 
       document.getElementById('content').innerHTML = html;
+      if (used < MAX_DRAFTS) wireDraftBehaviour();
     }
 
     function viewLatestFeedback() {
@@ -286,6 +349,164 @@
       if (words > 3000) { countEl.textContent = words + ' words — very long draft, feedback may not cover everything'; countEl.classList.add('warning'); }
       else if (words > 2000) { countEl.textContent = words + ' words — long draft'; countEl.classList.add('warning'); }
       else { countEl.textContent = words + ' words'; countEl.classList.remove('warning'); }
+    }
+
+    // Typing telemetry, autosave, paste blocking.
+    var telemetry = {
+      keystroke_count: 0,
+      paste_attempts_blocked: 0,
+      typing_session_count: 0,
+      total_typing_time_ms: 0,
+      time_to_first_keystroke_ms: null,
+    };
+    var pageLoadedAt = Date.now();
+    var lastInputAt = null;
+    var lastBlurAt = null;
+    var lastSavedText = '';
+    var autosaveTimer = null;
+    var saveIndicatorTimer = null;
+    var savedAt = null;
+
+    function showToast(msg) {
+      var t = document.getElementById('appToast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'appToast';
+        t.className = 'toast';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.classList.add('visible');
+      clearTimeout(t._hideTimer);
+      t._hideTimer = setTimeout(function() { t.classList.remove('visible'); }, 2500);
+    }
+
+    function setSaveIndicator(state) {
+      var el = document.getElementById('saveIndicator');
+      if (!el) return;
+      clearTimeout(saveIndicatorTimer);
+      el.className = 'save-indicator ' + state;
+      if (state === 'saving') el.textContent = 'Saving…';
+      else if (state === 'saved') {
+        var secs = Math.round((Date.now() - (savedAt || Date.now())) / 1000);
+        el.textContent = 'Saved' + (secs <= 1 ? ' just now' : ' ' + secs + 's ago');
+        // Refresh "Xs ago" once
+        saveIndicatorTimer = setTimeout(function() { if (savedAt) setSaveIndicator('saved'); }, 20000);
+      } else if (state === 'failed') {
+        el.textContent = 'Save failed — your work is still in this tab';
+      } else {
+        el.textContent = '';
+      }
+    }
+
+    async function loadAutosave(taskId) {
+      try {
+        const res = await authFetch('/api/draft-autosave?task_id=' + encodeURIComponent(taskId));
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data;
+      } catch (_) { return null; }
+    }
+
+    async function pushAutosave(taskId) {
+      var el = document.getElementById('draftTextarea');
+      if (!el) return;
+      const text = el.value;
+      if (text === lastSavedText) return;
+      setSaveIndicator('saving');
+      try {
+        const res = await authFetch('/api/draft-autosave', {
+          method: 'PUT',
+          body: JSON.stringify({ task_id: currentTask.id, draft_text: text, telemetry: telemetry }),
+        });
+        if (!res.ok) throw new Error('save failed');
+        lastSavedText = text;
+        savedAt = Date.now();
+        setSaveIndicator('saved');
+      } catch (_) {
+        setSaveIndicator('failed');
+      }
+    }
+
+    function scheduleAutosave() {
+      clearTimeout(autosaveTimer);
+      autosaveTimer = setTimeout(function() { pushAutosave(currentTask.id); }, 1500);
+    }
+
+    function wireDraftBehaviour() {
+      var el = document.getElementById('draftTextarea');
+      if (!el) return;
+      var typedOnly = currentTask.typed_response_only !== false;
+
+      // Restore autosaved draft + telemetry
+      loadAutosave(currentTask.id).then(function(data) {
+        if (!data) return;
+        if (data.draft_text) {
+          el.value = data.draft_text;
+          lastSavedText = data.draft_text;
+          updateWordCount();
+          savedAt = data.updated_at ? new Date(data.updated_at).getTime() : Date.now();
+          setSaveIndicator('saved');
+        }
+        if (data.telemetry && typeof data.telemetry === 'object') {
+          // Carry over counters so reload doesn't reset the trail
+          Object.keys(telemetry).forEach(function(k) {
+            if (typeof data.telemetry[k] === 'number') telemetry[k] = data.telemetry[k];
+          });
+          if (data.draft_text) telemetry.typing_session_count = (telemetry.typing_session_count || 0) + 1;
+        }
+      });
+
+      el.addEventListener('input', function() {
+        updateWordCount();
+        const now = Date.now();
+        if (telemetry.time_to_first_keystroke_ms == null) {
+          telemetry.time_to_first_keystroke_ms = now - pageLoadedAt;
+          telemetry.typing_session_count = Math.max(1, telemetry.typing_session_count);
+        }
+        telemetry.keystroke_count += 1;
+        if (lastInputAt) {
+          var gap = now - lastInputAt;
+          telemetry.total_typing_time_ms += Math.min(gap, 5000);
+        }
+        lastInputAt = now;
+        scheduleAutosave();
+      });
+
+      el.addEventListener('focus', function() {
+        if (lastBlurAt && Date.now() - lastBlurAt > 5 * 60 * 1000) {
+          telemetry.typing_session_count += 1;
+        }
+      });
+      el.addEventListener('blur', function() { lastBlurAt = Date.now(); });
+
+      // Tab key → insert tab character, not focus-jump
+      el.addEventListener('keydown', function(ev) {
+        if (ev.key === 'Tab' && !ev.shiftKey) {
+          ev.preventDefault();
+          var s = el.selectionStart, e2 = el.selectionEnd;
+          el.value = el.value.slice(0, s) + '\t' + el.value.slice(e2);
+          el.selectionStart = el.selectionEnd = s + 1;
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+
+      if (typedOnly) {
+        el.addEventListener('paste', function(ev) {
+          ev.preventDefault();
+          telemetry.paste_attempts_blocked += 1;
+          showToast('Pasting is disabled for this task. Please type your response.');
+        });
+        el.addEventListener('drop', function(ev) {
+          ev.preventDefault();
+          telemetry.paste_attempts_blocked += 1;
+          showToast('Dragging text in is disabled for this task.');
+        });
+        el.addEventListener('dragover', function(ev) { ev.preventDefault(); });
+      }
+
+      // Initial save indicator
+      if (!savedAt) setSaveIndicator('idle');
     }
 
     var submissionInFlight = false;
@@ -389,7 +610,15 @@
       try {
         const res = await authFetch('/api/generate-feedback', {
           method: 'POST',
-          body: JSON.stringify({ task_id: currentTask.id, draft: draft }),
+          body: JSON.stringify({
+            task_id: currentTask.id,
+            draft: draft,
+            keystroke_count: telemetry.keystroke_count,
+            paste_attempts_blocked: telemetry.paste_attempts_blocked,
+            typing_session_count: telemetry.typing_session_count,
+            total_typing_time_ms: telemetry.total_typing_time_ms,
+            time_to_first_keystroke_ms: telemetry.time_to_first_keystroke_ms,
+          }),
         });
         const text = await res.text();
         let data;

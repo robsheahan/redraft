@@ -19,8 +19,9 @@ A NESA-aligned formative-feedback tool for NSW HSC student drafts. Teachers crea
 - `auth.users` — Supabase auth, plus `user_metadata.role` ∈ {teacher, student}, `display_name`.
 - `classes` — `id`, `code` (6-char join code), `teacher_id`, `name`, `course`, `created_at`.
 - `class_members` — `class_id`, `student_id`, `joined_at`. Composite PK.
-- `tasks` — `id`, `class_id`, `title`, `question`, `course`, `task_type`, `total_marks`, `due_date`, `outcomes` (jsonb), `criteria` (jsonb), `criteria_text`, `notes`, `published_at`, `created_at`, plus `class_feedback`, `class_feedback_count`, `class_feedback_generated_at` for cached class-level synthesis.
-- `submissions` — `id`, `student_id`, `task_id`, `question`, `course`, `draft_text`, `feedback` (jsonb), `draft_version`, `created_at`. Capped at 3 drafts per student per task.
+- `tasks` — `id`, `class_id`, `title`, `question`, `course`, `task_type`, `total_marks`, `due_date`, `outcomes` (jsonb), `criteria` (jsonb), `criteria_text`, `notes`, `published_at`, `created_at`, plus `class_feedback`, `class_feedback_count`, `class_feedback_generated_at` for cached class-level synthesis, plus `typed_response_only` (boolean, default true) for the typed-only writing mode.
+- `submissions` — `id`, `student_id`, `task_id`, `question`, `course`, `draft_text`, `feedback` (jsonb), `draft_version`, `created_at`, plus typing telemetry fields written by `submit.html`: `keystroke_count`, `paste_attempts_blocked`, `typing_session_count`, `total_typing_time_ms`, `time_to_first_keystroke_ms`. Capped at 3 drafts per student per task.
+- `draft_autosaves` — `student_id`, `task_id`, `draft_text`, `telemetry` (jsonb), `updated_at`. Composite PK. Persistent in-progress drafts so students can close the tab and come back. Cleared automatically on a successful submission.
 - `api_call_log` — rate-limit + spend tracking. `user_id`, `endpoint`, `created_at`.
 - `lti_platforms` — one row per Canvas instance (issuer, client_id, deployment_id, hostname, JWKS + auth URLs, school_name).
 - `lti_nonces` — short-lived OIDC handshake nonces with state, expiry, consumed_at.
@@ -51,6 +52,7 @@ A NESA-aligned formative-feedback tool for NSW HSC student drafts. Teachers crea
 - **`task-csv.ts`** — Streams a CSV of submissions for a task.
 - **`class.ts`** — Class CRUD plus join-by-code for students.
 - **`me.ts`** — Returns the current user's profile + role + classes.
+- **`draft-autosave.ts`** — GET + PUT for `draft_autosaves`. Student draft text + telemetry are persisted every ~1.5s while typing. Cleared by `generate-feedback.ts` after a successful submission.
 - **`signup.ts`** — Custom signup that lets us set `display_name` and avoid Supabase's email-confirmation flow.
 - **`request-password-reset.ts`** — Sends a Resend-powered reset email with our own template.
 - **`set-role.ts`** — Sets `user_metadata.role` after the user picks teacher/student.
@@ -113,9 +115,9 @@ A NESA-aligned formative-feedback tool for NSW HSC student drafts. Teachers crea
 - **`new-class.html`** — Teacher creates a class. Auto-generates 6-char join code.
 - **`class-detail.html`** — Teacher view of a class: students, tasks, share-code panel.
 - **`class-view.html`** — Student view of a class: tasks they can submit to.
-- **`new-task.html`** — Teacher composes a task: question, criteria, outcomes, save-as-draft or save-and-publish. Has a Cancel button.
-- **`task-detail.html`** — Teacher view of one task: submissions list, generate/regenerate class feedback (persisted), CSV export. Class feedback re-renders on page load if cached.
-- **`submit.html`** — Student submission page: shows task + criteria, draft textarea, draft-progress banner, 3-draft cap state. Loading overlay with rotating messages.
+- **`new-task.html`** — Teacher composes a task: question, criteria, outcomes, save-as-draft or save-and-publish. Has a Cancel button. Includes a "Typed response only" toggle (default ON) which controls `tasks.typed_response_only`.
+- **`task-detail.html`** — Teacher view of one task: submissions list, generate/regenerate class feedback (persisted), CSV export. Class feedback re-renders on page load if cached. Each expanded draft shows a typing summary line (sessions, total typing time, keystrokes, paste attempts blocked) when telemetry was captured.
+- **`submit.html`** — Student submission page: shows task + criteria, draft textarea, draft-progress banner, 3-draft cap state. Loading overlay with rotating messages. Acts as a writing environment when the task has `typed_response_only` (default): paste/drop/dragover blocked with a toast, mobile screens get a "open on laptop" guard, tab key inserts a tab, autosaves every ~1.5s to `draft_autosaves`, captures typing telemetry (keystrokes, paste attempts blocked, session count, total typing time, time-to-first-keystroke) and sends it with the submission.
 - **`feedback.html`** — Renders one submission's feedback (holistic + criteria + inline annotations on the draft).
 - **`admin.html`** — Internal admin dashboard. Sign-ups by email domain (per-school uptake), full user roster, recent submissions/tasks.
 - **`compliance.html`** / **`privacy.html`** / **`terms.html`** / **`contact.html`** — Standard policy pages.
@@ -138,6 +140,7 @@ A NESA-aligned formative-feedback tool for NSW HSC student drafts. Teachers crea
 - **`backfill-inline-suggestions.ts`** — One-off: regenerate Pass 3 annotations for old submissions that predate Pass 3.
 - **`scrape-nesa-feedback.ts`** — One-off: scrapes NESA Notes from the Marking Centre into the JSON files.
 - **`lti-migration.sql`** — Creates LTI tables (`lti_platforms`, `lti_nonces`, `lti_user_mappings`, `lti_course_mappings`, `lti_dl_sessions`) + AGS columns on tasks. Includes seed row for Penrith Christian School (PCS).
+- **`typed-response-only-migration.sql`** — Adds `typed_response_only` to tasks (default true), typing telemetry columns to submissions, and the `draft_autosaves` table with RLS policies.
 - **`generate-lti-keypair.ts`** — One-off: generates an RSA-2048 keypair, prints PEM private key (for `LTI_PRIVATE_KEY` env var) + kid (for `LTI_KEY_ID`) + the public JWK we'll serve. Run via `npm run generate-lti-keypair`.
 
 ### `test/` — local QA harnesses (not CI)

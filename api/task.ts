@@ -73,7 +73,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
   if (!user) return res.status(401).json({ error: 'Not authenticated' });
 
   const supabase = getSupabase();
-  const { class_id, course, title, question, task_type, total_marks, due_date, outcomes, criteria, criteria_text, notes, publish } = req.body || {};
+  const { class_id, course, title, question, task_type, total_marks, due_date, outcomes, criteria, criteria_text, notes, publish, typed_response_only } = req.body || {};
 
   if (!class_id) return res.status(400).json({ error: 'class_id is required — tasks must belong to a class.' });
   if (!question || !String(question).trim()) return res.status(400).json({ error: 'Task question is required.' });
@@ -102,6 +102,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     criteria_structured: criteriaStructured,
     notes: notes || null,
     published_at: publish ? new Date().toISOString() : null,
+    typed_response_only: typeof typed_response_only === 'boolean' ? typed_response_only : true,
   }).select('*').single();
 
   if (error) return res.status(500).json({ error: error.message });
@@ -112,7 +113,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   const user = await verifyAuth(req);
   if (!user) return res.status(401).json({ error: 'Not authenticated' });
 
-  const { id, course, title, question, task_type, total_marks, due_date, outcomes, criteria, criteria_text, notes, publish } = req.body || {};
+  const { id, course, title, question, task_type, total_marks, due_date, outcomes, criteria, criteria_text, notes, publish, typed_response_only } = req.body || {};
   if (!id) return res.status(400).json({ error: 'Task id is required.' });
 
   const supabase = getSupabase();
@@ -133,6 +134,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     criteria: criteria ?? undefined,
     criteria_text: criteria_text ?? undefined,
     notes: notes ?? undefined,
+    typed_response_only: typeof typed_response_only === 'boolean' ? typed_response_only : undefined,
   };
   Object.keys(patch).forEach(k => patch[k] === undefined && delete patch[k]);
 
