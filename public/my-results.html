@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/proofready/favicon.svg" />
+  <link rel="shortcut icon" href="/proofready/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/proofready/apple-touch-icon.png" />
+  <link rel="manifest" href="/proofready/site.webmanifest" />
+  <title>My results — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #faf7f2; color: #111827; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    a:focus-visible, button:focus-visible { outline: 2px solid #ed7615; outline-offset: 2px; border-radius: 4px; }
+    .nav { background: #fdf6ee; border-bottom: 1px solid #f0e6d6; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { text-decoration: none; display: flex; align-items: center; }
+    .nav-brand img { height: 40px; width: auto; }
+    .back-link { font-size: 13px; font-weight: 500; color: #4b5563; text-decoration: none; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 6px 14px; }
+    .back-link:hover { background: rgba(0,0,0,0.08); }
+    .container { max-width: 980px; margin: 0 auto; padding: 28px 20px 80px; }
+    h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 4px; }
+    .lede { font-size: 14px; color: #6b7280; margin-bottom: 22px; }
+
+    .summary-strip { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+    .summary-card {
+      flex: 1; min-width: 180px;
+      background: #fff; border-radius: 12px; padding: 14px 18px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+    .summary-card .label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.4px; }
+    .summary-card .value { font-size: 24px; font-weight: 800; color: #111827; margin-top: 4px; letter-spacing: -0.5px; }
+    .summary-card .sub { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+    .class-card {
+      background: #fff; border-radius: 14px; padding: 22px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+      margin-bottom: 16px;
+    }
+    .class-header {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #f0e6d6;
+    }
+    .class-header h2 { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 4px; }
+    .class-header .class-meta { font-size: 13px; color: #6b7280; }
+    .class-header .average {
+      text-align: right; flex-shrink: 0;
+      background: #fef3e6; padding: 8px 14px; border-radius: 10px;
+    }
+    .class-header .average .avg-label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.4px; }
+    .class-header .average .avg-value { font-size: 18px; font-weight: 800; color: #111827; }
+
+    .task-row {
+      display: grid; grid-template-columns: 1fr auto auto; gap: 14px;
+      align-items: center;
+      padding: 12px 14px; border-radius: 10px;
+      margin-bottom: 6px;
+      transition: background 0.1s;
+    }
+    .task-row:hover { background: #faf7f2; }
+    .task-row.clickable { cursor: pointer; }
+    .task-row:last-child { margin-bottom: 0; }
+    .task-row .task-info .task-title {
+      font-size: 14.5px; font-weight: 600; color: #111827; margin-bottom: 2px;
+    }
+    .task-row .task-info .task-meta {
+      font-size: 12.5px; color: #6b7280;
+    }
+    .task-status {
+      font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 100px; white-space: nowrap;
+    }
+    .ts-not-submitted   { background: #f3f4f6; color: #4b5563; }
+    .ts-due-soon        { background: #fef3c7; color: #92400e; }
+    .ts-overdue         { background: #fee2e2; color: #991b1b; }
+    .ts-submitted       { background: #dbeafe; color: #1e40af; }
+    .ts-submitted-late  { background: #fef3c7; color: #92400e; }
+    .ts-marked          { background: #d1fae5; color: #065f46; }
+    .task-mark { font-size: 15px; font-weight: 700; color: #111827; white-space: nowrap; min-width: 70px; text-align: right; }
+    .task-mark .max { color: #9ca3af; font-weight: 500; }
+    .task-mark.empty { color: #d1d5db; font-weight: 500; font-size: 13px; }
+
+    .empty-class { padding: 12px; text-align: center; color: #9ca3af; font-size: 13px; }
+    .empty-state {
+      background: #fff; border-radius: 14px; padding: 48px 24px; text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+    .empty-state h3 { font-size: 17px; margin-bottom: 6px; }
+    .empty-state p { font-size: 14px; color: #6b7280; }
+    .loading { text-align: center; padding: 60px; color: #9ca3af; }
+    .error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 14px; border-radius: 8px; margin-bottom: 14px; }
+
+    .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
+    .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+
+    @media (max-width: 600px) {
+      .container { padding: 18px 14px 40px; }
+      .class-header { flex-direction: column; }
+      .class-header .average { align-self: flex-start; text-align: left; }
+      .task-row { grid-template-columns: 1fr; }
+      .task-mark { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+    <a href="student.html" class="back-link">Back to dashboard</a>
+  </nav>
+  <div class="container" id="content"><div class="loading">Loading your results...</div></div>
+  <div class="site-footer">
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms &amp; Conditions</a>
+    <a href="/compliance.html">Compliance</a>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+    (async () => {
+      const container = document.getElementById('content');
+      const user = await requireAuth('student');
+      if (!user) return;
+      try {
+        const res = await authFetch('/api/me?resource=results');
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          container.innerHTML = '<div class="error">' + e(err.error || 'Could not load your results.') + '</div>';
+          return;
+        }
+        const data = await res.json();
+        render(data.classes || []);
+      } catch (err) {
+        container.innerHTML = '<div class="error">' + e(err.message || String(err)) + '</div>';
+      }
+    })();
+
+    function classifyTask(t) {
+      const sub = t.submission;
+      if (!sub) {
+        if (!t.due_date) return { label: 'Not submitted', cls: 'ts-not-submitted' };
+        const due = new Date(t.due_date + 'T23:59:59');
+        const now = new Date();
+        if (due < now) return { label: 'Overdue', cls: 'ts-overdue' };
+        const daysToDue = Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+        if (daysToDue <= 3) return { label: 'Due in ' + daysToDue + ' day' + (daysToDue === 1 ? '' : 's'), cls: 'ts-due-soon' };
+        return { label: 'Not submitted', cls: 'ts-not-submitted' };
+      }
+      if (sub.graded_at) {
+        return { label: 'Marked', cls: 'ts-marked' };
+      }
+      // Submitted but not yet graded
+      if (t.due_date) {
+        const due = new Date(t.due_date + 'T23:59:59');
+        const subDate = new Date(sub.created_at);
+        if (subDate > due) {
+          const days = Math.ceil((subDate - due) / (1000 * 60 * 60 * 24));
+          return { label: 'Submitted ' + days + ' day' + (days === 1 ? '' : 's') + ' late', cls: 'ts-submitted-late' };
+        }
+      }
+      return { label: 'Submitted', cls: 'ts-submitted' };
+    }
+
+    function renderMark(t) {
+      const sub = t.submission;
+      if (sub && sub.graded_at && sub.total_mark != null) {
+        const max = t.total_marks || '—';
+        return '<div class="task-mark"><strong>' + e(String(sub.total_mark)) + '</strong> <span class="max">/ ' + e(String(max)) + '</span></div>';
+      }
+      if (sub) return '<div class="task-mark empty">—</div>';
+      return '<div class="task-mark empty">—</div>';
+    }
+
+    function classAverage(classObj) {
+      const marked = classObj.tasks.filter(t => t.submission && t.submission.graded_at && t.submission.total_mark != null && t.total_marks);
+      if (marked.length === 0) return null;
+      const totalAwarded = marked.reduce((s, t) => s + t.submission.total_mark, 0);
+      const totalOutOf   = marked.reduce((s, t) => s + t.total_marks, 0);
+      const pct = totalOutOf > 0 ? Math.round((totalAwarded / totalOutOf) * 100) : null;
+      return { awarded: totalAwarded, outOf: totalOutOf, pct, count: marked.length };
+    }
+
+    function buildLink(t) {
+      // Marked → feedback view; submitted-not-graded → also feedback; not submitted → submit
+      const sub = t.submission;
+      if (sub) {
+        // Feedback page loads via submit's viewLatestFeedback flow; simpler to send the student
+        // to submit.html which will detect the locked state and route appropriately.
+        return 'submit.html?task=' + encodeURIComponent(t.id);
+      }
+      return 'submit.html?task=' + encodeURIComponent(t.id);
+    }
+
+    function render(classes) {
+      const container = document.getElementById('content');
+      let html = '';
+      html += '<h1>My results</h1>';
+      html += '<p class="lede">Every task across your ProofReady classes — what\'s coming up, what you\'ve submitted, and how you\'ve gone.</p>';
+
+      // Summary strip
+      const allTasks = classes.flatMap(c => c.tasks);
+      const graded = allTasks.filter(t => t.submission && t.submission.graded_at && t.submission.total_mark != null && t.total_marks);
+      const submitted = allTasks.filter(t => t.submission);
+      const totalAwarded = graded.reduce((s, t) => s + t.submission.total_mark, 0);
+      const totalOutOf   = graded.reduce((s, t) => s + t.total_marks, 0);
+      const overallPct = totalOutOf > 0 ? Math.round((totalAwarded / totalOutOf) * 100) : null;
+
+      html += '<div class="summary-strip">';
+      html += '<div class="summary-card"><div class="label">Classes</div><div class="value">' + classes.length + '</div></div>';
+      html += '<div class="summary-card"><div class="label">Tasks</div><div class="value">' + allTasks.length + '</div><div class="sub">' + submitted.length + ' submitted</div></div>';
+      html += '<div class="summary-card"><div class="label">Marked</div><div class="value">' + graded.length + '</div>' + (overallPct != null ? '<div class="sub">' + overallPct + '% overall average</div>' : '<div class="sub">No marks yet</div>') + '</div>';
+      html += '</div>';
+
+      if (classes.length === 0) {
+        html += '<div class="empty-state"><h3>No classes yet</h3><p>Join a class with the code your teacher gave you to start seeing tasks here.</p></div>';
+        container.innerHTML = html;
+        return;
+      }
+
+      classes.forEach(c => {
+        html += '<div class="class-card">';
+        html += '<div class="class-header">';
+        html += '<div><h2>' + e(c.name) + '</h2>';
+        const metaParts = [];
+        if (c.course) metaParts.push(e(c.course));
+        if (c.teacher_name) metaParts.push('Teacher: ' + e(c.teacher_name));
+        metaParts.push(c.tasks.length + ' task' + (c.tasks.length === 1 ? '' : 's'));
+        html += '<div class="class-meta">' + metaParts.join(' · ') + '</div>';
+        html += '</div>';
+        const avg = classAverage(c);
+        if (avg && avg.pct != null) {
+          html += '<div class="average"><div class="avg-label">Class average</div><div class="avg-value">' + avg.pct + '%</div></div>';
+        }
+        html += '</div>';
+
+        if (c.tasks.length === 0) {
+          html += '<div class="empty-class">No published tasks in this class yet.</div>';
+        } else {
+          c.tasks.forEach(t => {
+            const status = classifyTask(t);
+            const link = buildLink(t);
+            html += '<a class="task-row clickable" href="' + link + '">';
+            html += '<div class="task-info">';
+            html += '<div class="task-title">' + e(t.title || t.question || 'Untitled task') + '</div>';
+            const taskMetaParts = [];
+            if (t.due_date) {
+              const due = new Date(t.due_date + 'T00:00:00');
+              taskMetaParts.push('Due ' + due.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }));
+            }
+            if (t.course && t.course !== c.course) taskMetaParts.push(e(t.course));
+            html += '<div class="task-meta">' + taskMetaParts.join(' · ') + '</div>';
+            html += '</div>';
+            html += '<div class="task-status ' + status.cls + '">' + e(status.label) + '</div>';
+            html += renderMark(t);
+            html += '</a>';
+          });
+        }
+        html += '</div>';
+      });
+
+      container.innerHTML = html;
+      // Stop anchors from styling like default browser links
+      document.querySelectorAll('.task-row.clickable').forEach(el => { el.style.textDecoration = 'none'; el.style.color = 'inherit'; });
+    }
+  </script>
+</body>
+</html>

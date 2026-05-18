@@ -7,6 +7,7 @@ import { getSupabase, verifyAuth } from '../lib/auth.js';
  *
  *   GET /api/me?resource=submissions              → student's submissions across all classes
  *   GET /api/me?resource=task-drafts&task_id=X    → student's drafts for one task
+ *   GET /api/me?resource=results                  → student's full markbook: classes → tasks → latest submission
  */
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -20,8 +21,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   switch (resource) {
     case 'submissions':  return returnSubmissions(req, res, user.id);
     case 'task-drafts':  return returnTaskDrafts(req, res, user.id);
+    case 'results':      return returnResults(req, res, user.id);
     default:
-      return res.status(400).json({ error: 'Unknown resource. Use ?resource=submissions|task-drafts' });
+      return res.status(400).json({ error: 'Unknown resource. Use ?resource=submissions|task-drafts|results' });
   }
 }
 
@@ -61,6 +63,79 @@ async function returnSubmissions(_req: VercelRequest, res: VercelResponse, userI
     };
   });
   return res.status(200).json(enriched);
+}
+
+async function returnResults(_req: VercelRequest, res: VercelResponse, userId: string) {
+  const supabase = getSupabase();
+
+  const { data: memberRows, error: memErr } = await supabase
+    .from('class_members').select('class_id').eq('student_id', userId);
+  if (memErr) return res.status(500).json({ error: memErr.message });
+  const classIds = (memberRows || []).map(r => r.class_id);
+  if (classIds.length === 0) return res.status(200).json({ classes: [] });
+
+  const { data: classes, error: clsErr } = await supabase
+    .from('classes')
+    .select('id, name, course, teacher_id')
+    .in('id', classIds)
+    .order('name', { ascending: true });
+  if (clsErr) return res.status(500).json({ error: clsErr.message });
+
+  const teacherIds = [...new Set((classes || []).map(c => c.teacher_id).filter(Boolean))] as string[];
+  const teacherNameById: Record<string, string> = {};
+  if (teacherIds.length > 0) {
+    const { getUserInfoBatch } = await import('../lib/user-names.js');
+    const info = await getUserInfoBatch(supabase, teacherIds);
+    Object.entries(info).forEach(([id, v]) => { teacherNameById[id] = v?.name || ''; });
+  }
+
+  const { data: tasks, error: tasksErr } = await supabase
+    .from('tasks')
+    .select('id, class_id, title, question, course, total_marks, due_date, published_at, criteria_structured, criteria_text')
+    .in('class_id', classIds)
+    .not('published_at', 'is', null)
+    .order('due_date', { ascending: true });
+  if (tasksErr) return res.status(500).json({ error: tasksErr.message });
+
+  const taskIds = (tasks || []).map(t => t.id);
+  let submissionsByTask: Record<string, any> = {};
+  if (taskIds.length > 0) {
+    const { data: subs, error: subsErr } = await supabase
+      .from('submissions')
+      .select('id, task_id, draft_version, created_at, total_mark, criterion_marks, graded_at, teacher_comment')
+      .eq('student_id', userId)
+      .in('task_id', taskIds)
+      .order('draft_version', { ascending: false });
+    if (subsErr) return res.status(500).json({ error: subsErr.message });
+    (subs || []).forEach(s => {
+      // We want the graded submission if any, otherwise the latest.
+      const existing = submissionsByTask[s.task_id];
+      if (!existing) {
+        submissionsByTask[s.task_id] = s;
+      } else if (s.graded_at && !existing.graded_at) {
+        submissionsByTask[s.task_id] = s;
+      }
+    });
+  }
+
+  const tasksByClass: Record<string, any[]> = {};
+  (tasks || []).forEach(t => {
+    if (!tasksByClass[t.class_id]) tasksByClass[t.class_id] = [];
+    tasksByClass[t.class_id].push({
+      ...t,
+      submission: submissionsByTask[t.id] || null,
+    });
+  });
+
+  const result = (classes || []).map(c => ({
+    id: c.id,
+    name: c.name,
+    course: c.course,
+    teacher_name: c.teacher_id ? (teacherNameById[c.teacher_id] || null) : null,
+    tasks: tasksByClass[c.id] || [],
+  }));
+
+  return res.status(200).json({ classes: result });
 }
 
 async function returnTaskDrafts(req: VercelRequest, res: VercelResponse, userId: string) {
