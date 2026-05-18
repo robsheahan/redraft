@@ -314,10 +314,33 @@
       .trim();
   }
 
-  function renderRubric(textOrStructured, escapeFn, structured) {
-    var e = escapeFn || function(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+  // Parse a range string like "3-5", "3–5", "(3-5)" into {min, max}.
+  function parseRange(rangeStr) {
+    if (!rangeStr) return null;
+    var s = String(rangeStr).replace(/[–—]/g, '-');
+    var m = s.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)/);
+    if (!m) {
+      // Single-number "rank" like "5" — treat as min=max
+      var n = s.match(/(\d+(?:\.\d+)?)/);
+      if (n) { var v = parseFloat(n[1]); return { min: v, max: v }; }
+      return null;
+    }
+    return { min: parseFloat(m[1]), max: parseFloat(m[2]) };
+  }
 
-    // New signature: renderRubric(rawText, escapeFn, structuredRubric).
+  function rangeContains(rangeStr, mark) {
+    var b = parseRange(rangeStr);
+    if (!b || mark == null || isNaN(mark)) return false;
+    return mark >= b.min && mark <= b.max;
+  }
+
+  function renderRubric(textOrStructured, escapeFn, structured, opts) {
+    var e = escapeFn || function(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    opts = opts || {};
+    var mode = opts.mode || 'display';  // 'display' | 'mark-entry' | 'graded'
+    var marks = opts.marks;
+
+    // New signature: renderRubric(rawText, escapeFn, structuredRubric, opts).
     // If a server-parsed structured rubric is supplied, use it directly —
     // skip the regex parser entirely. Falls back to the regex parser when
     // no structured rubric is available (legacy tasks, AI parse failed).
@@ -329,10 +352,13 @@
       if (!text) return '';
       parsed = parseRubric(text);
     }
+
     if (parsed && parsed.format === 'band') {
-      var html = '<div class="rubric-table">';
+      var awardedBandMark = (marks && typeof marks.mark === 'number') ? marks.mark : null;
+      var html = '<div class="rubric-table" data-rubric-format="band" data-rubric-mode="' + mode + '">';
       parsed.bands.forEach(function(band) {
-        html += '<div class="rubric-row">';
+        var isMarked = (mode === 'graded' && rangeContains(band.range, awardedBandMark));
+        html += '<div class="rubric-row' + (isMarked ? ' rubric-row--marked' : '') + '" data-band-range="' + e(band.range) + '">';
         html += '<div class="rubric-band">' + e(formatRange(band.range)) + '</div>';
         html += '<div class="rubric-criteria">';
         if (band.criteria.length > 0) {
@@ -344,13 +370,27 @@
         html += '</div>';
       });
       html += '</div>';
+      if (mode === 'mark-entry') {
+        html += '<div class="rubric-mark-entry-overall">';
+        html += '<label>Overall mark <input type="number" class="rubric-mark-input rubric-mark-overall" data-mode="band" min="0" step="0.5"></label>';
+        html += '</div>';
+      } else if (mode === 'graded' && awardedBandMark != null) {
+        html += '<div class="rubric-graded-summary">Awarded: <strong>' + e(String(awardedBandMark)) + '</strong></div>';
+      }
       return html;
     }
 
     if (parsed && parsed.format === 'criterion') {
-      var html2 = '<div class="rubric-table">';
+      var html2 = '<div class="rubric-table" data-rubric-format="criterion" data-rubric-mode="' + mode + '">';
       parsed.criteria.forEach(function(crit, i) {
-        html2 += '<div class="rubric-row">';
+        var bounds = parseRange(crit.range);
+        var awardedMark = null;
+        if (mode === 'graded' && Array.isArray(marks)) {
+          var found = marks.find(function(m) { return m.name === crit.name; });
+          if (found && typeof found.mark === 'number') awardedMark = found.mark;
+        }
+        var isMarked = awardedMark != null;
+        html2 += '<div class="rubric-row' + (isMarked ? ' rubric-row--marked' : '') + '" data-criterion-index="' + i + '" data-criterion-name="' + e(crit.name) + '">';
         html2 += '<div class="rubric-band">' + (crit.range ? e(formatRange(crit.range)) : (i + 1)) + '</div>';
         html2 += '<div class="rubric-criteria">';
         html2 += '<div style="font-weight:700;color:#1f2937;margin-bottom:' + (crit.details.length > 0 ? '6px' : '0') + '">' + e(crit.name) + '</div>';
@@ -360,6 +400,15 @@
           html2 += '</ul>';
         }
         html2 += '</div>';
+        if (mode === 'mark-entry') {
+          var minAttr = bounds ? ' min="' + bounds.min + '"' : '';
+          var maxAttr = bounds ? ' max="' + bounds.max + '"' : '';
+          var maxLabel = bounds ? ('/' + bounds.max) : '';
+          html2 += '<div class="rubric-input-cell"><input type="number" class="rubric-mark-input" data-mode="criterion" data-criterion-name="' + e(crit.name) + '" data-criterion-max="' + (bounds ? bounds.max : '') + '"' + minAttr + maxAttr + ' step="0.5"><span class="rubric-input-max">' + e(maxLabel) + '</span></div>';
+        } else if (mode === 'graded' && awardedMark != null) {
+          var maxStr = bounds ? ('/' + bounds.max) : '';
+          html2 += '<div class="rubric-input-cell rubric-awarded"><strong>' + e(String(awardedMark)) + '</strong>' + e(maxStr) + '</div>';
+        }
         html2 += '</div>';
       });
       html2 += '</div>';
@@ -373,4 +422,6 @@
 
   global.parseRubric = parseRubric;
   global.renderRubric = renderRubric;
+  global.rubricParseRange = parseRange;
+  global.rubricRangeContains = rangeContains;
 })(typeof window !== 'undefined' ? window : this);

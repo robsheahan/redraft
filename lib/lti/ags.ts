@@ -62,6 +62,8 @@ export async function postCompletionIfLinked(opts: {
   taskId: string;
   studentId: string;
   comment?: string;
+  scoreGiven?: number;
+  scoreMaximum?: number;
 }): Promise<{ posted: boolean; reason?: string }> {
   const supabase = getSupabase();
 
@@ -92,6 +94,8 @@ export async function postCompletionIfLinked(opts: {
     lineItemUrl: task.lti_line_item_url as string,
     canvasUserId: mapping.canvas_user_id as string,
     comment: opts.comment,
+    scoreGiven: opts.scoreGiven,
+    scoreMaximum: opts.scoreMaximum,
   });
   return { posted: true };
 }

@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/proofready/favicon.svg" />
+  <link rel="shortcut icon" href="/proofready/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/proofready/apple-touch-icon.png" />
+  <link rel="manifest" href="/proofready/site.webmanifest" />
+  <title>Mark submission — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #faf7f2; color: #111827; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+      outline: 2px solid #ed7615; outline-offset: 2px; border-radius: 4px;
+    }
+    .nav { background: #fdf6ee; border-bottom: 1px solid #f0e6d6; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { text-decoration: none; display: flex; align-items: center; }
+    .nav-brand img { height: 40px; width: auto; }
+    .back-link { font-size: 13px; font-weight: 500; color: #4b5563; text-decoration: none; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 6px 14px; }
+    .back-link:hover { background: rgba(0,0,0,0.08); }
+    .container { max-width: 1440px; margin: 0 auto; padding: 24px 20px 80px; }
+    h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 4px; }
+    .task-meta { font-size: 13px; color: #6b7280; margin-bottom: 18px; }
+    .student-strip { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .student-strip .student-name { font-weight: 700; color: #111827; font-size: 15px; }
+    .student-strip .draft-info { font-size: 13px; color: #6b7280; }
+    .badge { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 100px; }
+    .badge-on-time { background: #d1fae5; color: #065f46; }
+    .badge-late { background: #fee2e2; color: #991b1b; }
+    .layout { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; }
+    @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+    .card { background: #fff; border-radius: 14px; padding: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); margin-bottom: 14px; }
+    .card h3 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #9ca3af; margin-bottom: 12px; }
+
+    /* Draft text panel */
+    .draft-text {
+      font-size: 15px; line-height: 1.85; color: #1f2937;
+      white-space: pre-wrap; padding: 6px 2px;
+      user-select: text; cursor: text;
+    }
+    .teacher-annotation { padding: 1px 2px; border-radius: 3px; border-bottom: 2px solid; }
+    .teacher-annotation--praise  { background: #dbeafe; border-bottom-color: #2563eb; }
+    .teacher-annotation--improve { background: #ede9fe; border-bottom-color: #7c3aed; }
+    .teacher-annotation--note    { background: #f1f5f9; border-bottom-color: #64748b; }
+    .teacher-annotation-sup {
+      font-size: 10px; font-weight: 700; color: #fff; background: #4f46e5;
+      padding: 1px 5px; border-radius: 100px; margin-left: 3px;
+      vertical-align: super; line-height: 1;
+    }
+
+    /* Floating annotate button (anchored to selection) */
+    .annotate-popup {
+      position: absolute; z-index: 50; display: none;
+      background: #111827; color: #fff; padding: 6px 12px; border-radius: 8px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+    .annotate-popup.visible { display: inline-flex; align-items: center; gap: 6px; }
+
+    /* Annotate dialog */
+    .annotate-dialog {
+      position: fixed; inset: 0; background: rgba(17,24,39,0.5); display: none;
+      align-items: center; justify-content: center; z-index: 100; padding: 20px;
+    }
+    .annotate-dialog.visible { display: flex; }
+    .annotate-dialog-card {
+      background: #fff; border-radius: 14px; padding: 22px; max-width: 480px; width: 100%;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+    .annotate-dialog h4 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+    .annotate-dialog .quote-preview {
+      font-size: 13px; color: #6b7280; padding: 10px 12px; background: #f9fafb;
+      border-radius: 6px; margin-bottom: 14px; line-height: 1.5;
+      max-height: 100px; overflow-y: auto;
+    }
+    .annotate-dialog label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin: 12px 0 6px; }
+    .annotate-dialog select, .annotate-dialog textarea {
+      width: 100%; padding: 10px 12px; border: 1px solid #e8e0d4; border-radius: 8px;
+      font-family: inherit; font-size: 14px;
+    }
+    .annotate-dialog textarea { resize: vertical; min-height: 90px; }
+    .annotate-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .btn { padding: 9px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit; border: 1px solid transparent; }
+    .btn-primary { background: #ed7615; color: #fff; }
+    .btn-primary:hover { background: #d4690f; }
+    .btn-primary:disabled { background: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
+    .btn-ghost { background: #fff; color: #374151; border-color: #e8e0d4; }
+    .btn-ghost:hover { background: #f9fafb; }
+    .btn-danger-text { background: transparent; color: #b91c1c; padding: 4px 8px; }
+    .btn-danger-text:hover { text-decoration: underline; }
+
+    /* Rubric in marking mode */
+    .rubric-table { border: 1px solid #e8e0d4; border-radius: 10px; overflow: hidden; background: #fff; }
+    .rubric-row { display: flex; border-bottom: 1px solid #e8e0d4; }
+    .rubric-row:last-child { border-bottom: none; }
+    .rubric-row:nth-child(odd) { background: #fdf6ee; }
+    .rubric-row.rubric-row--marked { background: #fef3e6 !important; }
+    .rubric-band { flex: 0 0 80px; padding: 12px; font-weight: 700; font-size: 13px; color: #ed7615; border-right: 1px solid #e8e0d4; display: flex; align-items: flex-start; justify-content: center; text-align: center; }
+    .rubric-criteria { flex: 1; padding: 12px 16px; font-size: 13px; color: #374151; line-height: 1.55; }
+    .rubric-criteria ul { list-style: none; padding: 0; margin: 0; }
+    .rubric-criteria li { padding-left: 14px; position: relative; margin-bottom: 4px; }
+    .rubric-criteria li::before { content: '•'; position: absolute; left: 0; color: #ed7615; font-weight: 700; }
+    .rubric-input-cell {
+      flex: 0 0 110px; border-left: 1px solid #e8e0d4; padding: 12px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .rubric-input-cell input { width: 60px; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 15px; font-family: inherit; text-align: center; }
+    .rubric-input-cell input:focus { outline: none; border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.15); }
+    .rubric-input-max { font-size: 13px; color: #6b7280; font-weight: 600; }
+    .rubric-mark-entry-overall { margin-top: 14px; padding: 14px 16px; background: #fef3e6; border-radius: 10px; }
+    .rubric-mark-entry-overall label { font-size: 14px; font-weight: 700; color: #111827; display: flex; align-items: center; gap: 12px; }
+    .rubric-mark-entry-overall input { width: 90px; padding: 10px; border: 1px solid #ed7615; border-radius: 6px; font-size: 16px; font-family: inherit; text-align: center; font-weight: 700; }
+
+    .total-row {
+      margin-top: 12px; padding: 12px 16px; background: #1f2937; color: #fff;
+      border-radius: 10px; display: flex; align-items: center; justify-content: space-between;
+      font-weight: 700; font-size: 15px;
+    }
+    .total-row .total-label { color: #d1d5db; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .total-row .total-value { font-size: 18px; }
+
+    /* Teacher comment */
+    .comment-area {
+      width: 100%; min-height: 120px; padding: 14px 16px; border: 1px solid #e8e0d4;
+      border-radius: 10px; font-family: inherit; font-size: 14.5px; line-height: 1.65;
+      resize: vertical;
+    }
+    .comment-area:focus { outline: none; border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.1); }
+
+    /* Annotations list */
+    .annotation-cards { display: flex; flex-direction: column; gap: 10px; }
+    .annotation-card {
+      border-left: 4px solid #4f46e5; padding: 12px 14px; background: #fafaff;
+      border-radius: 8px; position: relative;
+    }
+    .annotation-card .ac-quote {
+      font-size: 12.5px; font-style: italic; color: #4b5563;
+      line-height: 1.5; margin-bottom: 6px;
+    }
+    .annotation-card .ac-quote::before { content: '"'; }
+    .annotation-card .ac-quote::after { content: '"'; }
+    .annotation-card .ac-comment {
+      font-size: 13.5px; color: #111827; line-height: 1.55; white-space: pre-wrap;
+    }
+    .annotation-card .ac-category {
+      display: inline-block; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.4px; padding: 2px 8px; border-radius: 100px; margin-bottom: 6px;
+    }
+    .ac-category--praise  { background: #dbeafe; color: #1e3a8a; }
+    .ac-category--improve { background: #ede9fe; color: #5b21b6; }
+    .ac-category--note    { background: #f1f5f9; color: #334155; }
+    .annotation-card .ac-remove {
+      position: absolute; top: 8px; right: 8px;
+      background: transparent; border: 0; color: #9ca3af; cursor: pointer;
+      font-size: 16px; padding: 2px 6px;
+    }
+    .annotation-card .ac-remove:hover { color: #b91c1c; }
+    .empty-annotations { font-size: 13px; color: #9ca3af; padding: 14px; text-align: center; background: #f9fafb; border-radius: 8px; border: 1px dashed #e5e7eb; }
+
+    .save-bar {
+      display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+      padding: 16px 0; margin-top: 12px;
+    }
+    .save-bar .lock-note { font-size: 12.5px; color: #6b7280; margin-right: auto; max-width: 60%; }
+
+    .loading { text-align: center; padding: 60px; color: #9ca3af; }
+    .error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 14px; border-radius: 8px; margin-bottom: 14px; }
+
+    .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
+    .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+    <a id="backLink" href="teacher.html" class="back-link">Back to task</a>
+  </nav>
+  <div class="container" id="content"><div class="loading">Loading submission...</div></div>
+  <div class="site-footer">
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms &amp; Conditions</a>
+    <a href="/compliance.html">Compliance</a>
+  </div>
+
+  <div class="annotate-popup" id="annotatePopup">+ Annotate selection</div>
+
+  <div class="annotate-dialog" id="annotateDialog">
+    <div class="annotate-dialog-card">
+      <h4 id="annotateDialogTitle">Add annotation</h4>
+      <div class="quote-preview" id="annotateQuotePreview"></div>
+      <label>Category</label>
+      <select id="annotateCategory">
+        <option value="praise">Praise</option>
+        <option value="improve">Improve</option>
+        <option value="note">Note</option>
+      </select>
+      <label>Comment</label>
+      <textarea id="annotateComment" placeholder="What do you want to say about this part?"></textarea>
+      <div class="annotate-dialog-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeAnnotateDialog()">Cancel</button>
+        <button type="button" class="btn btn-primary" id="annotateSaveBtn" onclick="saveAnnotation()">Save annotation</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script src="/js/rubric.js"></script>
+  <script>
+    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    let submission = null;
+    let task = null;
+    let teacherAnnotations = [];   // [{quote, comment, category, start, end}]
+    let criterionMarksState = {};  // {criterionName: number}
+    let bandMarkState = null;      // for band rubrics
+    let pendingSelection = null;   // {start, end, quote}
+
+    (async () => {
+      const container = document.getElementById('content');
+      try {
+        const user = await requireAuth('teacher');
+        if (!user) return;
+        const params = new URLSearchParams(window.location.search);
+        const submissionId = params.get('submission_id');
+        const taskId = params.get('task_id');
+        if (!submissionId || !taskId) {
+          container.innerHTML = '<div class="error">Missing submission_id or task_id in URL.</div>';
+          return;
+        }
+
+        const [taskRes, tsRes] = await Promise.all([
+          authFetch('/api/task?id=' + encodeURIComponent(taskId)),
+          authFetch('/api/task-submissions?task_id=' + encodeURIComponent(taskId)),
+        ]);
+
+        const taskData = await taskRes.json();
+        if (!taskRes.ok || !taskData.task) { container.innerHTML = '<div class="error">Could not load task.</div>'; return; }
+        task = taskData.task;
+        task.class = taskData.class || null;
+        document.getElementById('backLink').href = 'task-detail.html?id=' + encodeURIComponent(task.id);
+
+        if (!tsRes.ok) { container.innerHTML = '<div class="error">Could not load submissions for this task.</div>'; return; }
+        const tsData = await tsRes.json();
+        const row = (tsData.submissions || []).find(s => s.id === submissionId);
+        if (!row) { container.innerHTML = '<div class="error">Submission not found in this task.</div>'; return; }
+        submission = row;
+        const studentName = row.student_name || 'Student';
+
+        // Hydrate state from existing grade (if re-editing)
+        if (Array.isArray(sub.teacher_annotations)) teacherAnnotations = sub.teacher_annotations.slice();
+        if (Array.isArray(sub.criterion_marks)) {
+          sub.criterion_marks.forEach(m => { if (m && m.name) criterionMarksState[m.name] = m.mark; });
+        } else if (sub.criterion_marks && typeof sub.criterion_marks === 'object' && sub.criterion_marks.mark != null) {
+          bandMarkState = sub.criterion_marks.mark;
+        }
+
+        render(studentName);
+      } catch (err) {
+        console.error('[mark-submission] load failed:', err);
+        container.innerHTML = '<div class="error">' + e(err.message || String(err)) + '</div>';
+      }
+    })();
+
+    function lateBadge(submission, task) {
+      if (!task.due_date) return '';
+      const due = new Date(task.due_date + 'T23:59:59');
+      const sub = new Date(submission.created_at);
+      if (sub <= due) return '<span class="badge badge-on-time">Submitted on time</span>';
+      const days = Math.ceil((sub - due) / (1000 * 60 * 60 * 24));
+      return '<span class="badge badge-late">Submitted ' + days + ' day' + (days === 1 ? '' : 's') + ' late</span>';
+    }
+
+    function render(studentName) {
+      const container = document.getElementById('content');
+      const structured = task.criteria_structured || null;
+      const format = structured ? structured.format : null;
+
+      let html = '';
+      html += '<h1>Mark submission</h1>';
+      var metaParts = [];
+      if (task.title) metaParts.push(e(task.title));
+      if (task.class && task.class.name) metaParts.push(e(task.class.name));
+      html += '<div class="task-meta">' + metaParts.join(' · ') + '</div>';
+
+      html += '<div class="student-strip">';
+      html += '<span class="student-name">' + e(studentName) + '</span>';
+      html += '<span class="draft-info">Draft ' + e(String(submission.draft_version || 1)) + '</span>';
+      html += lateBadge(submission, task);
+      if (submission.graded_at) {
+        html += '<span class="badge" style="background:#d1fae5;color:#065f46">Already marked — editing</span>';
+      }
+      html += '</div>';
+
+      html += '<div class="layout">';
+
+      // Left: draft
+      html += '<div>';
+      html += '<div class="card">';
+      html += '<h3>Student draft</h3>';
+      html += '<div class="draft-text" id="draftText">' + renderDraftWithAnnotations() + '</div>';
+      html += '</div>';
+      html += '</div>';
+
+      // Right: rubric + comment + annotations
+      html += '<div>';
+      html += '<div class="card">';
+      html += '<h3>Marking criteria</h3>';
+      html += renderRubric(task.criteria_text, e, structured, { mode: 'mark-entry' });
+      html += '<div class="total-row"><span class="total-label">Total</span><span class="total-value" id="totalDisplay">— / ' + e(String(task.total_marks || '—')) + '</span></div>';
+      if (!structured) {
+        html += '<p style="margin-top:10px;font-size:13px;color:#9ca3af">This task\'s rubric isn\'t machine-parsed. Enter the overall mark in the box below.</p>';
+        html += '<div class="rubric-mark-entry-overall"><label>Overall mark <input type="number" class="rubric-mark-input rubric-mark-overall" data-mode="band" min="0" step="0.5"></label></div>';
+      }
+      html += '</div>';
+
+      html += '<div class="card">';
+      html += '<h3>Overall comment</h3>';
+      html += '<textarea class="comment-area" id="teacherComment" placeholder="Write your overall feedback for this student\'s submission..."></textarea>';
+      html += '</div>';
+
+      html += '<div class="card">';
+      html += '<h3>Inline annotations</h3>';
+      html += '<div class="annotation-cards" id="annotationCards">' + renderAnnotationCards() + '</div>';
+      html += '<p style="margin-top:10px;font-size:12.5px;color:#9ca3af">Select text in the student draft to add an annotation.</p>';
+      html += '</div>';
+
+      html += '<div class="save-bar">';
+      html += '<div class="lock-note">Saving the grade <strong>locks</strong> this task for the student — they can no longer submit further drafts.</div>';
+      html += '<button type="button" class="btn btn-primary" id="saveGradeBtn" onclick="saveGrade()">Save grade</button>';
+      html += '</div>';
+      html += '</div>'; // right col
+
+      html += '</div>'; // layout
+
+      container.innerHTML = html;
+
+      // Hydrate inputs
+      document.getElementById('teacherComment').value = submission.teacher_comment || '';
+      document.querySelectorAll('.rubric-mark-input').forEach(inp => {
+        if (inp.dataset.mode === 'criterion') {
+          const v = criterionMarksState[inp.dataset.criterionName];
+          if (typeof v === 'number') inp.value = v;
+        } else if (inp.dataset.mode === 'band') {
+          if (typeof bandMarkState === 'number') inp.value = bandMarkState;
+        }
+      });
+      wireMarkInputs(format);
+      wireSelection();
+      updateTotal(format);
+    }
+
+    function wireMarkInputs(format) {
+      document.querySelectorAll('.rubric-mark-input').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const val = inp.value === '' ? null : parseFloat(inp.value);
+          if (inp.dataset.mode === 'criterion') {
+            if (val == null) delete criterionMarksState[inp.dataset.criterionName];
+            else criterionMarksState[inp.dataset.criterionName] = val;
+          } else {
+            bandMarkState = val;
+            applyBandHighlight(val);
+          }
+          updateTotal(format);
+        });
+      });
+    }
+
+    function applyBandHighlight(mark) {
+      document.querySelectorAll('.rubric-row').forEach(row => {
+        const range = row.dataset.bandRange;
+        if (!range) return;
+        const match = window.rubricRangeContains && window.rubricRangeContains(range, mark);
+        row.classList.toggle('rubric-row--marked', !!match);
+      });
+    }
+
+    function updateTotal(format) {
+      let total = null;
+      if (format === 'criterion') {
+        const vals = Object.values(criterionMarksState).filter(v => typeof v === 'number');
+        if (vals.length > 0) total = vals.reduce((a, b) => a + b, 0);
+      } else if (format === 'band' || !format) {
+        if (typeof bandMarkState === 'number') total = bandMarkState;
+      }
+      const display = document.getElementById('totalDisplay');
+      if (display) display.textContent = (total == null ? '—' : total) + ' / ' + (task.total_marks || '—');
+    }
+
+    // ---- Selection + annotation ----
+
+    function wireSelection() {
+      const draftEl = document.getElementById('draftText');
+      if (!draftEl) return;
+      document.addEventListener('selectionchange', handleSelection);
+      document.getElementById('annotatePopup').addEventListener('mousedown', (ev) => {
+        ev.preventDefault();
+        openAnnotateDialog();
+      });
+    }
+
+    function handleSelection() {
+      const sel = window.getSelection();
+      const popup = document.getElementById('annotatePopup');
+      if (!sel || sel.isCollapsed) { popup.classList.remove('visible'); pendingSelection = null; return; }
+      const draftEl = document.getElementById('draftText');
+      if (!draftEl) { popup.classList.remove('visible'); return; }
+      const anchor = sel.anchorNode;
+      const focus = sel.focusNode;
+      if (!draftEl.contains(anchor) || !draftEl.contains(focus)) {
+        popup.classList.remove('visible'); pendingSelection = null; return;
+      }
+      const range = sel.getRangeAt(0);
+      const quote = range.toString().trim();
+      if (quote.length < 4) { popup.classList.remove('visible'); pendingSelection = null; return; }
+
+      const offsets = computeOffsets(draftEl, range);
+      if (!offsets) { popup.classList.remove('visible'); pendingSelection = null; return; }
+      pendingSelection = { start: offsets.start, end: offsets.end, quote };
+
+      const rect = range.getBoundingClientRect();
+      popup.style.left = (window.scrollX + rect.left + rect.width / 2 - 70) + 'px';
+      popup.style.top  = (window.scrollY + rect.top - 38) + 'px';
+      popup.classList.add('visible');
+    }
+
+    function computeOffsets(container, range) {
+      // Get start/end character offsets relative to container's plain text
+      const fullText = submission.draft_text || '';
+      const selectedText = range.toString();
+      // Walk the container's text nodes, accumulating until we hit the range
+      let charsBefore = 0;
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+      let node;
+      while ((node = walker.nextNode())) {
+        if (node === range.startContainer) {
+          charsBefore += range.startOffset;
+          break;
+        }
+        charsBefore += node.textContent.length;
+      }
+      // Translate from rendered-text offset back to the source string by
+      // matching the selected quote within the original draft_text near
+      // the computed offset.
+      const probe = Math.max(0, charsBefore - 50);
+      const slice = fullText.slice(probe);
+      const idx = slice.indexOf(selectedText);
+      if (idx === -1) {
+        // Fallback: locate first occurrence in the whole text
+        const fallback = fullText.indexOf(selectedText);
+        if (fallback === -1) return null;
+        return { start: fallback, end: fallback + selectedText.length };
+      }
+      const start = probe + idx;
+      return { start, end: start + selectedText.length };
+    }
+
+    function openAnnotateDialog() {
+      if (!pendingSelection) return;
+      document.getElementById('annotateDialog').classList.add('visible');
+      document.getElementById('annotateQuotePreview').textContent = pendingSelection.quote;
+      document.getElementById('annotateComment').value = '';
+      document.getElementById('annotateCategory').value = 'praise';
+      document.getElementById('annotateDialogTitle').textContent = 'Add annotation';
+      setTimeout(() => document.getElementById('annotateComment').focus(), 50);
+    }
+
+    function closeAnnotateDialog() {
+      document.getElementById('annotateDialog').classList.remove('visible');
+      document.getElementById('annotatePopup').classList.remove('visible');
+    }
+
+    function saveAnnotation() {
+      if (!pendingSelection) return closeAnnotateDialog();
+      const comment = document.getElementById('annotateComment').value.trim();
+      if (!comment) { alert('Please write a comment for this annotation.'); return; }
+      const category = document.getElementById('annotateCategory').value;
+      teacherAnnotations.push({
+        quote: pendingSelection.quote,
+        comment, category,
+        start: pendingSelection.start,
+        end: pendingSelection.end,
+      });
+      teacherAnnotations.sort((a, b) => a.start - b.start);
+      pendingSelection = null;
+      closeAnnotateDialog();
+      document.getElementById('draftText').innerHTML = renderDraftWithAnnotations();
+      document.getElementById('annotationCards').innerHTML = renderAnnotationCards();
+    }
+
+    function removeAnnotation(idx) {
+      teacherAnnotations.splice(idx, 1);
+      document.getElementById('draftText').innerHTML = renderDraftWithAnnotations();
+      document.getElementById('annotationCards').innerHTML = renderAnnotationCards();
+    }
+    window.removeAnnotation = removeAnnotation;
+
+    function renderDraftWithAnnotations() {
+      const text = submission.draft_text || '';
+      if (teacherAnnotations.length === 0) return e(text);
+      const sorted = teacherAnnotations.slice().sort((a, b) => a.start - b.start);
+      let html = '';
+      let cursor = 0;
+      sorted.forEach((ann, i) => {
+        if (ann.start < cursor) return;
+        html += e(text.slice(cursor, ann.start));
+        html += '<mark class="teacher-annotation teacher-annotation--' + e(ann.category || 'note') + '">' + e(text.slice(ann.start, ann.end)) + '<span class="teacher-annotation-sup">' + (i + 1) + '</span></mark>';
+        cursor = ann.end;
+      });
+      html += e(text.slice(cursor));
+      return html;
+    }
+
+    function renderAnnotationCards() {
+      if (teacherAnnotations.length === 0) {
+        return '<div class="empty-annotations">No annotations yet. Select text in the student draft to add one.</div>';
+      }
+      return teacherAnnotations.map((ann, i) => {
+        return '<div class="annotation-card">' +
+          '<button type="button" class="ac-remove" onclick="removeAnnotation(' + i + ')" aria-label="Remove">×</button>' +
+          '<span class="ac-category ac-category--' + e(ann.category || 'note') + '">' + e((ann.category || 'note').toUpperCase()) + '</span>' +
+          '<div class="ac-quote">' + e(ann.quote) + '</div>' +
+          '<div class="ac-comment">' + e(ann.comment) + '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    // ---- Save ----
+
+    async function saveGrade() {
+      const structured = task.criteria_structured || null;
+      const format = structured ? structured.format : null;
+      let criterionMarks = null;
+      let totalMark = null;
+
+      if (format === 'criterion') {
+        if (Object.keys(criterionMarksState).length === 0) {
+          alert('Please enter a mark for at least one criterion.');
+          return;
+        }
+        criterionMarks = Object.entries(criterionMarksState).map(([name, mark]) => {
+          const c = (structured.criteria || []).find(x => x.name === name);
+          const bounds = c ? window.rubricParseRange(c.range) : null;
+          return { name, mark, max: bounds ? bounds.max : null };
+        });
+        totalMark = criterionMarks.reduce((sum, m) => sum + (typeof m.mark === 'number' ? m.mark : 0), 0);
+      } else {
+        if (typeof bandMarkState !== 'number') {
+          alert('Please enter an overall mark.');
+          return;
+        }
+        let bandRange = null;
+        if (format === 'band' && structured) {
+          const b = (structured.bands || []).find(bb => window.rubricRangeContains(bb.range, bandMarkState));
+          if (b) bandRange = b.range;
+        }
+        criterionMarks = { band_range: bandRange, mark: bandMarkState };
+        totalMark = bandMarkState;
+      }
+
+      const teacherComment = document.getElementById('teacherComment').value.trim();
+
+      const btn = document.getElementById('saveGradeBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      try {
+        const res = await authFetch('/api/submission-grade', {
+          method: 'PUT',
+          body: JSON.stringify({
+            submission_id: submission.id,
+            criterion_marks: criterionMarks,
+            total_mark: totalMark,
+            teacher_comment: teacherComment || null,
+            teacher_annotations: teacherAnnotations,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to save grade');
+        window.location.href = 'task-detail.html?id=' + encodeURIComponent(task.id);
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+        btn.textContent = 'Save grade';
+      }
+    }
+    window.closeAnnotateDialog = closeAnnotateDialog;
+    window.saveAnnotation = saveAnnotation;
+    window.saveGrade = saveGrade;
+  </script>
+</body>
+</html>

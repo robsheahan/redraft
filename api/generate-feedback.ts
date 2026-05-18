@@ -107,6 +107,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Task id or a question is required.' });
   }
 
+  // Lock: if the student already has a graded submission for this task,
+  // further drafts are blocked. The teacher has the final say.
+  if (user && task_id) {
+    const { data: graded } = await getSupabase()
+      .from('submissions')
+      .select('id')
+      .eq('student_id', user.id)
+      .eq('task_id', task_id)
+      .not('graded_at', 'is', null)
+      .maybeSingle();
+    if (graded) {
+      return res.status(403).json({
+        error: 'This task has been marked by your teacher. You cannot submit further drafts.',
+      });
+    }
+  }
+
   // Draft sanity limits: cheap rejection before we pay Anthropic for nonsense
   const draftStr = String(draft);
   if (draftStr.trim().length < 50) {

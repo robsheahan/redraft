@@ -367,6 +367,44 @@
     .annotation-card--structure      { border-left-color: #6366f1; }
     .annotation-card--task_alignment { border-left-color: #ec4899; }
     .annotation-card--mechanics      { border-left-color: #9ca3af; }
+
+    /* Teacher annotations — distinct palette */
+    .annotation--teacher-praise   { background: #dbeafe; border-bottom-color: #2563eb; }
+    .annotation--teacher-improve  { background: #ede9fe; border-bottom-color: #7c3aed; }
+    .annotation--teacher-note     { background: #f1f5f9; border-bottom-color: #64748b; }
+    .annotation-card--teacher-praise   { border-left-color: #2563eb; }
+    .annotation-card--teacher-improve  { border-left-color: #7c3aed; }
+    .annotation-card--teacher-note     { border-left-color: #64748b; }
+
+    /* Marked-by-teacher tab */
+    .teacher-mark-hero {
+      background: linear-gradient(180deg, #fef3e6 0%, #fff 100%);
+      border: 1px solid #f5d3a3; border-radius: 14px;
+      padding: 24px 28px; margin-bottom: 18px;
+    }
+    .teacher-mark-hero .label {
+      font-size: 12px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.6px;
+    }
+    .teacher-mark-hero .grade { display: flex; align-items: baseline; gap: 8px; margin: 6px 0 8px; }
+    .teacher-mark-hero .grade .total { font-size: 36px; font-weight: 800; color: #111827; letter-spacing: -1px; }
+    .teacher-mark-hero .grade .max  { font-size: 18px; color: #6b7280; font-weight: 500; }
+    .teacher-mark-hero .late-line { font-size: 13px; color: #4b5563; }
+    .teacher-mark-hero .late-line.late { color: #b91c1c; font-weight: 600; }
+    .teacher-section-title {
+      font-size: 13px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px;
+      margin: 22px 0 10px;
+    }
+    .teacher-comment-block {
+      background: #fff; border-radius: 12px; padding: 18px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+      font-size: 14.5px; line-height: 1.7; color: #1f2937; white-space: pre-wrap;
+    }
+    .rubric-graded-summary {
+      margin-top: 10px; font-size: 14px; color: #374151;
+    }
+    .rubric-row.rubric-row--marked { background: #fef3e6 !important; }
+    .rubric-input-cell { flex: 0 0 90px; border-left: 1px solid #e8e0d4; padding: 12px; display: flex; align-items: center; justify-content: center; }
+    .rubric-input-cell.rubric-awarded { font-size: 15px; color: #ed7615; font-weight: 600; }
     .annotation-card.focused {
       box-shadow: 0 0 0 2px #ed7615, 0 4px 12px rgba(237,118,21,0.2);
     }
@@ -489,6 +527,19 @@
       const annotations = (Array.isArray(fb && fb.inline_suggestions) ? fb.inline_suggestions : [])
         .filter(function(a) { return a && typeof a === 'object' && typeof a.quote === 'string' && typeof a.category === 'string'; });
 
+      // Find the current draft row (if drafts array is present) so we can
+      // detect teacher grading and render the Marked tab.
+      const currentDraft = (Array.isArray(drafts) ? drafts : []).find(function(d) {
+        return d && d.draft_version === currentVersion;
+      }) || null;
+      const teacherGrade = (currentDraft && currentDraft.graded_at) ? currentDraft : null;
+      const teacherAnnotations = (teacherGrade && Array.isArray(teacherGrade.teacher_annotations))
+        ? teacherGrade.teacher_annotations
+        : [];
+      // Default to the teacher view if a grade exists and we haven't already
+      // switched away from the default.
+      if (teacherGrade && activeView === 'feedback' && !window._userPickedView) activeView = 'teacher';
+
       const getObj = (val) => {
         if (val && typeof val === 'object' && !Array.isArray(val)) return val;
         if (Array.isArray(val)) return { summary: val, detail: val };
@@ -546,16 +597,23 @@
         html += '</div>';
       }
 
-      // View tabs — only show if we actually have annotations to offer
-      if (annotations.length > 0 && draftText) {
+      // View tabs — show if any tab content is available
+      const hasAnnotated = annotations.length > 0 && draftText;
+      const hasTeacher = !!teacherGrade;
+      if (hasAnnotated || hasTeacher) {
         html += '<div class="view-tabs">';
-        html += '<button class="view-tab' + (activeView === 'feedback' ? ' active' : '') + '" data-view="feedback" onclick="switchView(\'feedback\')">Feedback</button>';
-        html += '<button class="view-tab' + (activeView === 'annotated' ? ' active' : '') + '" data-view="annotated" onclick="switchView(\'annotated\')">Annotated draft (' + annotations.length + ')</button>';
+        if (hasTeacher) {
+          html += '<button class="view-tab' + (activeView === 'teacher' ? ' active' : '') + '" data-view="teacher" onclick="switchView(\'teacher\')">Marked by your teacher</button>';
+        }
+        html += '<button class="view-tab' + (activeView === 'feedback' ? ' active' : '') + '" data-view="feedback" onclick="switchView(\'feedback\')">AI Feedback</button>';
+        if (hasAnnotated) {
+          html += '<button class="view-tab' + (activeView === 'annotated' ? ' active' : '') + '" data-view="annotated" onclick="switchView(\'annotated\')">Annotated draft (' + annotations.length + ')</button>';
+        }
         html += '</div>';
       }
 
       // Feedback view wrapper
-      html += '<div id="view-feedback"' + (activeView === 'annotated' ? ' hidden' : '') + '>';
+      html += '<div id="view-feedback"' + (activeView !== 'feedback' ? ' hidden' : '') + '>';
 
       // What you've done well
       const well = getObj(fb.what_youve_done_well);
@@ -686,8 +744,8 @@
       html += '</div>'; // close #view-feedback
 
       // Annotated draft view
-      if (annotations.length > 0 && draftText) {
-        html += '<div id="view-annotated"' + (activeView === 'feedback' ? ' hidden' : '') + '>';
+      if (hasAnnotated) {
+        html += '<div id="view-annotated"' + (activeView !== 'annotated' ? ' hidden' : '') + '>';
         html += '<div class="annotated-layout">';
         html += '<div class="annotated-draft-text">' + renderAnnotatedDraftHtml(draftText, annotations) + '</div>';
         html += '<div class="annotated-sidebar">' + renderAnnotationCardsHtml(annotations) + '</div>';
@@ -695,10 +753,105 @@
         html += '</div>';
       }
 
-      html += '<div class="footer">This is formative feedback on a draft — not a final mark.</div>';
+      // Marked-by-teacher view
+      if (hasTeacher) {
+        html += '<div id="view-teacher"' + (activeView !== 'teacher' ? ' hidden' : '') + '>';
+        html += renderTeacherMarkHtml(teacherGrade, task, teacherAnnotations, draftText);
+        html += '</div>';
+      }
+
+      const footerText = hasTeacher
+        ? 'This is your teacher\'s final mark and feedback. Your AI-feedback drafts are kept here for reference.'
+        : 'This is formative feedback on a draft — not a final mark.';
+      html += '<div class="footer">' + footerText + '</div>';
 
       container.innerHTML = html;
     }
+
+    function renderTeacherMarkHtml(grade, task, anns, draftText) {
+      const total = grade.total_mark != null ? grade.total_mark : '—';
+      const max   = task.total_marks || '—';
+      let html = '<div class="teacher-mark-hero">';
+      html += '<div class="label">Marked by your teacher</div>';
+      html += '<div class="grade"><span class="total">' + e(String(total)) + '</span><span class="max">/ ' + e(String(max)) + ' marks</span></div>';
+      // Late line
+      if (task.due_date && grade.created_at) {
+        const due = new Date(task.due_date + 'T23:59:59');
+        const sub = new Date(grade.created_at);
+        if (sub <= due) html += '<div class="late-line">Submitted on time.</div>';
+        else {
+          const days = Math.ceil((sub - due) / (1000 * 60 * 60 * 24));
+          html += '<div class="late-line late">Submitted ' + days + ' day' + (days === 1 ? '' : 's') + ' late.</div>';
+        }
+      }
+      html += '</div>';
+
+      // Per-criterion breakdown via renderRubric in graded mode
+      const structured = task.criteria_structured || null;
+      const marks = grade.criterion_marks || null;
+      if (structured && marks) {
+        html += '<div class="teacher-section-title">Criterion breakdown</div>';
+        html += renderRubric(task.criteria_text, e, structured, { mode: 'graded', marks: marks });
+      }
+
+      // Teacher comment
+      if (grade.teacher_comment && grade.teacher_comment.trim()) {
+        html += '<div class="teacher-section-title">Overall comment</div>';
+        html += '<div class="teacher-comment-block">' + e(grade.teacher_comment) + '</div>';
+      }
+
+      // Teacher annotations on draft
+      if (Array.isArray(anns) && anns.length > 0 && draftText) {
+        html += '<div class="teacher-section-title">Annotations on your draft</div>';
+        html += '<div class="annotated-layout">';
+        html += '<div class="annotated-draft-text">' + renderTeacherAnnotatedDraftHtml(draftText, anns) + '</div>';
+        html += '<div class="annotated-sidebar">' + renderTeacherAnnotationCardsHtml(anns) + '</div>';
+        html += '</div>';
+      }
+
+      return html;
+    }
+
+    function renderTeacherAnnotatedDraftHtml(draftText, anns) {
+      const sorted = anns.slice().sort(function(a, b) { return (a.start || 0) - (b.start || 0); });
+      let html = '';
+      let cursor = 0;
+      for (let i = 0; i < sorted.length; i++) {
+        const a = sorted[i];
+        if (typeof a.start !== 'number' || typeof a.end !== 'number' || a.start < cursor || a.end > draftText.length) continue;
+        html += e(draftText.slice(cursor, a.start));
+        html += '<span class="annotation annotation--teacher-' + e(a.category || 'note') + '" data-teacher-idx="' + i + '" onclick="focusTeacherAnnotation(' + i + ')" tabindex="0">';
+        html += e(draftText.slice(a.start, a.end));
+        html += '<sup class="annotation-num">' + (i + 1) + '</sup>';
+        html += '</span>';
+        cursor = a.end;
+      }
+      html += e(draftText.slice(cursor));
+      return html;
+    }
+
+    function renderTeacherAnnotationCardsHtml(anns) {
+      return anns.map(function(a, i) {
+        return '<div class="annotation-card annotation-card--teacher-' + e(a.category || 'note') + '" id="teacher-ann-card-' + i + '" onclick="focusTeacherAnnotation(' + i + ')">'
+          + '<div class="annotation-quote">"' + e(a.quote) + '"</div>'
+          + '<div class="annotation-comment">' + e(a.comment) + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    function focusTeacherAnnotation(idx) {
+      document.querySelectorAll('.annotation.focused, .annotation-card.focused').forEach(function(el) {
+        el.classList.remove('focused');
+      });
+      var hl = document.querySelector('[data-teacher-idx="' + idx + '"]');
+      var card = document.getElementById('teacher-ann-card-' + idx);
+      if (hl) hl.classList.add('focused');
+      if (card) {
+        card.classList.add('focused');
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+    window.focusTeacherAnnotation = focusTeacherAnnotation;
 
     function renderAnnotatedDraftHtml(draftText, annotations) {
       // Server guarantees annotations are sorted by start and non-overlapping.
@@ -735,10 +888,13 @@
 
     function switchView(view) {
       activeView = view;
+      window._userPickedView = true;
       var feedbackView = document.getElementById('view-feedback');
       var annotatedView = document.getElementById('view-annotated');
-      if (feedbackView) feedbackView.hidden = (view !== 'feedback');
+      var teacherView = document.getElementById('view-teacher');
+      if (feedbackView)  feedbackView.hidden  = (view !== 'feedback');
       if (annotatedView) annotatedView.hidden = (view !== 'annotated');
+      if (teacherView)   teacherView.hidden   = (view !== 'teacher');
       document.querySelectorAll('.view-tab').forEach(function(t) {
         t.classList.toggle('active', t.getAttribute('data-view') === view);
       });

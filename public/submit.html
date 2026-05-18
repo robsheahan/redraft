@@ -234,6 +234,21 @@
 
       html += '<div class="divider">Your draft</div>';
 
+      // Locking: if any of the student's prior drafts has been graded, the
+      // task is locked. Hide the draft form entirely; show a "Marked" card.
+      const gradedDraft = priorDrafts.find(d => d.graded_at);
+      if (gradedDraft) {
+        const total = gradedDraft.total_mark != null ? gradedDraft.total_mark : '—';
+        const max = t.total_marks || '—';
+        html += '<div class="cap-state" style="border-left:4px solid #10b981; background:#f0fdf4">';
+        html += '<h3>Marked by your teacher</h3>';
+        html += '<p>' + e(String(total)) + ' / ' + e(String(max)) + ' marks · Open your feedback to see your teacher\'s comments and annotations.</p>';
+        html += '<button type="button" class="submit-btn" style="max-width:280px;margin:0 auto;display:block;background:#10b981" onclick="viewLatestFeedback()">View teacher feedback</button>';
+        html += '</div>';
+        document.getElementById('content').innerHTML = html;
+        return;
+      }
+
       // Draft-progress banner (only shown if the student has at least one prior draft)
       const used = priorDrafts.length;
       const remaining = Math.max(0, MAX_DRAFTS - used);
@@ -313,7 +328,10 @@
 
     function viewLatestFeedback() {
       if (!priorDrafts.length) return;
-      const latest = priorDrafts[priorDrafts.length - 1];
+      // If any draft has been graded, surface THAT one (the teacher may have
+      // graded an earlier draft, not the literally-most-recent one).
+      const graded = priorDrafts.find(d => d.graded_at);
+      const latest = graded || priorDrafts[priorDrafts.length - 1];
       const prevVerbs = ['compare and contrast','critically analyse','critically evaluate','account for','analyse','analyze','appreciate','apply','assess','calculate','clarify','classify','compare','construct','contrast','deduce','demonstrate','describe','discuss','distinguish','evaluate','examine','explain','extract','extrapolate','identify','interpret','investigate','justify','outline','predict','propose','recommend','recount'];
       const qLow = (latest.question || currentTask.question || '').toLowerCase();
       const detectedVerb = prevVerbs.find(v => qLow.indexOf(v) !== -1) || '';
