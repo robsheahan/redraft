@@ -30,6 +30,17 @@
     .task-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
     .task-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
     .task-meta { font-size: 13px; color: #6b7280; }
+    .task-status-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 100px;
+      text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap;
+    }
+    .task-status-pill::before {
+      content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor;
+    }
+    .task-status-pill.marked  { background: #d1fae5; color: #065f46; }
+    .task-status-pill.pending { background: #dbeafe; color: #1e40af; }
     /* Draft progress indicator */
     .draft-progress { display: inline-flex; align-items: center; gap: 10px; margin-right: 12px; }
     .draft-dots { display: inline-flex; gap: 4px; }
@@ -112,9 +123,18 @@
           if (t.task_type) metaParts.push(e(t.task_type));
           if (t.total_marks) metaParts.push(e(String(t.total_marks)) + ' marks');
           if (t.due_date) metaParts.push('Due ' + e(t.due_date));
+          let statusPill = '';
+          if (t.my_graded_at) {
+            const total = t.my_total_mark != null ? t.my_total_mark : '—';
+            const max = t.total_marks || '—';
+            statusPill = '<span class="task-status-pill marked">Marked &middot; ' + e(String(total)) + '/' + e(String(max)) + '</span>';
+          } else if (t.my_submitted_for_marking) {
+            statusPill = '<span class="task-status-pill pending">Pending</span>';
+          }
           html += '<a href="submit.html?task=' + encodeURIComponent(t.id) + '" class="task-card">';
           html += '<div style="flex:1"><div class="task-title">' + e(t.title || t.question || 'Untitled task') + '</div>';
           html += '<div class="task-meta">' + metaParts.join(' · ') + '</div></div>';
+          if (statusPill) html += statusPill;
           html += renderDraftProgress(t.my_submission_count || 0);
           html += '<span style="color:#d1d5db;font-size:20px">›</span>';
           html += '</a>';

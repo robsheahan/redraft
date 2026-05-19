@@ -524,6 +524,17 @@
       white-space: nowrap; transition: background 0.15s;
     }
     .btn-view-feedback:hover { background: #fcd9b6; }
+    .task-status-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 100px;
+      text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap;
+    }
+    .task-status-pill::before {
+      content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor;
+    }
+    .task-status-pill.marked  { background: #d1fae5; color: #065f46; }
+    .task-status-pill.pending { background: #dbeafe; color: #1e40af; }
     .draft-badge {
       display: inline-block; font-size: 11px; font-weight: 600; color: #ed7615;
       background: #fef3e6; border-radius: 4px; padding: 1px 7px;
@@ -632,6 +643,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
 
     // Populated in the main IIFE; keyed by task_id, value = latest submission for that task
     var latestSubmissionByTask = {};
+    var taskById = {};
 
     (async () => {
       const user = await requireAuth('student');
@@ -662,6 +674,13 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           }
         });
       }
+
+      // Build a flat task lookup so the feedback handoff has full task context.
+      (classesData.joined || []).forEach(function(c) {
+        (c.tasks || []).forEach(function(t) {
+          taskById[t.id] = { ...t, class_name: c.name, teacher_name: c.teacher_name };
+        });
+      });
 
       // Sort by most recent published task first; classes with no
       // published tasks fall to the bottom and order alphabetically.
@@ -705,12 +724,21 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           if (t.total_marks) metaParts.push(escapeHtml(String(t.total_marks)) + ' marks');
           if (t.due_date) metaParts.push('Due ' + escapeHtml(t.due_date));
           const hasSubmission = (t.my_submission_count || 0) > 0;
+          let statusPill = '';
+          if (t.my_graded_at) {
+            const total = t.my_total_mark != null ? t.my_total_mark : '—';
+            const max = t.total_marks || '—';
+            statusPill = '<span class="task-status-pill marked">Marked &middot; ' + escapeHtml(String(total)) + '/' + escapeHtml(String(max)) + '</span>';
+          } else if (t.my_submitted_for_marking) {
+            statusPill = '<span class="task-status-pill pending">Pending</span>';
+          }
           html += '<a href="submit.html?task=' + encodeURIComponent(t.id) + '" class="task-row">';
           html += '<div style="flex:1;min-width:0"><div class="task-row-title">' + escapeHtml(t.title || t.question || 'Untitled task') + '</div>';
           html += '<div class="task-row-meta">' + metaParts.join(' · ') + '</div></div>';
+          if (statusPill) html += statusPill;
           html += renderDraftProgress(t.my_submission_count || 0);
           if (hasSubmission) {
-            html += '<button type="button" class="btn-view-feedback" onclick="openFeedback(event, \'' + encodeURIComponent(t.id) + '\')">View feedback</button>';
+            html += '<button type="button" class="btn-view-feedback" onclick="openFeedback(event, \'' + encodeURIComponent(t.id) + '\')">' + (t.my_graded_at ? 'View mark' : 'View feedback') + '</button>';
           } else {
             html += '<span class="task-row-arrow">›</span>';
           }
@@ -778,11 +806,18 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           draftVersion: latest.draft_version || 1,
         }
       }));
+      const tk = latest.task_id ? taskById[latest.task_id] : null;
       sessionStorage.setItem('proofready_task', JSON.stringify({
         task_id: latest.task_id || null,
-        title: latest.task_title || null,
-        question: latest.question,
-        course: latest.course,
+        title: latest.task_title || (tk ? tk.title : null),
+        question: latest.question || (tk ? tk.question : null),
+        course: latest.course || (tk ? tk.course : null),
+        total_marks: tk ? tk.total_marks || null : null,
+        due_date: tk ? tk.due_date || null : null,
+        criteria_text: tk ? tk.criteria_text || null : null,
+        criteria_structured: tk ? tk.criteria_structured || null : null,
+        teacher_name: tk ? tk.teacher_name || null : null,
+        class_name: tk ? tk.class_name || null : null,
       }));
       window.location.href = 'feedback.html';
     }

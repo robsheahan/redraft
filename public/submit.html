@@ -375,6 +375,10 @@
         title: currentTask.title,
         question: currentTask.question,
         course: currentTask.course,
+        total_marks: currentTask.total_marks || null,
+        due_date: currentTask.due_date || null,
+        criteria_text: currentTask.criteria_text || null,
+        criteria_structured: currentTask.criteria_structured || null,
         teacher_name: currentTask.class ? currentTask.class.teacher_name : null,
         class_name: currentTask.class ? currentTask.class.name : null,
       }));
@@ -730,6 +734,10 @@
           title: currentTask.title,
           question: currentTask.question,
           course: currentTask.course,
+          total_marks: currentTask.total_marks || null,
+          due_date: currentTask.due_date || null,
+          criteria_text: currentTask.criteria_text || null,
+          criteria_structured: currentTask.criteria_structured || null,
           teacher_name: currentTask.class ? currentTask.class.teacher_name : null,
           class_name: currentTask.class ? currentTask.class.name : null,
         }));

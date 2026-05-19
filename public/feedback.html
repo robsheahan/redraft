@@ -502,20 +502,35 @@
       const draftText = parsed.draft_text || '';
       const task = currentTask;
 
-      // If this was submitted against a task, load all drafts so we can navigate
+      // If this was submitted against a task, load all drafts + the full
+      // task so we can render the marked tab regardless of which page handed
+      // us off (submit / dashboard / my-results).
       const taskId = task.task_id || meta.task_id;
       if (taskId) {
-        authFetch('/api/me?resource=task-drafts&task_id=' + encodeURIComponent(taskId))
-          .then(r => r.json())
-          .then(data => {
-            if (data.drafts && data.drafts.length > 0) {
-              allDrafts = data.drafts;
-              var currentVersion = meta.draftVersion || allDrafts[allDrafts.length - 1].draft_version;
-              var current = allDrafts.find(function(d) { return d.draft_version === currentVersion; });
-              renderFeedback(fb, meta, allDrafts, currentVersion, current ? current.draft_text : draftText);
+        Promise.all([
+          authFetch('/api/me?resource=task-drafts&task_id=' + encodeURIComponent(taskId))
+            .then(r => r.ok ? r.json() : { drafts: [] }).catch(() => ({ drafts: [] })),
+          authFetch('/api/task?id=' + encodeURIComponent(taskId))
+            .then(r => r.ok ? r.json() : null).catch(() => null),
+        ]).then(([draftsData, taskData]) => {
+          if (taskData && taskData.task) {
+            // Merge any missing fields from the freshly-loaded task
+            currentTask = { ...currentTask, ...taskData.task, class: taskData.class || currentTask.class || null };
+            if (taskData.task.classes && taskData.task.classes.teacher_name) {
+              currentTask.teacher_name = currentTask.teacher_name || taskData.task.classes.teacher_name;
             }
-          })
-          .catch(() => { /* silently ignore draft nav if fetch fails */ });
+          }
+          if (draftsData.drafts && draftsData.drafts.length > 0) {
+            allDrafts = draftsData.drafts;
+            var currentVersion = meta.draftVersion || allDrafts[allDrafts.length - 1].draft_version;
+            var current = allDrafts.find(function(d) { return d.draft_version === currentVersion; });
+            renderFeedback(fb, meta, allDrafts, currentVersion, current ? current.draft_text : draftText);
+          } else {
+            renderFeedback(fb, meta, null, meta.draftVersion || 1, draftText);
+          }
+        });
+        renderFeedback(fb, meta, null, meta.draftVersion || 1, draftText);
+        return;
       }
 
       renderFeedback(fb, meta, null, meta.draftVersion || 1, draftText);
@@ -583,15 +598,18 @@
         html += '</div></div>';
       }
 
-      // Resubmit bar — shown if under the cap
+      // Resubmit bar — shown if under the cap AND task isn't locked
       var draftsUsed = drafts ? drafts.length : (meta.draftVersion || 1);
       var tId = task.task_id || meta.task_id;
-      if (tId && draftsUsed < MAX_DRAFTS) {
+      var anyLocked = Array.isArray(drafts) && drafts.some(function(d) {
+        return d && (d.graded_at || d.submitted_for_marking);
+      });
+      if (tId && !anyLocked && draftsUsed < MAX_DRAFTS) {
         html += '<div class="resubmit-bar">';
         html += '<div class="resubmit-bar-text">You\'ve used <strong>' + draftsUsed + ' of ' + MAX_DRAFTS + '</strong> drafts. Want to revise and resubmit?</div>';
         html += '<a href="submit.html?task=' + encodeURIComponent(tId) + '" class="btn-resubmit">Submit new draft</a>';
         html += '</div>';
-      } else if (tId && draftsUsed >= MAX_DRAFTS) {
+      } else if (tId && !anyLocked && draftsUsed >= MAX_DRAFTS) {
         html += '<div class="resubmit-bar">';
         html += '<div class="resubmit-bar-text">You\'ve used all <strong>' + MAX_DRAFTS + ' of ' + MAX_DRAFTS + '</strong> drafts for this task.</div>';
         html += '</div>';

@@ -94,23 +94,40 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
   const { data: tasks } = await taskQuery;
 
   // For students, decorate each task with how many drafts they've submitted
+  // plus their current grading state (graded / submitted-for-marking / none).
   let studentSubmissionCounts: Record<string, number> = {};
+  let studentStateByTask: Record<string, { graded_at: string | null; total_mark: number | null; submitted_for_marking: boolean }> = {};
   if (!isOwner && (tasks || []).length > 0) {
     const taskIds = (tasks || []).map((t: any) => t.id);
     const { data: subs } = await supabase
       .from('submissions')
-      .select('task_id')
+      .select('task_id, graded_at, total_mark, submitted_for_marking')
       .eq('student_id', user.id)
       .in('task_id', taskIds);
     (subs || []).forEach((s: any) => {
-      if (s.task_id) studentSubmissionCounts[s.task_id] = (studentSubmissionCounts[s.task_id] || 0) + 1;
+      if (!s.task_id) return;
+      studentSubmissionCounts[s.task_id] = (studentSubmissionCounts[s.task_id] || 0) + 1;
+      const existing = studentStateByTask[s.task_id];
+      const next = {
+        graded_at: s.graded_at || existing?.graded_at || null,
+        total_mark: s.graded_at && s.total_mark != null ? s.total_mark : (existing?.total_mark ?? null),
+        submitted_for_marking: !!s.submitted_for_marking || !!existing?.submitted_for_marking,
+      };
+      studentStateByTask[s.task_id] = next;
     });
   }
 
   const scrubbedTasks = (tasks || []).map((t: any) => {
     if (isOwner) return t;
     const { notes, ...rest } = t;
-    return { ...rest, my_submission_count: studentSubmissionCounts[t.id] || 0 };
+    const st = studentStateByTask[t.id];
+    return {
+      ...rest,
+      my_submission_count: studentSubmissionCounts[t.id] || 0,
+      my_graded_at: st?.graded_at || null,
+      my_total_mark: st?.total_mark ?? null,
+      my_submitted_for_marking: !!st?.submitted_for_marking,
+    };
   });
 
   let members: Array<{ student_id: string; student_name: string; joined_at: string }> | undefined;
@@ -184,14 +201,26 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
     });
   }
 
-  // Student's own submission counts by task_id, for inline draft-progress indicator
+  // Student's own submission counts + grading state by task_id, for inline indicators on the dashboard
   let myCounts: Record<string, number> = {};
+  let myStateByTask: Record<string, { graded_at: string | null; total_mark: number | null; submitted_for_marking: boolean }> = {};
   const studentTaskIds: string[] = [];
   Object.values(allTasksByClass).forEach(ts => ts.forEach((t: any) => { if (t.published_at) studentTaskIds.push(t.id); }));
   if (studentTaskIds.length > 0) {
     const { data: subs } = await supabase
-      .from('submissions').select('task_id').eq('student_id', userId).in('task_id', studentTaskIds);
-    (subs || []).forEach((s: any) => { if (s.task_id) myCounts[s.task_id] = (myCounts[s.task_id] || 0) + 1; });
+      .from('submissions')
+      .select('task_id, graded_at, total_mark, submitted_for_marking')
+      .eq('student_id', userId).in('task_id', studentTaskIds);
+    (subs || []).forEach((s: any) => {
+      if (!s.task_id) return;
+      myCounts[s.task_id] = (myCounts[s.task_id] || 0) + 1;
+      const existing = myStateByTask[s.task_id];
+      myStateByTask[s.task_id] = {
+        graded_at: s.graded_at || existing?.graded_at || null,
+        total_mark: s.graded_at && s.total_mark != null ? s.total_mark : (existing?.total_mark ?? null),
+        submitted_for_marking: !!s.submitted_for_marking || !!existing?.submitted_for_marking,
+      };
+    });
   }
 
   const decorate = (c: any) => {
@@ -219,7 +248,16 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
   const joinedOut: any[] = joinedVisible.map((c: any) => {
     const tasks = (allTasksByClass[c.id] || [])
       .filter((t: any) => t.published_at)
-      .map((t: any) => ({ ...t, my_submission_count: myCounts[t.id] || 0 }));
+      .map((t: any) => {
+        const st = myStateByTask[t.id];
+        return {
+          ...t,
+          my_submission_count: myCounts[t.id] || 0,
+          my_graded_at: st?.graded_at || null,
+          my_total_mark: st?.total_mark ?? null,
+          my_submitted_for_marking: !!st?.submitted_for_marking,
+        };
+      });
     return {
       ...decorate(c),
       teacher_name: teacherInfo[c.teacher_id]?.name || null,
