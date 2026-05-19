@@ -12,7 +12,10 @@
   // EN12-1, SC5-7WS, HMS-12-01 etc. The trailing letter-suffix uses a
   // negative lookahead so we don't eat the first letter of the next word
   // when codes are glued to descriptors (e.g. "PD4-1Examines factors...").
-  const OUTCOME_CODE_RE = /\b[A-Z]{2,8}-?\d{1,3}(?:\.\d{1,2})?-\d{1,3}(?:[A-Z]{1,3}(?![a-z]))?/g;
+  // Leading boundary uses (?<![A-Z]) rather than \b so codes glued to a
+  // preceding lowercase word (e.g. "DescriptorPD4-1") are still detected —
+  // \b doesn't fire on a lowercase->uppercase transition.
+  const OUTCOME_CODE_RE = /(?<![A-Z])[A-Z]{2,8}-?\d{1,3}(?:\.\d{1,2})?-\d{1,3}(?:[A-Z]{1,3}(?![a-z]))?/g;
 
   // Section heading markers (Section 1:, Part A:, Step 2., Stage 3 —).
   const SECTION_MARKER_RE = /(^|\n|[\s])((?:Section|Part|Step|Stage)\s+(?:\d+|[A-Z]))[:.\-–—]/g;
