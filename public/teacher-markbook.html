@@ -34,7 +34,25 @@
     .class-header .average .avg-label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.4px; }
     .class-header .average .avg-value { font-size: 18px; font-weight: 800; color: #111827; }
 
-    .markbook-scroll { overflow-x: auto; }
+    .markbook-scroll {
+      overflow-x: auto;
+      padding-bottom: 4px;
+      /* Firefox */
+      scrollbar-width: auto;
+      scrollbar-color: #ed7615 #fdf6ee;
+    }
+    /* Webkit/Blink — force a chunky always-visible orange scrollbar */
+    .markbook-scroll::-webkit-scrollbar { height: 12px; }
+    .markbook-scroll::-webkit-scrollbar-track { background: #fdf6ee; border-radius: 6px; }
+    .markbook-scroll::-webkit-scrollbar-thumb {
+      background: #ed7615; border-radius: 6px; border: 2px solid #fdf6ee;
+    }
+    .markbook-scroll::-webkit-scrollbar-thumb:hover { background: #d4690f; }
+    .scroll-hint {
+      font-size: 12px; color: #b45309; margin-bottom: 8px; font-weight: 600;
+      display: none;
+    }
+    .scroll-hint.visible { display: block; }
     .markbook-table { border-collapse: collapse; width: 100%; min-width: 100%; }
     .markbook-table th, .markbook-table td {
       padding: 8px 10px; border-bottom: 1px solid #f0e6d6; text-align: center;
@@ -198,6 +216,9 @@
         } else if (c.students.length === 0) {
           html += '<div style="padding:14px;color:#9ca3af;font-size:13px">No students enrolled yet.</div>';
         } else {
+          if (c.tasks.length > 4) {
+            html += '<div class="scroll-hint visible">← Scroll sideways to see all tasks →</div>';
+          }
           html += '<div class="markbook-scroll">';
           html += '<table class="markbook-table">';
           html += '<thead><tr>';
