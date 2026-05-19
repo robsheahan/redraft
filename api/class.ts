@@ -117,8 +117,36 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
     });
   }
 
+  // For the teacher view, decorate each task with per-task marking stats so
+  // the class-detail page can show "X submitted · Y marked · Z to mark".
+  const teacherStatsByTask: Record<string, { submitted: Set<string>; graded: Set<string>; pending: Set<string> }> = {};
+  if (isOwner && (tasks || []).length > 0) {
+    const taskIds = (tasks || []).map((t: any) => t.id);
+    const { data: allSubs } = await supabase
+      .from('submissions')
+      .select('task_id, student_id, graded_at, submitted_for_marking')
+      .in('task_id', taskIds);
+    (allSubs || []).forEach((s: any) => {
+      if (!s.task_id || !s.student_id) return;
+      if (!teacherStatsByTask[s.task_id]) {
+        teacherStatsByTask[s.task_id] = { submitted: new Set(), graded: new Set(), pending: new Set() };
+      }
+      const bucket = teacherStatsByTask[s.task_id];
+      bucket.submitted.add(s.student_id);
+      if (s.graded_at) bucket.graded.add(s.student_id);
+      else if (s.submitted_for_marking) bucket.pending.add(s.student_id);
+    });
+  }
+
   const scrubbedTasks = (tasks || []).map((t: any) => {
-    if (isOwner) return t;
+    if (isOwner) {
+      const stats = teacherStatsByTask[t.id];
+      const submitted_count = stats ? stats.submitted.size : 0;
+      const marked_count    = stats ? stats.graded.size : 0;
+      const to_mark_count   = stats ? Math.max(0, submitted_count - marked_count) : 0;
+      const ready_count     = stats ? stats.pending.size : 0;
+      return { ...t, submitted_count, marked_count, to_mark_count, ready_count };
+    }
     const { notes, ...rest } = t;
     const st = studentStateByTask[t.id];
     return {
