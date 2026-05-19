@@ -224,7 +224,7 @@
             html += '<span class="task-stat-pill submitted">' + t.submitted_count + ' submitted</span>';
             html += '<span class="task-stat-pill marked">' + (t.marked_count || 0) + ' marked</span>';
             const toMark = t.to_mark_count || 0;
-            if (toMark > 0) html += '<span class="task-stat-pill to-mark">' + toMark + ' to mark</span>';
+            if (toMark > 0) html += '<span class="task-stat-pill to-mark">' + toMark + ' unmarked</span>';
             if (t.ready_count > 0) html += '<span class="task-stat-pill ready">' + t.ready_count + ' ready</span>';
           }
           html += chip;

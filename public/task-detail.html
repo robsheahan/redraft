@@ -460,7 +460,7 @@
       if (submissions.length !== students.length) html += '<span class="stat"><strong>' + submissions.length + '</strong> total submissions</span>';
       if (students.length > 0) {
         html += '<span class="stat stat-marked"><strong>' + markedStudents.length + '</strong> marked</span>';
-        html += '<span class="stat stat-unmarked"><strong>' + unmarkedStudents + '</strong> to mark</span>';
+        html += '<span class="stat stat-unmarked"><strong>' + unmarkedStudents + '</strong> unmarked</span>';
       }
       if (task.total_marks) html += '<span class="stat"><strong>' + e(String(task.total_marks)) + '</strong> marks</span>';
       if (task.due_date) html += '<span class="stat">Due <strong>' + e(task.due_date) + '</strong></span>';
