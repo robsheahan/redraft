@@ -26,10 +26,50 @@
     .page-header .role-pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 100px; background: #fef3e6; color: #ed7615; margin-left: 8px; vertical-align: middle; text-transform: uppercase; letter-spacing: 0.4px; }
 
     .kpi-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 22px; }
-    .kpi { background: #fff; border-radius: 12px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
-    .kpi-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #9ca3af; margin-bottom: 4px; }
+    .kpi { background: #fff; border-radius: 12px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.15s; border: 1px solid transparent; font-family: inherit; text-align: left; width: 100%; }
+    .kpi:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04); }
+    .kpi.is-active { border-color: #ed7615; box-shadow: 0 0 0 1px #ed7615, 0 4px 12px rgba(237,118,21,0.15); }
+    .kpi-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #9ca3af; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
+    .kpi-label .chev { font-size: 10px; color: #d1d5db; transition: transform 0.15s; }
+    .kpi.is-active .kpi-label .chev { transform: rotate(180deg); color: #ed7615; }
     .kpi-value { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; color: #111827; line-height: 1.1; }
     .kpi-sub { font-size: 12px; color: #6b7280; margin-top: 4px; }
+
+    /* Detail panel under the KPI strip */
+    .detail-panel { background: #fff; border-radius: 12px; padding: 18px 22px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); display: none; }
+    .detail-panel.visible { display: block; }
+    .detail-panel h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+    .detail-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .detail-table th { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f0e6d6; font-weight: 700; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; background: #fdf6ee; }
+    .detail-table td { padding: 8px 10px; border-bottom: 1px solid #f5f0e8; color: #374151; vertical-align: top; }
+    .detail-table tr:last-child td { border-bottom: none; }
+    .detail-table tr:hover td { background: #fdfaf5; }
+    .detail-role-pill { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .detail-role-pill.admin { background: #fef3e6; color: #ed7615; }
+    .detail-role-pill.leader { background: #eef2ff; color: #4338ca; }
+    .detail-role-pill.none { background: #f3f4f6; color: #9ca3af; }
+    .detail-mono { font-family: monospace; font-size: 12px; color: #6b7280; }
+    .detail-loading { padding: 30px; text-align: center; color: #9ca3af; font-size: 13px; }
+    .detail-empty { padding: 30px; text-align: center; color: #9ca3af; font-size: 13px; }
+
+    /* Manage access section */
+    .access-section { background: #fff; border-radius: 12px; padding: 20px 24px; margin-top: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .access-section h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .access-section .sub { font-size: 13px; color: #6b7280; margin-bottom: 16px; line-height: 1.55; }
+    .access-add-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px; background: #fdf6ee; border: 1px solid #f0e6d6; border-radius: 8px; margin-bottom: 16px; align-items: center; }
+    .access-add-row input, .access-add-row select { padding: 8px 12px; border: 1px solid #e8e0d4; border-radius: 6px; font-family: inherit; font-size: 13.5px; outline: none; background: #fff; color: #111827; }
+    .access-add-row input { flex: 1 1 240px; min-width: 200px; }
+    .access-add-row input:focus, .access-add-row select:focus { border-color: #ed7615; box-shadow: 0 0 0 2px rgba(237,118,21,0.15); }
+    .access-add-row button { padding: 8px 16px; background: #ed7615; color: #fff; border: 0; border-radius: 6px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .access-add-row button:hover { background: #d4690f; }
+    .access-add-row button:disabled { background: #9ca3af; cursor: not-allowed; }
+    .access-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .access-table th { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f0e6d6; font-weight: 700; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .access-table td { padding: 10px; border-bottom: 1px solid #f5f0e8; color: #374151; vertical-align: middle; }
+    .access-table tr:last-child td { border-bottom: none; }
+    .access-table select { padding: 4px 8px; border: 1px solid #e8e0d4; border-radius: 4px; font-family: inherit; font-size: 13px; background: #fff; color: #111827; }
+    .access-table button { padding: 5px 10px; background: #fff; color: #dc2626; border: 1px solid #fecaca; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .access-table button:hover { background: #fef2f2; border-color: #dc2626; }
 
     .generate-section { margin-bottom: 22px; background: #fff; border-radius: 12px; padding: 18px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
     .generate-section .gen-text { flex: 1; min-width: 220px; }
@@ -83,9 +123,6 @@
     .empty-state .empty-icon { width: 48px; height: 48px; border-radius: 50%; background: #fef3e6; color: #ed7615; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; margin-bottom: 18px; }
     .empty-state .back-cta { display: inline-block; margin-top: 14px; padding: 9px 18px; background: #ed7615; color: #fff; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600; }
     .empty-state .back-cta:hover { background: #d4690f; }
-
-    .privacy-note { margin-top: 24px; padding: 14px 18px; background: #fff; border-radius: 10px; border-left: 3px solid #ed7615; font-size: 13px; color: #4b5563; line-height: 1.55; }
-    .privacy-note strong { color: #111827; }
 
     .loading { text-align: center; padding: 60px; color: #9ca3af; font-size: 14px; }
     .error-msg { text-align: center; padding: 40px; color: #dc2626; font-size: 14px; }
@@ -162,14 +199,17 @@
       html += '<div class="school-name">' + e(d.school.name) + '</div>';
       html += '</div>';
 
-      // KPI strip
+      // KPI strip (clickable — expands a detail panel below)
       const s = d.stats || {};
       html += '<div class="kpi-strip">';
-      html += kpi('Teachers', s.teachers || 0);
-      html += kpi('Classes', s.classes || 0);
-      html += kpi('Tasks', s.tasks_total || 0, s.tasks_with_feedback + ' with class feedback');
-      html += kpi('Submissions', s.submissions || 0);
+      html += kpi('teachers',    'Teachers',    s.teachers || 0);
+      html += kpi('classes',     'Classes',     s.classes || 0);
+      html += kpi('tasks',       'Tasks',       s.tasks_total || 0, (s.tasks_with_feedback || 0) + ' with class feedback');
+      html += kpi('submissions', 'Submissions', s.submissions || 0);
       html += '</div>';
+
+      // Detail panel — populated when a KPI is clicked
+      html += '<div class="detail-panel" id="detailPanel"></div>';
 
       // Generate / regenerate
       const hasInsights = !!d.insights;
@@ -199,22 +239,209 @@
       // Insights
       html += '<div id="insightsBody">' + renderInsights(d.insights) + '</div>';
 
-      // Privacy note
-      html += '<div class="privacy-note"><strong>Privacy note:</strong> this view is aggregated at the faculty level. Individual students, teachers, and classes are never named. To follow up on a specific class, the teacher remains the gatekeeper.</div>';
+      // Manage access (admins only)
+      if (d.caller_role === 'admin') {
+        html += '<div class="access-section">';
+        html += '<h2>Manage access</h2>';
+        html += '<p class="sub">Add other staff at ' + e(d.school.name) + ' as <strong>admin</strong> (can manage members + view) or <strong>leader</strong> (view only). The person must already have a ProofReady account.</p>';
+        html += '<div class="access-add-row">';
+        html += '<input type="email" id="addEmail" placeholder="staff.member@school.edu.au" autocomplete="off">';
+        html += '<select id="addRole"><option value="leader">Leader (view)</option><option value="admin">Admin (manage + view)</option></select>';
+        html += '<button id="addBtn">Add member</button>';
+        html += '</div>';
+        html += '<div id="membersTable"><div class="detail-loading">Loading members...</div></div>';
+        html += '</div>';
+      }
 
       c.innerHTML = html;
 
       const btn = document.getElementById('generateBtn');
       if (btn) btn.addEventListener('click', generate);
+
+      // Wire KPI click handlers
+      document.querySelectorAll('.kpi').forEach(el => {
+        el.addEventListener('click', () => toggleDetail(el.dataset.kind));
+      });
+
+      // Wire Manage access controls + load member list
+      if (d.caller_role === 'admin') {
+        document.getElementById('addBtn').addEventListener('click', addMember);
+        loadMembers();
+      }
     }
 
-    function kpi(label, value, sub) {
-      let html = '<div class="kpi">';
-      html += '<div class="kpi-label">' + e(label) + '</div>';
+    function kpi(kind, label, value, sub) {
+      let html = '<button type="button" class="kpi" data-kind="' + e(kind) + '">';
+      html += '<div class="kpi-label">' + e(label) + ' <span class="chev">▾</span></div>';
       html += '<div class="kpi-value">' + e(String(value)) + '</div>';
       if (sub) html += '<div class="kpi-sub">' + e(String(sub)) + '</div>';
-      html += '</div>';
+      html += '</button>';
       return html;
+    }
+
+    let activeKind = null;
+
+    async function toggleDetail(kind) {
+      const panel = document.getElementById('detailPanel');
+      document.querySelectorAll('.kpi').forEach(el => el.classList.toggle('is-active', el.dataset.kind === kind && activeKind !== kind));
+      if (activeKind === kind) {
+        panel.classList.remove('visible');
+        panel.innerHTML = '';
+        activeKind = null;
+        return;
+      }
+      activeKind = kind;
+      panel.classList.add('visible');
+      panel.innerHTML = '<div class="detail-loading">Loading...</div>';
+
+      try {
+        const res = await authFetch('/api/insights-detail?kind=' + encodeURIComponent(kind));
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not load list.');
+        panel.innerHTML = renderDetail(kind, data.rows || [], data.truncated_at);
+      } catch (err) {
+        panel.innerHTML = '<div class="detail-empty">' + e(err.message) + '</div>';
+      }
+    }
+
+    function renderDetail(kind, rows, truncatedAt) {
+      const title = ({
+        teachers: 'Teachers',
+        classes: 'Classes',
+        tasks: 'Tasks',
+        submissions: 'Recent submissions',
+      })[kind] || kind;
+      if (rows.length === 0) {
+        return '<h3>' + e(title) + '</h3><div class="detail-empty">No entries yet.</div>';
+      }
+      let html = '<h3>' + e(title) + ' <span style="color:#9ca3af;font-weight:500;font-size:12px">(' + rows.length + ')</span></h3>';
+
+      if (kind === 'teachers') {
+        html += '<table class="detail-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th style="text-align:right">Classes</th><th style="text-align:right">Tasks</th></tr></thead><tbody>';
+        rows.forEach(r => {
+          const rolePill = r.role
+            ? '<span class="detail-role-pill ' + e(r.role) + '">' + e(r.role) + '</span>'
+            : '<span class="detail-role-pill none">teacher</span>';
+          html += '<tr><td>' + e(r.name) + '</td><td class="detail-mono">' + e(r.email) + '</td><td>' + rolePill + '</td><td style="text-align:right">' + e(String(r.class_count)) + '</td><td style="text-align:right">' + e(String(r.task_count)) + '</td></tr>';
+        });
+        html += '</tbody></table>';
+      } else if (kind === 'classes') {
+        html += '<table class="detail-table"><thead><tr><th>Class</th><th>Course</th><th>Teacher</th><th>Code</th><th style="text-align:right">Students</th><th style="text-align:right">Tasks</th></tr></thead><tbody>';
+        rows.forEach(r => {
+          html += '<tr><td>' + e(r.name) + '</td><td>' + e(r.course || '—') + '</td><td>' + e(r.teacher_name) + '</td><td class="detail-mono">' + e(r.code || '—') + '</td><td style="text-align:right">' + e(String(r.student_count)) + '</td><td style="text-align:right">' + e(String(r.task_count)) + '</td></tr>';
+        });
+        html += '</tbody></table>';
+      } else if (kind === 'tasks') {
+        html += '<table class="detail-table"><thead><tr><th>Task</th><th>Course</th><th>Class</th><th>Teacher</th><th style="text-align:right">Submissions</th><th>Feedback</th></tr></thead><tbody>';
+        rows.forEach(r => {
+          const fbPill = r.has_class_feedback ? '✓' : '—';
+          html += '<tr><td>' + e(r.title) + (r.published ? '' : ' <span style="font-size:10px;color:#9ca3af;text-transform:uppercase">(draft)</span>') + '</td><td>' + e(r.course || '—') + '</td><td>' + e(r.class_name) + '</td><td>' + e(r.teacher_name) + '</td><td style="text-align:right">' + e(String(r.submission_count)) + '</td><td style="text-align:center;color:' + (r.has_class_feedback ? '#16a34a' : '#d1d5db') + '">' + fbPill + '</td></tr>';
+        });
+        html += '</tbody></table>';
+      } else if (kind === 'submissions') {
+        html += '<table class="detail-table"><thead><tr><th>Student</th><th>Task</th><th>Course</th><th>Draft</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+        rows.forEach(r => {
+          const date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+          let status;
+          if (r.graded) status = '<span style="color:#15803d;font-weight:600">Marked' + (r.total_mark != null ? ' · ' + r.total_mark : '') + '</span>';
+          else if (r.submitted_for_marking) status = '<span style="color:#1e40af;font-weight:600">Ready to mark</span>';
+          else status = '<span style="color:#b45309">Unmarked</span>';
+          html += '<tr><td>' + e(r.student_name) + '</td><td>' + e(r.task_title) + '</td><td>' + e(r.course || '—') + '</td><td>v' + e(String(r.draft_version)) + '</td><td>' + status + '</td><td class="detail-mono">' + e(date) + '</td></tr>';
+        });
+        html += '</tbody></table>';
+        if (truncatedAt && rows.length >= truncatedAt) {
+          html += '<div class="detail-empty" style="text-align:left;padding:10px 4px 0;color:#9ca3af">Showing the ' + truncatedAt + ' most recent submissions.</div>';
+        }
+      }
+      return html;
+    }
+
+    async function loadMembers() {
+      const target = document.getElementById('membersTable');
+      if (!target || !currentData) return;
+      try {
+        const res = await authFetch('/api/school-members?school_id=' + encodeURIComponent(currentData.school.id));
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not load members.');
+        target.innerHTML = renderMembers(data.members || []);
+        target.querySelectorAll('select.member-role').forEach(sel => {
+          sel.addEventListener('change', () => changeMemberRole(sel.dataset.userId, sel.value));
+        });
+        target.querySelectorAll('button.member-remove').forEach(btn => {
+          btn.addEventListener('click', () => removeMember(btn.dataset.userId, btn.dataset.name));
+        });
+      } catch (err) {
+        target.innerHTML = '<div class="detail-empty">' + e(err.message) + '</div>';
+      }
+    }
+
+    function renderMembers(members) {
+      if (members.length === 0) {
+        return '<div class="detail-empty">No leadership members yet. Add the first one above.</div>';
+      }
+      let html = '<table class="access-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Added</th><th></th></tr></thead><tbody>';
+      members.forEach(m => {
+        const date = m.created_at ? new Date(m.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+        html += '<tr><td>' + e(m.name) + '</td><td class="detail-mono">' + e(m.email) + '</td><td><select class="member-role" data-user-id="' + e(m.user_id) + '">';
+        html += '<option value="leader"' + (m.role === 'leader' ? ' selected' : '') + '>Leader</option>';
+        html += '<option value="admin"' + (m.role === 'admin' ? ' selected' : '') + '>Admin</option>';
+        html += '</select></td><td>' + e(date) + '</td><td style="text-align:right"><button class="member-remove" data-user-id="' + e(m.user_id) + '" data-name="' + e(m.name) + '">Remove</button></td></tr>';
+      });
+      html += '</tbody></table>';
+      return html;
+    }
+
+    async function addMember() {
+      const emailEl = document.getElementById('addEmail');
+      const roleEl = document.getElementById('addRole');
+      const btn = document.getElementById('addBtn');
+      const email = emailEl.value.trim();
+      const role = roleEl.value;
+      if (!email) { emailEl.focus(); return; }
+      btn.disabled = true; btn.textContent = 'Adding...';
+      try {
+        const res = await authFetch('/api/school-members', {
+          method: 'POST',
+          body: JSON.stringify({ school_id: currentData.school.id, email, role }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to add.');
+        emailEl.value = '';
+        await loadMembers();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Add member';
+      }
+    }
+
+    async function changeMemberRole(userId, role) {
+      try {
+        const res = await authFetch('/api/school-members', {
+          method: 'PUT',
+          body: JSON.stringify({ school_id: currentData.school.id, user_id: userId, role }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to update.');
+        await loadMembers();
+      } catch (err) {
+        alert(err.message);
+        await loadMembers();
+      }
+    }
+
+    async function removeMember(userId, name) {
+      if (!confirm('Remove ' + name + ' from this school\'s leadership? They will lose access to the insights dashboard.')) return;
+      try {
+        const res = await authFetch('/api/school-members?school_id=' + encodeURIComponent(currentData.school.id) + '&user_id=' + encodeURIComponent(userId), {
+          method: 'DELETE',
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to remove.');
+        await loadMembers();
+      } catch (err) {
+        alert(err.message);
+      }
     }
 
     function renderInsights(ins) {
