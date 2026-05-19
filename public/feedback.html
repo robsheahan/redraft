@@ -656,7 +656,7 @@
         if (hasTeacher) {
           html += '<button class="view-tab' + (activeView === 'teacher' ? ' active' : '') + '" data-view="teacher" onclick="switchView(\'teacher\')">Marked by your teacher</button>';
         }
-        html += '<button class="view-tab' + (activeView === 'feedback' ? ' active' : '') + '" data-view="feedback" onclick="switchView(\'feedback\')">AI Feedback</button>';
+        html += '<button class="view-tab' + (activeView === 'feedback' ? ' active' : '') + '" data-view="feedback" onclick="switchView(\'feedback\')">Feedback</button>';
         if (hasAnnotated) {
           html += '<button class="view-tab' + (activeView === 'annotated' ? ' active' : '') + '" data-view="annotated" onclick="switchView(\'annotated\')">Annotated draft (' + annotations.length + ')</button>';
         }
@@ -670,7 +670,7 @@
       // marking), show a brief explanation in the AI tab and skip the
       // section rendering rather than crashing on fb.foo accesses.
       if (!fb || typeof fb !== 'object') {
-        html += '<div class="section"><p class="section-text" style="color:#6b7280">No AI feedback for this submission — it was submitted directly for marking. Open the &quot;Marked by your teacher&quot; tab to see your mark and comments.</p></div>';
+        html += '<div class="section"><p class="section-text" style="color:#6b7280">No feedback for this submission — it was submitted directly for marking. Open the &quot;Marked by your teacher&quot; tab to see your mark and comments.</p></div>';
         html += '</div>'; // close #view-feedback
       } else {
 
