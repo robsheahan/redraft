@@ -252,11 +252,11 @@
         const studentName = row.student_name || 'Student';
 
         // Hydrate state from existing grade (if re-editing)
-        if (Array.isArray(sub.teacher_annotations)) teacherAnnotations = sub.teacher_annotations.slice();
-        if (Array.isArray(sub.criterion_marks)) {
-          sub.criterion_marks.forEach(m => { if (m && m.name) criterionMarksState[m.name] = m.mark; });
-        } else if (sub.criterion_marks && typeof sub.criterion_marks === 'object' && sub.criterion_marks.mark != null) {
-          bandMarkState = sub.criterion_marks.mark;
+        if (Array.isArray(submission.teacher_annotations)) teacherAnnotations = submission.teacher_annotations.slice();
+        if (Array.isArray(submission.criterion_marks)) {
+          submission.criterion_marks.forEach(m => { if (m && m.name) criterionMarksState[m.name] = m.mark; });
+        } else if (submission.criterion_marks && typeof submission.criterion_marks === 'object' && submission.criterion_marks.mark != null) {
+          bandMarkState = submission.criterion_marks.mark;
         }
 
         render(studentName);
