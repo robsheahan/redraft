@@ -139,7 +139,7 @@
     // NESA-standard band labels — when one of these appears after the range
     // on the band header line, store it as a band label rather than mixing
     // it into the criterion bullets.
-    var BAND_LABEL_RE = /^(highly\s+developed|well\s+developed|developing|basic|minimal|extensive|sophisticated|substantial|effective|thorough|comprehensive|outstanding|sound|adequate|clear|limited|simple|elementary|inadequate|excellent|good|fair|poor|exemplary|proficient|approaching|emerging|beginning|not\s+demonstrated)$/i;
+    var BAND_LABEL_RE = /^(outstanding|high|sound|basic|elementary|highly\s+developed|well\s+developed|developing|minimal|extensive|sophisticated|substantial|effective|thorough|comprehensive|adequate|clear|limited|simple|inadequate|excellent|good|fair|poor|exemplary|proficient|approaching|emerging|beginning|not\s+demonstrated)$/i;
     var bands = [];
     var currentBand = null;
 
