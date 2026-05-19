@@ -262,6 +262,26 @@
     }
     @keyframes btn-spin { to { transform: rotate(360deg); } }
 
+    .generate-row {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 10px;
+    }
+    .btn-generate-criteria {
+      background: #fff; color: #ed7615; border: 1.5px solid #ed7615; border-radius: 8px;
+      padding: 10px 18px; font-size: 13.5px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: all 0.15s; display: inline-flex;
+      align-items: center; gap: 8px;
+    }
+    .btn-generate-criteria:hover { background: #fef3e6; }
+    .btn-generate-criteria:disabled { background: #f3f4f6; color: #9ca3af; border-color: #e5e7eb; cursor: not-allowed; }
+    .btn-generate-criteria .inline-spinner {
+      width: 13px; height: 13px;
+      border: 2px solid currentColor; border-top-color: transparent;
+      border-radius: 50%; animation: btn-spin 0.7s linear infinite;
+    }
+    .generate-hint {
+      font-size: 12.5px; color: #9ca3af; line-height: 1.5; flex: 1; min-width: 200px;
+    }
+
     /* Code reveal */
     .code-reveal {
       display: none;
@@ -424,6 +444,12 @@
         </div>
         <div class="form-group">
           <div class="hint">Enter your marking criteria exactly as they appear on your task notification. The AI will detect the different criteria and marking levels automatically.</div>
+          <div class="generate-row">
+            <button type="button" class="btn-generate-criteria" id="generateCriteriaBtn" onclick="generateCriteria()">
+              <span class="btn-label">Generate marking criteria</span>
+            </button>
+            <span class="generate-hint">For in-class tasks: enter the task title, question and total marks, and we'll draft a NESA-aligned rubric you can edit.</span>
+          </div>
           <textarea class="criteria-textarea" id="criteriaText" placeholder="e.g.
 Criteria 1: Knowledge and understanding of key concepts (3-5 marks)
 Criteria 2: Use of relevant examples and evidence (3-5 marks)
@@ -472,6 +498,53 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
     function selectType(el) {
       document.querySelectorAll('.task-type').forEach(t => t.classList.remove('selected'));
       el.classList.add('selected');
+    }
+
+    async function generateCriteria() {
+      const btn = document.getElementById('generateCriteriaBtn');
+      const label = btn.querySelector('.btn-label');
+
+      const title = document.getElementById('titleInput').value.trim();
+      const question = document.querySelector('.step:nth-child(1) textarea').value.trim();
+      const totalMarksRaw = document.querySelector('.step:nth-child(1) input[type="number"]').value;
+      const totalMarks = totalMarksRaw ? Number(totalMarksRaw) : NaN;
+      const course = document.getElementById('courseInput').value.trim();
+      const outcomesRaw = document.getElementById('outcomesText').value.trim();
+      const outcomes = outcomesRaw ? outcomesRaw.split('\n').map(l => l.trim()).filter(l => l) : [];
+
+      if (!title) { alert('Add a task title first.'); return; }
+      if (!question) { alert('Enter the task question first — it tells the AI what to write criteria for.'); return; }
+      if (!totalMarks || totalMarks < 1) { alert('Enter the total marks for this task first.'); return; }
+
+      const existing = document.getElementById('criteriaText').value.trim();
+      if (existing) {
+        const ok = confirm('There\'s already text in the marking criteria field. Replace it with a generated one?');
+        if (!ok) return;
+      }
+
+      btn.disabled = true;
+      const originalLabel = label.textContent;
+      label.textContent = 'Generating...';
+      btn.insertAdjacentHTML('afterbegin', '<span class="inline-spinner"></span>');
+
+      try {
+        const res = await authFetch('/api/generate-criteria', {
+          method: 'POST',
+          body: JSON.stringify({ title, question, course, total_marks: totalMarks, outcomes }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to generate criteria.');
+        if (!data.criteria_text) throw new Error('No criteria returned.');
+        document.getElementById('criteriaText').value = data.criteria_text;
+        document.getElementById('criteriaText').focus();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        label.textContent = originalLabel;
+        const spinner = btn.querySelector('.inline-spinner');
+        if (spinner) spinner.remove();
+      }
     }
 
     /**
