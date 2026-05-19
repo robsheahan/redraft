@@ -90,3 +90,20 @@ async function logout() {
   await sb.auth.signOut();
   window.location.href = '/';
 }
+
+// Client-side mirror of the server's ADMIN_EMAILS. Purely a UI hint — the
+// actual admin endpoints re-check this list server-side. Add a new admin
+// here when you add them to the ADMIN_EMAILS env var.
+const ADMIN_EMAILS = ['robert.sheahan@gmail.com'];
+
+// Auto-reveal any element marked `.admin-only` once we've confirmed the
+// signed-in user is on the admin list. Hidden by default via inline style
+// in the markup so non-admins never see a flash of the link.
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.email) return;
+    if (!ADMIN_EMAILS.includes(user.email.toLowerCase())) return;
+    document.querySelectorAll('.admin-only').forEach(el => { el.style.display = ''; });
+  } catch (_) {}
+});
