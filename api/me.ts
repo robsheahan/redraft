@@ -8,6 +8,7 @@ import { getSupabase, verifyAuth } from '../lib/auth.js';
  *   GET /api/me?resource=submissions              → student's submissions across all classes
  *   GET /api/me?resource=task-drafts&task_id=X    → student's drafts for one task
  *   GET /api/me?resource=results                  → student's full markbook: classes → tasks → latest submission
+ *   GET /api/me?resource=teacher-markbook         → teacher's full markbook: classes → tasks + students + per-cell marks
  */
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -19,11 +20,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const resource = (req.query.resource as string || '').trim();
   switch (resource) {
-    case 'submissions':  return returnSubmissions(req, res, user.id);
-    case 'task-drafts':  return returnTaskDrafts(req, res, user.id);
-    case 'results':      return returnResults(req, res, user.id);
+    case 'submissions':       return returnSubmissions(req, res, user.id);
+    case 'task-drafts':       return returnTaskDrafts(req, res, user.id);
+    case 'results':           return returnResults(req, res, user.id);
+    case 'teacher-markbook':  return returnTeacherMarkbook(req, res, user.id);
     default:
-      return res.status(400).json({ error: 'Unknown resource. Use ?resource=submissions|task-drafts|results' });
+      return res.status(400).json({ error: 'Unknown resource. Use ?resource=submissions|task-drafts|results|teacher-markbook' });
   }
 }
 
@@ -136,6 +138,93 @@ async function returnResults(_req: VercelRequest, res: VercelResponse, userId: s
     teacher_name: c.teacher_id ? (teacherNameById[c.teacher_id] || null) : null,
     tasks: tasksByClass[c.id] || [],
   }));
+
+  return res.status(200).json({ classes: result });
+}
+
+async function returnTeacherMarkbook(_req: VercelRequest, res: VercelResponse, userId: string) {
+  const supabase = getSupabase();
+
+  const { data: classes, error: clsErr } = await supabase
+    .from('classes')
+    .select('id, name, course, archived_at')
+    .eq('teacher_id', userId)
+    .order('name', { ascending: true });
+  if (clsErr) return res.status(500).json({ error: clsErr.message });
+  const liveClasses = (classes || []).filter(c => !c.archived_at);
+  if (liveClasses.length === 0) return res.status(200).json({ classes: [] });
+
+  const classIds = liveClasses.map(c => c.id);
+
+  const { data: tasks } = await supabase
+    .from('tasks')
+    .select('id, class_id, title, question, total_marks, due_date')
+    .in('class_id', classIds)
+    .not('published_at', 'is', null)
+    .order('due_date', { ascending: true, nullsFirst: false });
+
+  const { data: memberRows } = await supabase
+    .from('class_members').select('class_id, student_id').in('class_id', classIds);
+
+  const studentIds = [...new Set((memberRows || []).map(m => m.student_id))] as string[];
+  const { getUserInfoBatch } = await import('../lib/user-names.js');
+  const userInfo = studentIds.length ? await getUserInfoBatch(supabase, studentIds) : {};
+
+  const taskIds = (tasks || []).map(t => t.id);
+  type CellEntry = {
+    submission_id: string;
+    total_mark: number | null;
+    graded_at: string | null;
+    submitted_for_marking: boolean;
+  };
+  const cellByTaskStudent: Record<string, Record<string, CellEntry>> = {};
+  if (taskIds.length > 0) {
+    const { data: subs } = await supabase
+      .from('submissions')
+      .select('id, task_id, student_id, draft_version, total_mark, graded_at, submitted_for_marking, created_at')
+      .in('task_id', taskIds)
+      .order('draft_version', { ascending: false });
+    (subs || []).forEach((s: any) => {
+      if (!s.task_id || !s.student_id) return;
+      if (!cellByTaskStudent[s.task_id]) cellByTaskStudent[s.task_id] = {};
+      const existing = cellByTaskStudent[s.task_id][s.student_id];
+      // Priority: graded > submitted-for-marking > latest.
+      const incomingPriority = s.graded_at ? 3 : (s.submitted_for_marking ? 2 : 1);
+      const existingPriority = !existing ? 0 : (existing.graded_at ? 3 : (existing.submitted_for_marking ? 2 : 1));
+      if (incomingPriority > existingPriority) {
+        cellByTaskStudent[s.task_id][s.student_id] = {
+          submission_id: s.id,
+          total_mark: s.total_mark ?? null,
+          graded_at: s.graded_at || null,
+          submitted_for_marking: !!s.submitted_for_marking,
+        };
+      }
+    });
+  }
+
+  const result = liveClasses.map(c => {
+    const classTasks = (tasks || []).filter(t => t.class_id === c.id);
+    const classMembers = (memberRows || []).filter(m => m.class_id === c.id);
+    const sortedMembers = classMembers
+      .map(m => ({ id: m.student_id, name: userInfo[m.student_id]?.name || 'Unknown student' }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'en-AU', { sensitivity: 'base' }));
+    return {
+      id: c.id,
+      name: c.name,
+      course: c.course,
+      tasks: classTasks.map(t => ({
+        id: t.id,
+        title: t.title || t.question || 'Untitled',
+        total_marks: t.total_marks,
+        due_date: t.due_date,
+      })),
+      students: sortedMembers.map(stu => ({
+        id: stu.id,
+        name: stu.name,
+        cells: classTasks.map(t => cellByTaskStudent[t.id]?.[stu.id] || null),
+      })),
+    };
+  });
 
   return res.status(200).json({ classes: result });
 }

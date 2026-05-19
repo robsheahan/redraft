@@ -37,6 +37,12 @@
       padding: 6px 14px; font-family: inherit; transition: all 0.15s;
     }
     .nav-logout:hover { background: rgba(0,0,0,0.08); border-color: rgba(0,0,0,0.18); color: #1f2937; }
+    .nav-markbook-link {
+      font-size: 13px; font-weight: 600; color: #ed7615; text-decoration: none;
+      background: #fef3e6; border: 1px solid #fcd9b6; border-radius: 6px;
+      padding: 6px 14px; transition: all 0.15s;
+    }
+    .nav-markbook-link:hover { background: #fcd9b6; }
 
     .container { max-width: 1320px; margin: 0 auto; padding: 48px 20px 64px; width: 100%; }
     .page-header {
@@ -121,6 +127,7 @@
   <nav class="nav">
     <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
     <div class="nav-right">
+      <a href="teacher-markbook.html" class="nav-markbook-link">Markbook</a>
       <span class="nav-user" id="navUser"></span>
       <button class="nav-logout" onclick="logout()">Log out</button>
     </div>

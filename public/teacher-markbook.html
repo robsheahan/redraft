@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/proofready/favicon.svg" />
+  <link rel="shortcut icon" href="/proofready/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/proofready/apple-touch-icon.png" />
+  <link rel="manifest" href="/proofready/site.webmanifest" />
+  <title>Markbook — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #faf7f2; color: #111827; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    a:focus-visible, button:focus-visible { outline: 2px solid #ed7615; outline-offset: 2px; border-radius: 4px; }
+    .nav { background: #fdf6ee; border-bottom: 1px solid #f0e6d6; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { text-decoration: none; display: flex; align-items: center; }
+    .nav-brand img { height: 40px; width: auto; }
+    .back-link { font-size: 13px; font-weight: 500; color: #4b5563; text-decoration: none; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 6px 14px; }
+    .back-link:hover { background: rgba(0,0,0,0.08); }
+    .container { max-width: 1400px; margin: 0 auto; padding: 28px 20px 80px; }
+    h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 4px; }
+    .lede { font-size: 14px; color: #6b7280; margin-bottom: 22px; }
+
+    .class-card { background: #fff; border-radius: 14px; padding: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); margin-bottom: 22px; overflow: hidden; }
+    .class-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #f0e6d6; }
+    .class-header h2 { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 4px; }
+    .class-header .class-meta { font-size: 13px; color: #6b7280; }
+    .class-header .average {
+      text-align: right; flex-shrink: 0;
+      background: #fef3e6; padding: 8px 14px; border-radius: 10px;
+    }
+    .class-header .average .avg-label { font-size: 11px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.4px; }
+    .class-header .average .avg-value { font-size: 18px; font-weight: 800; color: #111827; }
+
+    .markbook-scroll { overflow-x: auto; }
+    .markbook-table { border-collapse: collapse; width: 100%; min-width: 100%; }
+    .markbook-table th, .markbook-table td {
+      padding: 8px 10px; border-bottom: 1px solid #f0e6d6; text-align: center;
+      font-size: 13px;
+    }
+    .markbook-table thead th {
+      position: sticky; top: 0; background: #fdf6ee; z-index: 1;
+      font-weight: 700; color: #1f2937; vertical-align: bottom;
+    }
+    .markbook-table th.student-col, .markbook-table td.student-col {
+      text-align: left; position: sticky; left: 0; background: #fff;
+      font-weight: 600; min-width: 200px; max-width: 240px;
+      border-right: 1px solid #f0e6d6;
+    }
+    .markbook-table thead th.student-col { background: #fdf6ee; z-index: 2; }
+    .markbook-table th.task-col { min-width: 110px; font-size: 12px; line-height: 1.3; }
+    .markbook-table th.task-col .task-col-title { font-weight: 700; }
+    .markbook-table th.task-col .task-col-max { font-size: 11px; font-weight: 500; color: #6b7280; }
+    .markbook-table th.avg-col, .markbook-table td.avg-col {
+      background: #fdf6ee; font-weight: 700; min-width: 80px;
+      border-left: 1px solid #f0e6d6;
+    }
+    .markbook-table tfoot td { font-weight: 700; background: #fdf6ee; border-top: 2px solid #e8e0d4; }
+
+    .cell-mark { display: inline-block; padding: 4px 10px; border-radius: 6px; min-width: 60px; }
+    .cell-mark.graded   { background: #d1fae5; color: #065f46; font-weight: 700; }
+    .cell-mark.pending  { background: #dbeafe; color: #1e40af; font-weight: 600; font-size: 11px; }
+    .cell-mark.empty    { color: #d1d5db; font-weight: 400; }
+    .cell-link { color: inherit; text-decoration: none; display: inline-block; }
+    .cell-link:hover .cell-mark.graded  { background: #a7f3d0; }
+    .cell-link:hover .cell-mark.pending { background: #bfdbfe; }
+    .cell-link:hover .cell-mark.empty   { color: #9ca3af; }
+
+    .empty-state { background: #fff; border-radius: 14px; padding: 48px 24px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .empty-state h3 { font-size: 17px; margin-bottom: 6px; }
+    .empty-state p { font-size: 14px; color: #6b7280; }
+    .loading { text-align: center; padding: 60px; color: #9ca3af; }
+    .error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 14px; border-radius: 8px; margin-bottom: 14px; }
+
+    .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
+    .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+    <a href="teacher.html" class="back-link">Back to dashboard</a>
+  </nav>
+  <div class="container" id="content"><div class="loading">Loading markbook...</div></div>
+  <div class="site-footer">
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms &amp; Conditions</a>
+    <a href="/compliance.html">Compliance</a>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+    (async () => {
+      const container = document.getElementById('content');
+      const user = await requireAuth('teacher');
+      if (!user) return;
+      try {
+        const res = await authFetch('/api/me?resource=teacher-markbook');
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          container.innerHTML = '<div class="error">' + e(err.error || 'Could not load markbook.') + '</div>';
+          return;
+        }
+        const data = await res.json();
+        render(data.classes || []);
+      } catch (err) {
+        container.innerHTML = '<div class="error">' + e(err.message || String(err)) + '</div>';
+      }
+    })();
+
+    function studentAverage(student, tasks) {
+      let awarded = 0, outOf = 0;
+      student.cells.forEach((c, i) => {
+        if (c && c.graded_at && c.total_mark != null && tasks[i].total_marks) {
+          awarded += c.total_mark; outOf += tasks[i].total_marks;
+        }
+      });
+      if (outOf === 0) return null;
+      return Math.round((awarded / outOf) * 100);
+    }
+
+    function classAverage(klass) {
+      let awarded = 0, outOf = 0;
+      klass.students.forEach(stu => {
+        stu.cells.forEach((c, i) => {
+          if (c && c.graded_at && c.total_mark != null && klass.tasks[i].total_marks) {
+            awarded += c.total_mark; outOf += klass.tasks[i].total_marks;
+          }
+        });
+      });
+      if (outOf === 0) return null;
+      return Math.round((awarded / outOf) * 100);
+    }
+
+    function taskAverage(klass, taskIdx) {
+      const t = klass.tasks[taskIdx];
+      if (!t.total_marks) return null;
+      const graded = klass.students
+        .map(stu => stu.cells[taskIdx])
+        .filter(c => c && c.graded_at && c.total_mark != null);
+      if (graded.length === 0) return null;
+      const sum = graded.reduce((a, c) => a + c.total_mark, 0);
+      return { avg: (sum / graded.length).toFixed(1), max: t.total_marks, count: graded.length };
+    }
+
+    function renderCell(klass, student, taskIdx) {
+      const c = student.cells[taskIdx];
+      const t = klass.tasks[taskIdx];
+      if (!c) {
+        return '<span class="cell-mark empty">—</span>';
+      }
+      const url = '/mark-submission.html?task_id=' + encodeURIComponent(t.id) + '&submission_id=' + encodeURIComponent(c.submission_id);
+      if (c.graded_at && c.total_mark != null) {
+        const max = t.total_marks || '—';
+        return '<a class="cell-link" href="' + url + '"><span class="cell-mark graded">' + e(String(c.total_mark)) + '/' + e(String(max)) + '</span></a>';
+      }
+      if (c.submitted_for_marking) {
+        return '<a class="cell-link" href="' + url + '"><span class="cell-mark pending">Ready</span></a>';
+      }
+      return '<a class="cell-link" href="' + url + '"><span class="cell-mark empty">Draft</span></a>';
+    }
+
+    function render(classes) {
+      const container = document.getElementById('content');
+      let html = '';
+      html += '<h1>Markbook</h1>';
+      html += '<p class="lede">Every published task across your classes, the marks you\'ve given, and class averages. Click any mark to open the marking page.</p>';
+
+      if (classes.length === 0) {
+        html += '<div class="empty-state"><h3>No classes yet</h3><p>Create a class first to start collecting submissions.</p></div>';
+        container.innerHTML = html;
+        return;
+      }
+
+      classes.forEach(c => {
+        html += '<div class="class-card">';
+        html += '<div class="class-header">';
+        html += '<div><h2>' + e(c.name) + '</h2>';
+        const metaParts = [];
+        if (c.course) metaParts.push(e(c.course));
+        metaParts.push(c.students.length + ' student' + (c.students.length === 1 ? '' : 's'));
+        metaParts.push(c.tasks.length + ' task' + (c.tasks.length === 1 ? '' : 's'));
+        html += '<div class="class-meta">' + metaParts.join(' · ') + '</div>';
+        html += '</div>';
+        const avg = classAverage(c);
+        if (avg != null) {
+          html += '<div class="average"><div class="avg-label">Class average</div><div class="avg-value">' + avg + '%</div></div>';
+        }
+        html += '</div>';
+
+        if (c.tasks.length === 0) {
+          html += '<div style="padding:14px;color:#9ca3af;font-size:13px">No published tasks yet.</div>';
+        } else if (c.students.length === 0) {
+          html += '<div style="padding:14px;color:#9ca3af;font-size:13px">No students enrolled yet.</div>';
+        } else {
+          html += '<div class="markbook-scroll">';
+          html += '<table class="markbook-table">';
+          html += '<thead><tr>';
+          html += '<th class="student-col">Student</th>';
+          c.tasks.forEach(t => {
+            html += '<th class="task-col">';
+            html += '<div class="task-col-title">' + e(t.title) + '</div>';
+            if (t.total_marks) html += '<div class="task-col-max">/' + e(String(t.total_marks)) + '</div>';
+            html += '</th>';
+          });
+          html += '<th class="avg-col">Avg</th>';
+          html += '</tr></thead>';
+
+          html += '<tbody>';
+          c.students.forEach(stu => {
+            html += '<tr>';
+            html += '<td class="student-col">' + e(stu.name) + '</td>';
+            c.tasks.forEach((t, i) => {
+              html += '<td>' + renderCell(c, stu, i) + '</td>';
+            });
+            const sAvg = studentAverage(stu, c.tasks);
+            html += '<td class="avg-col">' + (sAvg != null ? sAvg + '%' : '—') + '</td>';
+            html += '</tr>';
+          });
+          html += '</tbody>';
+
+          // Footer: per-task averages
+          html += '<tfoot><tr>';
+          html += '<td class="student-col">Task avg</td>';
+          c.tasks.forEach((t, i) => {
+            const ta = taskAverage(c, i);
+            if (ta) html += '<td>' + ta.avg + '/' + ta.max + '<div style="font-size:10px;color:#9ca3af;font-weight:500">' + ta.count + ' marked</div></td>';
+            else html += '<td><span class="cell-mark empty">—</span></td>';
+          });
+          html += '<td class="avg-col">' + (avg != null ? avg + '%' : '—') + '</td>';
+          html += '</tr></tfoot>';
+          html += '</table></div>';
+        }
+        html += '</div>';
+      });
+
+      container.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
