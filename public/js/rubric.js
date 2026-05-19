@@ -132,11 +132,27 @@
 
     // Detect band-based rubric: lines that look like mark ranges,
     // optionally prefixed with a band letter ("A", "Band A", "Grade A").
-    // The "marks" word can appear either inside the parens — "(13-15 marks)"
-    // — or outside — "(13-15) marks", so allow it in either position.
-    var markRangeRegex = /^(?:(?:Band|Grade)\s+)?(?:[A-G]\s*)?\(?\s*(\d{1,2})\s*[–\-]\s*(\d{1,2})\s*(?:marks?)?\s*\)?\s*(?:marks?)?\s*$/i;
+    // Single-number bands ("A (4): Highly Developed") also supported for
+    // small mark allocations. "marks" can appear either inside or outside
+    // the parens.
+    var markRangeRegex = /^(?:(?:Band|Grade)\s+)?([A-G])?\s*\(?\s*(\d{1,2})(?:\s*[–\-]\s*(\d{1,2}))?\s*(?:marks?)?\s*\)?\s*(?:marks?)?\s*$/i;
+    // NESA-standard band labels — when one of these appears after the range
+    // on the band header line, store it as a band label rather than mixing
+    // it into the criterion bullets.
+    var BAND_LABEL_RE = /^(highly\s+developed|well\s+developed|developing|basic|minimal|extensive|sophisticated|substantial|effective|thorough|comprehensive|outstanding|sound|adequate|clear|limited|simple|elementary|inadequate|excellent|good|fair|poor|exemplary|proficient|approaching|emerging|beginning|not\s+demonstrated)$/i;
     var bands = [];
     var currentBand = null;
+
+    function pushBand(letter, low, high) {
+      currentBand = {
+        range: low + '–' + (high || low),
+        criteria: [],
+        letter: letter || null,
+        label: null,
+      };
+      bands.push(currentBand);
+      return currentBand;
+    }
 
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
@@ -156,27 +172,22 @@
       // Check if this line is a band marker
       var bandMatch = line.match(markRangeRegex);
       if (bandMatch) {
-        currentBand = {
-          range: bandMatch[1] + '–' + bandMatch[2],
-          criteria: [],
-        };
-        bands.push(currentBand);
+        pushBand(bandMatch[1], bandMatch[2], bandMatch[3]);
         continue;
       }
 
       // Also detect inline band headers like "13-15 marks Description..." or
-      // "A (17–20) Description..." or "Grade A (21–25 marks) Description..."
-      // followed by content on the same line. "marks" may sit either inside
-      // or outside the parens — allow either.
-      var inlineBandMatch = line.match(/^(?:(?:Band|Grade)\s+)?(?:[A-G]\s*)?\(?\s*(\d{1,2})\s*[–\-]\s*(\d{1,2})\s*(?:marks?)?\s*\)?\s*(?:marks?)?\s*[:\-]?\s*(.+)$/i);
+      // "A (17–20): Highly Developed" or "Grade A (21–25 marks) Description..."
+      // followed by content on the same line.
+      var inlineBandMatch = line.match(/^(?:(?:Band|Grade)\s+)?([A-G])?\s*\(?\s*(\d{1,2})(?:\s*[–\-]\s*(\d{1,2}))?\s*(?:marks?)?\s*\)?\s*(?:marks?)?\s*[:\-]?\s*(.+)$/i);
       if (inlineBandMatch && !line.match(/^•/)) {
-        currentBand = {
-          range: inlineBandMatch[1] + '–' + inlineBandMatch[2],
-          criteria: [],
-        };
-        bands.push(currentBand);
-        var rest = inlineBandMatch[3].trim().replace(/^[•*\-]\s*/, '');
-        if (rest) currentBand.criteria.push(rest);
+        pushBand(inlineBandMatch[1], inlineBandMatch[2], inlineBandMatch[3]);
+        var rest = inlineBandMatch[4].trim().replace(/^[•*\-]\s*/, '');
+        if (rest && BAND_LABEL_RE.test(rest)) {
+          currentBand.label = rest;
+        } else if (rest) {
+          currentBand.criteria.push(rest);
+        }
         continue;
       }
 
@@ -307,11 +318,15 @@
   // Handles "17 to 20", "17-20", "17–20", "(17-20)", "17 marks", etc.
   function formatRange(s) {
     if (!s) return '';
-    return String(s)
+    var str = String(s)
       .replace(/[()]/g, '')
       .replace(/(\d{1,2})\s*(?:to|[–\-])\s*(\d{1,2})/i, '$1 - $2')
       .replace(/\s+marks?$/i, '')
       .trim();
+    // Collapse "5 - 5" → "5" for single-mark bands.
+    var dup = str.match(/^(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)$/);
+    if (dup && dup[1] === dup[2]) return dup[1];
+    return str;
   }
 
   // Parse a range string like "3-5", "3–5", "(3-5)" into {min, max}.
@@ -359,7 +374,11 @@
       parsed.bands.forEach(function(band) {
         var isMarked = (mode === 'graded' && rangeContains(band.range, awardedBandMark));
         html += '<div class="rubric-row' + (isMarked ? ' rubric-row--marked' : '') + '" data-band-range="' + e(band.range) + '">';
-        html += '<div class="rubric-band">' + e(formatRange(band.range)) + '</div>';
+        html += '<div class="rubric-band">';
+        if (band.letter) html += '<div class="rubric-band-letter">' + e(band.letter) + '</div>';
+        html += '<div class="rubric-band-range">' + e(formatRange(band.range)) + '</div>';
+        if (band.label) html += '<div class="rubric-band-label">' + e(band.label) + '</div>';
+        html += '</div>';
         html += '<div class="rubric-criteria">';
         if (band.criteria.length > 0) {
           html += '<ul>';
@@ -391,7 +410,7 @@
         }
         var isMarked = awardedMark != null;
         html2 += '<div class="rubric-row' + (isMarked ? ' rubric-row--marked' : '') + '" data-criterion-index="' + i + '" data-criterion-name="' + e(crit.name) + '">';
-        html2 += '<div class="rubric-band">' + (crit.range ? e(formatRange(crit.range)) : (i + 1)) + '</div>';
+        html2 += '<div class="rubric-band"><div class="rubric-band-range">' + (crit.range ? e(formatRange(crit.range)) : String(i + 1)) + '</div></div>';
         html2 += '<div class="rubric-criteria">';
         html2 += '<div style="font-weight:700;color:#1f2937;margin-bottom:' + (crit.details.length > 0 ? '6px' : '0') + '">' + e(crit.name) + '</div>';
         if (crit.details.length > 0) {
