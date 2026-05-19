@@ -473,13 +473,6 @@
 
       html += '</div>';
 
-      // Submissions controls (export)
-      if (submissions.length > 0) {
-        html += '<div style="display:flex;justify-content:flex-end;margin-bottom:10px">';
-        html += '<button type="button" class="btn-export" id="exportBtn" onclick="downloadCsv()">Download as CSV</button>';
-        html += '</div>';
-      }
-
       // Generate class feedback button
       const hasSavedClassFeedback = !!(task.class_feedback && Object.keys(task.class_feedback).length);
       html += '<div class="generate-section">';
