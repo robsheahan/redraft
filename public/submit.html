@@ -27,7 +27,17 @@
     .task-teacher { font-size: 16px; font-weight: 500; color: #6b7280; letter-spacing: 0; }
     .task-meta { font-size: 13px; color: #6b7280; margin-bottom: 18px; }
     .card { background: #fff; border-radius: 14px; padding: 26px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
-    .task-question { padding: 14px 16px; background: #fdf6ee; border: 1px solid #e8e0d4; border-radius: 8px; font-size: 14px; font-weight: 500; line-height: 1.6; margin-bottom: 14px; white-space: pre-line; color: #374151; }
+    .task-question { padding: 16px 18px; background: #fdf6ee; border: 1px solid #e8e0d4; border-radius: 8px; font-size: 14px; line-height: 1.65; margin-bottom: 14px; color: #374151; }
+    /* Structured task-description rendering (see public/js/task-meta.js) */
+    .task-desc > *:first-child { margin-top: 0; }
+    .task-desc > *:last-child { margin-bottom: 0; }
+    .task-desc .task-desc-h { font-size: 13.5px; font-weight: 700; color: #111827; letter-spacing: -0.1px; margin: 14px 0 6px; }
+    .task-desc .task-desc-h-marker { color: #ed7615; font-weight: 800; margin-right: 4px; }
+    .task-desc .task-desc-p { margin: 0 0 10px; font-size: 14px; line-height: 1.65; color: #374151; }
+    .task-desc .task-desc-p:last-child { margin-bottom: 0; }
+    .task-desc .task-desc-list { list-style: none; padding: 0; margin: 0 0 10px; }
+    .task-desc .task-desc-list li { padding: 3px 0 3px 18px; position: relative; font-size: 14px; line-height: 1.6; color: #374151; }
+    .task-desc .task-desc-list li::before { content: '•'; position: absolute; left: 4px; color: #ed7615; font-weight: 700; }
     .criteria-display h4, .task-question-wrap h4 { font-size: 12px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px; }
     .task-question-wrap { margin-bottom: 18px; }
     .criteria-block { padding: 14px 16px; background: #f9fafb; border-radius: 8px; font-size: 14px; line-height: 1.7; white-space: pre-line; color: #374151; }
@@ -36,7 +46,10 @@
     .rubric-row { display: flex; border-bottom: 1px solid #e8e0d4; }
     .rubric-row:last-child { border-bottom: none; }
     .rubric-row:nth-child(odd) { background: #fdf6ee; }
-    .rubric-band { flex: 0 0 80px; padding: 14px 12px; font-weight: 700; font-size: 14px; color: #ed7615; border-right: 1px solid #e8e0d4; display: flex; align-items: flex-start; justify-content: center; text-align: center; }
+    .rubric-band { flex: 0 0 110px; padding: 12px 10px; border-right: 1px solid #e8e0d4; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; text-align: center; }
+    .rubric-band-letter { font-weight: 800; font-size: 18px; color: #ed7615; letter-spacing: -0.5px; line-height: 1; }
+    .rubric-band-range { font-weight: 700; font-size: 13px; color: #ed7615; }
+    .rubric-band-label { font-size: 10.5px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.4px; line-height: 1.25; }
     .rubric-criteria { flex: 1; padding: 12px 16px; font-size: 13px; color: #374151; line-height: 1.6; }
     .rubric-criteria ul { list-style: none; padding: 0; margin: 0; }
     .rubric-criteria li { padding-left: 16px; position: relative; margin-bottom: 6px; }
@@ -167,6 +180,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/app.js"></script>
   <script src="/js/rubric.js"></script>
+  <script src="/js/task-meta.js"></script>
   <script>
     const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     const MAX_DRAFTS = 3;
@@ -220,7 +234,7 @@
     function render() {
       const t = currentTask;
       document.title = (t.title || 'Task') + ' — ProofReady';
-      const questionText = (t.question || '').replace(/^\*\s/gm, '• ').replace(/\n\*\s/g, '\n• ');
+      const questionText = t.question || '';
       const criteriaText = t.criteria_text
         || (t.criteria && t.criteria.length > 0
           ? t.criteria.map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n')
@@ -236,7 +250,7 @@
 
       html += '<div class="card">';
       html += '<div class="task-question-wrap"><h4>Task description</h4>';
-      html += '<div class="task-question">' + e(questionText) + '</div></div>';
+      html += '<div class="task-question">' + renderTaskDescription(questionText, e) + '</div></div>';
       if (criteriaText) {
         html += '<div class="criteria-display"><h4>Marking criteria</h4>' + renderRubric(criteriaText, e, t.criteria_structured) + '</div>';
       }

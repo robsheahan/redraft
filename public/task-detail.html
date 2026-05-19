@@ -54,8 +54,27 @@
     }
     .task-course { font-size: 13px; color: #6b7280; margin-top: 2px; }
     .task-question {
-      margin-top: 16px; padding: 14px 16px; background: #f9fafb;
-      border-radius: 8px; font-size: 14px; font-weight: 500; line-height: 1.6;
+      margin-top: 16px; padding: 16px 18px; background: #f9fafb;
+      border-radius: 8px; font-size: 14px; line-height: 1.65; color: #374151;
+    }
+    /* Structured task-description rendering (see public/js/task-meta.js) */
+    .task-desc > *:first-child { margin-top: 0; }
+    .task-desc > *:last-child { margin-bottom: 0; }
+    .task-desc .task-desc-h {
+      font-size: 13.5px; font-weight: 700; color: #111827;
+      letter-spacing: -0.1px; margin: 14px 0 6px;
+    }
+    .task-desc .task-desc-h-marker { color: #ed7615; font-weight: 800; margin-right: 4px; }
+    .task-desc .task-desc-p { margin: 0 0 10px; font-size: 14px; line-height: 1.65; color: #374151; }
+    .task-desc .task-desc-p:last-child { margin-bottom: 0; }
+    .task-desc .task-desc-list {
+      list-style: none; padding: 0; margin: 0 0 10px;
+    }
+    .task-desc .task-desc-list li {
+      padding: 3px 0 3px 18px; position: relative; font-size: 14px; line-height: 1.6; color: #374151;
+    }
+    .task-desc .task-desc-list li::before {
+      content: '•'; position: absolute; left: 4px; color: #ed7615; font-weight: 700;
     }
     .task-stats {
       display: flex; gap: 16px; margin-top: 16px; align-items: center;
@@ -100,21 +119,38 @@
       padding: 3px 10px; background: #fef3e6; border-radius: 4px;
       font-size: 12px; font-weight: 600; color: #ed7615;
     }
-    /* Outcome list (one outcome per line, no pills) */
-    .outcome-list { list-style: none; padding: 0; margin: 0; }
-    .outcome-list li {
-      font-size: 14px; line-height: 1.6; color: #374151;
-      padding: 6px 0 6px 18px; position: relative;
+    /* Syllabus outcome rows (code pill + descriptor). See task-meta.js. */
+    .outcome-grid {
+      border: 1px solid #e8e0d4; border-radius: 8px; overflow: hidden;
     }
-    .outcome-list li::before {
-      content: '•'; position: absolute; left: 4px; color: #ed7615; font-weight: 700;
+    .outcome-row {
+      display: grid; grid-template-columns: 120px 1fr; gap: 14px;
+      padding: 10px 14px; border-bottom: 1px solid #e8e0d4;
+      align-items: start;
+    }
+    .outcome-row:nth-child(odd) { background: #fdf6ee; }
+    .outcome-row:last-child { border-bottom: none; }
+    .outcome-code {
+      font-family: monospace; font-size: 12.5px; font-weight: 700;
+      color: #ed7615; background: #fef3e6; border-radius: 4px;
+      padding: 3px 8px; text-align: center; letter-spacing: 0.2px;
+      white-space: nowrap; align-self: start;
+    }
+    .outcome-code-empty { background: #f3f4f6; color: #9ca3af; font-weight: 600; }
+    .outcome-desc { font-size: 13.5px; line-height: 1.55; color: #374151; }
+    @media (max-width: 540px) {
+      .outcome-row { grid-template-columns: 1fr; gap: 4px; }
+      .outcome-code { justify-self: start; }
     }
     /* Structured rubric table (matches submit page) */
     .rubric-table { border: 1px solid #e8e0d4; border-radius: 8px; overflow: hidden; }
     .rubric-row { display: flex; border-bottom: 1px solid #e8e0d4; }
     .rubric-row:last-child { border-bottom: none; }
     .rubric-row:nth-child(odd) { background: #fdf6ee; }
-    .rubric-band { flex: 0 0 80px; padding: 14px 12px; font-weight: 700; font-size: 14px; color: #ed7615; border-right: 1px solid #e8e0d4; display: flex; align-items: flex-start; justify-content: center; text-align: center; }
+    .rubric-band { flex: 0 0 110px; padding: 12px 10px; border-right: 1px solid #e8e0d4; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; text-align: center; }
+    .rubric-band-letter { font-weight: 800; font-size: 18px; color: #ed7615; letter-spacing: -0.5px; line-height: 1; }
+    .rubric-band-range { font-weight: 700; font-size: 13px; color: #ed7615; }
+    .rubric-band-label { font-size: 10.5px; font-weight: 700; color: #b45309; text-transform: uppercase; letter-spacing: 0.4px; line-height: 1.25; }
     .rubric-criteria { flex: 1; padding: 12px 16px; font-size: 13px; color: #374151; line-height: 1.6; }
     .rubric-criteria ul { list-style: none; padding: 0; margin: 0; }
     .rubric-criteria li { padding-left: 16px; position: relative; margin-bottom: 6px; }
@@ -162,6 +198,16 @@
       border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.1);
     }
     textarea.edit-field { min-height: 80px; resize: vertical; line-height: 1.6; }
+
+    /* Task type pills (mirrors the new-task form). */
+    .task-types { display: flex; flex-wrap: wrap; gap: 8px; }
+    .task-type {
+      padding: 8px 16px; border: 1px solid #e8e0d4; border-radius: 8px;
+      font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer;
+      transition: all 0.15s; background: #fff; font-family: inherit;
+    }
+    .task-type:hover { border-color: #d1d5db; color: #111827; }
+    .task-type.selected { border-color: #ed7615; background: #fef3e6; color: #ed7615; }
 
     /* Share-code strip */
     .share-strip {
@@ -394,6 +440,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/app.js"></script>
   <script src="/js/rubric.js"></script>
+  <script src="/js/task-meta.js"></script>
   <script>
     const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     let currentTask = null;
@@ -450,7 +497,7 @@
         html += '<button class="btn-save" onclick="togglePublish(true)">Publish</button>';
       }
       html += '</div></div>';
-      if (task.question) html += '<div class="task-question">' + e(task.question) + '</div>';
+      if (task.question) html += '<div class="task-question">' + renderTaskDescription(task.question, e) + '</div>';
       // Mark-progress counts: a student counts as "marked" if any of their drafts is graded.
       const markedStudents = students.filter(s => s.drafts.some(d => d.graded_at));
       const unmarkedStudents = students.length - markedStudents.length;
@@ -642,18 +689,9 @@
       html += '</div>';
 
       html += '<div class="detail-row"><div class="detail-label">Syllabus outcomes</div>';
-      var outcomes = (task.outcomes || []).map(function(o) {
-        return String(o || '')
-          .replace(/^\s*[-*•]\s*/, '')   // strip leading bullet markers
-          .trim();
-      }).filter(function(o) {
-        if (!o) return false;
-        // Drop heading-only lines that got included as if they were outcomes
-        // (e.g. "NESA Outcomes", "Syllabus Outcomes Assessed", bare "Outcomes")
-        return !/^(nesa\s+|syllabus\s+)?outcomes(\s+assessed)?\s*:?\s*$/i.test(o);
-      });
-      if (outcomes.length > 0) {
-        html += '<ul class="outcome-list">' + outcomes.map(function(o) { return '<li>' + e(o) + '</li>'; }).join('') + '</ul>';
+      var outcomesHtml = renderTaskOutcomes(task.outcomes || [], e);
+      if (outcomesHtml) {
+        html += outcomesHtml;
       } else {
         html += '<div class="detail-value empty">None selected</div>';
       }
@@ -680,7 +718,14 @@
       html += '<textarea class="edit-field" id="editQuestion">' + e(task.question || '') + '</textarea></div>';
 
       html += '<div class="detail-row"><div class="detail-label">Task type</div>';
-      html += '<input class="edit-field" id="editType" value="' + e(task.task_type || '') + '"></div>';
+      html += '<div class="task-types" id="editTypePills">';
+      var TYPES = ['Essay', 'Short answer', 'Report', 'Case study'];
+      var currentType = (task.task_type || '').trim();
+      TYPES.forEach(function(t) {
+        var sel = currentType.toLowerCase() === t.toLowerCase() ? ' selected' : '';
+        html += '<button type="button" class="task-type' + sel + '" onclick="selectEditType(this)">' + e(t) + '</button>';
+      });
+      html += '</div></div>';
 
       html += '<div class="detail-row"><div class="detail-label">Total marks</div>';
       html += '<input class="edit-field" id="editMarks" type="number" value="' + e(String(task.total_marks || '')) + '"></div>';
@@ -708,6 +753,13 @@
       const btn = document.querySelector('.btn-view-details');
       panel.classList.toggle('visible');
       btn.textContent = panel.classList.contains('visible') ? 'Hide details' : 'View details';
+    }
+
+    function selectEditType(el) {
+      const container = document.getElementById('editTypePills');
+      if (!container) return;
+      container.querySelectorAll('.task-type').forEach(t => t.classList.remove('selected'));
+      el.classList.add('selected');
     }
 
     function enterEditMode() {
@@ -753,12 +805,13 @@
       btn.disabled = true;
       btn.textContent = 'Saving...';
 
+      const selectedTypeEl = document.querySelector('#editTypePills .task-type.selected');
       const updated = {
         id: currentTask.id,
         title: document.getElementById('editTitle').value.trim(),
         course: document.getElementById('editCourse').value.trim(),
         question: document.getElementById('editQuestion').value.trim(),
-        task_type: document.getElementById('editType').value.trim(),
+        task_type: selectedTypeEl ? selectedTypeEl.textContent.trim() : null,
         total_marks: document.getElementById('editMarks').value || null,
         due_date: document.getElementById('editDue').value || null,
         criteria_text: document.getElementById('editCriteria').value.trim(),
@@ -786,7 +839,7 @@
         if (courseEl) courseEl.textContent = updated.course || '';
 
         const questionEl = headerEl.querySelector('.task-question');
-        if (questionEl) questionEl.textContent = updated.question || '';
+        if (questionEl) questionEl.innerHTML = renderTaskDescription(updated.question || '', e);
 
         cancelEdit();
       } catch (err) {
