@@ -2,7 +2,7 @@
  * NESA Board Developed Courses — client-side search
  * Used by new-task.html and student.html for course autocomplete
  */
-var NESA_COURSES = [
+var HSC_COURSES = [
   "English Advanced", "English Standard", "English Studies", "English EAL/D",
   "English Extension 1", "English Extension 2",
   "Mathematics Advanced", "Mathematics Standard 2", "Mathematics Standard 1",
@@ -34,6 +34,31 @@ var NESA_COURSES = [
   "Primary Industries (VET)", "Retail Services (VET)",
   "Tourism, Travel and Events (VET)"
 ];
+
+// Stage 4-5 (Y7-10) — mirrors data/nesa-courses.ts
+var STAGE_4_5_KLAS = [
+  "English", "Mathematics", "Science", "History", "Geography", "PDHPE",
+  "Technology Mandatory", "Music", "Visual Arts", "Drama"
+];
+var STAGE_5_ELECTIVES = [
+  "Commerce", "Design and Technology", "Food Technology",
+  "Industrial Technology", "Information and Software Technology",
+  "Marine and Aquaculture Technology", "Textiles Technology",
+  "Photography and Digital Media", "Aboriginal Studies"
+];
+var YEAR_7_10_COURSES = [];
+for (var y = 7; y <= 10; y++) {
+  for (var i = 0; i < STAGE_4_5_KLAS.length; i++) {
+    YEAR_7_10_COURSES.push("Year " + y + " " + STAGE_4_5_KLAS[i]);
+  }
+  if (y >= 9) {
+    for (var j = 0; j < STAGE_5_ELECTIVES.length; j++) {
+      YEAR_7_10_COURSES.push("Year " + y + " " + STAGE_5_ELECTIVES[j]);
+    }
+  }
+}
+
+var NESA_COURSES = YEAR_7_10_COURSES.concat(HSC_COURSES);
 
 function searchCourses(query) {
   if (!query) return NESA_COURSES.slice(0, 10);
