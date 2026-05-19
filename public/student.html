@@ -97,6 +97,11 @@
       border-radius: 10px;
       padding: 4px;
     }
+    .entry-block-heading {
+      margin: 16px 0 18px; padding-top: 28px; border-top: 1px solid #e8e0d4;
+    }
+    .entry-block-title { font-size: 16px; font-weight: 700; color: #111827; }
+    .entry-block-sub   { font-size: 13px; color: #6b7280; margin-top: 2px; }
     .entry-tab {
       flex: 1;
       padding: 10px 16px;
@@ -566,58 +571,67 @@
         <div class="how-step"><span class="how-step-num">3</span><h4>Read your feedback</h4><p>You'll get strengths, things to improve, and an annotated copy of your draft with comments.</p></div>
       </div>
 
-      <div class="entry-options">
-        <button class="entry-tab active" onclick="showCode()">Join a class</button>
-        <button class="entry-tab" onclick="showOwn()">Enter my own task</button>
+      <!-- Joined classes — primary content for returning students -->
+      <div id="classesSection" style="display:none">
+        <div id="classesList" style="display:flex;flex-direction:column;gap:24px"></div>
       </div>
 
-      <!-- Class code entry -->
-      <div class="card" id="codeEntry">
-        <h3>Enter your class code</h3>
-        <p>Your teacher will give you a 6-character class code. Once you've joined, every task your teacher posts shows up here.</p>
-        <div class="code-input-row">
-          <input type="text" class="code-input" id="codeInput" placeholder="e.g. XK7M2P" maxlength="6">
-          <button class="btn-primary" onclick="joinClass()">Join</button>
+      <!-- Add-a-class / own-task block — appears below the classes for
+           returning students, and stands alone for new students. -->
+      <div id="entryBlock" style="margin-top:32px">
+        <div class="entry-block-heading" id="entryBlockHeading" style="display:none">
+          <div class="entry-block-title">Join another class</div>
+          <div class="entry-block-sub">Got a new class code from a teacher, or want to try out an own-task draft?</div>
         </div>
-      </div>
 
-      <!-- Own task entry -->
-      <div class="own-task card" id="ownTask">
-        <div class="form-group">
-          <label>Course</label>
-          <div class="course-search">
-            <input type="text" id="ownCourseInput" placeholder="Search for your course..." autocomplete="off">
-            <div class="course-suggestions" id="ownCourseSuggestions"></div>
+        <div class="entry-options">
+          <button class="entry-tab active" onclick="showCode()">Join a class</button>
+          <button class="entry-tab" onclick="showOwn()">Enter my own task</button>
+        </div>
+
+        <!-- Class code entry -->
+        <div class="card" id="codeEntry">
+          <h3>Enter your class code</h3>
+          <p>Your teacher will give you a 6-character class code. Once you've joined, every task your teacher posts shows up here.</p>
+          <div class="code-input-row">
+            <input type="text" class="code-input" id="codeInput" placeholder="e.g. XK7M2P" maxlength="6">
+            <button class="btn-primary" onclick="joinClass()">Join</button>
           </div>
         </div>
-        <div class="form-group">
-          <label>Task question</label>
-          <div class="hint">Paste the full question from your task notification</div>
-          <textarea placeholder="e.g. Analyse how the Ottawa Charter can be used to address cardiovascular disease as a health priority in Australia."></textarea>
-        </div>
-        <div class="form-group">
-          <label>Marking criteria</label>
-          <div class="hint">Paste or type the marking criteria from your task notification. The AI will detect the different criteria automatically.</div>
-          <textarea class="criteria-textarea" id="ownCriteriaText" placeholder="e.g.
+
+        <!-- Own task entry -->
+        <div class="own-task card" id="ownTask">
+          <div class="form-group">
+            <label>Course</label>
+            <div class="course-search">
+              <input type="text" id="ownCourseInput" placeholder="Search for your course..." autocomplete="off">
+              <div class="course-suggestions" id="ownCourseSuggestions"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Task question</label>
+            <div class="hint">Paste the full question from your task notification</div>
+            <textarea placeholder="e.g. Analyse how the Ottawa Charter can be used to address cardiovascular disease as a health priority in Australia."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Marking criteria</label>
+            <div class="hint">Paste or type the marking criteria from your task notification. The AI will detect the different criteria automatically.</div>
+            <textarea class="criteria-textarea" id="ownCriteriaText" placeholder="e.g.
 Criteria 1: Knowledge and understanding (3-5 marks)
 Criteria 2: Use of examples and evidence (3-5 marks)
 Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
+          </div>
+
+          <div class="divider">Your draft</div>
+
+          <div>
+            <h3 style="font-size:16px;font-weight:700;margin-bottom:4px;">Paste your draft response</h3>
+            <p style="font-size:14px;color:#6b7280;margin-bottom:20px;">Paste your draft below exactly as you've written it.</p>
+            <textarea class="draft-textarea" id="ownDraftTextarea" placeholder="Paste your draft response here..."></textarea>
+            <div class="word-count" id="ownWordCount">0 words</div>
+            <button class="submit-btn" onclick="submitOwn()">Get feedback</button>
+          </div>
         </div>
-
-        <div class="divider">Your draft</div>
-
-        <div>
-          <h3 style="font-size:16px;font-weight:700;margin-bottom:4px;">Paste your draft response</h3>
-          <p style="font-size:14px;color:#6b7280;margin-bottom:20px;">Paste your draft below exactly as you've written it.</p>
-          <textarea class="draft-textarea" id="ownDraftTextarea" placeholder="Paste your draft response here..."></textarea>
-          <div class="word-count" id="ownWordCount">0 words</div>
-          <button class="submit-btn" onclick="submitOwn()">Get feedback</button>
-        </div>
-      </div>
-
-      <!-- Joined classes (below the entry options, grouped by class) -->
-      <div id="classesSection" style="display:none; margin-top:40px">
-        <div id="classesList" style="display:flex;flex-direction:column;gap:24px"></div>
       </div>
     </div>
 
@@ -697,6 +711,8 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         if (howStrip) howStrip.style.display = 'none';
         document.getElementById('classesList').innerHTML = joined.map(renderClassSection).join('');
         document.getElementById('classesSection').style.display = 'block';
+        var entryHeading = document.getElementById('entryBlockHeading');
+        if (entryHeading) entryHeading.style.display = 'block';
       }
 
       // Own-task (task_id === null) submissions get a small list at the bottom
