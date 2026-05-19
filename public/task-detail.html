@@ -356,6 +356,18 @@
       display: inline-block; font-size: 12px; font-weight: 700; padding: 4px 12px;
       background: #dbeafe; color: #1e40af; border-radius: 100px;
     }
+    .submission-status-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 100px;
+      text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap;
+    }
+    .submission-status-pill::before {
+      content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor;
+    }
+    .submission-status-pill.marked   { background: #d1fae5; color: #065f46; }
+    .submission-status-pill.ready    { background: #dbeafe; color: #1e40af; }
+    .submission-status-pill.unmarked { background: #fef3c7; color: #92400e; }
 
     .loading { text-align: center; padding: 60px; color: #9ca3af; font-size: 14px; }
     .error-msg { text-align: center; padding: 40px; color: #dc2626; font-size: 14px; }
@@ -493,11 +505,26 @@
           const count = stu.drafts.length;
           const date = new Date(latest.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
           const preview = latest.draft_text ? latest.draft_text.substring(0, 150) + (latest.draft_text.length > 150 ? '...' : '') : 'No draft text';
+          // Mark status pill (graded > submitted-for-marking > none)
+          const gradedDraft = stu.drafts.find(d => d.graded_at);
+          const finalDraft = stu.drafts.find(d => d.submitted_for_marking);
+          let statusPill = '';
+          if (gradedDraft) {
+            const total = gradedDraft.total_mark != null ? gradedDraft.total_mark : '—';
+            const max = currentTask.total_marks || '—';
+            statusPill = '<span class="submission-status-pill marked">Marked &middot; ' + e(String(total)) + '/' + e(String(max)) + '</span>';
+          } else if (finalDraft) {
+            statusPill = '<span class="submission-status-pill ready">Ready to mark</span>';
+          } else {
+            statusPill = '<span class="submission-status-pill unmarked">Not marked</span>';
+          }
+
           html += '<div class="submission-card" id="sub-' + i + '">';
           html += '<div class="submission-card-header" onclick="toggleSubmission(' + i + ')">';
           html += '<div class="submission-header-left">';
           html += '<span class="submission-label">' + e(stu.name) + '</span>';
           if (count > 1) html += '<span class="draft-badge">' + count + ' drafts</span>';
+          html += statusPill;
           html += '<span class="submission-date">' + e(date) + '</span>';
           html += '</div>';
           html += '<span class="submission-arrow">›</span>';
