@@ -127,6 +127,7 @@
   <nav class="nav">
     <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
     <div class="nav-right">
+      <a href="insights.html" id="navInsightsLink" class="nav-markbook-link" style="display:none">Insights</a>
       <a href="teacher-markbook.html" class="nav-markbook-link">Markbook</a>
       <a href="profile.html" class="nav-logout" style="text-decoration:none;display:inline-block">Profile</a>
       <span class="nav-user" id="navUser"></span>
@@ -149,6 +150,15 @@
       const user = await requireAuth('teacher');
       if (!user) return;
       document.getElementById('navUser').textContent = user.email;
+
+      // Probe insights access in the background; show the nav link only
+      // if this user is a school admin/leader.
+      authFetch('/api/insights-synthesis?probe=1').then(r => {
+        if (r.ok) {
+          const link = document.getElementById('navInsightsLink');
+          if (link) link.style.display = '';
+        }
+      }).catch(() => {});
 
       var meta = user.user_metadata || {};
       var displayName = meta.display_name || meta.full_name || meta.name || null;

@@ -209,3 +209,77 @@ export const CLASS_FEEDBACK_TOOL: Tool = {
     required: ['class_strengths', 'class_weaknesses', 'task_verb_adherence', 'top_priorities', 'overall_snapshot'],
   },
 };
+
+export const SCHOOL_INSIGHTS_TOOL: Tool = {
+  name: 'provide_school_insights',
+  description:
+    'Return a cross-faculty synthesis of student writing performance for an entire school, rolled up from per-task class-level feedback. Written for school leadership (Head of Teaching & Learning, Deputy Principal). Aggregates strengths, gaps, and cross-faculty patterns into a leadership-actionable overview.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      school_snapshot: {
+        type: 'string',
+        description:
+          '2 to 3 sentences giving an honest overall picture of student writing performance across the school. Where is the cohort strongest? Where are the most consistent gaps? Frame for leadership (not parents, not students).',
+      },
+      school_strengths: {
+        type: 'array',
+        items: { type: 'string' },
+        description:
+          'Up to 5 strengths that appear across multiple tasks / faculties. Each entry one specific point — name the skill, concept, or approach. Avoid generic praise.',
+      },
+      school_weaknesses: {
+        type: 'array',
+        items: { type: 'string' },
+        description:
+          'Up to 5 gaps or misconceptions that appear across multiple tasks / faculties. Be specific about what is going wrong and how widespread it is.',
+      },
+      verb_depth_patterns: {
+        type: 'string',
+        description:
+          'A short paragraph on how students are handling NESA task verbs across the school. Common patterns (e.g. "analyse" being treated as "describe"). Reference faculties where this is most visible.',
+      },
+      by_faculty: {
+        type: 'array',
+        description:
+          'Per-faculty breakdown. Include only faculties that have at least one task with class-level feedback. Faculty = the NSW KLA grouping (HSIE, English, PDHPE, etc.) inferred from the task course.',
+        items: {
+          type: 'object',
+          properties: {
+            faculty: { type: 'string', description: 'Faculty / KLA name (e.g. PDHPE, English, HSIE).' },
+            task_count: { type: 'integer', description: 'Number of tasks contributing to this faculty rollup.' },
+            strengths: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Up to 3 faculty-level strengths.',
+            },
+            weaknesses: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Up to 3 faculty-level gaps.',
+            },
+            notable_pattern: {
+              type: 'string',
+              description: 'One sentence on the standout pattern for this faculty.',
+            },
+          },
+          required: ['faculty', 'task_count', 'strengths', 'weaknesses', 'notable_pattern'],
+        },
+      },
+      teachable_moments: {
+        type: 'array',
+        items: { type: 'string' },
+        description:
+          '3 to 5 high-leverage, cross-faculty teaching opportunities leadership could action. Each entry should be a concrete, addressable point (e.g. "Schedule a whole-staff PD on NESA verb depth", "Cross-KLA moderation on use of evidence"). Avoid platitudes.',
+      },
+    },
+    required: [
+      'school_snapshot',
+      'school_strengths',
+      'school_weaknesses',
+      'verb_depth_patterns',
+      'by_faculty',
+      'teachable_moments',
+    ],
+  },
+};
