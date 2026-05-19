@@ -36,19 +36,19 @@
       grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
       gap: 8px;
     }
-    .faculty-option {
+    .faculty-grid .faculty-option {
       display: flex; align-items: center; gap: 8px; padding: 10px 12px;
       border: 1px solid #e8e0d4; border-radius: 8px; cursor: pointer;
-      font-size: 13.5px; background: #fff; transition: all 0.15s;
-      min-width: 0;
+      font-size: 13.5px; font-weight: 500; background: #fff;
+      transition: all 0.15s; min-width: 0; margin: 0;
     }
-    .faculty-option:hover { border-color: #ed7615; }
-    .faculty-option input[type="checkbox"] {
+    .faculty-grid .faculty-option:hover { border-color: #ed7615; }
+    .faculty-grid .faculty-option input[type="checkbox"] {
       width: 16px; height: 16px; accent-color: #ed7615;
       flex-shrink: 0;
     }
-    .faculty-option span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .faculty-option.checked { background: #fef3e6; border-color: #ed7615; }
+    .faculty-grid .faculty-option span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .faculty-grid .faculty-option.checked { background: #fef3e6; border-color: #ed7615; }
 
     .save-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
     .btn-save { background: #ed7615; color: #fff; border: 0; padding: 10px 22px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; font-family: inherit; }
