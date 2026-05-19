@@ -219,6 +219,7 @@
     let criterionMarksState = {};  // {criterionName: number}
     let bandMarkState = null;      // for band rubrics
     let pendingSelection = null;   // {start, end, quote}
+    let dialogOpen = false;
 
     (async () => {
       const container = document.getElementById('content');
@@ -404,6 +405,7 @@
     }
 
     function handleSelection() {
+      if (dialogOpen) return; // Preserve pendingSelection while dialog is open
       const sel = window.getSelection();
       const popup = document.getElementById('annotatePopup');
       if (!sel || sel.isCollapsed) { popup.classList.remove('visible'); pendingSelection = null; return; }
@@ -461,6 +463,7 @@
 
     function openAnnotateDialog() {
       if (!pendingSelection) return;
+      dialogOpen = true;
       document.getElementById('annotateDialog').classList.add('visible');
       document.getElementById('annotateQuotePreview').textContent = pendingSelection.quote;
       document.getElementById('annotateComment').value = '';
@@ -470,8 +473,10 @@
     }
 
     function closeAnnotateDialog() {
+      dialogOpen = false;
       document.getElementById('annotateDialog').classList.remove('visible');
       document.getElementById('annotatePopup').classList.remove('visible');
+      pendingSelection = null;
     }
 
     function saveAnnotation() {
