@@ -29,6 +29,7 @@ import {
 import type { Stage } from "../data/nesa-reference.js";
 import { buildMarkerVoiceReference } from "../data/marker-voice-loader.js";
 import { getSubjectGlossary } from "../data/subject-glossaries.js";
+import { getStage45Reference } from "../data/stage-4-5-reference.js";
 
 export const DISCIPLINE_PERSONAS: Record<string, string> = {
   English: "English teacher with extensive experience in textual analysis, essay writing, and HSC marking",
@@ -124,11 +125,30 @@ export function buildSystemPrompt(courseName?: string, discipline?: string, year
   const stageStatement = STAGE_STATEMENTS[stage];
   const isHsc = stage === 6;
 
-  // Stage-appropriate calibration ceiling
-  const bandDescriptions = isHsc
-    ? PERFORMANCE_BANDS.map((b) => `Band ${b.band} (${b.markRange}): ${b.description}`).join("\n\n")
-    : A_E_GRADE_SCALE.map((g) => `Grade ${g.grade}: ${g.description}`).join("\n\n");
-  const bandHeading = isHsc ? "HSC PERFORMANCE BAND DESCRIPTIONS" : "A-E COMMON GRADE SCALE (end-of-Stage ceiling)";
+  // Stage-appropriate calibration ceiling. For Stage 4-5 we prefer the
+  // subject-specific A-E descriptors when we have them; fall back to the
+  // generic A-E scale otherwise.
+  let bandDescriptions: string;
+  let bandHeading: string;
+  if (isHsc) {
+    bandDescriptions = PERFORMANCE_BANDS.map(b => `Band ${b.band} (${b.markRange}): ${b.description}`).join("\n\n");
+    bandHeading = "HSC PERFORMANCE BAND DESCRIPTIONS";
+  } else {
+    const ref = getStage45Reference(discipline || null, stage as 4 | 5);
+    if (ref) {
+      bandDescriptions = ref.descriptors.map(d => `Grade ${d.grade}: ${d.description}`).join("\n\n");
+      bandHeading = `A-E DESCRIPTORS for ${discipline} at Stage ${stage} (end-of-stage ceiling)`;
+    } else {
+      bandDescriptions = A_E_GRADE_SCALE.map(g => `Grade ${g.grade}: ${g.description}`).join("\n\n");
+      bandHeading = "A-E COMMON GRADE SCALE (end-of-Stage ceiling — generic, no subject-specific calibration available)";
+    }
+  }
+
+  // Subject-specific pitfalls for Stage 4-5
+  const stage45Ref = !isHsc ? getStage45Reference(discipline || null, stage as 4 | 5) : null;
+  const stage45PitfallsBlock = stage45Ref
+    ? `\nSTAGE ${stage} ${discipline?.toUpperCase()} PITFALLS (common errors at this stage):\n${stage45Ref.commonPitfalls.map(p => '- ' + p).join('\n')}\n`
+    : '';
 
   const glossaryEntries = Object.entries(GLOSSARY)
     .map(([term, def]) => `- ${term}: ${def}`)
@@ -240,12 +260,12 @@ ${bandDescriptions}
 FULL NESA GLOSSARY OF KEY WORDS:
 ${glossaryEntries}
 
-COMMON STUDENT PITFALLS (from 15+ years of HSC marker feedback):
+COMMON STUDENT PITFALLS:
 ${pitfalls}
 ${(() => {
     const extra = discipline && DISCIPLINE_PITFALLS[discipline];
     return extra ? `\nSUBJECT-SPECIFIC PITFALLS for ${subjectLabel}:\n${extra.map(p => '- ' + p).join('\n')}` : '';
-  })()}
+  })()}${stage45PitfallsBlock}
 
 Check for these specific pitfalls in the student's response and flag any that apply.
 ${isHsc ? buildMarkerVoiceReference(courseName, discipline) : ''}

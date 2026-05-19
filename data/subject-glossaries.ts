@@ -241,6 +241,119 @@ export const SUBJECT_GLOSSARIES: Record<string, GlossaryEntry[]> = {
     { term: 'FITT principle', definition: 'Frequency, Intensity, Time, Type — variables in designing a training program.', watchFor: 'Listing FITT without applying it to the athlete or context in question.' },
     { term: 'principles vs methods of training', definition: 'Principles = guiding rules (overload, specificity). Methods = how training is delivered (continuous, interval, plyometric).', watchFor: 'Treating methods as principles or vice versa.' },
   ],
+
+  // ─────────────── Stage 4 (Years 7-8) ───────────────────────────────────
+  'English Stage 4': [
+    { term: 'theme', definition: 'A central idea or message explored in a text.', watchFor: 'Stating the topic ("the theme is friendship") instead of the idea explored about it ("the text suggests friendship is conditional").' },
+    { term: 'character', definition: 'A person, animal or being in a text — constructed by the composer through language and action.', watchFor: 'Describing what a character does rather than how they are constructed.' },
+    { term: 'setting', definition: 'The time and place in which a text is set; can be physical, social or imagined.', watchFor: 'Listing where the story happens without considering how setting shapes mood or meaning.' },
+    { term: 'composer', definition: 'The writer, director or maker of a text.', watchFor: 'Using "author" inconsistently — "composer" works for any text type (novels, films, poems).' },
+    { term: 'imagery', definition: 'Language that creates a sensory picture in the reader\'s mind.', watchFor: 'Using "imagery" as a catch-all for any descriptive language without identifying the specific sense engaged.' },
+    { term: 'simile', definition: 'A comparison using "like" or "as" (e.g. "as cold as ice").', watchFor: 'Identifying similes without explaining what the comparison reveals.' },
+    { term: 'metaphor', definition: 'A direct comparison saying one thing IS another (e.g. "time is a thief").', watchFor: 'Confusing metaphor with simile — metaphors don\'t use "like" or "as".' },
+    { term: 'personification', definition: 'Giving human qualities to a non-human thing.', watchFor: 'Identifying personification without saying what effect it creates.' },
+    { term: 'narrative voice', definition: 'Who is telling the story — first person (I) or third person (he/she/they).', watchFor: 'Mixing up narrator with author.' },
+  ],
+
+  'Mathematics Stage 4': [
+    { term: 'pronumeral', definition: 'A letter that represents an unknown or variable number (e.g. x, y).', watchFor: 'Treating pronumerals as fixed numbers rather than placeholders.' },
+    { term: 'equation', definition: 'A statement that two expressions are equal (uses an = sign).', watchFor: 'Confusing equations (have =) with expressions (don\'t).' },
+    { term: 'integer', definition: 'A whole number — positive, negative or zero — with no fraction or decimal.', watchFor: 'Including fractions or decimals as integers.' },
+    { term: 'factor / multiple', definition: 'A factor divides into a number exactly. A multiple is what you get by multiplying.', watchFor: 'Confusing the two — 3 is a factor of 12; 12 is a multiple of 3.' },
+    { term: 'perimeter / area / volume', definition: 'Perimeter = distance around (units of length). Area = surface (units²). Volume = space inside (units³).', watchFor: 'Using the wrong unit (e.g. cm for area, where cm² is required).' },
+    { term: 'angle types', definition: 'Acute (<90°), right (=90°), obtuse (>90° and <180°), straight (=180°), reflex (>180°).', watchFor: 'Confusing acute and obtuse.' },
+    { term: 'mean / median / mode', definition: 'Mean = average. Median = middle value. Mode = most frequent.', watchFor: 'Using them interchangeably or computing the wrong one for the question asked.' },
+  ],
+
+  'Science Stage 4': [
+    { term: 'hypothesis', definition: 'A testable prediction about what will happen, usually in an "if/then" form.', watchFor: 'Writing a vague guess instead of a clear, testable statement.' },
+    { term: 'variable', definition: 'Something that can change in an investigation. Independent = what you change. Dependent = what you measure. Controlled = what you keep the same.', watchFor: 'Mixing up independent and dependent variables.' },
+    { term: 'observation vs inference', definition: 'Observation = what you see/measure. Inference = a conclusion drawn from observations.', watchFor: 'Calling an inference an observation.' },
+    { term: 'fair test', definition: 'An investigation where only the independent variable changes; all other variables are controlled.', watchFor: 'Using the phrase without identifying which variables were controlled.' },
+    { term: 'classification', definition: 'Sorting living things or substances into groups based on shared features.', watchFor: 'Naming features without using them to classify, or vice versa.' },
+    { term: 'physical vs chemical change', definition: 'Physical = reversible, same substance (e.g. melting). Chemical = new substance formed (e.g. burning).', watchFor: 'Calling a chemical change physical because the substance "looks different".' },
+    { term: 'force', definition: 'A push or pull, measured in newtons (N). Has direction and magnitude.', watchFor: 'Treating force as energy or motion.' },
+  ],
+
+  'HSIE Stage 4': [
+    { term: 'source', definition: 'Any material used to find out about the past or a place — primary (from the time/place) or secondary (interpretation of it).', watchFor: 'Listing sources without explaining how they help answer the question.' },
+    { term: 'primary vs secondary source', definition: 'Primary = from the time/place under study. Secondary = produced later, interpreting primary sources.', watchFor: 'Calling a textbook a primary source.' },
+    { term: 'cause and effect', definition: 'A cause makes something happen; an effect is what happens as a result.', watchFor: 'Confusing the two — a cause comes BEFORE; an effect comes AFTER.' },
+    { term: 'continuity and change', definition: 'Continuity = things that stay the same over time. Change = things that are different.', watchFor: 'Discussing only change and ignoring what stayed the same.' },
+    { term: 'perspective', definition: 'A point of view shaped by who someone is, when they lived, and what they experienced.', watchFor: 'Treating "perspective" as identical to "opinion".' },
+    { term: 'environment', definition: 'In Geography: the surroundings (natural and built) that affect and are affected by people.', watchFor: 'Using "environment" only to mean "nature".' },
+    { term: 'sustainability', definition: 'Meeting present needs without harming the ability of future generations to meet theirs.', watchFor: 'Using "sustainable" loosely to mean "good for the environment".' },
+  ],
+
+  'PDHPE Stage 4': [
+    { term: 'dimensions of health', definition: 'Physical, social, emotional, mental and spiritual — health is more than just physical.', watchFor: 'Only discussing physical health when the question implies multiple dimensions.' },
+    { term: 'identity', definition: 'Who someone is — shaped by family, culture, experiences and choices.', watchFor: 'Confusing identity with self-esteem (how someone feels about themselves).' },
+    { term: 'wellbeing', definition: 'A state of feeling well across all dimensions of health.', watchFor: 'Treating wellbeing as synonymous with happiness.' },
+    { term: 'resilience', definition: 'The ability to recover from setbacks, adapt to change, and keep going.', watchFor: 'Using "resilience" as a fix-all without describing what builds it.' },
+    { term: 'movement skill', definition: 'A specific physical action — locomotor (running), object (catching), or balance.', watchFor: 'Confusing skills with sports — "soccer" is not a skill; "kicking" is.' },
+    { term: 'fundamental movement skills (FMS)', definition: 'Core skills like running, jumping, throwing, catching that underpin all sport and physical activity.', watchFor: 'Listing FMS without applying them to the activity being discussed.' },
+    { term: 'risk vs safety', definition: 'Risk = chance of harm. Safety = strategies to reduce that chance.', watchFor: 'Treating any new activity as "risky" without considering specific risks and how they\'re managed.' },
+  ],
+
+  // ─────────────── Stage 5 (Years 9-10) ──────────────────────────────────
+  'English Stage 5': [
+    { term: 'analysis', definition: 'Identifying components of a text (techniques, structure, choices) and explaining how they work together to create meaning.', watchFor: 'Naming techniques without explaining effect (which is identification, not analysis).' },
+    { term: 'composer / responder', definition: 'Composer = who made the text. Responder = who reads, views or listens.', watchFor: 'Using "author" or "viewer" instead of the precise terms.' },
+    { term: 'theme', definition: 'A central idea or concern explored in a text.', watchFor: 'Naming a topic ("love") rather than the idea ("the text presents love as conditional on sacrifice").' },
+    { term: 'context', definition: 'The historical, cultural, social or personal circumstances that shape a text or its reception.', watchFor: 'Listing biographical facts disconnected from the text\'s meaning.' },
+    { term: 'representation', definition: 'How ideas, people, events or values are constructed through textual choices.', watchFor: 'Discussing WHAT is represented rather than HOW.' },
+    { term: 'voice', definition: 'The distinctive way a speaker, narrator or persona expresses ideas — through diction, syntax, tone.', watchFor: 'Confusing voice with the composer\'s personal opinion.' },
+    { term: 'tone', definition: 'The composer\'s attitude toward the subject or audience.', watchFor: 'Naming a tone without quoting the language that creates it.' },
+    { term: 'irony', definition: 'A gap between what is said/expected and what is meant/occurs (verbal, situational, dramatic).', watchFor: 'Calling something ironic when it is merely contrasting.' },
+    { term: 'symbol / motif', definition: 'Symbol = something representing an idea beyond literal meaning. Motif = a recurring image, idea or pattern.', watchFor: 'Identifying a symbol without explaining what it represents and why that matters.' },
+    { term: 'thesis', definition: 'The central interpretive argument of a response — a position you can defend.', watchFor: 'Mechanical statements like "This essay will discuss..." instead of taking a position.' },
+  ],
+
+  'Mathematics Stage 5': [
+    { term: 'equation vs expression', definition: 'Equation contains "=". Expression is a value or relationship without an equals sign.', watchFor: 'Treating an expression as something to "solve" — you can only solve an equation.' },
+    { term: 'function', definition: 'A relationship that assigns each input one output — written as f(x) or y = ...', watchFor: 'Calling something a function when one input produces multiple outputs.' },
+    { term: 'rate vs ratio', definition: 'Ratio compares like quantities (3 boys : 2 girls). Rate compares unlike quantities (60 km : 1 hour).', watchFor: 'Using them interchangeably; rate always involves units.' },
+    { term: 'percentage change', definition: '(new − old) / old × 100. Increase if positive, decrease if negative.', watchFor: 'Using the new value as the denominator instead of the original.' },
+    { term: 'similarity vs congruence', definition: 'Similar = same shape, different size (proportional). Congruent = same shape and size.', watchFor: 'Calling congruent figures similar or vice versa.' },
+    { term: 'Pythagoras vs trig', definition: 'Pythagoras gives side lengths from two known sides (right-angled). Trig (sin, cos, tan) relates sides to angles.', watchFor: 'Reaching for trig when Pythagoras would work, or vice versa.' },
+    { term: 'mean / median / range', definition: 'Mean = average. Median = middle value when ordered. Range = max minus min. Each gives different information.', watchFor: 'Using "average" without specifying which measure of centre is being calculated.' },
+    { term: 'probability', definition: 'A number between 0 and 1 representing the likelihood of an event.', watchFor: 'Expressing probability as a number greater than 1 or as a percentage that doesn\'t match the fraction.' },
+  ],
+
+  'Science Stage 5': [
+    { term: 'valid vs reliable', definition: 'Valid = measures what you intended. Reliable = consistent results when repeated.', watchFor: 'Treating them as the same thing.' },
+    { term: 'accuracy vs precision', definition: 'Accuracy = closeness to the true value. Precision = consistency of repeated measurements.', watchFor: 'Confusing the two — you can be precise but inaccurate.' },
+    { term: 'hypothesis', definition: 'A testable, falsifiable prediction.', watchFor: 'Writing untestable opinions as hypotheses.' },
+    { term: 'controlled variable', definition: 'A variable kept the same so it doesn\'t affect the experiment.', watchFor: 'Naming controlled variables without explaining why they matter.' },
+    { term: 'inference vs conclusion', definition: 'Inference = explanation based on evidence. Conclusion = what the data tells you about the hypothesis.', watchFor: 'Drawing a conclusion that ignores or contradicts the data.' },
+    { term: 'correlation vs causation', definition: 'Correlation = two things change together. Causation = one causes the other.', watchFor: 'Claiming causation from correlation without controlling for other variables.' },
+    { term: 'qualitative vs quantitative data', definition: 'Quantitative = numbers, measurements. Qualitative = descriptions, observations.', watchFor: 'Treating qualitative data as less rigorous; both have a place.' },
+    { term: 'systematic error', definition: 'A consistent error in the same direction (e.g. an instrument always reads 0.5 too high).', watchFor: 'Confusing systematic with random error.' },
+    { term: 'theory vs hypothesis', definition: 'Hypothesis = testable prediction for one investigation. Theory = well-supported explanation, refined over many investigations.', watchFor: 'Using "theory" loosely to mean "guess".' },
+  ],
+
+  'HSIE Stage 5': [
+    { term: 'source analysis', definition: 'Examining origin, perspective, reliability and usefulness of a source for a specific question.', watchFor: 'Describing a source without analysing its perspective or limitations.' },
+    { term: 'reliability vs usefulness', definition: 'Reliability = how trustworthy the source is. Usefulness = how well it helps answer the question (may be useful even if biased).', watchFor: 'Dismissing a source as biased without considering what it usefully reveals.' },
+    { term: 'significance', definition: 'How important an event/person/process is in terms of lasting impact, scale of change, or relevance today.', watchFor: 'Equating significance with size or recency.' },
+    { term: 'continuity and change', definition: 'What stays the same and what shifts over time.', watchFor: 'Discussing only change and ignoring continuity (or vice versa).' },
+    { term: 'cause and effect', definition: 'A causal explanation — why something happened and what followed.', watchFor: 'Listing events chronologically without explaining the causal links.' },
+    { term: 'perspective', definition: 'A point of view shaped by historical, cultural, or social context. Different groups see the same event differently.', watchFor: 'Treating perspective as opinion; perspectives are evidenced and contextual.' },
+    { term: 'environment / sustainability', definition: 'In Geography: the surroundings shaped by and shaping human activity. Sustainability = meeting needs now without compromising future generations.', watchFor: 'Using "sustainability" as a buzzword without explaining what trade-off is being managed.' },
+    { term: 'spatial pattern / process', definition: 'Pattern = the way features are distributed. Process = the forces that produce or change patterns.', watchFor: 'Describing a pattern without explaining the process behind it.' },
+    { term: 'globalisation', definition: 'The increasing interconnection of countries through trade, technology, culture and migration.', watchFor: 'Using "globalisation" as a single force; it has different impacts on different groups.' },
+  ],
+
+  'PDHPE Stage 5': [
+    { term: 'health-promotion frameworks', definition: 'Tools like the Ottawa Charter that guide action on health — applied to a context, not just listed.', watchFor: 'Naming the Ottawa Charter\'s five action areas without applying them to the specific issue.' },
+    { term: 'determinants of health', definition: 'Factors that influence health outcomes — individual, social, economic, environmental.', watchFor: 'Listing determinants without connecting them to specific health outcomes.' },
+    { term: 'modifiable vs non-modifiable factors', definition: 'Modifiable = can be changed (e.g. diet, activity). Non-modifiable = cannot (e.g. age, genetics).', watchFor: 'Proposing strategies that target non-modifiable factors.' },
+    { term: 'equity vs equality', definition: 'Equality = everyone gets the same. Equity = everyone gets what they need to reach the same outcome.', watchFor: 'Proposing health strategies that are "equal" but not "equitable" — same support for very different needs.' },
+    { term: 'health inequities', definition: 'Differences in health outcomes between groups that are avoidable and unfair.', watchFor: 'Treating health differences as natural without considering the social structures that produce them.' },
+    { term: 'wellbeing', definition: 'A holistic state — physical, social, emotional, mental, spiritual.', watchFor: 'Discussing wellbeing only in physical terms.' },
+    { term: 'agency', definition: 'The capacity to make decisions and act on them — shaped by individual resources and context.', watchFor: 'Treating agency as purely individual responsibility, ignoring structural constraints.' },
+    { term: 'skill-related vs health-related fitness', definition: 'Health-related = aerobic capacity, strength, flexibility, body composition, muscular endurance. Skill-related = balance, agility, coordination, power, speed, reaction time.', watchFor: 'Mixing the two when designing a program for a specific goal.' },
+  ],
 };
 
 /**
@@ -263,10 +376,44 @@ const COURSE_ALIASES: Record<string, string> = {
   'Community and Family Studies': 'PDHPE',
 };
 
+// Map "Year N Subject" to its Stage 4 or Stage 5 glossary key.
+// Year 7-8 = Stage 4; Year 9-10 = Stage 5.
+// Subjects in HSIE (History, Geography, Commerce, etc.) all map to "HSIE Stage N".
+function mapYearCourseToStageKey(courseName: string): string | null {
+  const m = courseName.match(/^Year\s+(\d{1,2})\s+(.+)$/i);
+  if (!m) return null;
+  const year = parseInt(m[1], 10);
+  const subject = m[2].trim();
+  const stage = (year >= 7 && year <= 8) ? 4 : (year >= 9 && year <= 10) ? 5 : null;
+  if (!stage) return null;
+
+  // Discipline-based bucketing for HSIE subjects
+  const hsieSubjects = new Set([
+    'History', 'Geography', 'Commerce', 'Aboriginal Studies',
+  ]);
+  // Creative Arts subjects bucket
+  const caSubjects = new Set([
+    'Music', 'Visual Arts', 'Drama', 'Photography and Digital Media',
+  ]);
+  // TAS subjects bucket
+  const tasSubjects = new Set([
+    'Technology Mandatory', 'Design and Technology', 'Food Technology',
+    'Industrial Technology', 'Information and Software Technology',
+    'Marine and Aquaculture Technology', 'Textiles Technology',
+  ]);
+
+  if (hsieSubjects.has(subject)) return `HSIE Stage ${stage}`;
+  if (caSubjects.has(subject))   return `Creative Arts Stage ${stage}`;
+  if (tasSubjects.has(subject))  return `TAS Stage ${stage}`;
+  return `${subject} Stage ${stage}`;
+}
+
 export function getSubjectGlossary(courseName: string | null | undefined): GlossaryEntry[] | null {
   if (!courseName) return null;
   if (SUBJECT_GLOSSARIES[courseName]) return SUBJECT_GLOSSARIES[courseName];
   const aliased = COURSE_ALIASES[courseName];
   if (aliased && SUBJECT_GLOSSARIES[aliased]) return SUBJECT_GLOSSARIES[aliased];
+  const stageKey = mapYearCourseToStageKey(courseName);
+  if (stageKey && SUBJECT_GLOSSARIES[stageKey]) return SUBJECT_GLOSSARIES[stageKey];
   return null;
 }
