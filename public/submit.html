@@ -307,29 +307,25 @@
         if (blockForMobile) {
           html += '<div class="card mobile-guard">';
           html += '<h3>Open this on a laptop or desktop</h3>';
-          html += '<p>This task requires you to <strong>type your response</strong> rather than paste it. Open ProofReady on a larger screen with a keyboard to draft your response. The task details above are still visible so you can plan ahead.</p>';
+          html += '<p>This task requires you to <strong>type your response</strong>. Open ProofReady on a larger screen with a keyboard to draft your response. The task details above are still visible so you can plan ahead.</p>';
           html += '</div>';
         } else {
           html += '<div class="card" id="draftCard">';
           if (typedOnly) {
             html += '<div class="typed-only-banner"><span class="pill">Typed only</span><span>Pasting is disabled for this task. ProofReady records your typing for your teacher.</span></div>';
           }
-          const heading = typedOnly ? 'Write your draft response' : 'Paste your draft response';
+          const heading = 'Write your draft response';
           html += '<h3>' + e(heading) + '</h3>';
           let subtitle;
           if (used === 0) {
             subtitle = typedOnly
-              ? "Type your draft below. Your work autosaves every few seconds — you can close the tab and come back."
-              : "Paste your draft below exactly as you've written it.";
+              ? "Write your draft below. Your work autosaves every few seconds — you can close the tab and come back."
+              : "Enter your draft below exactly as you've written it.";
           } else {
-            subtitle = typedOnly
-              ? "Type your revised draft below. ProofReady will compare it to your previous draft and acknowledge what's improved."
-              : "Paste your revised draft below. ProofReady will compare it to your previous draft and acknowledge what's improved.";
+            subtitle = "Write your revised draft below. ProofReady will compare it to your previous draft and acknowledge what's improved.";
           }
           html += '<p>' + e(subtitle) + '</p>';
-          const placeholder = typedOnly
-            ? 'Start typing your response here...'
-            : 'Paste your draft response here...';
+          const placeholder = 'Start writing your response here...';
           html += '<textarea class="draft-textarea" id="draftTextarea" placeholder="' + e(placeholder) + '"></textarea>';
           html += '<div class="draft-meta-row">';
           html += '<div class="word-count" id="wordCount">0 words</div>';
@@ -602,7 +598,7 @@
     async function submit() {
       if (submissionInFlight) return;
       const draft = document.getElementById('draftTextarea').value.trim();
-      if (!draft) { alert('Paste your draft first.'); return; }
+      if (!draft) { alert('Write your draft first.'); return; }
       if (draft.length < 50) { alert('Your draft is too short for meaningful feedback — write at least a paragraph.'); return; }
 
       submissionInFlight = true;
