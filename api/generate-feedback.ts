@@ -107,20 +107,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Task id or a question is required.' });
   }
 
-  // Lock: if the student already has a graded submission for this task,
-  // further drafts are blocked. The teacher has the final say.
+  // Lock: if the student already has a graded submission OR a
+  // submitted-for-marking submission for this task, further drafts are
+  // blocked.
   if (user && task_id) {
-    const { data: graded } = await getSupabase()
+    const { data: locked } = await getSupabase()
       .from('submissions')
-      .select('id')
+      .select('id, graded_at, submitted_for_marking')
       .eq('student_id', user.id)
       .eq('task_id', task_id)
-      .not('graded_at', 'is', null)
+      .or('graded_at.not.is.null,submitted_for_marking.eq.true')
       .maybeSingle();
-    if (graded) {
-      return res.status(403).json({
-        error: 'This task has been marked by your teacher. You cannot submit further drafts.',
-      });
+    if (locked) {
+      const reason = locked.graded_at
+        ? 'This task has been marked by your teacher. You cannot submit further drafts.'
+        : 'You have already submitted this task for marking. AI feedback is disabled until your teacher marks it.';
+      return res.status(403).json({ error: reason });
     }
   }
 

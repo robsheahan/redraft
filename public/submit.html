@@ -86,6 +86,16 @@
     .submit-btn { width: 100%; padding: 14px; background: #ed7615; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 2px 6px rgba(237,118,21,0.3); }
     .submit-btn:hover { background: #d4690f; }
     .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .submit-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: stretch; }
+    .submit-row .submit-btn { flex: 1; min-width: 200px; }
+    .submit-final-btn {
+      padding: 14px 20px; background: #fff; color: #1f2937; border: 1.5px solid #d1d5db;
+      border-radius: 10px; font-size: 14.5px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: all 0.15s; flex: 1; min-width: 200px;
+    }
+    .submit-final-btn:hover { border-color: #6b7280; background: #f9fafb; }
+    .submit-final-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .submit-final-hint { font-size: 12.5px; color: #9ca3af; margin-top: 8px; }
     .loading-overlay { display: none; text-align: center; padding: 48px 20px; }
     .loading-overlay.visible { display: block; }
     .spinner { width: 36px; height: 36px; border: 3px solid #e8e0d4; border-top-color: #ed7615; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
@@ -234,9 +244,9 @@
 
       html += '<div class="divider">Your draft</div>';
 
-      // Locking: if any of the student's prior drafts has been graded, the
-      // task is locked. Hide the draft form entirely; show a "Marked" card.
+      // Locking: graded > submitted-for-marking > normal.
       const gradedDraft = priorDrafts.find(d => d.graded_at);
+      const submittedFinal = priorDrafts.find(d => d.submitted_for_marking);
       if (gradedDraft) {
         const total = gradedDraft.total_mark != null ? gradedDraft.total_mark : '—';
         const max = t.total_marks || '—';
@@ -244,6 +254,14 @@
         html += '<h3>Marked by your teacher</h3>';
         html += '<p>' + e(String(total)) + ' / ' + e(String(max)) + ' marks · Open your feedback to see your teacher\'s comments and annotations.</p>';
         html += '<button type="button" class="submit-btn" style="max-width:280px;margin:0 auto;display:block;background:#10b981" onclick="viewLatestFeedback()">View teacher feedback</button>';
+        html += '</div>';
+        document.getElementById('content').innerHTML = html;
+        return;
+      }
+      if (submittedFinal) {
+        html += '<div class="cap-state" style="border-left:4px solid #3b82f6; background:#eff6ff">';
+        html += '<h3>Submitted for marking</h3>';
+        html += '<p>Your teacher has been notified. You will see your mark and feedback here once they have marked it.</p>';
         html += '</div>';
         document.getElementById('content').innerHTML = html;
         return;
@@ -317,7 +335,11 @@
           html += '<div class="word-count" id="wordCount">0 words</div>';
           html += '<div class="save-indicator" id="saveIndicator"></div>';
           html += '</div>';
-          html += '<button class="submit-btn" onclick="submit()">Get feedback</button>';
+          html += '<div class="submit-row">';
+          html += '<button class="submit-btn" onclick="submit()">Get AI feedback</button>';
+          html += '<button class="submit-final-btn" onclick="submitForMarking()">Submit for marking</button>';
+          html += '</div>';
+          html += '<div class="submit-final-hint">"Get AI feedback" gives you formative feedback on your draft (counts toward your 3-draft cap). "Submit for marking" is your final — your teacher will mark it and you can\'t submit again.</div>';
           html += '</div>';
         }
       }
@@ -528,6 +550,51 @@
     }
 
     var submissionInFlight = false;
+    async function submitForMarking() {
+      if (submissionInFlight) return;
+      const draftEl = document.getElementById('draftTextarea');
+      if (!draftEl) return;
+      const draft = draftEl.value.trim();
+      if (!draft) { alert('Type your response first.'); return; }
+      if (draft.length < 50) { alert('Your response is too short. Write at least a paragraph.'); return; }
+
+      const ok = confirm(
+        'Submit this for marking?\n\n' +
+        'Your teacher will mark it as your final response. You will not be able to submit any more drafts for this task, and ProofReady will not generate AI feedback on this submission.'
+      );
+      if (!ok) return;
+
+      submissionInFlight = true;
+      const finalBtn = document.querySelector('.submit-final-btn');
+      const aiBtn = document.querySelector('.submit-btn');
+      if (finalBtn) { finalBtn.disabled = true; finalBtn.textContent = 'Submitting...'; }
+      if (aiBtn) aiBtn.disabled = true;
+
+      try {
+        const res = await authFetch('/api/submit-for-marking', {
+          method: 'POST',
+          body: JSON.stringify({
+            task_id: currentTask.id,
+            draft,
+            keystroke_count: telemetry.keystroke_count,
+            paste_attempts_blocked: telemetry.paste_attempts_blocked,
+            typing_session_count: telemetry.typing_session_count,
+            total_typing_time_ms: telemetry.total_typing_time_ms,
+            time_to_first_keystroke_ms: telemetry.time_to_first_keystroke_ms,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Could not submit for marking.');
+        // Reload — the page will now show the "Submitted for marking" locked state
+        window.location.reload();
+      } catch (err) {
+        alert(err.message);
+        if (finalBtn) { finalBtn.disabled = false; finalBtn.textContent = 'Submit for marking'; }
+        if (aiBtn) aiBtn.disabled = false;
+        submissionInFlight = false;
+      }
+    }
+
     async function submit() {
       if (submissionInFlight) return;
       const draft = document.getElementById('draftTextarea').value.trim();

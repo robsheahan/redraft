@@ -102,17 +102,19 @@ async function returnResults(_req: VercelRequest, res: VercelResponse, userId: s
   if (taskIds.length > 0) {
     const { data: subs, error: subsErr } = await supabase
       .from('submissions')
-      .select('id, task_id, draft_version, created_at, total_mark, criterion_marks, graded_at, teacher_comment')
+      .select('id, task_id, draft_version, created_at, total_mark, criterion_marks, graded_at, teacher_comment, submitted_for_marking')
       .eq('student_id', userId)
       .in('task_id', taskIds)
       .order('draft_version', { ascending: false });
     if (subsErr) return res.status(500).json({ error: subsErr.message });
     (subs || []).forEach(s => {
-      // We want the graded submission if any, otherwise the latest.
+      // Preference order for "the submission to display": graded > submitted-for-marking > latest.
       const existing = submissionsByTask[s.task_id];
       if (!existing) {
         submissionsByTask[s.task_id] = s;
       } else if (s.graded_at && !existing.graded_at) {
+        submissionsByTask[s.task_id] = s;
+      } else if (s.submitted_for_marking && !existing.graded_at && !existing.submitted_for_marking) {
         submissionsByTask[s.task_id] = s;
       }
     });
@@ -145,7 +147,7 @@ async function returnTaskDrafts(req: VercelRequest, res: VercelResponse, userId:
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from('submissions')
-    .select('id, draft_text, feedback, draft_version, created_at, question, course, criterion_marks, total_mark, teacher_comment, teacher_annotations, graded_at, graded_by')
+    .select('id, draft_text, feedback, draft_version, created_at, question, course, criterion_marks, total_mark, teacher_comment, teacher_annotations, graded_at, graded_by, submitted_for_marking')
     .eq('student_id', userId)
     .eq('task_id', taskId)
     .order('draft_version', { ascending: true });

@@ -151,16 +151,19 @@
       if (sub.graded_at) {
         return { label: 'Marked', cls: 'ts-marked' };
       }
-      // Submitted but not yet graded
+      if (sub.submitted_for_marking) {
+        return { label: 'Submitted for marking', cls: 'ts-submitted' };
+      }
+      // AI-feedback draft, not yet final
       if (t.due_date) {
         const due = new Date(t.due_date + 'T23:59:59');
         const subDate = new Date(sub.created_at);
         if (subDate > due) {
           const days = Math.ceil((subDate - due) / (1000 * 60 * 60 * 24));
-          return { label: 'Submitted ' + days + ' day' + (days === 1 ? '' : 's') + ' late', cls: 'ts-submitted-late' };
+          return { label: 'Draft submitted ' + days + ' day' + (days === 1 ? '' : 's') + ' late', cls: 'ts-submitted-late' };
         }
       }
-      return { label: 'Submitted', cls: 'ts-submitted' };
+      return { label: 'Draft submitted', cls: 'ts-submitted' };
     }
 
     function renderMark(t) {

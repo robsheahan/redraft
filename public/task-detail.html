@@ -62,6 +62,10 @@
     }
     .stat { font-size: 13px; color: #6b7280; }
     .stat strong { color: #111827; }
+    .stat-marked   { background: #d1fae5; color: #065f46; padding: 3px 10px; border-radius: 100px; font-size: 12.5px; font-weight: 600; }
+    .stat-marked strong   { color: #065f46; }
+    .stat-unmarked { background: #fef3c7; color: #92400e; padding: 3px 10px; border-radius: 100px; font-size: 12.5px; font-weight: 600; }
+    .stat-unmarked strong { color: #92400e; }
 
     /* View details toggle */
     .btn-view-details {
@@ -348,6 +352,10 @@
       display: inline-block; font-size: 12px; font-weight: 700; padding: 4px 12px;
       background: #d1fae5; color: #065f46; border-radius: 100px;
     }
+    .ready-pill {
+      display: inline-block; font-size: 12px; font-weight: 700; padding: 4px 12px;
+      background: #dbeafe; color: #1e40af; border-radius: 100px;
+    }
 
     .loading { text-align: center; padding: 60px; color: #9ca3af; font-size: 14px; }
     .error-msg { text-align: center; padding: 40px; color: #dc2626; font-size: 14px; }
@@ -431,9 +439,17 @@
       }
       html += '</div></div>';
       if (task.question) html += '<div class="task-question">' + e(task.question) + '</div>';
+      // Mark-progress counts: a student counts as "marked" if any of their drafts is graded.
+      const markedStudents = students.filter(s => s.drafts.some(d => d.graded_at));
+      const unmarkedStudents = students.length - markedStudents.length;
+
       html += '<div class="task-stats">';
       html += '<span class="stat"><strong>' + students.length + '</strong> student' + (students.length !== 1 ? 's' : '') + '</span>';
       if (submissions.length !== students.length) html += '<span class="stat"><strong>' + submissions.length + '</strong> total submissions</span>';
+      if (students.length > 0) {
+        html += '<span class="stat stat-marked"><strong>' + markedStudents.length + '</strong> marked</span>';
+        html += '<span class="stat stat-unmarked"><strong>' + unmarkedStudents + '</strong> to mark</span>';
+      }
       if (task.total_marks) html += '<span class="stat"><strong>' + e(String(task.total_marks)) + '</strong> marks</span>';
       if (task.due_date) html += '<span class="stat">Due <strong>' + e(task.due_date) + '</strong></span>';
       html += '<button class="btn-view-details" onclick="toggleDetails()">View details</button>';
@@ -784,6 +800,9 @@
         html += '<span class="graded-pill">Marked — ' + e(String(total)) + ' / ' + e(String(max)) + '</span>';
         html += '<a class="btn-mark-submission edit" href="' + url + '">Edit grade</a>';
       } else {
+        if (d.submitted_for_marking) {
+          html += '<span class="ready-pill">Ready for marking</span>';
+        }
         html += '<a class="btn-mark-submission" href="' + url + '">Mark this submission</a>';
       }
       html += '</div>';
