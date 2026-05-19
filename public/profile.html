@@ -31,15 +31,23 @@
     .field label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #111827; }
     .field select { width: 100%; padding: 11px 14px; border: 1px solid #e8e0d4; border-radius: 8px; font-family: inherit; font-size: 14.5px; background: #fff; }
     .field select:focus { outline: none; border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.15); }
-    .faculty-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    @media (max-width: 460px) { .faculty-grid { grid-template-columns: 1fr; } }
+    .faculty-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+    }
     .faculty-option {
-      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      display: flex; align-items: center; gap: 8px; padding: 10px 12px;
       border: 1px solid #e8e0d4; border-radius: 8px; cursor: pointer;
-      font-size: 14px; background: #fff; transition: all 0.15s;
+      font-size: 13.5px; background: #fff; transition: all 0.15s;
+      min-width: 0;
     }
     .faculty-option:hover { border-color: #ed7615; }
-    .faculty-option input[type="checkbox"] { width: 16px; height: 16px; accent-color: #ed7615; }
+    .faculty-option input[type="checkbox"] {
+      width: 16px; height: 16px; accent-color: #ed7615;
+      flex-shrink: 0;
+    }
+    .faculty-option span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .faculty-option.checked { background: #fef3e6; border-color: #ed7615; }
 
     .save-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
@@ -140,7 +148,6 @@
           html += '<label class="faculty-option' + (checked ? ' checked' : '') + '"><input type="checkbox" value="' + f + '" ' + (checked ? 'checked' : '') + ' onchange="onFacultyChange(this)"><span>' + e(f) + '</span></label>';
         });
         html += '</div></div>';
-        html += '<p style="font-size:12.5px;color:#9ca3af;margin-top:4px">Used for the insights dashboard so leaders see only your faculty\'s data.</p>';
         html += '<div class="save-row"><button type="button" class="btn-save" id="saveFacultiesBtn" onclick="saveFaculties()">Save</button></div>';
         html += '</div>';
       }
