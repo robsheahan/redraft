@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { buildSystemPrompt, buildUserPrompt } from '../prompts/feedback-system.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
+import { currentYearLevelFromGraduationYear } from '../data/nesa-reference.js';
 import { VERB_DEPTH_MAP } from '../data/nesa-reference.js';
 import { generateInlineSuggestions } from '../lib/generate-inline-suggestions.js';
 import { extractTaskVerbs } from '../lib/task-verbs.js';
@@ -249,7 +250,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   );
 
   const discipline = resolvedCourse ? getDisciplineForCourse(resolvedCourse as string) : null;
-  const systemPrompt = buildSystemPrompt(resolvedCourse as string || undefined, discipline || undefined);
+  const gradYear = (user?.user_metadata as any)?.graduation_year;
+  const yearLevel = typeof gradYear === 'number' ? currentYearLevelFromGraduationYear(gradYear) : null;
+  const systemPrompt = buildSystemPrompt(
+    resolvedCourse as string || undefined,
+    discipline || undefined,
+    yearLevel || undefined,
+  );
   const userPrompt = buildUserPrompt({
     taskDescription,
     taskVerb: taskVerb || undefined,

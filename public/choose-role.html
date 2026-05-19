@@ -20,9 +20,7 @@
       -webkit-font-smoothing: antialiased;
     }
     .nav { padding: 24px 32px; }
-    .nav-brand {
-      text-decoration: none; display: flex; align-items: center;
-    }
+    .nav-brand { text-decoration: none; display: flex; align-items: center; }
     .nav-brand img { height: 40px; width: auto; }
 
     .page {
@@ -30,12 +28,8 @@
       align-items: center; justify-content: center;
       padding: 40px 24px 80px; text-align: center;
     }
-    .page h1 {
-      font-size: 28px; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 8px;
-    }
-    .page p {
-      font-size: 15px; color: #6b7280; margin-bottom: 40px;
-    }
+    .page h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.8px; margin-bottom: 8px; }
+    .page p.lede { font-size: 15px; color: #6b7280; margin-bottom: 40px; }
     .cards { display: flex; gap: 16px; max-width: 500px; width: 100%; }
     @media (max-width: 520px) { .cards { flex-direction: column; } }
     .card {
@@ -43,21 +37,51 @@
       border-radius: 12px; padding: 32px 24px; text-align: center;
       cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .card:hover {
-      border-color: #ed7615; box-shadow: 0 4px 16px rgba(237,118,21,0.08);
-    }
-    .card-icon {
-      width: 48px; height: 48px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 16px;
-    }
+    .card:hover { border-color: #ed7615; box-shadow: 0 4px 16px rgba(237,118,21,0.08); }
+    .card.selected { border-color: #ed7615; background: #fef3e6; }
+    .card-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
     .card-icon svg { width: 28px; height: 28px; stroke: #ed7615; stroke-width: 1.5; fill: none; }
     .card h2 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
     .card p { font-size: 13px; color: #6b7280; margin-bottom: 0; }
     .card.selecting { opacity: 0.6; pointer-events: none; }
-    .site-footer {
-      text-align: center; padding: 24px; font-size: 13px; color: #9ca3af;
+
+    .step { display: none; max-width: 500px; width: 100%; text-align: left; }
+    .step.visible { display: block; }
+    .step h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; text-align: center; }
+    .step p.sub { font-size: 14px; color: #6b7280; margin-bottom: 24px; text-align: center; }
+    .field { background: #fff; border: 1px solid #e8e0d4; border-radius: 12px; padding: 22px; margin-bottom: 18px; }
+    .field label { display: block; font-size: 14px; font-weight: 700; margin-bottom: 10px; color: #111827; }
+    .field select {
+      width: 100%; padding: 12px 14px; border: 1px solid #e8e0d4; border-radius: 8px;
+      font-family: inherit; font-size: 15px; background: #fff;
     }
+    .field select:focus { outline: none; border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.15); }
+    .faculty-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 460px) { .faculty-grid { grid-template-columns: 1fr; } }
+    .faculty-option {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      border: 1px solid #e8e0d4; border-radius: 8px; cursor: pointer;
+      font-size: 14px; background: #fff; transition: all 0.15s;
+    }
+    .faculty-option:hover { border-color: #ed7615; }
+    .faculty-option input[type="checkbox"] {
+      width: 16px; height: 16px; accent-color: #ed7615; cursor: pointer;
+    }
+    .faculty-option.checked { background: #fef3e6; border-color: #ed7615; }
+    .submit-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .btn-back {
+      background: transparent; color: #6b7280; border: 0; padding: 8px 4px;
+      font-family: inherit; font-size: 14px; cursor: pointer;
+    }
+    .btn-back:hover { color: #1f2937; }
+    .btn-continue {
+      background: #ed7615; color: #fff; border: 0; padding: 12px 24px; border-radius: 8px;
+      font-weight: 700; font-size: 15px; cursor: pointer; font-family: inherit;
+    }
+    .btn-continue:hover { background: #d4690f; }
+    .btn-continue:disabled { background: #d1d5db; cursor: not-allowed; }
+
+    .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; }
     .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
     .site-footer a:hover { color: #6b7280; }
   </style>
@@ -69,63 +93,64 @@
   </nav>
 
   <div class="page">
-    <h1 id="heading">How will you use ProofReady?</h1>
-    <p>This is saved to your account — you won't be asked again.</p>
-    <div class="cards">
-      <div class="card" onclick="pickRole('teacher')">
-        <div class="card-icon">
-          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+    <!-- Step 1: role -->
+    <div id="step-role" class="step visible" style="display:block">
+      <h1 id="heading">How will you use ProofReady?</h1>
+      <p class="lede">This is saved to your account — you won't be asked again.</p>
+      <div class="cards">
+        <div class="card" id="cardTeacher" onclick="pickRole('teacher')">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+          </div>
+          <h2>I'm a teacher</h2>
+          <p>Create tasks and review student feedback</p>
         </div>
-        <h2>I'm a teacher</h2>
-        <p>Create tasks and review student feedback</p>
+        <div class="card" id="cardStudent" onclick="pickRole('student')">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <h2>I'm a student</h2>
+          <p>Submit drafts and get feedback</p>
+        </div>
       </div>
-      <div class="card" onclick="pickRole('student')">
-        <div class="card-icon">
-          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        </div>
-        <h2>I'm a student</h2>
-        <p>Submit drafts and get feedback</p>
+    </div>
+
+    <!-- Step 2 (student): year level -->
+    <div id="step-year" class="step">
+      <h2>What year are you in?</h2>
+      <p class="sub">We use this to tailor feedback to your stage — Year 8 work isn't marked like Year 12 work.</p>
+      <div class="field">
+        <label for="yearSelect">Current year level</label>
+        <select id="yearSelect">
+          <option value="">Select your year level…</option>
+          <option value="7">Year 7</option>
+          <option value="8">Year 8</option>
+          <option value="9">Year 9</option>
+          <option value="10">Year 10</option>
+          <option value="11">Year 11</option>
+          <option value="12">Year 12</option>
+        </select>
+      </div>
+      <div class="submit-row">
+        <button type="button" class="btn-back" onclick="backToRole()">← Back</button>
+        <button type="button" class="btn-continue" id="yearContinueBtn" onclick="submitStudent()" disabled>Continue</button>
+      </div>
+    </div>
+
+    <!-- Step 2 (teacher): faculties -->
+    <div id="step-faculties" class="step">
+      <h2>Which faculties do you teach in?</h2>
+      <p class="sub">Pick any that apply. We use this for the insights dashboard — your Head of Department will see your faculty's data, not other faculties'.</p>
+      <div class="field">
+        <label>Faculties</label>
+        <div class="faculty-grid" id="facultyGrid"></div>
+      </div>
+      <div class="submit-row">
+        <button type="button" class="btn-back" onclick="backToRole()">← Back</button>
+        <button type="button" class="btn-continue" id="facultyContinueBtn" onclick="submitTeacher()" disabled>Continue</button>
       </div>
     </div>
   </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/app.js"></script>
-  <script>
-    // Must be logged in to see this page
-    getCurrentUser().then(user => {
-      if (!user) { window.location.href = '/auth.html'; return; }
-      // If already has role, go to dashboard
-      const role = user.user_metadata?.role;
-      if (role) {
-        window.location.href = role === 'teacher' ? '/teacher.html' : '/student.html';
-      } else {
-        const meta = user.user_metadata || {};
-        const name = meta.display_name || meta.full_name || meta.name || '';
-        if (name) document.getElementById('heading').textContent = 'Hey ' + name + ', how will you use ProofReady?';
-      }
-    });
-
-    async function pickRole(role) {
-      document.querySelectorAll('.card').forEach(c => c.classList.add('selecting'));
-
-      try {
-        const res = await authFetch('/api/set-role', {
-          method: 'POST',
-          body: JSON.stringify({ role }),
-        });
-        if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
-
-        // Refresh the session so metadata is updated
-        await sb.auth.refreshSession();
-
-        window.location.href = role === 'teacher' ? '/teacher.html' : '/student.html';
-      } catch (err) {
-        alert(err.message);
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('selecting'));
-      }
-    }
-  </script>
 
   <div class="site-footer">
     <a href="/contact.html">Contact</a>
@@ -133,6 +158,101 @@
     <a href="/terms.html">Terms &amp; Conditions</a>
     <a href="/compliance.html">Compliance</a>
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const FACULTIES = ['English', 'Mathematics', 'Science', 'HSIE', 'PDHPE', 'TAS', 'CAPA', 'Languages', 'Other'];
+    let selectedRole = null;
+
+    getCurrentUser().then(user => {
+      if (!user) { window.location.href = '/auth.html'; return; }
+      const meta = user.user_metadata || {};
+      const role = meta.role;
+      if (role) {
+        // Already onboarded — send straight to dashboard
+        window.location.href = role === 'teacher' ? '/teacher.html' : '/student.html';
+        return;
+      }
+      const name = meta.display_name || meta.full_name || meta.name || '';
+      if (name) document.getElementById('heading').textContent = 'Hey ' + name + ', how will you use ProofReady?';
+
+      // Build faculty grid
+      const grid = document.getElementById('facultyGrid');
+      grid.innerHTML = FACULTIES.map(f =>
+        '<label class="faculty-option"><input type="checkbox" value="' + f + '" onchange="onFacultyChange(this)"><span>' + f + '</span></label>'
+      ).join('');
+
+      // Wire year-select enabling continue
+      document.getElementById('yearSelect').addEventListener('change', () => {
+        document.getElementById('yearContinueBtn').disabled = !document.getElementById('yearSelect').value;
+      });
+    });
+
+    function showStep(id) {
+      document.querySelectorAll('.step').forEach(s => { s.style.display = 'none'; });
+      const el = document.getElementById('step-' + id);
+      el.style.display = 'block';
+    }
+
+    function backToRole() {
+      selectedRole = null;
+      document.querySelectorAll('.card').forEach(c => c.classList.remove('selected', 'selecting'));
+      showStep('role');
+    }
+
+    function pickRole(role) {
+      selectedRole = role;
+      document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+      document.getElementById(role === 'teacher' ? 'cardTeacher' : 'cardStudent').classList.add('selected');
+      showStep(role === 'teacher' ? 'faculties' : 'year');
+    }
+
+    function onFacultyChange(input) {
+      input.closest('.faculty-option').classList.toggle('checked', input.checked);
+      const anyChecked = Array.from(document.querySelectorAll('#facultyGrid input[type="checkbox"]')).some(i => i.checked);
+      document.getElementById('facultyContinueBtn').disabled = !anyChecked;
+    }
+
+    async function submitStudent() {
+      const year = parseInt(document.getElementById('yearSelect').value, 10);
+      if (!year) return;
+      const btn = document.getElementById('yearContinueBtn');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        const res = await authFetch('/api/set-role', {
+          method: 'POST',
+          body: JSON.stringify({ role: 'student', year_level: year }),
+        });
+        if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+        await sb.auth.refreshSession();
+        window.location.href = '/student.html';
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false; btn.textContent = 'Continue';
+      }
+    }
+
+    async function submitTeacher() {
+      const faculties = Array.from(document.querySelectorAll('#facultyGrid input[type="checkbox"]'))
+        .filter(i => i.checked).map(i => i.value);
+      if (faculties.length === 0) return;
+      const btn = document.getElementById('facultyContinueBtn');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        const res = await authFetch('/api/set-role', {
+          method: 'POST',
+          body: JSON.stringify({ role: 'teacher', faculties }),
+        });
+        if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+        await sb.auth.refreshSession();
+        window.location.href = '/teacher.html';
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false; btn.textContent = 'Continue';
+      }
+    }
+  </script>
 
 </body>
 </html>

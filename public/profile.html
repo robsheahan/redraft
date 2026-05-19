@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/proofready/favicon.svg" />
+  <link rel="shortcut icon" href="/proofready/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/proofready/apple-touch-icon.png" />
+  <link rel="manifest" href="/proofready/site.webmanifest" />
+  <title>Profile — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #faf7f2; color: #111827; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .nav { background: #fdf6ee; border-bottom: 1px solid #f0e6d6; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand { text-decoration: none; display: flex; align-items: center; }
+    .nav-brand img { height: 40px; width: auto; }
+    .back-link { font-size: 13px; font-weight: 500; color: #4b5563; text-decoration: none; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 6px 14px; }
+    .back-link:hover { background: rgba(0,0,0,0.08); }
+    .container { max-width: 640px; margin: 0 auto; padding: 32px 20px 80px; }
+    h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 6px; }
+    .lede { font-size: 14px; color: #6b7280; margin-bottom: 22px; }
+
+    .card { background: #fff; border-radius: 14px; padding: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); margin-bottom: 16px; }
+    .card h3 { font-size: 12.5px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
+    .row .label { font-size: 13px; color: #6b7280; }
+    .row .value { font-size: 14px; font-weight: 600; color: #111827; }
+
+    .field label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; color: #111827; }
+    .field select { width: 100%; padding: 11px 14px; border: 1px solid #e8e0d4; border-radius: 8px; font-family: inherit; font-size: 14.5px; background: #fff; }
+    .field select:focus { outline: none; border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.15); }
+    .faculty-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 460px) { .faculty-grid { grid-template-columns: 1fr; } }
+    .faculty-option {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      border: 1px solid #e8e0d4; border-radius: 8px; cursor: pointer;
+      font-size: 14px; background: #fff; transition: all 0.15s;
+    }
+    .faculty-option:hover { border-color: #ed7615; }
+    .faculty-option input[type="checkbox"] { width: 16px; height: 16px; accent-color: #ed7615; }
+    .faculty-option.checked { background: #fef3e6; border-color: #ed7615; }
+
+    .save-row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+    .btn-save { background: #ed7615; color: #fff; border: 0; padding: 10px 22px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; font-family: inherit; }
+    .btn-save:hover { background: #d4690f; }
+    .btn-save:disabled { background: #d1d5db; cursor: not-allowed; }
+    .saved-toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #065f46; color: #fff; padding: 10px 18px; border-radius: 8px;
+      font-size: 13.5px; font-weight: 600; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .saved-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .loading { text-align: center; padding: 60px; color: #9ca3af; }
+    .error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 14px; border-radius: 8px; margin-bottom: 14px; }
+
+    .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
+    .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+    <a id="backLink" href="student.html" class="back-link">Back to dashboard</a>
+  </nav>
+  <div class="container" id="content"><div class="loading">Loading profile...</div></div>
+  <div class="saved-toast" id="savedToast">Saved.</div>
+  <div class="site-footer">
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms &amp; Conditions</a>
+    <a href="/compliance.html">Compliance</a>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    const FACULTIES = ['English', 'Mathematics', 'Science', 'HSIE', 'PDHPE', 'TAS', 'CAPA', 'Languages', 'Other'];
+
+    function currentYearLevel(graduationYear) {
+      if (!graduationYear) return null;
+      const now = new Date().getFullYear();
+      return Math.max(7, Math.min(13, 12 - (graduationYear - now)));
+    }
+
+    (async () => {
+      const container = document.getElementById('content');
+      const user = await requireAuth();
+      if (!user) return;
+      const meta = user.user_metadata || {};
+      const role = meta.role || 'student';
+      document.getElementById('backLink').href = role === 'teacher' ? 'teacher.html' : 'student.html';
+      render({ user, meta, role });
+    })();
+
+    function render(ctx) {
+      const { user, meta, role } = ctx;
+      const container = document.getElementById('content');
+      const displayName = meta.display_name || meta.full_name || meta.name || user.email;
+
+      let html = '';
+      html += '<h1>Profile</h1>';
+      html += '<p class="lede">Update your details. Changes save instantly.</p>';
+
+      // Identity card
+      html += '<div class="card">';
+      html += '<h3>Account</h3>';
+      html += '<div class="row"><span class="label">Name</span><span class="value">' + e(displayName) + '</span></div>';
+      html += '<div class="row"><span class="label">Email</span><span class="value">' + e(user.email || '') + '</span></div>';
+      html += '<div class="row"><span class="label">Role</span><span class="value">' + e(role.charAt(0).toUpperCase() + role.slice(1)) + '</span></div>';
+      html += '</div>';
+
+      if (role === 'student') {
+        const currentYear = currentYearLevel(meta.graduation_year);
+        html += '<div class="card">';
+        html += '<h3>Year level</h3>';
+        html += '<div class="field"><label for="yearSelect">Current year level</label>';
+        html += '<select id="yearSelect">';
+        html += '<option value="">Select…</option>';
+        for (let y = 7; y <= 12; y++) {
+          html += '<option value="' + y + '"' + (y === currentYear ? ' selected' : '') + '>Year ' + y + '</option>';
+        }
+        html += '</select></div>';
+        html += '<p style="font-size:12.5px;color:#9ca3af;margin-top:4px">We use this to calibrate feedback to your stage. It updates automatically each year.</p>';
+        html += '<div class="save-row"><button type="button" class="btn-save" id="saveYearBtn" onclick="saveYear()">Save</button></div>';
+        html += '</div>';
+      }
+
+      if (role === 'teacher') {
+        const myFaculties = Array.isArray(meta.faculties) ? meta.faculties : [];
+        html += '<div class="card">';
+        html += '<h3>Faculties</h3>';
+        html += '<div class="field"><label>Which faculties do you teach in?</label>';
+        html += '<div class="faculty-grid">';
+        FACULTIES.forEach(f => {
+          const checked = myFaculties.includes(f);
+          html += '<label class="faculty-option' + (checked ? ' checked' : '') + '"><input type="checkbox" value="' + f + '" ' + (checked ? 'checked' : '') + ' onchange="onFacultyChange(this)"><span>' + e(f) + '</span></label>';
+        });
+        html += '</div></div>';
+        html += '<p style="font-size:12.5px;color:#9ca3af;margin-top:4px">Used for the insights dashboard so leaders see only your faculty\'s data.</p>';
+        html += '<div class="save-row"><button type="button" class="btn-save" id="saveFacultiesBtn" onclick="saveFaculties()">Save</button></div>';
+        html += '</div>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    function onFacultyChange(input) {
+      input.closest('.faculty-option').classList.toggle('checked', input.checked);
+    }
+
+    function showSavedToast() {
+      const t = document.getElementById('savedToast');
+      t.classList.add('visible');
+      clearTimeout(t._hideTimer);
+      t._hideTimer = setTimeout(() => t.classList.remove('visible'), 1800);
+    }
+
+    async function saveYear() {
+      const year = parseInt(document.getElementById('yearSelect').value, 10);
+      if (!year) { alert('Pick a year level first.'); return; }
+      const btn = document.getElementById('saveYearBtn');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        const res = await authFetch('/api/set-role', {
+          method: 'POST',
+          body: JSON.stringify({ year_level: year }),
+        });
+        if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+        await sb.auth.refreshSession();
+        showSavedToast();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Save';
+      }
+    }
+
+    async function saveFaculties() {
+      const faculties = Array.from(document.querySelectorAll('.faculty-option input[type="checkbox"]'))
+        .filter(i => i.checked).map(i => i.value);
+      const btn = document.getElementById('saveFacultiesBtn');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        const res = await authFetch('/api/set-role', {
+          method: 'POST',
+          body: JSON.stringify({ faculties }),
+        });
+        if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+        await sb.auth.refreshSession();
+        showSavedToast();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Save';
+      }
+    }
+  </script>
+</body>
+</html>

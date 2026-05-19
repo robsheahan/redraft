@@ -121,6 +121,45 @@ export const NESA_COURSES: NesaCourse[] = [
   { name: "Tourism, Travel and Events (VET)", discipline: "VET" },
 ];
 
+// Stage 4-5 (Year 7-10) courses. Eight mandatory KLAs across both stages,
+// plus common Year 9-10 electives. The 8 disciplines map to NSW school
+// faculty structure 1:1.
+const STAGE_4_5_KLAS: { name: string; discipline: DisciplineCategory }[] = [
+  { name: "English", discipline: "English" },
+  { name: "Mathematics", discipline: "Mathematics" },
+  { name: "Science", discipline: "Science" },
+  { name: "History", discipline: "HSIE" },
+  { name: "Geography", discipline: "HSIE" },
+  { name: "PDHPE", discipline: "PDHPE" },
+  { name: "Technology Mandatory", discipline: "TAS" },
+  { name: "Music", discipline: "Creative Arts" },
+  { name: "Visual Arts", discipline: "Creative Arts" },
+  { name: "Drama", discipline: "Creative Arts" },
+];
+
+const STAGE_5_ELECTIVES: { name: string; discipline: DisciplineCategory }[] = [
+  { name: "Commerce", discipline: "HSIE" },
+  { name: "Design and Technology", discipline: "TAS" },
+  { name: "Food Technology", discipline: "TAS" },
+  { name: "Industrial Technology", discipline: "TAS" },
+  { name: "Information and Software Technology", discipline: "TAS" },
+  { name: "Marine and Aquaculture Technology", discipline: "TAS" },
+  { name: "Textiles Technology", discipline: "TAS" },
+  { name: "Photography and Digital Media", discipline: "Creative Arts" },
+  { name: "Aboriginal Studies", discipline: "HSIE" },
+];
+
+for (let year = 7; year <= 10; year++) {
+  for (const k of STAGE_4_5_KLAS) {
+    NESA_COURSES.push({ name: `Year ${year} ${k.name}`, discipline: k.discipline });
+  }
+  if (year >= 9) {
+    for (const e of STAGE_5_ELECTIVES) {
+      NESA_COURSES.push({ name: `Year ${year} ${e.name}`, discipline: e.discipline });
+    }
+  }
+}
+
 /**
  * Look up the discipline category for a course name.
  * Handles case-insensitive matching and common prefixes like "HSC", "Preliminary".
@@ -128,7 +167,7 @@ export const NESA_COURSES: NesaCourse[] = [
 export function getDisciplineForCourse(courseName: string): DisciplineCategory | null {
   const normalised = courseName
     .toLowerCase()
-    .replace(/^(hsc|preliminary|year\s*1[12])\s+/i, "")
+    .replace(/^(hsc|preliminary|year\s*\d+)\s+/i, "")
     .trim();
 
   for (const course of NESA_COURSES) {

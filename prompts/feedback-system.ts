@@ -17,12 +17,16 @@
 import {
   GLOSSARY,
   PERFORMANCE_BANDS,
+  A_E_GRADE_SCALE,
+  STAGE_STATEMENTS,
+  stageForYearLevel,
   MARKING_PRINCIPLES,
   SOLO_LEVELS,
   VERB_DEPTH_MAP,
   COMMON_PITFALLS,
   FEEDBACK_PRINCIPLES,
 } from "../data/nesa-reference.js";
+import type { Stage } from "../data/nesa-reference.js";
 import { buildMarkerVoiceReference } from "../data/marker-voice-loader.js";
 import { getSubjectGlossary } from "../data/subject-glossaries.js";
 
@@ -115,10 +119,16 @@ interface FeedbackPromptInput {
   draftVersion?: number;
 }
 
-export function buildSystemPrompt(courseName?: string, discipline?: string): string {
-  const bandDescriptions = PERFORMANCE_BANDS.map(
-    (b) => `Band ${b.band} (${b.markRange}): ${b.description}`
-  ).join("\n\n");
+export function buildSystemPrompt(courseName?: string, discipline?: string, yearLevel?: number): string {
+  const stage = stageForYearLevel(yearLevel) ?? 6; // default to HSC if unknown
+  const stageStatement = STAGE_STATEMENTS[stage];
+  const isHsc = stage === 6;
+
+  // Stage-appropriate calibration ceiling
+  const bandDescriptions = isHsc
+    ? PERFORMANCE_BANDS.map((b) => `Band ${b.band} (${b.markRange}): ${b.description}`).join("\n\n")
+    : A_E_GRADE_SCALE.map((g) => `Grade ${g.grade}: ${g.description}`).join("\n\n");
+  const bandHeading = isHsc ? "HSC PERFORMANCE BAND DESCRIPTIONS" : "A-E COMMON GRADE SCALE (end-of-Stage ceiling)";
 
   const glossaryEntries = Object.entries(GLOSSARY)
     .map(([term, def]) => `- ${term}: ${def}`)
@@ -143,13 +153,27 @@ export function buildSystemPrompt(courseName?: string, discipline?: string): str
     .map((l) => `- ${l}`)
     .join("\n");
 
-  const persona = (discipline && DISCIPLINE_PERSONAS[discipline])
+  const hscPersona = (discipline && DISCIPLINE_PERSONAS[discipline])
     || "senior secondary teacher with extensive HSC marking experience";
   const subjectLabel = courseName || "this subject";
+  const stageYearsLabel = stage === 4 ? "Years 7-8" : stage === 5 ? "Years 9-10" : "Years 11-12";
 
-  return `You are an experienced NSW ${persona} with 15+ years of classroom and HSC marking experience. You are providing formative feedback on a student's draft assessment response in ${subjectLabel} to help them improve before final submission.
+  // Persona varies by stage — Stage 4-5 teachers don't have HSC marking experience.
+  const persona = isHsc
+    ? `${hscPersona} with 15+ years of classroom and HSC marking experience`
+    : `${stageYearsLabel} ${discipline || 'secondary'} teacher with deep experience marking student work at this stage against NESA Stage ${stage} outcomes and the A-E common grade scale`;
+  const expertiseLine = isHsc
+    ? `You have deep knowledge of the NESA syllabus for ${subjectLabel}, the HSC marking process, and what distinguishes student work at each performance band. You know what examiners look for and where students commonly lose marks.`
+    : `You have deep knowledge of the NSW NESA Stage ${stage} syllabus for ${subjectLabel}, what students at this stage are expected to do, and what distinguishes A-grade work from C-grade work against the common grade scale at this stage. You calibrate feedback to a ${stageYearsLabel} student — not to HSC standards.`;
 
-You have deep knowledge of the NESA syllabus for ${subjectLabel}, the HSC marking process, and what distinguishes student work at each performance band. You know what examiners look for and where students commonly lose marks.
+  return `You are an experienced NSW ${persona}. You are providing formative feedback on a student's draft response in ${subjectLabel} (${stageStatement.label}) to help them improve before they submit.
+
+${expertiseLine}
+
+STAGE CALIBRATION (critical — read carefully):
+${stageStatement.description}
+
+Your feedback ceiling is the end-of-stage expectation above. Do NOT hold this student to a higher stage's standards. If a Year 8 student writes work that's appropriate for a Year 8 student, that's strong work — not weak HSC work. Conversely, if their work is below stage expectations, be honest about it.
 
 VOICE AND TONE:
 You are writing feedback directly to the student. Use "you" and "your" throughout — never refer to "the student" in third person. Write the way a warm but honest teacher would write comments on a draft: approachable, direct, and genuinely helpful. You care about this student doing well, and that means being straight with them about what needs work.
@@ -208,9 +232,9 @@ When a student's response is at the multistructural level (listing without conne
 VERB DEPTH MAPPING — expected cognitive depth for each NESA key word:
 ${verbDepthEntries}
 
-If the key term requires depth 4+ (analyse, evaluate, etc.) but the student's response operates at depth 2 (describe, outline), flag this mismatch clearly and explain what the higher depth looks like in practice.
+If the key term requires depth 4+ (analyse, evaluate, etc.) but the student's response operates at depth 2 (describe, outline), flag this mismatch clearly and explain what the higher depth looks like in practice. ${stage === 4 ? "For Stage 4 (Y7-8) tasks, depth 1-3 verbs (identify, describe, explain) are stage-appropriate; depth 4+ verbs (analyse, evaluate) are not the typical Stage 4 expectation — calibrate accordingly." : stage === 5 ? "For Stage 5 (Y9-10) tasks, depth up to 4 (analyse) is well within stage expectations; depth 5+ (evaluate, synthesise) is emerging but not fully expected until late Year 10." : ""}
 
-HSC PERFORMANCE BAND DESCRIPTIONS:
+${bandHeading}:
 ${bandDescriptions}
 
 FULL NESA GLOSSARY OF KEY WORDS:
@@ -224,7 +248,7 @@ ${(() => {
   })()}
 
 Check for these specific pitfalls in the student's response and flag any that apply.
-${buildMarkerVoiceReference(courseName, discipline)}
+${isHsc ? buildMarkerVoiceReference(courseName, discipline) : ''}
 ${(() => {
     const subjectGlossary = getSubjectGlossary(courseName);
     if (!subjectGlossary || subjectGlossary.length === 0) return '';

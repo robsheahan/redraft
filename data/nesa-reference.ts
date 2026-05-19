@@ -51,6 +51,74 @@ export const PERFORMANCE_BANDS = [
   },
 ] as const;
 
+// ── A-E Common Grade Scale (Stage 4 + Stage 5, end-of-year) ──────────────
+// NESA's standard descriptors for Y7-10. Used at the end of Stage 5 for the
+// RoSA, and informally for in-school reporting in Y7-9. Generic across
+// subjects (NESA publishes subject-specific variants too, but the generic
+// scale is good for prompt calibration when subject-specific isn't available).
+
+export const A_E_GRADE_SCALE = [
+  {
+    grade: "A",
+    description: "Has an extensive knowledge and understanding of the content and can readily apply this knowledge. Has achieved a very high level of competence in the processes and skills, and can apply these skills to new situations.",
+  },
+  {
+    grade: "B",
+    description: "Has a thorough knowledge and understanding of the content and a high level of competence in the processes and skills, and is able to apply this knowledge and these skills to most situations.",
+  },
+  {
+    grade: "C",
+    description: "Has a sound knowledge and understanding of the main areas of content and has achieved an adequate level of competence in the processes and skills.",
+  },
+  {
+    grade: "D",
+    description: "Has a basic knowledge and understanding of the content and has achieved a limited level of competence in the processes and skills.",
+  },
+  {
+    grade: "E",
+    description: "Has an elementary knowledge and understanding in few areas of the content and has achieved very limited competence in some of the processes and skills.",
+  },
+] as const;
+
+// ── Stage statements (generic ceiling for each stage) ────────────────────
+// Used as the depth anchor when calibrating prompts to a student's year level.
+
+export const STAGE_STATEMENTS = {
+  4: {
+    label: "Stage 4 (Years 7-8)",
+    description:
+      "Students at this stage identify, describe and apply key concepts in familiar contexts. They use subject-specific terminology with growing accuracy, construct paragraphs with clear topic sentences, and support ideas with simple examples or evidence. They are beginning to explain causes and effects but are not yet expected to evaluate, synthesise or sustain a complex argument.",
+  },
+  5: {
+    label: "Stage 5 (Years 9-10)",
+    description:
+      "Students at this stage analyse and explain concepts with growing depth, beginning to evaluate by the end of Year 10. They use subject-specific terminology consistently, sustain a clear argument across multiple paragraphs, integrate evidence purposefully, and are starting to weigh competing perspectives. Higher-order synthesis is emerging but not yet expected to be polished.",
+  },
+  6: {
+    label: "Stage 6 (Years 11-12 / HSC)",
+    description:
+      "Students at this stage analyse, evaluate and synthesise concepts at depth. They sustain a sophisticated argument with discipline-appropriate language, integrate complex evidence to support nuanced judgements, and demonstrate critical engagement with multiple perspectives. The HSC year (Year 12) expects polished, fully synthesised responses; the Preliminary year (Year 11) accepts emerging HSC-quality work.",
+  },
+} as const;
+
+export type Stage = 4 | 5 | 6;
+
+export function stageForYearLevel(yearLevel: number | null | undefined): Stage | null {
+  if (typeof yearLevel !== "number") return null;
+  if (yearLevel >= 7 && yearLevel <= 8) return 4;
+  if (yearLevel >= 9 && yearLevel <= 10) return 5;
+  if (yearLevel >= 11 && yearLevel <= 12) return 6;
+  return null;
+}
+
+export function currentYearLevelFromGraduationYear(graduationYear: number | null | undefined): number | null {
+  if (typeof graduationYear !== "number") return null;
+  const now = new Date().getFullYear();
+  const yl = 12 - (graduationYear - now);
+  if (yl < 7 || yl > 13) return null;
+  return Math.min(12, yl);
+}
+
 // ── Full NESA Glossary of Key Words ────────────────────────────────────
 // Source: https://www.nsw.gov.au/education-and-training/nesa/hsc/student-guide/glossary
 
