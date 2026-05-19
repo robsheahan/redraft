@@ -507,6 +507,9 @@
       // us off (submit / dashboard / my-results).
       const taskId = task.task_id || meta.task_id;
       if (taskId) {
+        // Initial render with whatever data we have from sessionStorage;
+        // re-render once the freshly-fetched task + drafts arrive.
+        renderFeedback(fb, meta, null, meta.draftVersion || 1, draftText);
         Promise.all([
           authFetch('/api/me?resource=task-drafts&task_id=' + encodeURIComponent(taskId))
             .then(r => r.ok ? r.json() : { drafts: [] }).catch(() => ({ drafts: [] })),
@@ -514,7 +517,6 @@
             .then(r => r.ok ? r.json() : null).catch(() => null),
         ]).then(([draftsData, taskData]) => {
           if (taskData && taskData.task) {
-            // Merge any missing fields from the freshly-loaded task
             currentTask = { ...currentTask, ...taskData.task, class: taskData.class || currentTask.class || null };
             if (taskData.task.classes && taskData.task.classes.teacher_name) {
               currentTask.teacher_name = currentTask.teacher_name || taskData.task.classes.teacher_name;
@@ -529,11 +531,9 @@
             renderFeedback(fb, meta, null, meta.draftVersion || 1, draftText);
           }
         });
+      } else {
         renderFeedback(fb, meta, null, meta.draftVersion || 1, draftText);
-        return;
       }
-
-      renderFeedback(fb, meta, null, meta.draftVersion || 1, draftText);
     }
 
     function renderFeedback(fb, meta, drafts, currentVersion, draftText) {
@@ -632,6 +632,14 @@
 
       // Feedback view wrapper
       html += '<div id="view-feedback"' + (activeView !== 'feedback' ? ' hidden' : '') + '>';
+
+      // If this submission has no AI feedback (e.g. submitted directly for
+      // marking), show a brief explanation in the AI tab and skip the
+      // section rendering rather than crashing on fb.foo accesses.
+      if (!fb || typeof fb !== 'object') {
+        html += '<div class="section"><p class="section-text" style="color:#6b7280">No AI feedback for this submission — it was submitted directly for marking. Open the &quot;Marked by your teacher&quot; tab to see your mark and comments.</p></div>';
+        html += '</div>'; // close #view-feedback
+      } else {
 
       // What you've done well
       const well = getObj(fb.what_youve_done_well);
