@@ -36,6 +36,36 @@
     .mono { font-family: monospace; font-size: 12px; color: #ed7615; }
     .loading { padding: 60px; text-align: center; color: #9ca3af; }
     .error { padding: 40px; text-align: center; color: #dc2626; }
+
+    .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 12px; }
+    .section-head h2 { margin: 0; }
+    .btn-primary { padding: 7px 14px; background: #ed7615; color: #fff; border: 0; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .btn-primary:hover { background: #d4690f; }
+    .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+    .btn-link { background: transparent; border: 0; color: #ed7615; font-weight: 600; font-size: 12px; cursor: pointer; font-family: inherit; padding: 0 4px; text-decoration: none; }
+    .btn-link:hover { text-decoration: underline; }
+    .btn-link.danger { color: #dc2626; }
+
+    /* Modal */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(17,24,39,0.45); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+    .modal-backdrop.visible { display: flex; }
+    .modal { background: #fff; border-radius: 14px; max-width: 520px; width: 100%; box-shadow: 0 12px 40px rgba(0,0,0,0.2); }
+    .modal-head { padding: 16px 22px; border-bottom: 1px solid #f0e6d6; display: flex; align-items: center; justify-content: space-between; }
+    .modal-head h3 { font-size: 16px; font-weight: 700; margin: 0; }
+    .modal-head .modal-close { background: transparent; border: 0; color: #9ca3af; font-size: 22px; cursor: pointer; line-height: 1; }
+    .modal-body { padding: 18px 22px; }
+    .modal-body label { display: block; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }
+    .modal-body input { width: 100%; padding: 9px 12px; border: 1px solid #e8e0d4; border-radius: 6px; font-family: inherit; font-size: 14px; outline: none; background: #fff; color: #111827; margin-bottom: 14px; }
+    .modal-body input:focus { border-color: #ed7615; box-shadow: 0 0 0 2px rgba(237,118,21,0.15); }
+    .modal-body .hint { font-size: 12px; color: #9ca3af; margin-top: -10px; margin-bottom: 14px; line-height: 1.45; }
+    .modal-actions { padding: 12px 22px 16px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f0e6d6; }
+    .modal-actions .left, .modal-actions .right { display: flex; gap: 8px; }
+    .modal-actions button { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; border: 1px solid #e8e0d4; background: #fff; color: #374151; }
+    .modal-actions button.primary { background: #ed7615; color: #fff; border-color: #ed7615; }
+    .modal-actions button.primary:hover { background: #d4690f; }
+    .modal-actions button.danger { color: #dc2626; border-color: #fecaca; }
+    .modal-actions button.danger:hover { background: #fef2f2; border-color: #dc2626; }
+    .modal-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -95,19 +125,27 @@
 
       // Schools meta view
       var schools = data.schools || [];
-      html += '<div class="section"><h2>Schools <span style="font-weight:500;color:#9ca3af;font-size:13px">(' + schools.length + ')</span></h2>';
+      html += '<div class="section">';
+      html += '<div class="section-head"><h2>Schools <span style="font-weight:500;color:#9ca3af;font-size:13px">(' + schools.length + ')</span></h2>';
+      html += '<button class="btn-primary" id="addSchoolBtn">+ Add school</button></div>';
       if (schools.length === 0) {
-        html += '<p style="color:#9ca3af;font-size:14px">No schools registered yet.</p>';
+        html += '<p style="color:#9ca3af;font-size:14px">No schools registered yet. Add the first one to start matching users by email domain.</p>';
       } else {
-        html += '<table><thead><tr><th>Name</th><th>Domain</th><th style="text-align:right">Staff</th><th style="text-align:right">Admins</th><th style="text-align:right">Leaders</th><th style="text-align:right">Classes</th><th style="text-align:right">Tasks</th><th style="text-align:right">Submissions</th><th>Insights</th><th></th></tr></thead><tbody>';
+        html += '<table><thead><tr><th>Name</th><th>Domain(s)</th><th style="text-align:right">Staff</th><th style="text-align:right">Admins</th><th style="text-align:right">Leaders</th><th style="text-align:right">Classes</th><th style="text-align:right">Tasks</th><th style="text-align:right">Subs</th><th>Insights</th><th></th></tr></thead><tbody>';
         schools.forEach(s => {
           var insightsCell = s.insights_generated_at
-            ? '<span style="color:#15803d">✓ ' + s.insights_task_count + ' tasks</span>'
+            ? '<span style="color:#15803d">✓ ' + s.insights_task_count + '</span>'
             : '<span style="color:#d1d5db">—</span>';
-          var domain = s.primary_domain || (s.lti_linked ? '<span style="color:#9ca3af">(LTI)</span>' : '<span style="color:#d1d5db">—</span>');
+          var domainParts = [];
+          if (s.primary_domain) domainParts.push('<span class="mono">' + e(s.primary_domain) + '</span>');
+          if (s.secondary_domains && s.secondary_domains.length) {
+            domainParts.push('<span class="mono" style="color:#9ca3af">+' + s.secondary_domains.length + '</span>');
+          }
+          if (s.lti_linked) domainParts.push('<span style="color:#9ca3af;font-size:11px">LTI</span>');
+          var domain = domainParts.length ? domainParts.join(' ') : '<span style="color:#d1d5db">—</span>';
           html += '<tr>';
           html += '<td><strong>' + e(s.name) + '</strong></td>';
-          html += '<td class="mono">' + domain + '</td>';
+          html += '<td>' + domain + '</td>';
           html += '<td style="text-align:right">' + s.staff_count + '</td>';
           html += '<td style="text-align:right">' + s.admin_count + '</td>';
           html += '<td style="text-align:right">' + s.leader_count + '</td>';
@@ -115,7 +153,10 @@
           html += '<td style="text-align:right">' + s.task_count + '</td>';
           html += '<td style="text-align:right">' + s.submission_count + '</td>';
           html += '<td>' + insightsCell + '</td>';
-          html += '<td><a href="/insights.html?school_id=' + encodeURIComponent(s.id) + '" style="font-size:12px;color:#ed7615;font-weight:600;text-decoration:none">View →</a></td>';
+          html += '<td style="white-space:nowrap">';
+          html += '<button class="btn-link edit-school" data-school-id="' + e(s.id) + '">Edit</button>';
+          html += ' · <a href="/insights.html?school_id=' + encodeURIComponent(s.id) + '" class="btn-link">View →</a>';
+          html += '</td>';
           html += '</tr>';
         });
         html += '</tbody></table>';
@@ -187,7 +228,102 @@
       html += '</div>';
 
       container.innerHTML = html;
+
+      // Wire Schools section
+      window.__schoolsById = {};
+      (data.schools || []).forEach(s => { window.__schoolsById[s.id] = s; });
+      var addBtn = document.getElementById('addSchoolBtn');
+      if (addBtn) addBtn.addEventListener('click', () => openSchoolModal(null));
+      document.querySelectorAll('.edit-school').forEach(el => {
+        el.addEventListener('click', () => openSchoolModal(el.dataset.schoolId));
+      });
     })();
+
+    function openSchoolModal(schoolId) {
+      const existing = schoolId ? (window.__schoolsById || {})[schoolId] : null;
+      const html = [
+        '<div class="modal-backdrop visible" id="schoolModal">',
+        '<div class="modal" onclick="event.stopPropagation()">',
+        '  <div class="modal-head">',
+        '    <h3>' + (existing ? 'Edit school' : 'Add a school') + '</h3>',
+        '    <button class="modal-close" onclick="closeSchoolModal()">×</button>',
+        '  </div>',
+        '  <div class="modal-body">',
+        '    <label for="schName">School name</label>',
+        '    <input id="schName" type="text" autocomplete="off" value="' + e(existing?.name || '') + '" placeholder="e.g. Penrith Christian School">',
+        '    <label for="schPrimary">Primary email domain</label>',
+        '    <input id="schPrimary" type="text" autocomplete="off" value="' + e(existing?.primary_domain || '') + '" placeholder="e.g. pcs.nsw.edu.au">',
+        '    <div class="hint">Anyone signing up with this email domain is automatically counted as staff at this school.</div>',
+        '    <label for="schSecondary">Secondary domains <span style="font-weight:500;color:#9ca3af;text-transform:none;letter-spacing:0">(optional)</span></label>',
+        '    <input id="schSecondary" type="text" autocomplete="off" value="' + e((existing?.secondary_domains || []).join(', ')) + '" placeholder="e.g. students.pcs.nsw.edu.au, alumni.pcs.nsw.edu.au">',
+        '    <div class="hint">Comma-separated. Use this when a school has separate staff and student domains, or has rebranded.</div>',
+        '  </div>',
+        '  <div class="modal-actions">',
+        '    <div class="left">' + (existing ? '<button class="danger" id="schDelete">Delete school</button>' : '') + '</div>',
+        '    <div class="right"><button onclick="closeSchoolModal()">Cancel</button> <button class="primary" id="schSave">' + (existing ? 'Save changes' : 'Create school') + '</button></div>',
+        '  </div>',
+        '</div>',
+        '</div>',
+      ].join('');
+      const wrap = document.createElement('div');
+      wrap.innerHTML = html;
+      const node = wrap.firstChild;
+      document.body.appendChild(node);
+      node.addEventListener('click', (ev) => { if (ev.target === node) closeSchoolModal(); });
+      document.getElementById('schSave').addEventListener('click', () => saveSchool(existing?.id || null));
+      const delBtn = document.getElementById('schDelete');
+      if (delBtn) delBtn.addEventListener('click', () => deleteSchool(existing));
+      setTimeout(() => document.getElementById('schName').focus(), 50);
+    }
+
+    function closeSchoolModal() {
+      const m = document.getElementById('schoolModal');
+      if (m) m.remove();
+    }
+
+    async function saveSchool(existingId) {
+      const name = document.getElementById('schName').value.trim();
+      const primary = document.getElementById('schPrimary').value.trim();
+      const secondary = document.getElementById('schSecondary').value.trim()
+        .split(',').map(s => s.trim()).filter(Boolean);
+      if (!name) { document.getElementById('schName').focus(); return; }
+
+      const btn = document.getElementById('schSave');
+      btn.disabled = true; btn.textContent = 'Saving...';
+
+      try {
+        const body = { name, primary_domain: primary || null, secondary_domains: secondary };
+        let res;
+        if (existingId) {
+          res = await authFetch('/api/admin-schools', { method: 'PUT', body: JSON.stringify({ id: existingId, ...body }) });
+        } else {
+          res = await authFetch('/api/admin-schools', { method: 'POST', body: JSON.stringify(body) });
+        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Save failed.');
+        closeSchoolModal();
+        location.reload();
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+        btn.textContent = existingId ? 'Save changes' : 'Create school';
+      }
+    }
+
+    async function deleteSchool(school) {
+      if (!school) return;
+      const msg = 'Delete "' + school.name + '"? This removes the school + every leadership grant tied to it. Classes, tasks, and submissions are NOT deleted — they just stop appearing under any school.';
+      if (!confirm(msg)) return;
+      try {
+        const res = await authFetch('/api/admin-schools?id=' + encodeURIComponent(school.id), { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Delete failed.');
+        closeSchoolModal();
+        location.reload();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
   </script>
 </body>
 </html>
