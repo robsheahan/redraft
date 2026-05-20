@@ -191,6 +191,74 @@ export async function getSchoolStudentIds(
 }
 
 /**
+ * Standard auth + school-resolution shared by every insights endpoint.
+ * Returns the school the caller is allowed to view (with their effective
+ * role + faculty scope), or null if they should be 404'd.
+ *
+ *   - Global admins pass ?school_id=… (or it's in the body) to view any
+ *     school; without it they're forced to use the admin meta page.
+ *   - Everyone else resolves their own school via school_members / LTI /
+ *     email-domain match.
+ *   - Faculty scope is derived from school_members.faculties (only applies
+ *     to role='leader'; admins are unrestricted).
+ */
+export interface InsightsAccess {
+  schoolId: string;
+  schoolName: string;
+  callerRole: 'admin' | 'leader' | null;
+  restrictedFaculties: string[] | null;
+}
+
+export async function resolveInsightsAccess(
+  supabase: SupabaseClient,
+  user: { id: string; email?: string | null },
+  opts: { overrideSchoolId?: string | null; isGlobalAdmin: boolean },
+): Promise<InsightsAccess | null> {
+  let schoolId = '';
+  let schoolName = '';
+  let callerRole: 'admin' | 'leader' | null = null;
+
+  if (opts.overrideSchoolId && opts.isGlobalAdmin) {
+    const { data: s } = await supabase
+      .from('schools')
+      .select('id, name')
+      .eq('id', opts.overrideSchoolId)
+      .maybeSingle();
+    if (!s) return null;
+    schoolId = s.id;
+    schoolName = s.name;
+    callerRole = 'admin';
+  } else {
+    const ctx = await resolveUserSchool(supabase, user.id);
+    if (!ctx) return null;
+    const allowed = ctx.role !== null
+      || await canViewInsights(supabase, user.id, ctx.school_id)
+      || opts.isGlobalAdmin;
+    if (!allowed) return null;
+    schoolId = ctx.school_id;
+    schoolName = ctx.school_name;
+    callerRole = ctx.role;
+  }
+
+  // Faculty scope only applies to leaders. Admins and global admins see
+  // everything regardless of any faculties[] entry.
+  let restrictedFaculties: string[] | null = null;
+  if (callerRole === 'leader' && !opts.isGlobalAdmin) {
+    const { data: grant } = await supabase
+      .from('school_members')
+      .select('faculties')
+      .eq('school_id', schoolId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (grant && Array.isArray(grant.faculties) && grant.faculties.length > 0) {
+      restrictedFaculties = grant.faculties as string[];
+    }
+  }
+
+  return { schoolId, schoolName, callerRole, restrictedFaculties };
+}
+
+/**
  * Whether the user can access the insights dashboard for a school.
  * Currently: any explicit school_member (admin or leader). Global admins
  * (from ADMIN_EMAILS) are handled by the API layer, not here.
