@@ -112,7 +112,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { data: rawSubs } = taskIds.length > 0
     ? await supabase
       .from('submissions')
-      .select('id, task_id, student_id, draft_version, graded_at, total_mark, created_at, submitted_for_marking')
+      .select('id, task_id, student_id, draft_version, graded_at, total_mark, criterion_marks, feedback, created_at, submitted_for_marking')
       .in('task_id', taskIds)
     : { data: [] as any[] };
 
@@ -258,6 +258,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return b.last_active.localeCompare(a.last_active);
   });
 
+  // -- Card: Per-criterion lows --
+  const perCriterionLows = computePerCriterionLows(submissions);
+
+  // -- Card: Improvement velocity --
+  const improvementVelocity = computeImprovementVelocity(submissions);
+
+  // -- Card: Keyword struggles (NESA-glossary pattern match) --
+  const keywordStruggles = computeKeywordStruggles(submissions);
+
   // -- Counts (header KPI strip) --
   const counts = {
     teachers: teachersInScopeIds.size,
@@ -305,9 +314,168 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       mark_by_faculty: markByFaculty,
       marking,
       teacher_activity: teacherActivity,
+      per_criterion_lows: perCriterionLows,
+      improvement_velocity: improvementVelocity,
+      keyword_struggles: keywordStruggles,
     },
     counts,
   });
+}
+
+// ─────────────── New SQL-derived performance cards ───────────────
+
+/**
+ * Per-criterion average performance, sorted lowest first. Pulls from
+ * submissions.criterion_marks (jsonb array of {name, mark, max}) and
+ * groups by exact criterion name.
+ */
+function computePerCriterionLows(submissions: any[]) {
+  const map: Record<string, { sum_pct: number; count: number }> = {};
+  let analysed = 0;
+  for (const s of submissions) {
+    if (!s.graded_at) continue;
+    const cm = s.criterion_marks;
+    if (!Array.isArray(cm)) continue;
+    let counted = false;
+    for (const c of cm) {
+      if (!c || typeof c.name !== 'string') continue;
+      const mark = Number(c.mark);
+      const max = Number(c.max);
+      if (!Number.isFinite(mark) || !Number.isFinite(max) || max <= 0) continue;
+      const name = c.name.trim();
+      if (!name) continue;
+      map[name] ||= { sum_pct: 0, count: 0 };
+      map[name].sum_pct += (mark / max) * 100;
+      map[name].count++;
+      counted = true;
+    }
+    if (counted) analysed++;
+  }
+  const rows = Object.entries(map)
+    .map(([name, v]) => ({ name, avg_pct: v.sum_pct / v.count, sample_size: v.count }))
+    .filter(r => r.sample_size >= 2)  // need at least 2 samples to be meaningful
+    .sort((a, b) => a.avg_pct - b.avg_pct)
+    .slice(0, 8);
+  return { rows, total_analyzed: analysed };
+}
+
+/**
+ * "Do multi-draft students improve?" — for each (student, task) pair
+ * with two or more drafts, compare the count of improvement bullets in
+ * the AI feedback between v1 and the final draft. Fewer bullets = the
+ * model found fewer things to flag = improvement.
+ *
+ * Output is intentionally a simple % reduction figure; deeper analysis
+ * (mark deltas) is harder because we rarely grade every draft.
+ */
+function computeImprovementVelocity(submissions: any[]) {
+  const byPair: Record<string, any[]> = {};
+  for (const s of submissions) {
+    if (!s.student_id || !s.task_id) continue;
+    const key = s.student_id + '|' + s.task_id;
+    (byPair[key] ||= []).push(s);
+  }
+  let sampleSize = 0;
+  let v1ImprSum = 0;
+  let vNImprSum = 0;
+  let increased = 0;
+  let decreased = 0;
+  let unchanged = 0;
+  for (const subs of Object.values(byPair)) {
+    if (subs.length < 2) continue;
+    subs.sort((a, b) => (a.draft_version || 0) - (b.draft_version || 0));
+    const first = subs[0];
+    const last = subs[subs.length - 1];
+    const c1 = countImprovements(first?.feedback);
+    const cN = countImprovements(last?.feedback);
+    if (c1 == null || cN == null) continue;
+    sampleSize++;
+    v1ImprSum += c1;
+    vNImprSum += cN;
+    if (cN < c1) decreased++;
+    else if (cN > c1) increased++;
+    else unchanged++;
+  }
+  if (sampleSize === 0) return { sample_size: 0, avg_v1: 0, avg_vN: 0, avg_delta_pct: 0, decreased: 0, increased: 0, unchanged: 0 };
+  const avgV1 = v1ImprSum / sampleSize;
+  const avgVN = vNImprSum / sampleSize;
+  const deltaPct = avgV1 > 0 ? ((avgV1 - avgVN) / avgV1) * 100 : 0;
+  return {
+    sample_size: sampleSize,
+    avg_v1: avgV1,
+    avg_vN: avgVN,
+    avg_delta_pct: deltaPct,
+    decreased,
+    increased,
+    unchanged,
+  };
+}
+
+function countImprovements(feedback: any): number | null {
+  if (!feedback || typeof feedback !== 'object') return null;
+  const imp = feedback.improvements;
+  if (!imp || typeof imp !== 'object') return null;
+  if (Array.isArray(imp.summary)) return imp.summary.length;
+  if (Array.isArray(imp)) return imp.length;
+  return null;
+}
+
+/**
+ * NESA-glossary keyword struggle map. Scans every submission's AI
+ * improvement feedback text for occurrences of high-signal NESA terms
+ * and surfaces the most-mentioned ones. Pure SQL/JS — no LLM needed.
+ *
+ * The list is deliberately curated: directive verbs at the top
+ * (analyse / evaluate / justify) plus the writing-craft terms that
+ * appear most often in HSC marking centre commentary (evidence,
+ * structure, thesis, etc.).
+ */
+const STRUGGLE_KEYWORDS = [
+  // NESA directive verbs
+  'analyse', 'evaluate', 'justify', 'assess', 'explain', 'discuss', 'compare',
+  'contrast', 'examine', 'describe', 'identify', 'outline', 'synthesise',
+  'apply', 'demonstrate', 'critique',
+  // Writing-craft terms
+  'evidence', 'examples', 'structure', 'thesis', 'argument', 'conclusion',
+  'introduction', 'paragraph', 'topic sentence', 'transitions', 'cohesion',
+  'terminology', 'vocabulary', 'concept', 'context', 'audience', 'purpose',
+  // Analysis-quality terms
+  'depth', 'detail', 'specificity', 'critical thinking', 'reasoning',
+  'integration', 'connection', 'relevance', 'sustained',
+];
+
+function computeKeywordStruggles(submissions: any[]) {
+  const counts: Record<string, number> = {};
+  for (const k of STRUGGLE_KEYWORDS) counts[k] = 0;
+  let analysed = 0;
+  const wordRe = (kw: string) => new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+  const compiled = STRUGGLE_KEYWORDS.map(k => ({ kw: k, re: wordRe(k) }));
+  for (const s of submissions) {
+    const fb = s.feedback;
+    if (!fb || typeof fb !== 'object') continue;
+    // Concatenate the improvement-related text fields.
+    const parts: string[] = [];
+    const collect = (v: any) => {
+      if (!v) return;
+      if (typeof v === 'string') parts.push(v);
+      else if (Array.isArray(v)) v.forEach(collect);
+      else if (typeof v === 'object') { if (typeof v.summary !== 'undefined') collect(v.summary); if (typeof v.detail !== 'undefined') collect(v.detail); }
+    };
+    collect(fb.improvements);
+    collect(fb.top_priority);
+    if (parts.length === 0) continue;
+    const text = parts.join(' ');
+    analysed++;
+    for (const { kw, re } of compiled) {
+      if (re.test(text)) counts[kw]++;
+    }
+  }
+  const rows = Object.entries(counts)
+    .filter(([_, c]) => c > 0)
+    .map(([keyword, count]) => ({ keyword, count, pct: analysed > 0 ? (count / analysed) * 100 : 0 }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+  return { rows, total_analyzed: analysed };
 }
 
 function computeActivity(submissions: any[]) {
@@ -441,6 +609,9 @@ function emptyResponse(
       mark_by_faculty: restrictedFaculties && restrictedFaculties.length <= 1 ? null : { rows: [], bands: NESA_BANDS },
       marking: { total: 0, marked: 0, awaiting_marking: 0, unmarked: 0 },
       teacher_activity: [],
+      per_criterion_lows: { rows: [], total_analyzed: 0 },
+      improvement_velocity: { sample_size: 0, avg_v1: 0, avg_vN: 0, avg_delta_pct: 0, decreased: 0, increased: 0, unchanged: 0 },
+      keyword_struggles: { rows: [], total_analyzed: 0 },
     },
     counts: {
       teachers: 0,
