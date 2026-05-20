@@ -103,6 +103,51 @@
     .modal-actions button.danger:hover { background: #fef2f2; border-color: #dc2626; }
     .modal-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    /* Filter bar */
+    .filter-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 18px; padding: 10px 14px; background: #fff; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .filter-bar .filter-lead { font-size: 12px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.4px; margin-right: 4px; }
+    .filter-pill { position: relative; }
+    .filter-pill-btn { padding: 7px 12px; background: #fdf6ee; border: 1px solid #e8e0d4; border-radius: 100px; font-size: 13px; font-weight: 600; color: #374151; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
+    .filter-pill-btn:hover { background: #f9eedd; border-color: #d4690f; }
+    .filter-pill-btn.is-active { background: #ed7615; color: #fff; border-color: #ed7615; }
+    .filter-pill-btn .chev { font-size: 9px; opacity: 0.7; }
+    .filter-menu { display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 220px; max-height: 320px; overflow-y: auto; background: #fff; border: 1px solid #e8e0d4; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 50; padding: 4px; }
+    .filter-pill.open .filter-menu { display: block; }
+    .filter-option { display: block; width: 100%; padding: 8px 12px; border: 0; background: transparent; font-size: 13px; color: #374151; cursor: pointer; font-family: inherit; text-align: left; border-radius: 6px; }
+    .filter-option:hover { background: #fef3e6; color: #ed7615; }
+    .filter-option.is-selected { background: #ed7615; color: #fff; font-weight: 600; }
+    .filter-option .opt-meta { font-size: 11px; color: #9ca3af; margin-left: 6px; }
+    .filter-option.is-selected .opt-meta { color: rgba(255,255,255,0.8); }
+    .filter-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1; }
+    .filter-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px 4px 10px; background: #fef3e6; color: #ed7615; border-radius: 100px; font-size: 12px; font-weight: 600; }
+    .filter-chip-x { background: transparent; border: 0; color: #ed7615; cursor: pointer; font-family: inherit; padding: 0; line-height: 1; font-size: 16px; opacity: 0.7; }
+    .filter-chip-x:hover { opacity: 1; }
+    .filter-clear { background: transparent; border: 0; color: #6b7280; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; padding: 4px 8px; }
+    .filter-clear:hover { color: #ed7615; }
+    .filter-denied { padding: 10px 14px; background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; font-size: 13px; color: #78350f; margin-bottom: 12px; }
+
+    /* Card drill-down panel */
+    .card-drilldown { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #e8e0d4; }
+    .card-drilldown.visible { display: block; }
+    .card-drilldown h5 { font-size: 12px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+    .card-drilldown .close-x { background: transparent; border: 0; color: #9ca3af; cursor: pointer; font-size: 18px; line-height: 1; }
+    .card-drilldown .close-x:hover { color: #ed7615; }
+    .card-drilldown .loading-row { padding: 14px; color: #9ca3af; font-size: 12.5px; text-align: center; }
+    .card-drilldown table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .card-drilldown th { text-align: left; padding: 6px 8px; border-bottom: 1px solid #f0e6d6; font-weight: 700; color: #9ca3af; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.3px; background: #fdf6ee; }
+    .card-drilldown td { padding: 7px 8px; border-bottom: 1px solid #f5f0e8; color: #374151; vertical-align: middle; }
+    .card-drilldown tr:last-child td { border-bottom: none; }
+
+    /* Interactive states on chart elements */
+    .bar-row.clickable { cursor: pointer; padding: 2px 4px; margin: -2px -4px; border-radius: 6px; transition: background 0.1s; }
+    .bar-row.clickable:hover { background: #fef3e6; }
+    .band-row.clickable { cursor: pointer; padding: 2px 4px; margin: -2px -4px; border-radius: 6px; transition: background 0.1s; }
+    .band-row.clickable:hover { background: #fef3e6; }
+    .teachers-table tr.clickable { cursor: pointer; }
+    .teachers-table tr.clickable:hover td { background: #fdfaf5; }
+    .marking-seg.clickable { cursor: pointer; transition: filter 0.1s; }
+    .marking-seg.clickable:hover { filter: brightness(1.1); }
+
     /* Card grid */
     .cards-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; margin-bottom: 22px; }
     .card { background: #fff; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); display: flex; flex-direction: column; }
@@ -295,6 +340,46 @@
     // Global admins drill into a specific school via /insights.html?school_id=…
     // Everyone else resolves their own school server-side.
     const SCHOOL_ID_OVERRIDE = new URLSearchParams(window.location.search).get('school_id') || '';
+
+    // Active filter state (synced to URL). UI elements + every API call
+    // consult this; updating it triggers a refetch + re-render.
+    const FILTER_KEYS = ['faculty', 'course', 'class_id', 'year_level'];
+    function readFiltersFromUrl() {
+      const u = new URLSearchParams(window.location.search);
+      const out = {};
+      FILTER_KEYS.forEach(k => { const v = (u.get(k) || '').trim(); if (v) out[k] = v; });
+      return out;
+    }
+    let activeFilters = readFiltersFromUrl();
+    function buildQueryString(extra = {}) {
+      const u = new URLSearchParams();
+      if (SCHOOL_ID_OVERRIDE) u.set('school_id', SCHOOL_ID_OVERRIDE);
+      FILTER_KEYS.forEach(k => { if (activeFilters[k]) u.set(k, activeFilters[k]); });
+      Object.entries(extra).forEach(([k, v]) => { if (v != null && v !== '') u.set(k, String(v)); });
+      const s = u.toString();
+      return s ? '?' + s : '';
+    }
+    function updateUrlForFilters() {
+      const u = new URLSearchParams(window.location.search);
+      FILTER_KEYS.forEach(k => {
+        if (activeFilters[k]) u.set(k, activeFilters[k]); else u.delete(k);
+      });
+      const qs = u.toString();
+      const newUrl = window.location.pathname + (qs ? '?' + qs : '');
+      window.history.replaceState({}, '', newUrl);
+    }
+    function setFilter(key, value) {
+      if (value == null || value === '') delete activeFilters[key];
+      else activeFilters[key] = String(value);
+      updateUrlForFilters();
+      reloadData();
+    }
+    function clearAllFilters() {
+      activeFilters = {};
+      updateUrlForFilters();
+      reloadData();
+    }
+    // Legacy helper preserved for old call sites.
     const SCHOOL_QS = SCHOOL_ID_OVERRIDE ? '?school_id=' + encodeURIComponent(SCHOOL_ID_OVERRIDE) : '';
     function withSchoolParam(url) {
       if (!SCHOOL_ID_OVERRIDE) return url;
@@ -306,10 +391,15 @@
       if (!user) return;
       document.getElementById('navUser').textContent = user.email;
 
+      await reloadData();
+    })();
+
+    async function reloadData() {
       const container = document.getElementById('content');
+      const qs = buildQueryString();
       const [cardsRes, synthRes] = await Promise.all([
-        authFetch('/api/insights-cards' + SCHOOL_QS),
-        authFetch('/api/insights-synthesis' + SCHOOL_QS),
+        authFetch('/api/insights-cards' + qs),
+        authFetch('/api/insights-synthesis' + qs),
       ]);
       if (!cardsRes.ok) {
         if (cardsRes.status === 404 || cardsRes.status === 403) {
@@ -329,7 +419,7 @@
       currentCards = await cardsRes.json();
       currentData = synthRes.ok ? await synthRes.json() : { school: currentCards.school, caller_role: currentCards.caller_role, insights: null };
       render();
-    })();
+    }
 
     function render() {
       const c = document.getElementById('content');
@@ -360,6 +450,9 @@
       html += kpi('tasks',       'Tasks',       totalTasks, tasksWithFb + ' with class feedback');
       html += kpi('submissions', 'Submissions', s.submissions || 0);
       html += '</div>';
+
+      // Filter bar
+      html += renderFilterBar(currentCards);
 
       // Detail panel — populated when a KPI is clicked
       html += '<div class="detail-panel" id="detailPanel"></div>';
@@ -400,6 +493,12 @@
         el.addEventListener('click', () => toggleDetail(el.dataset.kind));
       });
 
+      // Wire filter bar
+      wireFilterBar();
+
+      // Wire card drill-down handlers
+      wireCardDrilldowns();
+
       // Wire Manage access controls + load staff list
       if (d.caller_role === 'admin') {
         loadMembers();
@@ -410,6 +509,215 @@
       backdrop.addEventListener('click', (ev) => {
         if (ev.target === backdrop) closeAccessModal();
       });
+    }
+
+    function renderFilterBar(cards) {
+      const opts = (cards && cards.filters && cards.filters.options) || { faculties: [], courses: [], classes: [], year_levels: [] };
+      const denied = cards && cards.filters && cards.filters.denied;
+      const labelFor = (key) => {
+        const v = activeFilters[key];
+        if (!v) return null;
+        if (key === 'class_id') {
+          const cls = (opts.classes || []).find(c => c.id === v);
+          return cls ? cls.name : null;
+        }
+        if (key === 'year_level') return 'Year ' + v;
+        return v;
+      };
+      const facultyLocked = cards && cards.restricted_faculties && cards.restricted_faculties.length > 0;
+
+      let html = '<div class="filter-bar">';
+      html += '<span class="filter-lead">Filter</span>';
+      // Year level
+      html += filterPill('year_level', 'Year level', labelFor('year_level'), (opts.year_levels || []).map(y => ({ value: String(y), label: 'Year ' + y })));
+      // Faculty (clamped to allowed faculties for restricted leaders)
+      const facultyOpts = (opts.faculties || []).map(f => ({ value: f, label: f }));
+      html += filterPill('faculty', 'Faculty' + (facultyLocked ? ' (scoped)' : ''), labelFor('faculty'), facultyOpts);
+      // Course (filtered by faculty if set)
+      const courseOpts = (opts.courses || []).map(c => ({ value: c, label: c }));
+      html += filterPill('course', 'Course', labelFor('course'), courseOpts);
+      // Class (filtered by faculty/course if set)
+      const classOpts = (opts.classes || [])
+        .filter(c => !activeFilters.faculty || c.faculty === activeFilters.faculty)
+        .filter(c => !activeFilters.course || c.course === activeFilters.course)
+        .map(c => ({ value: c.id, label: c.name || '(untitled)', meta: c.course }));
+      html += filterPill('class_id', 'Class', labelFor('class_id'), classOpts);
+
+      // Active chips
+      const activeKeys = FILTER_KEYS.filter(k => activeFilters[k]);
+      if (activeKeys.length > 0) {
+        html += '<div class="filter-chips">';
+        activeKeys.forEach(k => {
+          html += '<span class="filter-chip">' + e(labelFor(k) || '') + ' <button class="filter-chip-x" data-clear-filter="' + e(k) + '" title="Remove filter">×</button></span>';
+        });
+        html += '<button class="filter-clear" id="clearAllFiltersBtn">Clear all</button>';
+        html += '</div>';
+      }
+      html += '</div>';
+
+      if (denied) {
+        html += '<div class="filter-denied"><strong>Filter outside your access.</strong> You\'re asking for data in a faculty your school admin hasn\'t granted you. Remove the faculty filter or pick one of your assigned KLAs.</div>';
+      }
+      return html;
+    }
+
+    function filterPill(key, label, currentVal, options) {
+      const isActive = !!currentVal;
+      let html = '<div class="filter-pill" data-filter-pill="' + e(key) + '">';
+      html += '<button class="filter-pill-btn ' + (isActive ? 'is-active' : '') + '" data-filter-toggle="' + e(key) + '">'
+        + '<span>' + e(label) + (currentVal ? ': ' + e(String(currentVal)) : '') + '</span><span class="chev">▾</span></button>';
+      html += '<div class="filter-menu">';
+      if (isActive) {
+        html += '<button class="filter-option" data-filter-set="' + e(key) + '" data-filter-value="">Clear</button>';
+      }
+      if (options.length === 0) {
+        html += '<div class="filter-option" style="color:#9ca3af;cursor:default">No options yet</div>';
+      } else {
+        options.forEach(o => {
+          const sel = currentVal && String(currentVal) === String(o.label) ? 'is-selected' : '';
+          html += '<button class="filter-option ' + sel + '" data-filter-set="' + e(key) + '" data-filter-value="' + e(String(o.value)) + '">'
+            + e(o.label)
+            + (o.meta ? '<span class="opt-meta">' + e(o.meta) + '</span>' : '')
+            + '</button>';
+        });
+      }
+      html += '</div></div>';
+      return html;
+    }
+
+    function wireFilterBar() {
+      document.querySelectorAll('[data-filter-toggle]').forEach(btn => {
+        btn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const pill = btn.closest('.filter-pill');
+          const wasOpen = pill.classList.contains('open');
+          document.querySelectorAll('.filter-pill.open').forEach(p => p.classList.remove('open'));
+          if (!wasOpen) pill.classList.add('open');
+        });
+      });
+      document.querySelectorAll('[data-filter-set]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.dataset.filterSet;
+          const val = btn.dataset.filterValue || '';
+          // Selecting a class implies its course/faculty too — keep simple,
+          // don't cascade for v1; let the leader manually narrow.
+          setFilter(key, val);
+        });
+      });
+      document.querySelectorAll('[data-clear-filter]').forEach(btn => {
+        btn.addEventListener('click', () => setFilter(btn.dataset.clearFilter, ''));
+      });
+      const clearAll = document.getElementById('clearAllFiltersBtn');
+      if (clearAll) clearAll.addEventListener('click', clearAllFilters);
+      // Close menus on outside click
+      document.addEventListener('click', (ev) => {
+        if (!ev.target.closest('.filter-pill')) {
+          document.querySelectorAll('.filter-pill.open').forEach(p => p.classList.remove('open'));
+        }
+      });
+    }
+
+    // ─────────────── Card drill-downs ───────────────
+
+    function wireCardDrilldowns() {
+      // Faculty engagement bars
+      document.querySelectorAll('[data-drill-faculty]').forEach(el => {
+        el.addEventListener('click', () => openDrilldown(el, 'faculty', { faculty: el.dataset.drillFaculty }));
+      });
+      // Mark distribution band rows
+      document.querySelectorAll('[data-drill-band]').forEach(el => {
+        el.addEventListener('click', () => openDrilldown(el, 'band', { band: el.dataset.drillBand }));
+      });
+      // Teacher activity rows
+      document.querySelectorAll('[data-drill-teacher]').forEach(el => {
+        el.addEventListener('click', () => openDrilldown(el, 'teacher', { teacher_id: el.dataset.drillTeacher, name: el.dataset.teacherName }));
+      });
+      // Marking segments
+      document.querySelectorAll('[data-drill-marking]').forEach(el => {
+        el.addEventListener('click', () => openDrilldown(el, 'marking', { marking_status: el.dataset.drillMarking }));
+      });
+    }
+
+    async function openDrilldown(triggerEl, kind, params) {
+      const card = triggerEl.closest('.card');
+      if (!card) return;
+      let panel = card.querySelector('.card-drilldown');
+      if (!panel) {
+        panel = document.createElement('div');
+        panel.className = 'card-drilldown';
+        card.appendChild(panel);
+      }
+      // Toggle close if already showing this drill
+      if (panel.dataset.drillKey === kind + ':' + JSON.stringify(params)) {
+        panel.classList.remove('visible');
+        panel.innerHTML = '';
+        panel.dataset.drillKey = '';
+        return;
+      }
+      panel.dataset.drillKey = kind + ':' + JSON.stringify(params);
+      panel.classList.add('visible');
+      panel.innerHTML = '<div class="loading-row">Loading...</div>';
+
+      try {
+        let html = '';
+        if (kind === 'faculty') {
+          // Show teachers in that faculty (combines current filters)
+          const res = await authFetch('/api/insights-detail' + buildQueryString({ kind: 'teachers', faculty: params.faculty }));
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Failed to load');
+          html = drillHeader(params.faculty + ' — teachers') + renderTeachersDrill(data.rows || []);
+        } else if (kind === 'band') {
+          const res = await authFetch('/api/insights-detail' + buildQueryString({ kind: 'submissions', band: params.band }));
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Failed to load');
+          html = drillHeader('Band ' + params.band + ' — submissions') + renderSubmissionsDrill(data.rows || [], data.truncated_at);
+        } else if (kind === 'teacher') {
+          const res = await authFetch('/api/insights-detail' + buildQueryString({ kind: 'submissions', teacher_id: params.teacher_id }));
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Failed to load');
+          html = drillHeader(params.name + ' — recent submissions') + renderSubmissionsDrill(data.rows || [], data.truncated_at);
+        } else if (kind === 'marking') {
+          const label = ({ marked: 'Marked', awaiting: 'Awaiting marking', unmarked: 'Unmarked' })[params.marking_status] || params.marking_status;
+          const res = await authFetch('/api/insights-detail' + buildQueryString({ kind: 'submissions', marking_status: params.marking_status }));
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Failed to load');
+          html = drillHeader(label + ' — submissions') + renderSubmissionsDrill(data.rows || [], data.truncated_at);
+        }
+        panel.innerHTML = html;
+        const close = panel.querySelector('.close-x');
+        if (close) close.addEventListener('click', () => { panel.classList.remove('visible'); panel.innerHTML = ''; panel.dataset.drillKey = ''; });
+      } catch (err) {
+        panel.innerHTML = '<div class="loading-row" style="color:#dc2626">' + e(err.message) + '</div>';
+      }
+    }
+
+    function drillHeader(label) {
+      return '<h5>' + e(label) + ' <button class="close-x">×</button></h5>';
+    }
+
+    function renderTeachersDrill(rows) {
+      if (rows.length === 0) return '<div class="loading-row">No teachers match this filter.</div>';
+      let html = '<table><thead><tr><th>Teacher</th><th>Email</th><th style="text-align:right">Classes</th><th style="text-align:right">Tasks</th></tr></thead><tbody>';
+      rows.forEach(r => {
+        html += '<tr><td>' + e(r.name) + '</td><td style="font-family:monospace;color:#6b7280">' + e(r.email) + '</td><td style="text-align:right">' + r.class_count + '</td><td style="text-align:right">' + r.task_count + '</td></tr>';
+      });
+      html += '</tbody></table>';
+      return html;
+    }
+
+    function renderSubmissionsDrill(rows, truncatedAt) {
+      if (rows.length === 0) return '<div class="loading-row">No submissions match this filter.</div>';
+      let html = '<table><thead><tr><th>Student</th><th>Task</th><th>Course</th><th>Draft</th><th>Mark</th><th>Date</th></tr></thead><tbody>';
+      rows.forEach(r => {
+        const date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '—';
+        let mark = '—';
+        if (r.graded && r.total_mark != null) mark = r.total_mark + (r.total_marks_max ? '/' + r.total_marks_max : '') + (r.band ? ' (' + r.band + ')' : '');
+        else if (r.submitted_for_marking) mark = '<span style="color:#1e40af">awaiting</span>';
+        html += '<tr><td>' + e(r.student_name) + '</td><td>' + e(r.task_title) + '</td><td>' + e(r.course || '—') + '</td><td>v' + r.draft_version + '</td><td>' + mark + '</td><td style="font-family:monospace;color:#6b7280">' + e(date) + '</td></tr>';
+      });
+      html += '</tbody></table>';
+      if (truncatedAt) html += '<div class="loading-row" style="text-align:left;padding-left:8px">Showing the ' + truncatedAt + ' most recent matches.</div>';
+      return html;
     }
 
     function buildModalShell() {
@@ -928,8 +1236,12 @@
         const meta = engagement.mode === 'classes'
           ? (r.teacher_name || '') + ' · ' + (r.task_count || 0) + ' task' + (r.task_count === 1 ? '' : 's')
           : (r.teacher_count || 0) + ' staff · ' + (r.task_count || 0) + ' task' + (r.task_count === 1 ? '' : 's');
-        html += '<div class="bar-row">'
-          + '<div class="bar-label" title="' + e(label) + '">' + e(label) + '<div class="bar-meta">' + e(meta) + '</div></div>'
+        // Drill-down only on faculty mode (class mode has nothing extra to drill into).
+        const drill = engagement.mode === 'faculty'
+          ? ' clickable" data-drill-faculty="' + e(r.faculty)
+          : '';
+        html += '<div class="bar-row' + drill + '" title="' + (engagement.mode === 'faculty' ? 'Click to see teachers in this faculty' : e(label)) + '">'
+          + '<div class="bar-label">' + e(label) + '<div class="bar-meta">' + e(meta) + '</div></div>'
           + '<div class="bar-track"><div class="bar-fill" style="width:' + pct.toFixed(1) + '%"></div></div>'
           + '<div class="bar-value">' + sub + '</div>'
           + '</div>';
@@ -949,7 +1261,8 @@
       bands.forEach(b => {
         const n = counts[b.code] || 0;
         const pct = (n / total) * 100;
-        html += '<div class="band-row band-' + e(b.code) + '">'
+        const clickable = n > 0 ? ' clickable" data-drill-band="' + e(b.code) : '';
+        html += '<div class="band-row band-' + e(b.code) + clickable + '" title="' + (n > 0 ? 'Click to see submissions in this band' : 'No submissions') + '">'
           + '<div class="band-letter">' + e(b.code) + '</div>'
           + '<div class="band-label">' + e(b.label || b.code) + '</div>'
           + '<div class="band-track"><div class="band-fill" style="width:' + Math.max(pct, n > 0 ? 1.5 : 0).toFixed(1) + '%"></div></div>'
@@ -994,9 +1307,9 @@
       const u = marking.unmarked || 0;
       const pct = n => total > 0 ? (n / total) * 100 : 0;
       let html = '<div class="marking-stack">';
-      if (m > 0) html += '<div class="marking-seg marked" style="flex:' + pct(m) + '" title="Marked">' + (pct(m) >= 12 ? m : '') + '</div>';
-      if (a > 0) html += '<div class="marking-seg awaiting" style="flex:' + pct(a) + '" title="Awaiting marking">' + (pct(a) >= 12 ? a : '') + '</div>';
-      if (u > 0) html += '<div class="marking-seg unmarked" style="flex:' + pct(u) + '" title="Unmarked">' + (pct(u) >= 12 ? u : '') + '</div>';
+      if (m > 0) html += '<div class="marking-seg marked clickable" data-drill-marking="marked" style="flex:' + pct(m) + '" title="Marked — click to list">' + (pct(m) >= 12 ? m : '') + '</div>';
+      if (a > 0) html += '<div class="marking-seg awaiting clickable" data-drill-marking="awaiting" style="flex:' + pct(a) + '" title="Awaiting marking — click to list">' + (pct(a) >= 12 ? a : '') + '</div>';
+      if (u > 0) html += '<div class="marking-seg unmarked clickable" data-drill-marking="unmarked" style="flex:' + pct(u) + '" title="Unmarked — click to list">' + (pct(u) >= 12 ? u : '') + '</div>';
       html += '</div>';
       html += '<div class="marking-legend">';
       html += '<div class="marking-legend-item"><span class="marking-legend-dot marked"></span><strong>' + m + '</strong> marked</div>';
@@ -1031,7 +1344,7 @@
         const last = r.last_active
           ? new Date(r.last_active).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
           : '—';
-        html += '<tr class="' + trClass + '">';
+        html += '<tr class="clickable ' + trClass + '" data-drill-teacher="' + e(r.teacher_id) + '" data-teacher-name="' + e(r.name) + '">';
         html += '<td>' + e(r.name) + pill + '</td>';
         html += '<td style="text-align:right">' + r.class_count + '</td>';
         html += '<td style="text-align:right">' + r.task_count + '</td>';
