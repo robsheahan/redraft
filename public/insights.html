@@ -190,13 +190,22 @@
     const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     let currentData = null;
 
+    // Global admins drill into a specific school via /insights.html?school_id=…
+    // Everyone else resolves their own school server-side.
+    const SCHOOL_ID_OVERRIDE = new URLSearchParams(window.location.search).get('school_id') || '';
+    const SCHOOL_QS = SCHOOL_ID_OVERRIDE ? '?school_id=' + encodeURIComponent(SCHOOL_ID_OVERRIDE) : '';
+    function withSchoolParam(url) {
+      if (!SCHOOL_ID_OVERRIDE) return url;
+      return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'school_id=' + encodeURIComponent(SCHOOL_ID_OVERRIDE);
+    }
+
     (async () => {
       const user = await requireAuth();
       if (!user) return;
       document.getElementById('navUser').textContent = user.email;
 
       const container = document.getElementById('content');
-      const res = await authFetch('/api/insights-synthesis');
+      const res = await authFetch('/api/insights-synthesis' + SCHOOL_QS);
       if (!res.ok) {
         if (res.status === 404 || res.status === 403) {
           container.innerHTML =
@@ -356,7 +365,7 @@
       panel.innerHTML = '<div class="detail-loading">Loading...</div>';
 
       try {
-        const res = await authFetch('/api/insights-detail?kind=' + encodeURIComponent(kind));
+        const res = await authFetch(withSchoolParam('/api/insights-detail?kind=' + encodeURIComponent(kind)));
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Could not load list.');
         panel.innerHTML = renderDetail(kind, data.rows || [], data.truncated_at);
@@ -696,7 +705,8 @@
       }, 5000);
 
       try {
-        const res = await authFetch('/api/insights-synthesis', { method: 'POST', body: JSON.stringify({}) });
+        const body = SCHOOL_ID_OVERRIDE ? { school_id: SCHOOL_ID_OVERRIDE } : {};
+        const res = await authFetch('/api/insights-synthesis', { method: 'POST', body: JSON.stringify(body) });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to generate insights.');
         currentData = data;
