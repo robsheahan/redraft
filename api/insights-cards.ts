@@ -7,6 +7,12 @@ import {
 } from '../lib/schools.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
+import {
+  parseFiltersFromQuery,
+  applyFacultyScope,
+  userIdsForYearLevel,
+  isFilterActive,
+} from '../lib/insights-filters.js';
 
 /**
  * Returns the populated card data for the school insights dashboard.
@@ -63,6 +69,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   });
   if (!access) return res.status(404).json({ error: 'Not found' });
   const { schoolId, schoolName, callerRole, restrictedFaculties } = access;
+
+  // Filter parsing + scope clamping. A faculty-scoped leader cannot widen
+  // their view by asking for a faculty they don't have access to; that
+  // returns no data (we don't 403 because empty is a useful UI signal).
+  const rawFilters = parseFiltersFromQuery(req.query as any);
+  const filters = applyFacultyScope(rawFilters, restrictedFaculties);
+  const filtersDenied = !!filters._denied;
 
   // Share the listUsers fetch across helpers — same pattern as admin-stats.
   const { data: { users: allUsers } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
@@ -135,28 +148,55 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
   });
 
-  // Apply faculty scope.
+  // Apply faculty scope (caller's role-based restriction) AND the request
+  // filters (faculty/course/class_id from query params).
   const allowed = restrictedFaculties ? new Set(restrictedFaculties) : null;
-  const inScope = (faculty: string) => !allowed || allowed.has(faculty);
+  const inFacultyScope = (faculty: string) => !allowed || allowed.has(faculty);
 
-  const tasks = Object.values(taskMap).filter((t: any) => inScope(t.faculty)) as any[];
+  // year_level filter is applied at submission scope (since each task can
+  // host submissions from students in different years).
+  let allowedStudentIds: Set<string> | null = null;
+  if (filters.year_level != null) {
+    allowedStudentIds = userIdsForYearLevel(allUsers as any, filters.year_level);
+  }
+
+  function passesFilters(task: any): boolean {
+    if (!inFacultyScope(task.faculty)) return false;
+    if (filtersDenied) return false;
+    if (filters.faculty && task.faculty !== filters.faculty) return false;
+    if (filters.course && task.course !== filters.course) return false;
+    if (filters.class_id && task.class_id !== filters.class_id) return false;
+    return true;
+  }
+  function classPassesFilters(cls: any): boolean {
+    if (!inFacultyScope(cls.faculty)) return false;
+    if (filtersDenied) return false;
+    if (filters.faculty && cls.faculty !== filters.faculty) return false;
+    if (filters.course && cls.course !== filters.course) return false;
+    if (filters.class_id && cls.id !== filters.class_id) return false;
+    return true;
+  }
+
+  const tasks = Object.values(taskMap).filter((t: any) => passesFilters(t)) as any[];
   const tasksInScopeIds = new Set(tasks.map(t => t.id));
-  // Classes are filtered by their own faculty (from course → discipline),
-  // not by whether they happen to own a task. Otherwise empty classes
-  // disappear from the count even though they're real.
   const classesInScope = Object.values(classMap)
-    .filter((c: any) => inScope(c.faculty)) as any[];
+    .filter((c: any) => classPassesFilters(c)) as any[];
   // Teachers "in scope" for the headline KPI + activity table:
-  //   - unrestricted view: every staff member at the school (including
-  //     teachers who haven't created a class yet)
-  //   - restricted (faculty-scoped) leader: only teachers who own a class
-  //     in their allowed faculties.
+  //   - no filters / unrestricted view: every staff member at the school
+  //     (including teachers who haven't created a class yet)
+  //   - any filter active: only teachers who own a class in scope (since
+  //     a filtered view should narrow to what's relevant)
+  const anyFilter = !!(allowed || isFilterActive(filters));
   const teachersInScopeIds = new Set<string>(
-    allowed
+    anyFilter
       ? classesInScope.map((c: any) => c.teacher_id).filter(Boolean) as string[]
       : teacherIds
   );
-  const submissions = (rawSubs || []).filter(s => tasksInScopeIds.has(s.task_id));
+
+  let submissions = (rawSubs || []).filter(s => tasksInScopeIds.has(s.task_id));
+  if (allowedStudentIds) {
+    submissions = submissions.filter(s => s.student_id && allowedStudentIds!.has(s.student_id));
+  }
 
   // -- Card: Activity sparkline (last 12 weeks) --
   const activity = computeActivity(submissions);
@@ -227,6 +267,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     tasks_with_class_feedback: tasks.filter(t => t.has_class_feedback).length,
   };
 
+  // Filter options for the dropdowns. Derived from ALL school data (not
+  // just in-scope) so leaders can change filters without first clearing
+  // them. Faculty list is clamped to the caller's allowed faculties.
+  const allClassesArr = Object.values(classMap) as any[];
+  const allTasksArr = Object.values(taskMap) as any[];
+  const facultyOptions = [...new Set(allClassesArr.map(c => c.faculty).concat(allTasksArr.map(t => t.faculty)))]
+    .filter((f): f is string => !!f && f !== 'Other')
+    .filter(f => !restrictedFaculties || restrictedFaculties.includes(f))
+    .sort();
+  const courseOptions = [...new Set(allClassesArr.map(c => c.course).filter(Boolean))].sort() as string[];
+  const classOptions = allClassesArr
+    .map(c => ({ id: c.id, name: c.name, course: c.course, faculty: c.faculty }))
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
   return res.status(200).json({
     school: { id: schoolId, name: schoolName },
     caller_role: callerRole,
@@ -234,6 +288,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     scope: restrictedFaculties
       ? { type: 'faculty', faculties: restrictedFaculties }
       : { type: 'school' },
+    filters: {
+      active: { ...filters, _denied: undefined },
+      denied: filtersDenied,
+      options: {
+        faculties: facultyOptions,
+        courses: courseOptions,
+        classes: classOptions,
+        year_levels: [7, 8, 9, 10, 11, 12],
+      },
+    },
     cards: {
       activity,
       engagement,
