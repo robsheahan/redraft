@@ -91,24 +91,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
   });
 
-  if (teacherIds.length === 0) {
-    return res.status(200).json(emptyResponse(schoolId, schoolName, callerRole, restrictedFaculties));
-  }
+  // Don't short-circuit on empty teachers — the main flow handles empty
+  // arrays cleanly and returns a fully-formed response (with filter
+  // options etc.), whereas the dedicated emptyResponse() skipped those.
+  const { data: rawClasses } = teacherIds.length > 0
+    ? await supabase
+      .from('classes')
+      .select('id, name, course, teacher_id')
+      .in('teacher_id', teacherIds)
+    : { data: [] as any[] };
 
-  const { data: rawClasses } = await supabase
-    .from('classes')
-    .select('id, name, course, teacher_id')
-    .in('teacher_id', teacherIds);
-
+  // Don't short-circuit if classes is empty. A school can have staff
+  // signed up but no classes yet — we still want to show the headline
+  // Teachers count (and the empty states on the other cards), not zero
+  // out the entire dashboard.
   const classIds = (rawClasses || []).map(c => c.id);
-  if (classIds.length === 0) {
-    return res.status(200).json(emptyResponse(schoolId, schoolName, callerRole, restrictedFaculties));
-  }
 
-  const { data: rawTasks } = await supabase
-    .from('tasks')
-    .select('id, title, class_id, course, total_marks, published_at, created_at, class_feedback_count')
-    .in('class_id', classIds);
+  const { data: rawTasks } = classIds.length > 0
+    ? await supabase
+      .from('tasks')
+      .select('id, title, class_id, course, total_marks, published_at, created_at, class_feedback_count')
+      .in('class_id', classIds)
+    : { data: [] as any[] };
 
   const taskIds = (rawTasks || []).map(t => t.id);
   const { data: rawSubs } = taskIds.length > 0
