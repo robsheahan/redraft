@@ -103,6 +103,33 @@ interface MinimalAuthUser {
 }
 
 /**
+ * List every auth user, paginating through Supabase's 1000-per-page cap.
+ * Multi-school instances will exceed 1000 quickly — silently truncating
+ * means teachers / students disappear from school counts.
+ */
+export async function listAllAuthUsers(
+  supabase: SupabaseClient,
+): Promise<MinimalAuthUser[]> {
+  const out: MinimalAuthUser[] = [];
+  const perPage = 1000;
+  let page = 1;
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error) {
+      console.warn('[schools] listUsers page', page, 'failed:', error.message);
+      break;
+    }
+    const users = (data?.users || []) as MinimalAuthUser[];
+    if (users.length === 0) break;
+    out.push(...users);
+    if (users.length < perPage) break;
+    page++;
+    if (page > 50) break; // safety: 50,000 users
+  }
+  return out;
+}
+
+/**
  * Internal: resolve every user belonging to a school via explicit grants
  * (school_members), LTI mappings, or email-domain match. Returns a map of
  * user_id → role (from user_metadata.role, or null if unroled). Callers
@@ -150,8 +177,7 @@ async function getSchoolUserRoles(
 
   let allUsers = preloadedUsers;
   if (!allUsers) {
-    const { data } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-    allUsers = (data?.users || []) as MinimalAuthUser[];
+    allUsers = await listAllAuthUsers(supabase);
   }
 
   const roleByUserId: Record<string, string | null> = {};

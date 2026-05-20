@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
-import { getSchoolTeacherIds, resolveInsightsAccess } from '../lib/schools.js';
+import { getSchoolTeacherIds, resolveInsightsAccess, listAllAuthUsers } from '../lib/schools.js';
 import { getUserInfoBatch } from '../lib/user-names.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
@@ -79,7 +79,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'marking_status must be marked / awaiting / unmarked' });
   }
 
-  const { data: { users: allUsers } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+  const allUsers = await listAllAuthUsers(supabase);
   const teacherIds = await getSchoolTeacherIds(supabase, schoolId, allUsers as any);
   if (teacherIds.length === 0) return res.status(200).json({ rows: [] });
 
@@ -111,8 +111,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
   });
 
-  // Apply faculty / course / class_id filters to tasks + classes.
+  // CRITICAL: every match function must enforce the caller's faculty
+  // scope. Without this guard, a leader restricted to PDHPE could pass
+  // ?course=English%20Standard or ?class_id=<English-class> and pull
+  // data outside their granted KLAs. We re-check the faculty against
+  // the caller's restrictedFaculties on every row.
+  const allowed = restrictedFaculties ? new Set(restrictedFaculties) : null;
+  const inFacultyScope = (faculty: string) => !allowed || allowed.has(faculty);
+
   function classMatches(cls: any): boolean {
+    if (!inFacultyScope(cls.faculty)) return false;
     if (filters.faculty && cls.faculty !== filters.faculty) return false;
     if (filters.course && cls.course !== filters.course) return false;
     if (filters.class_id && cls.id !== filters.class_id) return false;
@@ -120,6 +128,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return true;
   }
   function taskMatches(t: any): boolean {
+    if (!inFacultyScope(t.faculty)) return false;
     if (filters.faculty && t.faculty !== filters.faculty) return false;
     if (filters.course && t.course !== filters.course) return false;
     if (filters.class_id && t.class_id !== filters.class_id) return false;

@@ -395,13 +395,19 @@
       await reloadData();
     })();
 
+    // Token-based in-flight guard so rapid filter changes don't race.
+    // Only the most recent reloadData() call is allowed to mutate state +
+    // re-render; earlier ones bail out as soon as a newer call starts.
+    let reloadToken = 0;
     async function reloadData() {
+      const myToken = ++reloadToken;
       const container = document.getElementById('content');
       const qs = buildQueryString();
       const [cardsRes, synthRes] = await Promise.all([
         authFetch('/api/insights-cards' + qs),
         authFetch('/api/insights-synthesis' + qs),
       ]);
+      if (myToken !== reloadToken) return; // a newer reload superseded us
       if (!cardsRes.ok) {
         if (cardsRes.status === 404 || cardsRes.status === 403) {
           container.innerHTML =
@@ -589,7 +595,7 @@
         html += '<div class="filter-option" style="color:#9ca3af;cursor:default;font-style:italic">No options yet</div>';
       } else {
         options.forEach(o => {
-          const sel = currentVal && String(currentVal) === String(o.label) ? 'is-selected' : '';
+          const sel = currentVal && String(currentVal) === String(o.value) ? 'is-selected' : '';
           html += '<button class="filter-option ' + sel + '" data-filter-set="' + e(key) + '" data-filter-value="' + e(String(o.value)) + '">'
             + e(o.label)
             + (o.meta ? '<span class="opt-meta">' + e(o.meta) + '</span>' : '')
@@ -1257,11 +1263,23 @@
 
     // ─────────────── LLM card renderers ───────────────
 
+    function filtersMatch(a, b) {
+      const keys = ['faculty', 'course', 'class_id', 'year_level'];
+      for (const k of keys) {
+        const av = (a && a[k]) ? String(a[k]) : '';
+        const bv = (b && b[k]) ? String(b[k]) : '';
+        if (av !== bv) return false;
+      }
+      return true;
+    }
+
     function renderLLMCard(kind, cache, opts) {
       const hasContent = !!(cache && cache.content);
       const lastGen = cache && cache.generated_at
         ? new Date(cache.generated_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
         : null;
+      const mismatch = hasContent && !filtersMatch(cache.filters || {}, activeFilters);
+
       let html = '<div class="synthesis-head">';
       html += '<div><h3 style="font-size:14.5px">' + e(opts.title) + '</h3>';
       html += '<div class="meta" style="font-size:11.5px;color:#9ca3af;margin-top:2px">' + e(opts.sub) + '</div>';
@@ -1277,6 +1295,12 @@
       html += '<button class="btn-synthesise" style="padding:6px 12px;font-size:12px" data-llm-generate="' + e(kind) + '">'
         + (hasContent ? 'Regenerate' : 'Generate') + '</button>';
       html += '</div>';
+
+      if (mismatch) {
+        html += '<div style="margin-bottom:10px;padding:8px 12px;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;font-size:12px;color:#78350f;line-height:1.45">'
+          + '<strong>Stale scope.</strong> This card was generated with different filters than the ones currently selected. Click <strong>Regenerate</strong> to refresh under your current filters.'
+          + '</div>';
+      }
 
       html += '<div class="synthesis-loading" id="llmLoading_' + e(kind) + '"><div class="spinner"></div><div style="font-size:13px;color:#6b7280">Analysing feedback across submissions...</div></div>';
 

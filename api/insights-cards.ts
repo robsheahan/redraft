@@ -4,6 +4,7 @@ import { getSupabase, verifyAuth } from '../lib/auth.js';
 import {
   getSchoolTeacherIds,
   resolveInsightsAccess,
+  listAllAuthUsers,
 } from '../lib/schools.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
@@ -78,7 +79,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const filtersDenied = !!filters._denied;
 
   // Share the listUsers fetch across helpers — same pattern as admin-stats.
-  const { data: { users: allUsers } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+  // Paginate through Supabase's 1000/page cap so we don't silently truncate.
+  const allUsers = await listAllAuthUsers(supabase);
   const teacherIds = await getSchoolTeacherIds(supabase, schoolId, allUsers as any);
 
   const userInfo: Record<string, { name: string; email: string }> = {};

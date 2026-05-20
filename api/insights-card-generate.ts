@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
-import { resolveInsightsAccess, getSchoolTeacherIds } from '../lib/schools.js';
+import { resolveInsightsAccess, getSchoolTeacherIds, listAllAuthUsers } from '../lib/schools.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import {
@@ -223,7 +223,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Pull submissions in scope.
-  const { data: { users: allUsers } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+  const allUsers = await listAllAuthUsers(supabase);
   const teacherIds = await getSchoolTeacherIds(supabase, schoolId, allUsers as any);
   if (teacherIds.length === 0) {
     return res.status(400).json({ error: 'No teachers in scope yet.' });
@@ -271,14 +271,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return true;
   });
 
-  // Keep only the latest draft per (student, task) so we don't double-count.
+  // Keep only the latest draft per (student, task). Anonymous submissions
+  // (null student_id) bypass the dedupe — there's no "student" to dedupe
+  // within, so colliding them under "null|<task>" would corrupt the sample.
   const byPair = new Map<string, any>();
+  const anonSubs: any[] = [];
   for (const s of submissions) {
+    if (!s.student_id || !s.task_id) {
+      anonSubs.push(s);
+      continue;
+    }
     const k = s.student_id + '|' + s.task_id;
     const prev = byPair.get(k);
     if (!prev || (s.created_at || '') > (prev.created_at || '')) byPair.set(k, s);
   }
-  submissions = [...byPair.values()];
+  submissions = [...byPair.values(), ...anonSubs];
 
   if (submissions.length === 0) {
     return res.status(400).json({ error: 'No submissions with AI feedback in scope yet. Have students submit drafts to generate feedback first.' });
@@ -333,6 +340,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (err: any) {
     captureError(err, { stage: 'insights-card-generate', kind, school_id: schoolId, user_id: user.id });
     return res.status(500).json({ error: err?.message || 'Failed to generate.' });
+  }
+
+  // Validate the model's output against each card's required keys before
+  // caching. Tool-use returns are usually well-formed but a max_tokens
+  // cutoff can leave required arrays missing. Don't cache garbage.
+  const requiredKeys: Record<string, string[]> = {
+    bottom_decile:     ['patterns', 'scope_note'],
+    top_decile:        ['next_steps', 'scope_note'],
+    verb_depth:        ['verbs', 'overall_pattern'],
+    common_gaps:       ['gaps', 'scope_note'],
+    things_done_well:  ['strengths', 'scope_note'],
+  };
+  const missing = (requiredKeys[kind] || []).filter(k => !(k in (value || {})));
+  if (missing.length > 0) {
+    captureError(new Error('Incomplete tool output: missing ' + missing.join(', ')), { kind, school_id: schoolId });
+    return res.status(502).json({ error: 'Generation finished but the response was incomplete. Try again — usually clears on retry.' });
   }
 
   // -- Cache --
