@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSchoolTeacherIds } from '../lib/schools.js';
 
 /**
  * Admin-only usage dashboard endpoint.
@@ -135,6 +136,62 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .map(([domain, c]) => ({ domain, ...c }))
     .sort((a, b) => b.total - a.total);
 
+  // Schools meta view: every school, with member breakdown + inferred staff.
+  const { data: schoolRows } = await supabase
+    .from('schools')
+    .select('id, name, primary_domain, secondary_domains, lti_platform_id, insights_cache_generated_at, insights_cache_task_count, created_at')
+    .order('name');
+
+  // Pull all grants in one shot
+  const { data: allGrants } = await supabase
+    .from('school_members')
+    .select('school_id, user_id, role, faculties');
+  const grantsBySchool: Record<string, Array<{ role: string; faculties: string[] }>> = {};
+  (allGrants || []).forEach(g => {
+    if (!g.school_id) return;
+    (grantsBySchool[g.school_id] ||= []).push({
+      role: g.role,
+      faculties: Array.isArray(g.faculties) ? g.faculties : [],
+    });
+  });
+
+  const schools = await Promise.all((schoolRows || []).map(async (s) => {
+    const teacherIds = await getSchoolTeacherIds(supabase, s.id);
+    let classCount = 0, taskCount = 0, submissionCount = 0;
+    if (teacherIds.length > 0) {
+      const { data: cls } = await supabase.from('classes').select('id').in('teacher_id', teacherIds);
+      const classIds = (cls || []).map(c => c.id);
+      classCount = classIds.length;
+      if (classIds.length > 0) {
+        const tasksRes = await supabase.from('tasks').select('id', { count: 'exact', head: true }).in('class_id', classIds);
+        taskCount = tasksRes.count || 0;
+        const { data: tRows } = await supabase.from('tasks').select('id').in('class_id', classIds);
+        const taskIds = (tRows || []).map(t => t.id);
+        if (taskIds.length > 0) {
+          const subsRes = await supabase.from('submissions').select('id', { count: 'exact', head: true }).in('task_id', taskIds);
+          submissionCount = subsRes.count || 0;
+        }
+      }
+    }
+    const grants = grantsBySchool[s.id] || [];
+    return {
+      id: s.id,
+      name: s.name,
+      primary_domain: s.primary_domain || null,
+      secondary_domains: s.secondary_domains || [],
+      lti_linked: !!s.lti_platform_id,
+      created_at: s.created_at,
+      staff_count: teacherIds.length,
+      admin_count: grants.filter(g => g.role === 'admin').length,
+      leader_count: grants.filter(g => g.role === 'leader').length,
+      class_count: classCount,
+      task_count: taskCount,
+      submission_count: submissionCount,
+      insights_generated_at: s.insights_cache_generated_at || null,
+      insights_task_count: s.insights_cache_task_count || 0,
+    };
+  }));
+
   return res.status(200).json({
     counts: {
       users: {
@@ -158,6 +215,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       api_calls_24h: apiCalls24h.count || 0,
     },
+    schools,
     recent_submissions: recentSubmissionsWithEmail,
     recent_tasks: recentTasksAnnotated,
     users: allUsers,

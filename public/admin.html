@@ -93,6 +93,35 @@
       html += '<div class="kpi-sub">Approx $' + (calls24h * 0.09).toFixed(2) + ' spend · <span style="color:' + capColor + '">' + pct + '% of daily cap</span></div></div>';
       html += '</div>';
 
+      // Schools meta view
+      var schools = data.schools || [];
+      html += '<div class="section"><h2>Schools <span style="font-weight:500;color:#9ca3af;font-size:13px">(' + schools.length + ')</span></h2>';
+      if (schools.length === 0) {
+        html += '<p style="color:#9ca3af;font-size:14px">No schools registered yet.</p>';
+      } else {
+        html += '<table><thead><tr><th>Name</th><th>Domain</th><th style="text-align:right">Staff</th><th style="text-align:right">Admins</th><th style="text-align:right">Leaders</th><th style="text-align:right">Classes</th><th style="text-align:right">Tasks</th><th style="text-align:right">Submissions</th><th>Insights</th><th></th></tr></thead><tbody>';
+        schools.forEach(s => {
+          var insightsCell = s.insights_generated_at
+            ? '<span style="color:#15803d">✓ ' + s.insights_task_count + ' tasks</span>'
+            : '<span style="color:#d1d5db">—</span>';
+          var domain = s.primary_domain || (s.lti_linked ? '<span style="color:#9ca3af">(LTI)</span>' : '<span style="color:#d1d5db">—</span>');
+          html += '<tr>';
+          html += '<td><strong>' + e(s.name) + '</strong></td>';
+          html += '<td class="mono">' + domain + '</td>';
+          html += '<td style="text-align:right">' + s.staff_count + '</td>';
+          html += '<td style="text-align:right">' + s.admin_count + '</td>';
+          html += '<td style="text-align:right">' + s.leader_count + '</td>';
+          html += '<td style="text-align:right">' + s.class_count + '</td>';
+          html += '<td style="text-align:right">' + s.task_count + '</td>';
+          html += '<td style="text-align:right">' + s.submission_count + '</td>';
+          html += '<td>' + insightsCell + '</td>';
+          html += '<td><a href="/insights.html?school_id=' + encodeURIComponent(s.id) + '" style="font-size:12px;color:#ed7615;font-weight:600;text-decoration:none">View →</a></td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+      }
+      html += '</div>';
+
       // Sign-ups by school (email domain)
       var byDomain = data.by_domain || [];
       html += '<div class="section"><h2>Sign-ups by email domain</h2>';

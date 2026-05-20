@@ -96,6 +96,11 @@ async function logout() {
 // here when you add them to the ADMIN_EMAILS env var.
 const ADMIN_EMAILS = ['robert.sheahan@gmail.com'];
 
+function isAdminUser(user) {
+  if (!user || !user.email) return false;
+  return ADMIN_EMAILS.includes(user.email.toLowerCase());
+}
+
 // Auto-reveal any element marked `.admin-only` once we've confirmed the
 // signed-in user is on the admin list. Hidden by default via inline style
 // in the markup so non-admins never see a flash of the link.

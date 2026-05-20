@@ -51,6 +51,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!s) return res.status(404).json({ error: 'School not found.' });
     schoolId = s.id;
     schoolName = s.name;
+    // Global admins viewing via override get full admin powers in the UI.
+    callerRole = 'admin';
   } else {
     const ctx = await resolveUserSchool(supabase, user.id);
     if (!ctx) {

@@ -196,6 +196,7 @@
   <script src="/js/app.js"></script>
   <script>
     function redirectUser(user) {
+      if (isAdminUser(user)) { window.location.href = '/admin.html'; return; }
       const role = user.user_metadata?.role;
       if (!role) window.location.href = '/choose-role.html';
       else window.location.href = role === 'teacher' ? '/teacher.html' : '/student.html';
