@@ -67,7 +67,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // --- GET: full school staff list with their grants ---
   if (req.method === 'GET') {
-    const schoolUserIds = await getSchoolTeacherIds(supabase, schoolId);
+    // Fetch the auth user list once and share with getSchoolTeacherIds so
+    // listUsers isn't hit twice in the same request.
+    const { data: { users: allUsers } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+    const schoolUserIds = await getSchoolTeacherIds(supabase, schoolId, allUsers as any);
 
     const { data: grantRows } = await supabase
       .from('school_members')
@@ -87,8 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ids = new Set<string>([...schoolUserIds, ...Object.keys(grants)]);
     const lookup = await getUserInfoBatch(supabase, [...ids]);
 
-    // Pull user-metadata so we can label students vs teachers.
-    const { data: { users: allUsers } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+    // Reuse the allUsers list we already loaded above for role metadata.
     const metaByUser: Record<string, { metaRole: string | null }> = {};
     allUsers.forEach(u => { metaByUser[u.id] = { metaRole: (u.user_metadata as any)?.role || null }; });
 

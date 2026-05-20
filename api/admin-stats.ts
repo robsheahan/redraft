@@ -156,8 +156,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   });
 
+  // Share the already-loaded auth users list with getSchoolTeacherIds so
+  // we don't pay the listUsers cost again per school.
+  const preloadedUsers = userList as any;
   const schools = await Promise.all((schoolRows || []).map(async (s) => {
-    const teacherIds = await getSchoolTeacherIds(supabase, s.id);
+    const teacherIds = await getSchoolTeacherIds(supabase, s.id, preloadedUsers);
     let classCount = 0, taskCount = 0, submissionCount = 0;
     if (teacherIds.length > 0) {
       const { data: cls } = await supabase.from('classes').select('id').in('teacher_id', teacherIds);

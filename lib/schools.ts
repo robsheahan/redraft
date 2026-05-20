@@ -96,9 +96,16 @@ export async function resolveUserSchool(
  * scoping is about staff. Unroled users are kept (likely staff who haven't
  * picked a role yet).
  */
+interface MinimalAuthUser {
+  id: string;
+  email: string | null | undefined;
+  user_metadata: Record<string, any> | null | undefined;
+}
+
 export async function getSchoolTeacherIds(
   supabase: SupabaseClient,
   schoolId: string,
+  preloadedUsers?: MinimalAuthUser[],
 ): Promise<string[]> {
   const ids = new Set<string>();
 
@@ -123,9 +130,10 @@ export async function getSchoolTeacherIds(
     ltiUsers?.forEach(u => u.user_id && ids.add(u.user_id));
   }
 
-  // We need user_metadata to drop students from the final set. listUsers
-  // returns up to 1000 in one call; we use the same call to do email-domain
-  // matching too so we don't have to page twice.
+  // We need user_metadata to drop students from the final set, AND to do
+  // email-domain matching. listUsers can be slow (loads up to 1000 users
+  // with metadata), so callers should pass `preloadedUsers` when they've
+  // already fetched the list in the same request.
   const { data: school } = await supabase
     .from('schools')
     .select('primary_domain, secondary_domains')
@@ -135,10 +143,15 @@ export async function getSchoolTeacherIds(
     .filter((d): d is string => !!d)
     .map(d => d.toLowerCase());
 
-  const { data: { users: allUsers } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+  let allUsers = preloadedUsers;
+  if (!allUsers) {
+    const { data } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+    allUsers = (data?.users || []) as MinimalAuthUser[];
+  }
+
   const roleById: Record<string, string | null> = {};
   allUsers.forEach(u => {
-    roleById[u.id] = (u.user_metadata as any)?.role || null;
+    roleById[u.id] = u.user_metadata?.role || null;
     if (domains.length > 0) {
       const domain = (u.email || '').split('@')[1]?.toLowerCase().trim();
       if (domain && domains.includes(domain)) ids.add(u.id);
