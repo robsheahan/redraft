@@ -213,17 +213,17 @@ export const CLASS_FEEDBACK_TOOL: Tool = {
 export const BOTTOM_DECILE_TOOL: Tool = {
   name: 'provide_bottom_decile_patterns',
   description:
-    'Identify the dominant patterns of mistakes appearing in the AI improvement feedback for the bottom decile of students by mark percentage. Output 5 actionable, specific patterns that a head of teaching & learning could put on a faculty meeting agenda.',
+    'Identify the dominant patterns of mistakes appearing in the AI improvement feedback for the bottom decile of students by mark percentage. Output 3 actionable, specific patterns that a head of teaching & learning could put on a faculty meeting agenda.',
   input_schema: {
     type: 'object',
     properties: {
       patterns: {
         type: 'array',
-        description: 'Exactly 5 dominant patterns, ordered by how widespread they are. Most prevalent first.',
+        description: 'Exactly 3 dominant patterns, ordered by how widespread they are. Most prevalent first.',
         items: {
           type: 'object',
           properties: {
-            rank: { type: 'integer', minimum: 1, maximum: 5 },
+            rank: { type: 'integer', minimum: 1, maximum: 3 },
             headline: { type: 'string', description: 'One short, specific sentence naming the mistake (e.g. "Treating analyse as describe — listing features without explaining significance").' },
             detail: { type: 'string', description: '1-2 sentences expanding what the pattern looks like and why it matters for these students.' },
             prevalence_note: { type: 'string', description: "Plain-language indicator of how widespread (e.g. 'shows in most of the bottom-decile submissions reviewed', 'half of the cohort'). No numeric claims beyond the scope_note." },

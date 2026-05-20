@@ -58,7 +58,7 @@ const KIND_CONFIG: Record<string, {
       `School: ${schoolName}`,
       `Sample size: ${sample} submissions from students in the bottom 10% by mark percentage.`,
       ``,
-      `You'll receive each student's AI improvement feedback. Identify the 5 dominant patterns of mistakes — the things appearing across multiple students that a head of teaching & learning should action.`,
+      `You'll receive each student's AI improvement feedback. Identify the 3 dominant patterns of mistakes — the things appearing across multiple students that a head of teaching & learning should action.`,
       ``,
       `RULES:`,
       `- Concrete, specific patterns. Not "students need to write better".`,

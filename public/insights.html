@@ -1212,9 +1212,9 @@
       const llm = cd.llm || {};
 
       html += '<div class="card card-span-6">' + renderLLMCard('bottom_decile', llm.bottom_decile, {
-        title: 'Top 5 mistakes — bottom decile',
+        title: 'Top 3 mistakes — bottom decile',
         sub: 'AI synthesis of patterns in the bottom 10% of students',
-        emptyTeaser: 'Generate this card to surface the 5 dominant mistakes appearing across the bottom 10% of marked submissions. Drives intervention priorities.',
+        emptyTeaser: 'Generate this card to surface the 3 dominant mistakes appearing across the bottom 10% of marked submissions. Drives intervention priorities.',
         render: renderBottomDecile,
       }) + '</div>';
 
