@@ -223,11 +223,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   (allInsightsRes.data || []).forEach(r => {
     if (!r.endpoint) return;
     totals[r.endpoint] = (totals[r.endpoint] || 0) + 1;
-    // The synthetic user_id encodes school (cross-faculty-synthesis) or
-    // school:kind (per-card generators). Extract the school UUID prefix.
-    const schoolKey = (r.user_id || '').split(':')[0];
-    if (schoolKey) {
-      (schoolsUsing[r.endpoint] ||= new Set()).add(schoolKey);
+    // user_id for insights endpoints is the school UUID (the rate-limit
+    // bucket key). Synthesis + every per-card generator follow the same
+    // convention.
+    if (r.user_id) {
+      (schoolsUsing[r.endpoint] ||= new Set()).add(r.user_id);
     }
   });
   const last24h: Record<string, number> = {};

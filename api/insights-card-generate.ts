@@ -209,8 +209,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   delete (filters as any)._denied;
 
-  // Rate-limit per (school, card kind) so one card doesn't starve others.
-  const rateLimit = await checkAndLogRateLimit(supabase, schoolId + ':' + kind, {
+  // Rate-limit per school — each card kind has its own endpoint name so
+  // the bucket is naturally scoped per (school, kind) without needing to
+  // smuggle the kind into the user_id (which must be a valid UUID FK).
+  const rateLimit = await checkAndLogRateLimit(supabase, schoolId, {
     endpoint: cfg.endpointName,
     perUserPerHour: 5,
     globalPerDay: 200,
