@@ -567,17 +567,26 @@
       return html;
     }
 
+    const ALL_LABELS = {
+      year_level: 'All years',
+      faculty: 'All faculties',
+      course: 'All courses',
+      class_id: 'All classes',
+    };
+
     function filterPill(key, label, currentVal, options) {
       const isActive = !!currentVal;
       let html = '<div class="filter-pill" data-filter-pill="' + e(key) + '">';
       html += '<button class="filter-pill-btn ' + (isActive ? 'is-active' : '') + '" data-filter-toggle="' + e(key) + '">'
         + '<span>' + e(label) + (currentVal ? ': ' + e(String(currentVal)) : '') + '</span><span class="chev">▾</span></button>';
       html += '<div class="filter-menu">';
-      if (isActive) {
-        html += '<button class="filter-option" data-filter-set="' + e(key) + '" data-filter-value="">Clear</button>';
-      }
+      // Always-visible "All X" option at the top. Highlighted when no
+      // filter is active for this pill.
+      const allLabel = ALL_LABELS[key] || 'All';
+      const allSel = isActive ? '' : 'is-selected';
+      html += '<button class="filter-option ' + allSel + '" data-filter-set="' + e(key) + '" data-filter-value="">' + e(allLabel) + '</button>';
       if (options.length === 0) {
-        html += '<div class="filter-option" style="color:#9ca3af;cursor:default">No options yet</div>';
+        html += '<div class="filter-option" style="color:#9ca3af;cursor:default;font-style:italic">No options yet</div>';
       } else {
         options.forEach(o => {
           const sel = currentVal && String(currentVal) === String(o.label) ? 'is-selected' : '';
