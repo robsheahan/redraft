@@ -102,14 +102,22 @@ interface MinimalAuthUser {
   user_metadata: Record<string, any> | null | undefined;
 }
 
-export async function getSchoolTeacherIds(
+/**
+ * Internal: resolve every user belonging to a school via explicit grants
+ * (school_members), LTI mappings, or email-domain match. Returns a map of
+ * user_id → role (from user_metadata.role, or null if unroled). Callers
+ * apply their own role filtering — getSchoolTeacherIds excludes students,
+ * getSchoolStudentIds keeps only them.
+ */
+async function getSchoolUserRoles(
   supabase: SupabaseClient,
   schoolId: string,
   preloadedUsers?: MinimalAuthUser[],
-): Promise<string[]> {
+): Promise<Record<string, string | null>> {
   const ids = new Set<string>();
 
-  // Explicit members
+  // Explicit members (typically only staff are graded here, but we include
+  // any explicit row — callers can filter by role).
   const { data: members } = await supabase
     .from('school_members')
     .select('user_id')
@@ -130,10 +138,7 @@ export async function getSchoolTeacherIds(
     ltiUsers?.forEach(u => u.user_id && ids.add(u.user_id));
   }
 
-  // We need user_metadata to drop students from the final set, AND to do
-  // email-domain matching. listUsers can be slow (loads up to 1000 users
-  // with metadata), so callers should pass `preloadedUsers` when they've
-  // already fetched the list in the same request.
+  // Email-domain match (also used to populate the role lookup)
   const { data: school } = await supabase
     .from('schools')
     .select('primary_domain, secondary_domains')
@@ -149,16 +154,40 @@ export async function getSchoolTeacherIds(
     allUsers = (data?.users || []) as MinimalAuthUser[];
   }
 
-  const roleById: Record<string, string | null> = {};
+  const roleByUserId: Record<string, string | null> = {};
   allUsers.forEach(u => {
-    roleById[u.id] = u.user_metadata?.role || null;
+    roleByUserId[u.id] = u.user_metadata?.role || null;
     if (domains.length > 0) {
       const domain = (u.email || '').split('@')[1]?.toLowerCase().trim();
       if (domain && domains.includes(domain)) ids.add(u.id);
     }
   });
 
-  return Array.from(ids).filter(id => roleById[id] !== 'student');
+  const out: Record<string, string | null> = {};
+  ids.forEach(id => { out[id] = roleByUserId[id] ?? null; });
+  return out;
+}
+
+export async function getSchoolTeacherIds(
+  supabase: SupabaseClient,
+  schoolId: string,
+  preloadedUsers?: MinimalAuthUser[],
+): Promise<string[]> {
+  const roles = await getSchoolUserRoles(supabase, schoolId, preloadedUsers);
+  return Object.entries(roles)
+    .filter(([_, r]) => r !== 'student')
+    .map(([id]) => id);
+}
+
+export async function getSchoolStudentIds(
+  supabase: SupabaseClient,
+  schoolId: string,
+  preloadedUsers?: MinimalAuthUser[],
+): Promise<string[]> {
+  const roles = await getSchoolUserRoles(supabase, schoolId, preloadedUsers);
+  return Object.entries(roles)
+    .filter(([_, r]) => r === 'student')
+    .map(([id]) => id);
 }
 
 /**

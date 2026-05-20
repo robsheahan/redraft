@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
-import { getSchoolTeacherIds } from '../lib/schools.js';
+import { getSchoolTeacherIds, getSchoolStudentIds } from '../lib/schools.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 
 /**
@@ -156,11 +156,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   });
 
-  // Share the already-loaded auth users list with getSchoolTeacherIds so
-  // we don't pay the listUsers cost again per school.
+  // Share the already-loaded auth users list with getSchool*Ids so we
+  // don't pay the listUsers cost again per school.
   const preloadedUsers = userList as any;
   const schools = await Promise.all((schoolRows || []).map(async (s) => {
-    const teacherIds = await getSchoolTeacherIds(supabase, s.id, preloadedUsers);
+    const [teacherIds, studentIds] = await Promise.all([
+      getSchoolTeacherIds(supabase, s.id, preloadedUsers),
+      getSchoolStudentIds(supabase, s.id, preloadedUsers),
+    ]);
     let classCount = 0, taskCount = 0, submissionCount = 0;
     if (teacherIds.length > 0) {
       const { data: cls } = await supabase.from('classes').select('id').in('teacher_id', teacherIds);
@@ -186,6 +189,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       lti_linked: ltiLinkedSchoolIds.has(s.id),
       created_at: s.created_at,
       staff_count: teacherIds.length,
+      student_count: studentIds.length,
       admin_count: grants.filter(g => g.role === 'admin').length,
       leader_count: grants.filter(g => g.role === 'leader').length,
       class_count: classCount,

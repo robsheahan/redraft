@@ -131,7 +131,7 @@
       if (schools.length === 0) {
         html += '<p style="color:#9ca3af;font-size:14px">No schools registered yet. Add the first one to start matching users by email domain.</p>';
       } else {
-        html += '<table><thead><tr><th>Name</th><th>Domain(s)</th><th style="text-align:right">Staff</th><th style="text-align:right">Admins</th><th style="text-align:right">Leaders</th><th style="text-align:right">Classes</th><th style="text-align:right">Tasks</th><th style="text-align:right">Subs</th><th>Insights</th><th></th></tr></thead><tbody>';
+        html += '<table><thead><tr><th>Name</th><th>Domain(s)</th><th style="text-align:right">Staff</th><th style="text-align:right">Students</th><th style="text-align:right">Admins</th><th style="text-align:right">Leaders</th><th style="text-align:right">Classes</th><th style="text-align:right">Tasks</th><th style="text-align:right">Subs</th><th>Insights</th><th></th></tr></thead><tbody>';
         schools.forEach(s => {
           var insightsCell = s.insights_generated_at
             ? '<span style="color:#15803d">✓ ' + s.insights_task_count + '</span>'
@@ -147,6 +147,7 @@
           html += '<td><strong>' + e(s.name) + '</strong></td>';
           html += '<td>' + domain + '</td>';
           html += '<td style="text-align:right">' + s.staff_count + '</td>';
+          html += '<td style="text-align:right">' + (s.student_count || 0) + '</td>';
           html += '<td style="text-align:right">' + s.admin_count + '</td>';
           html += '<td style="text-align:right">' + s.leader_count + '</td>';
           html += '<td style="text-align:right">' + s.class_count + '</td>';
