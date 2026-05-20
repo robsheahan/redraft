@@ -143,7 +143,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const tasksInScopeIds = new Set(tasks.map(t => t.id));
   const classesInScope = Object.values(classMap)
     .filter((c: any) => tasks.some(t => t.class_id === c.id)) as any[];
-  const teachersInScopeIds = new Set(classesInScope.map(c => c.teacher_id).filter(Boolean));
+  // Teachers "in scope" for the headline KPI + activity table:
+  //   - unrestricted view: every staff member at the school (including
+  //     teachers who haven't created a class yet)
+  //   - restricted (faculty-scoped) leader: only teachers who own a class
+  //     in their allowed faculties.
+  const teachersInScopeIds = new Set<string>(
+    allowed
+      ? classesInScope.map((c: any) => c.teacher_id).filter(Boolean) as string[]
+      : teacherIds
+  );
   const submissions = (rawSubs || []).filter(s => tasksInScopeIds.has(s.task_id));
 
   // -- Card: Activity sparkline (last 12 weeks) --
