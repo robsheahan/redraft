@@ -103,6 +103,107 @@
     .modal-actions button.danger:hover { background: #fef2f2; border-color: #dc2626; }
     .modal-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    /* Card grid */
+    .cards-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px; margin-bottom: 22px; }
+    .card { background: #fff; border-radius: 12px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); display: flex; flex-direction: column; }
+    .card-span-12 { grid-column: span 12; }
+    .card-span-7 { grid-column: span 7; }
+    .card-span-5 { grid-column: span 5; }
+    .card-span-8 { grid-column: span 8; }
+    .card-span-4 { grid-column: span 4; }
+    @media (max-width: 920px) {
+      .card-span-7, .card-span-5, .card-span-8, .card-span-4 { grid-column: span 12; }
+    }
+    .card-h { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #9ca3af; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .card-h .card-h-sub { font-size: 11px; font-weight: 600; color: #d1d5db; text-transform: none; letter-spacing: 0; }
+    .card-empty { padding: 22px 12px; text-align: center; color: #9ca3af; font-size: 13px; line-height: 1.5; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .card-empty strong { color: #6b7280; font-weight: 600; display: block; margin-bottom: 4px; }
+
+    /* Sparkline */
+    .sparkline { width: 100%; height: 96px; overflow: visible; }
+    .sparkline .area { fill: rgba(237,118,21,0.08); }
+    .sparkline .line { fill: none; stroke: #ed7615; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+    .sparkline .dot { fill: #ed7615; }
+    .sparkline-axis { display: flex; justify-content: space-between; font-size: 10px; color: #9ca3af; margin-top: 6px; }
+    .sparkline-summary { font-size: 12.5px; color: #6b7280; margin-top: 4px; }
+    .sparkline-summary strong { color: #111827; font-weight: 700; font-size: 22px; letter-spacing: -0.4px; display: block; margin-bottom: 2px; }
+
+    /* Horizontal bar rows (engagement, mark-by-faculty headers etc.) */
+    .bar-list { display: flex; flex-direction: column; gap: 8px; }
+    .bar-row { display: grid; grid-template-columns: 130px 1fr auto; gap: 10px; align-items: center; font-size: 13px; }
+    .bar-row .bar-label { color: #374151; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-row .bar-track { background: #fdf6ee; border-radius: 4px; height: 16px; position: relative; overflow: hidden; border: 1px solid #f0e6d6; }
+    .bar-row .bar-fill { background: linear-gradient(90deg, #f08a2e, #ed7615); height: 100%; border-radius: 3px; transition: width 0.3s ease; }
+    .bar-row .bar-value { color: #111827; font-weight: 700; font-size: 13px; min-width: 28px; text-align: right; font-variant-numeric: tabular-nums; }
+    .bar-row .bar-meta { font-size: 11px; color: #9ca3af; font-weight: 500; }
+
+    /* Mark distribution (A-E) */
+    .band-list { display: flex; flex-direction: column; gap: 8px; }
+    .band-row { display: grid; grid-template-columns: 28px 90px 1fr 48px; gap: 10px; align-items: center; font-size: 13px; }
+    .band-row .band-letter { font-weight: 800; font-size: 18px; letter-spacing: -0.5px; text-align: center; }
+    .band-row .band-label { color: #374151; font-weight: 600; }
+    .band-row .band-track { background: #f9fafb; border-radius: 4px; height: 18px; position: relative; overflow: hidden; }
+    .band-row .band-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; }
+    .band-row .band-value { color: #111827; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; }
+    .band-row.band-A .band-letter { color: #15803d; }
+    .band-row.band-A .band-fill   { background: linear-gradient(90deg, #34d399, #15803d); }
+    .band-row.band-B .band-letter { color: #2563eb; }
+    .band-row.band-B .band-fill   { background: linear-gradient(90deg, #60a5fa, #2563eb); }
+    .band-row.band-C .band-letter { color: #d97706; }
+    .band-row.band-C .band-fill   { background: linear-gradient(90deg, #fbbf24, #d97706); }
+    .band-row.band-D .band-letter { color: #b45309; }
+    .band-row.band-D .band-fill   { background: linear-gradient(90deg, #f97316, #b45309); }
+    .band-row.band-E .band-letter { color: #991b1b; }
+    .band-row.band-E .band-fill   { background: linear-gradient(90deg, #f87171, #991b1b); }
+
+    /* Mark by faculty — compact mini bars per faculty */
+    .mark-faculty-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .mark-faculty-card { padding: 12px 14px; background: #fdfaf5; border: 1px solid #f0e6d6; border-radius: 10px; }
+    .mark-faculty-card h5 { font-size: 12.5px; font-weight: 700; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: baseline; }
+    .mark-faculty-card .count { font-size: 11px; color: #9ca3af; font-weight: 500; }
+    .mark-faculty-card .mini-bands { display: flex; gap: 2px; height: 18px; border-radius: 4px; overflow: hidden; margin-top: 6px; background: #f9fafb; }
+    .mark-faculty-card .mini-band { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; min-width: 2px; }
+    .mark-faculty-card .mini-band.band-A { background: #15803d; }
+    .mark-faculty-card .mini-band.band-B { background: #2563eb; }
+    .mark-faculty-card .mini-band.band-C { background: #d97706; }
+    .mark-faculty-card .mini-band.band-D { background: #b45309; }
+    .mark-faculty-card .mini-band.band-E { background: #991b1b; }
+
+    /* Marking progress */
+    .marking-stack { display: flex; height: 22px; border-radius: 6px; overflow: hidden; background: #f3f4f6; margin-top: 4px; }
+    .marking-seg { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700; min-width: 0; }
+    .marking-seg.marked   { background: #15803d; }
+    .marking-seg.awaiting { background: #2563eb; }
+    .marking-seg.unmarked { background: #d1d5db; color: #6b7280; }
+    .marking-legend { display: flex; gap: 14px; margin-top: 12px; font-size: 12px; color: #4b5563; flex-wrap: wrap; }
+    .marking-legend-item { display: flex; align-items: center; gap: 6px; }
+    .marking-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .marking-legend-dot.marked   { background: #15803d; }
+    .marking-legend-dot.awaiting { background: #2563eb; }
+    .marking-legend-dot.unmarked { background: #d1d5db; }
+    .marking-legend strong { color: #111827; font-weight: 700; }
+
+    /* Teacher activity table */
+    .teachers-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .teachers-table th { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f0e6d6; font-weight: 700; color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; background: #fdf6ee; }
+    .teachers-table td { padding: 9px 10px; border-bottom: 1px solid #f5f0e8; color: #374151; vertical-align: middle; }
+    .teachers-table tr:last-child td { border-bottom: none; }
+    .teachers-table .stale td { color: #9ca3af; }
+    .teachers-table .stale-pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 100px; background: #fef3c7; color: #92400e; text-transform: uppercase; letter-spacing: 0.3px; margin-left: 6px; }
+    .teachers-table .never-pill { background: #f3f4f6; color: #9ca3af; }
+    .teachers-table .active-pill { background: #d1fae5; color: #065f46; }
+
+    /* Synthesis card — includes its own Generate button at the right */
+    .synthesis-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+    .synthesis-head .meta { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+    .synthesis-head h3 { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+    .btn-synthesise { padding: 9px 18px; background: #ed7615; color: #fff; border: 0; border-radius: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit; box-shadow: 0 2px 6px rgba(237,118,21,0.25); white-space: nowrap; }
+    .btn-synthesise:hover { background: #d4690f; }
+    .btn-synthesise:disabled { background: #9ca3af; cursor: not-allowed; box-shadow: none; }
+    .synthesis-loading { display: none; padding: 30px 12px; text-align: center; color: #9ca3af; }
+    .synthesis-loading.visible { display: block; }
+    .synthesis-loading .spinner { width: 28px; height: 28px; border: 3px solid #e8e0d4; border-top-color: #ed7615; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+
     .generate-section { margin-bottom: 22px; background: #fff; border-radius: 12px; padding: 18px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
     .generate-section .gen-text { flex: 1; min-width: 220px; }
     .generate-section h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
@@ -189,6 +290,7 @@
   <script>
     const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     let currentData = null;
+    let currentCards = null;
 
     // Global admins drill into a specific school via /insights.html?school_id=…
     // Everyone else resolves their own school server-side.
@@ -205,9 +307,12 @@
       document.getElementById('navUser').textContent = user.email;
 
       const container = document.getElementById('content');
-      const res = await authFetch('/api/insights-synthesis' + SCHOOL_QS);
-      if (!res.ok) {
-        if (res.status === 404 || res.status === 403) {
+      const [cardsRes, synthRes] = await Promise.all([
+        authFetch('/api/insights-cards' + SCHOOL_QS),
+        authFetch('/api/insights-synthesis' + SCHOOL_QS),
+      ]);
+      if (!cardsRes.ok) {
+        if (cardsRes.status === 404 || cardsRes.status === 403) {
           container.innerHTML =
             '<div class="empty-state">' +
               '<div class="empty-icon">🔒</div>' +
@@ -217,11 +322,12 @@
             '</div>';
           return;
         }
-        const err = await res.json().catch(() => ({}));
+        const err = await cardsRes.json().catch(() => ({}));
         container.innerHTML = '<div class="error-msg">' + e(err.error || 'Could not load insights.') + '</div>';
         return;
       }
-      currentData = await res.json();
+      currentCards = await cardsRes.json();
+      currentData = synthRes.ok ? await synthRes.json() : { school: currentCards.school, caller_role: currentCards.caller_role, insights: null };
       render();
     })();
 
@@ -241,44 +347,33 @@
       html += '</div>';
 
       // KPI strip (clickable — expands a detail panel below)
-      const s = d.stats || {};
+      // Prefer cards-endpoint counts (faculty-scoped) over synthesis stats.
+      const s = (currentCards && currentCards.counts) || d.stats || {};
+      const tasksWithFb = (s.tasks_with_class_feedback != null) ? s.tasks_with_class_feedback : (s.tasks_with_feedback || 0);
+      const totalTasks = (s.tasks != null) ? s.tasks : (s.tasks_total || 0);
       html += '<div class="kpi-strip">';
       html += kpi('teachers',    'Teachers',    s.teachers || 0);
       html += kpi('classes',     'Classes',     s.classes || 0);
-      html += kpi('tasks',       'Tasks',       s.tasks_total || 0, (s.tasks_with_feedback || 0) + ' with class feedback');
+      html += kpi('tasks',       'Tasks',       totalTasks, tasksWithFb + ' with class feedback');
       html += kpi('submissions', 'Submissions', s.submissions || 0);
       html += '</div>';
 
       // Detail panel — populated when a KPI is clicked
       html += '<div class="detail-panel" id="detailPanel"></div>';
 
-      // Generate / regenerate
-      const hasInsights = !!d.insights;
-      const canGenerate = (s.tasks_with_feedback || 0) > 0;
-      html += '<div class="generate-section">';
-      html += '<div class="gen-text">';
-      if (hasInsights) {
-        html += '<h3>Cross-faculty synthesis</h3>';
-        const last = d.generated_at ? new Date(d.generated_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
-        html += '<p>Based on ' + (d.task_count || 0) + ' task' + (d.task_count === 1 ? '' : 's') + ' with class-level feedback. Last generated ' + e(last) + '.</p>';
-      } else if (canGenerate) {
-        html += '<h3>Generate the first synthesis</h3>';
-        html += '<p>We will roll up the class-level feedback from ' + (s.tasks_with_feedback || 0) + ' task' + (s.tasks_with_feedback === 1 ? '' : 's') + ' into a school-level overview. Takes about 30 to 60 seconds.</p>';
-      } else {
-        html += '<h3>No data to synthesise yet</h3>';
-        html += '<p>This view becomes available once teachers in your school have generated class-level feedback on at least one task. Ask your teachers to open a task and click "Generate class feedback".</p>';
+      // Faculty-restricted banner (leaders scoped to specific KLAs)
+      const restricted = currentCards && currentCards.restricted_faculties;
+      if (restricted && restricted.length > 0) {
+        html += '<div class="card" style="grid-column:span 12;border-left:3px solid #ed7615;margin-bottom:12px">'
+          + '<div style="font-size:11px;font-weight:700;color:#b45309;letter-spacing:0.4px;text-transform:uppercase;margin-bottom:4px">Faculty-restricted view</div>'
+          + '<div style="font-size:13.5px;color:#374151;line-height:1.55">You can see data for '
+          + restricted.map(f => '<strong>' + e(f) + '</strong>').join(', ')
+          + ' only. School-wide aggregates are hidden — ask your school admin if you need broader access.</div>'
+          + '</div>';
       }
-      html += '</div>';
-      if (canGenerate) {
-        html += '<button class="btn-generate" id="generateBtn">' + (hasInsights ? 'Regenerate' : 'Generate insights') + '</button>';
-      }
-      html += '</div>';
 
-      // Loading overlay placeholder
-      html += '<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><div class="loading-text" id="loadingText">Reading class-level feedback across the school...</div><div class="loading-hint">Synthesising school-wide insights usually takes 30 to 60 seconds.</div></div>';
-
-      // Insights
-      html += '<div id="insightsBody">' + renderInsights(d.insights) + '</div>';
+      // Populated card grid
+      html += renderCardsGrid(currentCards, d);
 
       // Manage access (admins only)
       if (d.caller_role === 'admin') {
@@ -679,9 +774,9 @@
 
     async function generate() {
       const btn = document.getElementById('generateBtn');
-      btn.disabled = true;
-      const overlay = document.getElementById('loadingOverlay');
-      const body = document.getElementById('insightsBody');
+      if (btn) btn.disabled = true;
+      const overlay = document.getElementById('synthesisLoading');
+      const body = document.getElementById('synthesisBody');
       if (body) body.style.display = 'none';
       if (overlay) overlay.classList.add('visible');
 
@@ -716,9 +811,272 @@
         clearInterval(loadingInterval);
         if (overlay) overlay.classList.remove('visible');
         if (body) body.style.display = '';
-        btn.disabled = false;
+        if (btn) btn.disabled = false;
         alert(err.message);
       }
+    }
+
+    // ─────────────── Card renderers ───────────────
+
+    function renderCardsGrid(cards, synth) {
+      if (!cards || !cards.cards) return '';
+      const cd = cards.cards;
+      let html = '<div class="cards-grid">';
+
+      // Activity sparkline — full width
+      html += '<div class="card card-span-12">'
+        + cardHeader('Activity', 'Submissions per week, last 12 weeks')
+        + renderActivityCard(cd.activity)
+        + '</div>';
+
+      // Engagement (faculty or classes) — 7 cols
+      const engagementLabel = (cd.engagement && cd.engagement.mode === 'classes')
+        ? 'Class engagement — ' + (cd.engagement.faculty || '')
+        : 'Faculty engagement';
+      html += '<div class="card card-span-7">'
+        + cardHeader(engagementLabel, 'By submissions volume')
+        + renderEngagementCard(cd.engagement)
+        + '</div>';
+
+      // Mark distribution (A-E) — 5 cols
+      html += '<div class="card card-span-5">'
+        + cardHeader('Mark distribution', 'NESA Common Grade Scale')
+        + renderMarkDistribution(cd.mark_distribution)
+        + '</div>';
+
+      // Mark by faculty — full width (when shown)
+      if (cd.mark_by_faculty) {
+        html += '<div class="card card-span-12">'
+          + cardHeader('Mark distribution by faculty', 'Common Grade Scale per KLA')
+          + renderMarkByFaculty(cd.mark_by_faculty)
+          + '</div>';
+      }
+
+      // Marking progress — 4 cols
+      html += '<div class="card card-span-4">'
+        + cardHeader('Marking progress', 'All submissions in scope')
+        + renderMarkingProgress(cd.marking)
+        + '</div>';
+
+      // Teacher activity — 8 cols
+      html += '<div class="card card-span-8">'
+        + cardHeader('Teacher activity', 'Sorted by last activity')
+        + renderTeacherActivity(cd.teacher_activity)
+        + '</div>';
+
+      // Cross-faculty synthesis (LLM) — full width
+      html += '<div class="card card-span-12">'
+        + renderSynthesisCard(cards, synth)
+        + '</div>';
+
+      html += '</div>';
+      return html;
+    }
+
+    function cardHeader(title, sub) {
+      let h = '<div class="card-h"><span>' + e(title) + '</span>';
+      if (sub) h += '<span class="card-h-sub">' + e(sub) + '</span>';
+      h += '</div>';
+      return h;
+    }
+
+    function renderActivityCard(activity) {
+      if (!activity || !activity.weeks || activity.weeks.length === 0) {
+        return '<div class="card-empty"><strong>No submissions yet</strong>Activity will appear here once students start submitting drafts.</div>';
+      }
+      const weeks = activity.weeks;
+      const total = activity.total_in_window || 0;
+      const maxCount = Math.max(1, ...weeks.map(w => w.count));
+      const W = 100, H = 60;
+      const stepX = weeks.length > 1 ? (W / (weeks.length - 1)) : 0;
+      const points = weeks.map((w, i) => ({
+        x: i * stepX,
+        y: H - (w.count / maxCount) * H,
+        count: w.count,
+        week_start: w.week_start,
+      }));
+      const linePath = 'M ' + points.map(p => p.x.toFixed(2) + ',' + p.y.toFixed(2)).join(' L ');
+      const areaPath = linePath + ' L ' + W.toFixed(2) + ',' + H.toFixed(2) + ' L 0,' + H.toFixed(2) + ' Z';
+      const firstLabel = new Date(weeks[0].week_start).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+      const lastLabel = new Date(weeks[weeks.length - 1].week_start).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+      let html = '<div class="sparkline-summary"><strong>' + total + '</strong>submission' + (total === 1 ? '' : 's') + ' in the last 12 weeks</div>';
+      html += '<svg class="sparkline" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">';
+      html += '<path class="area" d="' + areaPath + '"/>';
+      html += '<path class="line" d="' + linePath + '"/>';
+      points.forEach(p => {
+        html += '<circle class="dot" cx="' + p.x.toFixed(2) + '" cy="' + p.y.toFixed(2) + '" r="1.4"><title>' + new Date(p.week_start).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) + ': ' + p.count + '</title></circle>';
+      });
+      html += '</svg>';
+      html += '<div class="sparkline-axis"><span>' + e(firstLabel) + '</span><span>' + e(lastLabel) + '</span></div>';
+      return html;
+    }
+
+    function renderEngagementCard(engagement) {
+      if (!engagement || !engagement.rows || engagement.rows.length === 0) {
+        return '<div class="card-empty"><strong>No published tasks yet</strong>Bars appear here once teachers publish tasks in their classes.</div>';
+      }
+      const rows = engagement.rows;
+      const max = Math.max(1, ...rows.map(r => r.submission_count || 0));
+      let html = '<div class="bar-list">';
+      rows.forEach(r => {
+        const sub = r.submission_count || 0;
+        const pct = (sub / max) * 100;
+        const label = engagement.mode === 'classes' ? r.name : r.faculty;
+        const meta = engagement.mode === 'classes'
+          ? (r.teacher_name || '') + ' · ' + (r.task_count || 0) + ' task' + (r.task_count === 1 ? '' : 's')
+          : (r.teacher_count || 0) + ' staff · ' + (r.task_count || 0) + ' task' + (r.task_count === 1 ? '' : 's');
+        html += '<div class="bar-row">'
+          + '<div class="bar-label" title="' + e(label) + '">' + e(label) + '<div class="bar-meta">' + e(meta) + '</div></div>'
+          + '<div class="bar-track"><div class="bar-fill" style="width:' + pct.toFixed(1) + '%"></div></div>'
+          + '<div class="bar-value">' + sub + '</div>'
+          + '</div>';
+      });
+      html += '</div>';
+      return html;
+    }
+
+    function renderMarkDistribution(dist) {
+      if (!dist || !dist.total) {
+        return '<div class="card-empty"><strong>No marks awarded yet</strong>This bucket shows the NESA Common Grade Scale spread across all marked submissions.</div>';
+      }
+      const counts = dist.counts || {};
+      const total = dist.total || 1;
+      const bands = dist.bands || [{ code: 'A' }, { code: 'B' }, { code: 'C' }, { code: 'D' }, { code: 'E' }];
+      let html = '<div class="band-list">';
+      bands.forEach(b => {
+        const n = counts[b.code] || 0;
+        const pct = (n / total) * 100;
+        html += '<div class="band-row band-' + e(b.code) + '">'
+          + '<div class="band-letter">' + e(b.code) + '</div>'
+          + '<div class="band-label">' + e(b.label || b.code) + '</div>'
+          + '<div class="band-track"><div class="band-fill" style="width:' + Math.max(pct, n > 0 ? 1.5 : 0).toFixed(1) + '%"></div></div>'
+          + '<div class="band-value">' + n + ' <span style="color:#9ca3af;font-weight:500;font-size:11px">(' + pct.toFixed(0) + '%)</span></div>'
+          + '</div>';
+      });
+      html += '</div>';
+      return html;
+    }
+
+    function renderMarkByFaculty(byFaculty) {
+      const rows = (byFaculty && byFaculty.rows) || [];
+      const bands = (byFaculty && byFaculty.bands) || [{ code: 'A' }, { code: 'B' }, { code: 'C' }, { code: 'D' }, { code: 'E' }];
+      if (rows.length === 0) {
+        return '<div class="card-empty"><strong>No marks per faculty yet</strong>Each faculty\'s grade-scale spread shows here once submissions are graded.</div>';
+      }
+      let html = '<div class="mark-faculty-grid">';
+      rows.forEach(r => {
+        const total = r.total || 1;
+        html += '<div class="mark-faculty-card">';
+        html += '<h5>' + e(r.faculty) + '<span class="count">' + r.total + ' marked</span></h5>';
+        html += '<div class="mini-bands">';
+        bands.forEach(b => {
+          const n = (r.counts && r.counts[b.code]) || 0;
+          const pct = (n / total) * 100;
+          if (n > 0) html += '<div class="mini-band band-' + e(b.code) + '" style="flex:' + pct + '" title="' + e(b.code) + ': ' + n + '">' + (pct >= 9 ? e(b.code) : '') + '</div>';
+        });
+        html += '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+      return html;
+    }
+
+    function renderMarkingProgress(marking) {
+      const total = (marking && marking.total) || 0;
+      if (total === 0) {
+        return '<div class="card-empty"><strong>No submissions yet</strong>Marking progress appears once students submit drafts.</div>';
+      }
+      const m = marking.marked || 0;
+      const a = marking.awaiting_marking || 0;
+      const u = marking.unmarked || 0;
+      const pct = n => total > 0 ? (n / total) * 100 : 0;
+      let html = '<div class="marking-stack">';
+      if (m > 0) html += '<div class="marking-seg marked" style="flex:' + pct(m) + '" title="Marked">' + (pct(m) >= 12 ? m : '') + '</div>';
+      if (a > 0) html += '<div class="marking-seg awaiting" style="flex:' + pct(a) + '" title="Awaiting marking">' + (pct(a) >= 12 ? a : '') + '</div>';
+      if (u > 0) html += '<div class="marking-seg unmarked" style="flex:' + pct(u) + '" title="Unmarked">' + (pct(u) >= 12 ? u : '') + '</div>';
+      html += '</div>';
+      html += '<div class="marking-legend">';
+      html += '<div class="marking-legend-item"><span class="marking-legend-dot marked"></span><strong>' + m + '</strong> marked</div>';
+      html += '<div class="marking-legend-item"><span class="marking-legend-dot awaiting"></span><strong>' + a + '</strong> awaiting</div>';
+      html += '<div class="marking-legend-item"><span class="marking-legend-dot unmarked"></span><strong>' + u + '</strong> unmarked</div>';
+      html += '</div>';
+      return html;
+    }
+
+    function renderTeacherActivity(rows) {
+      if (!rows || rows.length === 0) {
+        return '<div class="card-empty"><strong>No staff in scope yet</strong>Once teachers sign up with a matching school email domain, they appear here.</div>';
+      }
+      const now = Date.now();
+      const ms30d = 30 * 24 * 60 * 60 * 1000;
+      let html = '<table class="teachers-table"><thead><tr><th>Teacher</th><th style="text-align:right">Classes</th><th style="text-align:right">Tasks</th><th style="text-align:right">Last 30d</th><th>Last active</th></tr></thead><tbody>';
+      rows.forEach(r => {
+        let pill = '';
+        let trClass = '';
+        if (!r.last_active) {
+          pill = '<span class="stale-pill never-pill">never</span>';
+          trClass = 'stale';
+        } else {
+          const age = now - new Date(r.last_active).getTime();
+          if (age > ms30d) {
+            pill = '<span class="stale-pill">' + Math.floor(age / (24 * 60 * 60 * 1000)) + 'd ago</span>';
+            trClass = 'stale';
+          } else if (age < 7 * 24 * 60 * 60 * 1000) {
+            pill = '<span class="stale-pill active-pill">active</span>';
+          }
+        }
+        const last = r.last_active
+          ? new Date(r.last_active).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+          : '—';
+        html += '<tr class="' + trClass + '">';
+        html += '<td>' + e(r.name) + pill + '</td>';
+        html += '<td style="text-align:right">' + r.class_count + '</td>';
+        html += '<td style="text-align:right">' + r.task_count + '</td>';
+        html += '<td style="text-align:right">' + r.tasks_last_30d + '</td>';
+        html += '<td>' + e(last) + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+      return html;
+    }
+
+    function renderSynthesisCard(cards, synth) {
+      const counts = (cards && cards.counts) || {};
+      const tasksWithFb = counts.tasks_with_class_feedback || 0;
+      const hasInsights = !!(synth && synth.insights);
+      const canGenerate = tasksWithFb > 0;
+      const lastGen = synth && synth.generated_at
+        ? new Date(synth.generated_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : null;
+
+      let html = '<div class="synthesis-head">';
+      html += '<div><h3>Cross-faculty synthesis</h3>';
+      if (hasInsights) {
+        html += '<div class="meta">Based on ' + (synth.task_count || 0) + ' task' + (synth.task_count === 1 ? '' : 's') + ' with class-level feedback' + (lastGen ? ' · Last generated ' + e(lastGen) : '') + '</div>';
+      } else if (canGenerate) {
+        html += '<div class="meta">Roll up class-level feedback from ' + tasksWithFb + ' task' + (tasksWithFb === 1 ? '' : 's') + ' into a school-level overview. Takes 30 to 60 seconds.</div>';
+      } else {
+        html += '<div class="meta">Available once teachers generate class-level feedback on at least one task.</div>';
+      }
+      html += '</div>';
+      if (canGenerate) {
+        html += '<button class="btn-synthesise" id="generateBtn">' + (hasInsights ? 'Regenerate' : 'Generate insights') + '</button>';
+      }
+      html += '</div>';
+
+      html += '<div class="synthesis-loading" id="synthesisLoading"><div class="spinner"></div><div class="loading-text" id="loadingText">Reading class-level feedback...</div></div>';
+
+      html += '<div id="synthesisBody">';
+      if (hasInsights) {
+        html += renderInsights(synth.insights);
+      } else if (!canGenerate) {
+        html += '<div class="card-empty" style="padding:24px"><strong>No synthesis yet</strong>Ask teachers to open a task and click "Generate class feedback" — once any task has feedback, this card lets you roll it up across the school.</div>';
+      } else {
+        html += '<div class="card-empty" style="padding:24px"><strong>Ready to synthesise</strong>Click "Generate insights" to produce the cross-faculty rollup.</div>';
+      }
+      html += '</div>';
+
+      return html;
     }
   </script>
 </body>
