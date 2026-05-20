@@ -127,10 +127,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .sort((a, b) => b.total - a.total);
 
   // Schools meta view: every school, with member breakdown + inferred staff.
-  const { data: schoolRows } = await supabase
+  const { data: schoolRows, error: schoolsError } = await supabase
     .from('schools')
-    .select('id, name, primary_domain, secondary_domains, lti_platform_id, insights_cache_generated_at, insights_cache_task_count, created_at')
+    .select('id, name, primary_domain, secondary_domains, insights_cache_generated_at, insights_cache_task_count, created_at')
     .order('name');
+  if (schoolsError) {
+    console.error('[admin-stats] schools query failed:', schoolsError.message);
+  }
+
+  // Look up which schools have an LTI platform attached. The FK lives on
+  // lti_platforms.school_id, not on schools.
+  const { data: ltiLinks } = await supabase
+    .from('lti_platforms')
+    .select('school_id')
+    .not('school_id', 'is', null);
+  const ltiLinkedSchoolIds = new Set((ltiLinks || []).map(p => p.school_id));
 
   // Pull all grants in one shot
   const { data: allGrants } = await supabase
@@ -169,7 +180,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       name: s.name,
       primary_domain: s.primary_domain || null,
       secondary_domains: s.secondary_domains || [],
-      lti_linked: !!s.lti_platform_id,
+      lti_linked: ltiLinkedSchoolIds.has(s.id),
       created_at: s.created_at,
       staff_count: teacherIds.length,
       admin_count: grants.filter(g => g.role === 'admin').length,
