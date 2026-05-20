@@ -164,6 +164,28 @@
       }
       html += '</div>';
 
+      // Insights usage — how often each LLM card / synthesis is being generated
+      var usage = data.insights_usage || [];
+      html += '<div class="section"><h2>Insights usage</h2>';
+      html += '<p style="color:#6b7280;font-size:13px;margin-bottom:12px;line-height:1.5">How often each insight card is being generated across all schools. Tracks every Generate / Regenerate click from a leader.</p>';
+      if (usage.length === 0 || usage.every(u => u.total === 0)) {
+        html += '<p style="color:#9ca3af;font-size:14px">No generations yet. Numbers appear here once leaders start using the insights dashboard.</p>';
+      } else {
+        html += '<table><thead><tr><th>Card</th><th style="text-align:right">Total</th><th style="text-align:right">Last 7 days</th><th style="text-align:right">Last 24h</th><th style="text-align:right">Schools using</th></tr></thead><tbody>';
+        usage.forEach(u => {
+          var totalCellStyle = u.total === 0 ? 'color:#d1d5db' : 'font-weight:700;color:#111827';
+          html += '<tr>';
+          html += '<td><strong>' + e(u.label) + '</strong> <span class="mono" style="font-size:11px">' + e(u.endpoint) + '</span></td>';
+          html += '<td style="text-align:right;' + totalCellStyle + '">' + u.total + '</td>';
+          html += '<td style="text-align:right">' + u.last_7d + '</td>';
+          html += '<td style="text-align:right">' + u.last_24h + '</td>';
+          html += '<td style="text-align:right">' + u.distinct_schools + '</td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+      }
+      html += '</div>';
+
       // Sign-ups by school (email domain)
       var byDomain = data.by_domain || [];
       html += '<div class="section"><h2>Sign-ups by email domain</h2>';

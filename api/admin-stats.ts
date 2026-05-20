@@ -200,6 +200,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
   }));
 
+  // Insights usage roll-up — how often each LLM card / synthesis is being
+  // generated. Reads the rate-limit log which already records every
+  // generation, so no extra instrumentation is needed.
+  const INSIGHT_ENDPOINTS: Record<string, string> = {
+    'insights-card-bottom-decile':    'Bottom-decile mistakes',
+    'insights-card-top-decile':       'Top-decile next steps',
+    'insights-card-verb-depth':       'Verb-depth handling',
+    'insights-card-common-gaps':      'Cohort gaps',
+    'insights-card-things-done-well': 'Things done well',
+    'insights-synthesis':             'Cross-faculty synthesis',
+    'generate-class-feedback':        'Class feedback (per-task)',
+  };
+  const insightEndpoints = Object.keys(INSIGHT_ENDPOINTS);
+  const [allInsightsRes, last24hInsightsRes, last7dInsightsRes] = await Promise.all([
+    supabase.from('api_call_log').select('endpoint, user_id').in('endpoint', insightEndpoints),
+    supabase.from('api_call_log').select('endpoint').in('endpoint', insightEndpoints).gte('created_at', oneDayAgo),
+    supabase.from('api_call_log').select('endpoint').in('endpoint', insightEndpoints).gte('created_at', sevenDaysAgo),
+  ]);
+  const totals: Record<string, number> = {};
+  const schoolsUsing: Record<string, Set<string>> = {};
+  (allInsightsRes.data || []).forEach(r => {
+    if (!r.endpoint) return;
+    totals[r.endpoint] = (totals[r.endpoint] || 0) + 1;
+    // The synthetic user_id encodes school (cross-faculty-synthesis) or
+    // school:kind (per-card generators). Extract the school UUID prefix.
+    const schoolKey = (r.user_id || '').split(':')[0];
+    if (schoolKey) {
+      (schoolsUsing[r.endpoint] ||= new Set()).add(schoolKey);
+    }
+  });
+  const last24h: Record<string, number> = {};
+  (last24hInsightsRes.data || []).forEach(r => { if (r.endpoint) last24h[r.endpoint] = (last24h[r.endpoint] || 0) + 1; });
+  const last7d: Record<string, number> = {};
+  (last7dInsightsRes.data || []).forEach(r => { if (r.endpoint) last7d[r.endpoint] = (last7d[r.endpoint] || 0) + 1; });
+
+  const insightsUsage = insightEndpoints.map(ep => ({
+    endpoint: ep,
+    label: INSIGHT_ENDPOINTS[ep],
+    total: totals[ep] || 0,
+    last_7d: last7d[ep] || 0,
+    last_24h: last24h[ep] || 0,
+    distinct_schools: (schoolsUsing[ep] || new Set()).size,
+  })).sort((a, b) => b.total - a.total);
+
   return res.status(200).json({
     counts: {
       users: {
@@ -224,6 +268,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       api_calls_24h: apiCalls24h.count || 0,
     },
     schools,
+    insights_usage: insightsUsage,
     recent_submissions: recentSubmissionsWithEmail,
     recent_tasks: recentTasksAnnotated,
     users: allUsers,
