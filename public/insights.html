@@ -338,6 +338,9 @@
 
       // Header
       html += '<div class="page-header">';
+      if (SCHOOL_ID_OVERRIDE) {
+        html += '<a href="/admin.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#6b7280;text-decoration:none;font-weight:500;background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 12px;margin-bottom:12px">← Back to admin overview</a>';
+      }
       html += '<h1>School Insights';
       if (d.caller_role) {
         html += '<span class="role-pill">' + e(d.caller_role) + '</span>';
