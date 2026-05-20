@@ -3,12 +3,7 @@ import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { resolveUserSchool, getSchoolTeacherIds } from '../lib/schools.js';
 import { getUserInfoBatch } from '../lib/user-names.js';
-
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'robert.sheahan@gmail.com')
-  .split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-function isGlobalAdmin(email: string | undefined): boolean {
-  return !!email && ADMIN_EMAILS.includes(email.toLowerCase());
-}
+import { isGlobalAdmin } from '../lib/admin.js';
 
 const VALID_FACULTIES = new Set([
   'English', 'Mathematics', 'Science', 'HSIE',
@@ -60,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!schoolId) return res.status(400).json({ error: 'school_id required.' });
 
   // Authorisation: school admin or global admin.
-  const isGlobal = isGlobalAdmin(user.email);
+  const isGlobal = isGlobalAdmin(user);
   let isSchoolAdmin = false;
   if (!isGlobal) {
     const ctx = await resolveUserSchool(supabase, user.id);

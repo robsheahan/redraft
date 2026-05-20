@@ -3,12 +3,7 @@ import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { resolveUserSchool, getSchoolTeacherIds, canViewInsights } from '../lib/schools.js';
 import { getUserInfoBatch } from '../lib/user-names.js';
-
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'robert.sheahan@gmail.com')
-  .split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-function isGlobalAdmin(email: string | undefined): boolean {
-  return !!email && ADMIN_EMAILS.includes(email.toLowerCase());
-}
+import { isGlobalAdmin } from '../lib/admin.js';
 
 /**
  * Detail lists for the leadership insights KPI cards.
@@ -19,7 +14,7 @@ function isGlobalAdmin(email: string | undefined): boolean {
  *   GET /api/insights-detail?kind=submissions→ submissions in the school
  *
  * Auth: same as /api/insights-synthesis — explicit school_member or
- * ADMIN_EMAILS bypass with ?school_id=.
+ * global-admin bypass (via lib/admin.ts) with ?school_id=.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (applyCors(req, res)) return;
@@ -37,14 +32,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   let schoolId: string | null = null;
   const overrideId = (req.query.school_id as string) || null;
-  if (overrideId && isGlobalAdmin(user.email)) {
+  if (overrideId && isGlobalAdmin(user)) {
     schoolId = overrideId;
   } else {
     const ctx = await resolveUserSchool(supabase, user.id);
     if (!ctx) return res.status(404).json({ error: 'Not found' });
     const allowed = ctx.role !== null
       || await canViewInsights(supabase, user.id, ctx.school_id)
-      || isGlobalAdmin(user.email);
+      || isGlobalAdmin(user);
     if (!allowed) return res.status(404).json({ error: 'Not found' });
     schoolId = ctx.school_id;
   }

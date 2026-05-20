@@ -2,23 +2,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { getSchoolTeacherIds } from '../lib/schools.js';
+import { isGlobalAdmin } from '../lib/admin.js';
 
 /**
- * Admin-only usage dashboard endpoint.
- *
- * Gated by a hardcoded email allowlist via the ADMIN_EMAILS env var
- * (comma-separated). Only returns aggregate counts and recent activity —
- * not personally identifiable content like draft text.
+ * Admin-only usage dashboard endpoint. Gated by lib/admin.ts (user_id
+ * preferred, email fallback). Only returns aggregate counts and recent
+ * activity — not personally identifiable content like draft text.
  */
-
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'robert.sheahan@gmail.com')
-  .split(',')
-  .map(e => e.trim().toLowerCase())
-  .filter(Boolean);
-
-function isAdmin(email: string | undefined): boolean {
-  return !!email && ADMIN_EMAILS.includes(email.toLowerCase());
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (applyCors(req, res)) return;
@@ -27,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const user = await verifyAuth(req);
-  if (!user || !isAdmin(user.email)) {
+  if (!user || !isGlobalAdmin(user)) {
     return res.status(404).json({ error: 'Not found' }); // 404 rather than 403 so admin existence isn't advertised
   }
 

@@ -8,6 +8,7 @@ import { callTool } from '../lib/anthropic-tool-call.js';
 import { SCHOOL_INSIGHTS_TOOL } from '../lib/feedback-tools.js';
 import { resolveUserSchool, getSchoolTeacherIds, canViewInsights } from '../lib/schools.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
+import { isGlobalAdmin } from '../lib/admin.js';
 
 const MODEL = 'claude-sonnet-4-6';
 
@@ -17,16 +18,9 @@ const MODEL = 'claude-sonnet-4-6';
  *   GET  → returns the cached synthesis + meta for the caller's school
  *   POST → regenerates the synthesis (rate-limited per school, not per user)
  *
- * Auth: caller must be an explicit school_member (admin or leader). Rob's
- * ADMIN_EMAILS list also bypasses, for development access.
+ * Auth: caller must be an explicit school_member (admin or leader). Global
+ * admins (lib/admin.ts) bypass via ?school_id= for development access.
  */
-
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'robert.sheahan@gmail.com')
-  .split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-
-function isGlobalAdmin(email: string | undefined): boolean {
-  return !!email && ADMIN_EMAILS.includes(email.toLowerCase());
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (applyCors(req, res)) return;
@@ -46,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let callerRole: 'admin' | 'leader' | null = null;
 
   const overrideId = (req.method === 'GET' ? (req.query.school_id as string) : (req.body?.school_id as string)) || null;
-  if (overrideId && isGlobalAdmin(user.email)) {
+  if (overrideId && isGlobalAdmin(user)) {
     const { data: s } = await supabase.from('schools').select('id, name').eq('id', overrideId).maybeSingle();
     if (!s) return res.status(404).json({ error: 'School not found.' });
     schoolId = s.id;
@@ -56,12 +50,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } else {
     const ctx = await resolveUserSchool(supabase, user.id);
     if (!ctx) {
-      if (isGlobalAdmin(user.email)) {
+      if (isGlobalAdmin(user)) {
         return res.status(400).json({ error: 'No school resolved. Pass ?school_id=... to scope the view.' });
       }
       return res.status(404).json({ error: 'Not found' });
     }
-    const allowed = ctx.role !== null || await canViewInsights(supabase, user.id, ctx.school_id) || isGlobalAdmin(user.email);
+    const allowed = ctx.role !== null || await canViewInsights(supabase, user.id, ctx.school_id) || isGlobalAdmin(user);
     if (!allowed) return res.status(404).json({ error: 'Not found' });
     schoolId = ctx.school_id;
     schoolName = ctx.school_name;
@@ -97,7 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('school_id', schoolId)
       .eq('user_id', user.id)
       .maybeSingle();
-    const isAdminViewer = isGlobalAdmin(user.email) || (grant && grant.role === 'admin');
+    const isAdminViewer = isGlobalAdmin(user) || (grant && grant.role === 'admin');
     const restrictedFaculties = (!isAdminViewer
       && grant
       && grant.role === 'leader'
