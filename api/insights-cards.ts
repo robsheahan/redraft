@@ -141,8 +141,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const tasks = Object.values(taskMap).filter((t: any) => inScope(t.faculty)) as any[];
   const tasksInScopeIds = new Set(tasks.map(t => t.id));
+  // Classes are filtered by their own faculty (from course → discipline),
+  // not by whether they happen to own a task. Otherwise empty classes
+  // disappear from the count even though they're real.
   const classesInScope = Object.values(classMap)
-    .filter((c: any) => tasks.some(t => t.class_id === c.id)) as any[];
+    .filter((c: any) => inScope(c.faculty)) as any[];
   // Teachers "in scope" for the headline KPI + activity table:
   //   - unrestricted view: every staff member at the school (including
   //     teachers who haven't created a class yet)
