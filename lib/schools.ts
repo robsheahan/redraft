@@ -86,13 +86,15 @@ export async function resolveUserSchool(
 }
 
 /**
- * Return the auth.users.id of every teacher that belongs to a given
- * school, by union of:
- *   - school_members rows
+ * Return the auth.users.id of every teacher (or unroled staff) belonging
+ * to a school. Union of:
+ *   - school_members rows (explicit grants)
  *   - LTI user mappings on platforms linked to that school
  *   - auth.users whose email domain matches the school's primary/secondary
  *
- * Used by the insights synthesis to scope which tasks to roll up.
+ * Users with user_metadata.role === 'student' are excluded — leadership
+ * scoping is about staff. Unroled users are kept (likely staff who haven't
+ * picked a role yet).
  */
 export async function getSchoolTeacherIds(
   supabase: SupabaseClient,
@@ -121,7 +123,9 @@ export async function getSchoolTeacherIds(
     ltiUsers?.forEach(u => u.user_id && ids.add(u.user_id));
   }
 
-  // Email-domain users
+  // We need user_metadata to drop students from the final set. listUsers
+  // returns up to 1000 in one call; we use the same call to do email-domain
+  // matching too so we don't have to page twice.
   const { data: school } = await supabase
     .from('schools')
     .select('primary_domain, secondary_domains')
@@ -130,16 +134,18 @@ export async function getSchoolTeacherIds(
   const domains = [school?.primary_domain, ...(school?.secondary_domains || [])]
     .filter((d): d is string => !!d)
     .map(d => d.toLowerCase());
-  if (domains.length > 0) {
-    // listUsers is paginated; we only need ids so 1000-per-page is fine
-    const { data: { users: allUsers } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-    allUsers.forEach(u => {
+
+  const { data: { users: allUsers } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+  const roleById: Record<string, string | null> = {};
+  allUsers.forEach(u => {
+    roleById[u.id] = (u.user_metadata as any)?.role || null;
+    if (domains.length > 0) {
       const domain = (u.email || '').split('@')[1]?.toLowerCase().trim();
       if (domain && domains.includes(domain)) ids.add(u.id);
-    });
-  }
+    }
+  });
 
-  return Array.from(ids);
+  return Array.from(ids).filter(id => roleById[id] !== 'student');
 }
 
 /**
