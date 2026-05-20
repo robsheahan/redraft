@@ -267,6 +267,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // -- Card: Keyword struggles (NESA-glossary pattern match) --
   const keywordStruggles = computeKeywordStruggles(submissions);
 
+  // -- Cached LLM cards (Tier A) --
+  const { data: llmRows } = await supabase
+    .from('school_insights_cards')
+    .select('card_kind, content, filters, source_submission_count, source_task_count, generated_at')
+    .eq('school_id', schoolId);
+  const llm: Record<string, any> = {};
+  (llmRows || []).forEach(r => {
+    llm[r.card_kind] = {
+      content: r.content,
+      filters: r.filters || {},
+      source_submission_count: r.source_submission_count,
+      source_task_count: r.source_task_count,
+      generated_at: r.generated_at,
+    };
+  });
+
   // -- Counts (header KPI strip) --
   const counts = {
     teachers: teachersInScopeIds.size,
@@ -317,6 +333,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       per_criterion_lows: perCriterionLows,
       improvement_velocity: improvementVelocity,
       keyword_struggles: keywordStruggles,
+      llm,
     },
     counts,
   });

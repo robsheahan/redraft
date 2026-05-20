@@ -500,6 +500,11 @@
       // Wire card drill-down handlers
       wireCardDrilldowns();
 
+      // Wire LLM card Generate buttons
+      document.querySelectorAll('[data-llm-generate]').forEach(b => {
+        b.addEventListener('click', () => generateLLMCard(b.dataset.llmGenerate));
+      });
+
       // Wire Manage access controls + load staff list
       if (d.caller_role === 'admin') {
         loadMembers();
@@ -1194,6 +1199,44 @@
         + renderKeywordStruggles(cd.keyword_struggles)
         + '</div>';
 
+      // ─── Tier A: LLM-derived cards (each with own Generate button) ───
+      const llm = cd.llm || {};
+
+      html += '<div class="card card-span-6">' + renderLLMCard('bottom_decile', llm.bottom_decile, {
+        title: 'Top 5 mistakes — bottom decile',
+        sub: 'AI synthesis of patterns in the bottom 10% of students',
+        emptyTeaser: 'Generate this card to surface the 5 dominant mistakes appearing across the bottom 10% of marked submissions. Drives intervention priorities.',
+        render: renderBottomDecile,
+      }) + '</div>';
+
+      html += '<div class="card card-span-6">' + renderLLMCard('top_decile', llm.top_decile, {
+        title: 'Stretch goals — top decile',
+        sub: '3 highest-impact next steps for top 10% students',
+        emptyTeaser: 'Generate this card to identify the 3 most useful next steps for the top 10% of students — moving "high" responses to "exceptional".',
+        render: renderTopDecile,
+      }) + '</div>';
+
+      html += '<div class="card card-span-12">' + renderLLMCard('verb_depth', llm.verb_depth, {
+        title: 'NESA verb-depth handling',
+        sub: 'How students execute each directive verb across faculties',
+        emptyTeaser: 'Generate to map how students across the school are handling each NESA directive verb (analyse, evaluate, justify, etc.). Most actionable HSC diagnostic — drives whole-faculty PD priorities.',
+        render: renderVerbDepth,
+      }) + '</div>';
+
+      html += '<div class="card card-span-6">' + renderLLMCard('common_gaps', llm.common_gaps, {
+        title: 'Top 5 cohort-wide gaps',
+        sub: 'Recurring improvement themes across all students',
+        emptyTeaser: 'Generate to surface the 5 gaps appearing most often in AI feedback across the cohort. Drives whole-staff PD planning.',
+        render: renderListedItems,
+      }) + '</div>';
+
+      html += '<div class="card card-span-6">' + renderLLMCard('things_done_well', llm.things_done_well, {
+        title: 'Top 3 things done well',
+        sub: 'Strengths showing up consistently across the cohort',
+        emptyTeaser: 'Generate to identify the 3 strengths students across the school are consistently demonstrating. Useful for celebrating wins and sharing best practice.',
+        render: renderListedItems,
+      }) + '</div>';
+
       // Cross-faculty synthesis (LLM) — full width
       html += '<div class="card card-span-12">'
         + renderSynthesisCard(cards, synth)
@@ -1201,6 +1244,147 @@
 
       html += '</div>';
       return html;
+    }
+
+    // ─────────────── LLM card renderers ───────────────
+
+    function renderLLMCard(kind, cache, opts) {
+      const hasContent = !!(cache && cache.content);
+      const lastGen = cache && cache.generated_at
+        ? new Date(cache.generated_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : null;
+      let html = '<div class="synthesis-head">';
+      html += '<div><h3 style="font-size:14.5px">' + e(opts.title) + '</h3>';
+      html += '<div class="meta" style="font-size:11.5px;color:#9ca3af;margin-top:2px">' + e(opts.sub) + '</div>';
+      if (hasContent) {
+        const ctx = [];
+        if (cache.source_submission_count) ctx.push(cache.source_submission_count + ' submissions');
+        if (lastGen) ctx.push('updated ' + lastGen);
+        const filtersStr = formatFilterContext(cache.filters);
+        if (filtersStr) ctx.push('scope: ' + filtersStr);
+        html += '<div class="meta" style="margin-top:4px">' + e(ctx.join(' · ')) + '</div>';
+      }
+      html += '</div>';
+      html += '<button class="btn-synthesise" style="padding:6px 12px;font-size:12px" data-llm-generate="' + e(kind) + '">'
+        + (hasContent ? 'Regenerate' : 'Generate') + '</button>';
+      html += '</div>';
+
+      html += '<div class="synthesis-loading" id="llmLoading_' + e(kind) + '"><div class="spinner"></div><div style="font-size:13px;color:#6b7280">Analysing feedback across submissions...</div></div>';
+
+      html += '<div id="llmBody_' + e(kind) + '" style="font-size:13.5px;color:#374151;line-height:1.55">';
+      if (hasContent) {
+        html += opts.render(cache.content);
+      } else {
+        html += '<div class="card-empty" style="padding:20px"><strong>Not generated yet</strong>' + e(opts.emptyTeaser) + '</div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    function formatFilterContext(f) {
+      if (!f) return '';
+      const parts = [];
+      if (f.year_level) parts.push('Year ' + f.year_level);
+      if (f.faculty) parts.push(f.faculty);
+      if (f.course) parts.push(f.course);
+      if (f.class_id) parts.push('class');
+      return parts.join(' · ');
+    }
+
+    function renderBottomDecile(c) {
+      let html = '';
+      if (c.scope_note) html += '<div style="font-size:12px;color:#9ca3af;margin-bottom:10px">' + e(c.scope_note) + '</div>';
+      html += '<ol style="padding-left:18px;display:flex;flex-direction:column;gap:10px">';
+      (c.patterns || []).forEach(p => {
+        html += '<li style="background:#fffbeb;padding:10px 12px;border-radius:8px;border-left:3px solid #d97706">'
+          + '<div style="font-weight:700;color:#78350f;margin-bottom:3px">' + e(p.headline) + '</div>'
+          + '<div style="font-size:12.5px;color:#374151;margin-bottom:4px">' + e(p.detail) + '</div>'
+          + '<div style="font-size:11px;color:#9ca3af;font-style:italic">' + e(p.prevalence_note || '') + '</div>'
+          + '</li>';
+      });
+      html += '</ol>';
+      return html;
+    }
+
+    function renderTopDecile(c) {
+      let html = '';
+      if (c.scope_note) html += '<div style="font-size:12px;color:#9ca3af;margin-bottom:10px">' + e(c.scope_note) + '</div>';
+      html += '<ol style="padding-left:18px;display:flex;flex-direction:column;gap:10px">';
+      (c.next_steps || []).forEach(p => {
+        html += '<li style="background:#f0fdf4;padding:10px 12px;border-radius:8px;border-left:3px solid #15803d">'
+          + '<div style="font-weight:700;color:#14532d;margin-bottom:3px">' + e(p.headline) + '</div>'
+          + '<div style="font-size:12.5px;color:#374151">' + e(p.detail) + '</div>'
+          + '</li>';
+      });
+      html += '</ol>';
+      return html;
+    }
+
+    function renderVerbDepth(c) {
+      let html = '';
+      if (c.overall_pattern) html += '<div style="font-size:13px;color:#374151;background:#fdf6ee;padding:10px 12px;border-radius:8px;margin-bottom:14px;line-height:1.55"><strong style="color:#b45309">Overall: </strong>' + e(c.overall_pattern) + '</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:10px">';
+      (c.verbs || []).forEach(v => {
+        const sevColour = v.severity === 'concern' ? '#991b1b' : v.severity === 'strength' ? '#15803d' : '#d97706';
+        const sevBg     = v.severity === 'concern' ? '#fef2f2' : v.severity === 'strength' ? '#f0fdf4' : '#fffbeb';
+        html += '<div style="background:' + sevBg + ';padding:11px 13px;border-radius:8px;border-left:3px solid ' + sevColour + '">'
+          + '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">'
+          +   '<span style="font-weight:800;font-size:15px;color:' + sevColour + '">' + e(v.verb) + '</span>'
+          +   '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:' + sevColour + '">' + e(v.severity || '') + '</span>'
+          + '</div>'
+          + '<div style="font-size:12.5px;color:#374151;margin-bottom:6px">' + e(v.handling_note) + '</div>'
+          + (v.faculties_involved && v.faculties_involved.length
+              ? '<div style="font-size:11px;color:#9ca3af">' + e(v.faculties_involved.join(' · ')) + '</div>'
+              : '')
+          + '</div>';
+      });
+      html += '</div>';
+      return html;
+    }
+
+    function renderListedItems(c) {
+      const items = c.gaps || c.strengths || [];
+      const isGap = !!c.gaps;
+      const bg = isGap ? '#fffbeb' : '#f0fdf4';
+      const stripe = isGap ? '#d97706' : '#15803d';
+      const titleC = isGap ? '#78350f' : '#14532d';
+      let html = '';
+      if (c.scope_note) html += '<div style="font-size:12px;color:#9ca3af;margin-bottom:10px">' + e(c.scope_note) + '</div>';
+      html += '<ol style="padding-left:18px;display:flex;flex-direction:column;gap:10px">';
+      items.forEach(p => {
+        html += '<li style="background:' + bg + ';padding:10px 12px;border-radius:8px;border-left:3px solid ' + stripe + '">'
+          + '<div style="font-weight:700;color:' + titleC + ';margin-bottom:3px">' + e(p.headline) + '</div>'
+          + '<div style="font-size:12.5px;color:#374151;margin-bottom:4px">' + e(p.detail) + '</div>'
+          + (p.faculties_involved && p.faculties_involved.length
+              ? '<div style="font-size:11px;color:#9ca3af">' + e(p.faculties_involved.join(' · ')) + '</div>'
+              : '')
+          + '</li>';
+      });
+      html += '</ol>';
+      return html;
+    }
+
+    async function generateLLMCard(kind) {
+      const btn = document.querySelector('[data-llm-generate="' + kind + '"]');
+      const loading = document.getElementById('llmLoading_' + kind);
+      const body = document.getElementById('llmBody_' + kind);
+      if (btn) btn.disabled = true;
+      if (body) body.style.display = 'none';
+      if (loading) loading.classList.add('visible');
+      try {
+        const filterBody = { kind, school_id: SCHOOL_ID_OVERRIDE || undefined };
+        FILTER_KEYS.forEach(k => { if (activeFilters[k]) filterBody[k] = activeFilters[k]; });
+        const res = await authFetch('/api/insights-card-generate', { method: 'POST', body: JSON.stringify(filterBody) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to generate');
+        // Reload all cards (simpler than patching the DOM)
+        await reloadData();
+      } catch (err) {
+        if (loading) loading.classList.remove('visible');
+        if (body) body.style.display = '';
+        if (btn) btn.disabled = false;
+        alert(err.message);
+      }
     }
 
     function renderPerCriterion(d) {

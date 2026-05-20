@@ -210,6 +210,138 @@ export const CLASS_FEEDBACK_TOOL: Tool = {
   },
 };
 
+export const BOTTOM_DECILE_TOOL: Tool = {
+  name: 'provide_bottom_decile_patterns',
+  description:
+    'Identify the dominant patterns of mistakes appearing in the AI improvement feedback for the bottom decile of students by mark percentage. Output 5 actionable, specific patterns that a head of teaching & learning could put on a faculty meeting agenda.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      patterns: {
+        type: 'array',
+        description: 'Exactly 5 dominant patterns, ordered by how widespread they are. Most prevalent first.',
+        items: {
+          type: 'object',
+          properties: {
+            rank: { type: 'integer', minimum: 1, maximum: 5 },
+            headline: { type: 'string', description: 'One short, specific sentence naming the mistake (e.g. "Treating analyse as describe — listing features without explaining significance").' },
+            detail: { type: 'string', description: '1-2 sentences expanding what the pattern looks like and why it matters for these students.' },
+            prevalence_note: { type: 'string', description: "Plain-language indicator of how widespread (e.g. 'shows in most of the bottom-decile submissions reviewed', 'half of the cohort'). No numeric claims beyond the scope_note." },
+          },
+          required: ['rank', 'headline', 'detail', 'prevalence_note'],
+        },
+      },
+      scope_note: { type: 'string', description: '1 sentence indicating the sample (how many submissions were analysed). No band predictions.' },
+    },
+    required: ['patterns', 'scope_note'],
+  },
+};
+
+export const TOP_DECILE_TOOL: Tool = {
+  name: 'provide_top_decile_next_steps',
+  description:
+    'For the top decile of students by mark percentage, identify the 3 most useful next-step recommendations to lift their work further. Stretch-focused — these students already perform well.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      next_steps: {
+        type: 'array',
+        description: 'Exactly 3 next steps, ordered by impact.',
+        items: {
+          type: 'object',
+          properties: {
+            rank: { type: 'integer', minimum: 1, maximum: 3 },
+            headline: { type: 'string', description: 'One sentence naming the stretch step (e.g. "Sustain critical evaluation across all body paragraphs, not just paragraph 2").' },
+            detail: { type: 'string', description: '1-2 sentences explaining what the upgrade looks like in their writing.' },
+          },
+          required: ['rank', 'headline', 'detail'],
+        },
+      },
+      scope_note: { type: 'string', description: '1 sentence on the sample.' },
+    },
+    required: ['next_steps', 'scope_note'],
+  },
+};
+
+export const VERB_DEPTH_TOOL: Tool = {
+  name: 'provide_verb_depth_patterns',
+  description:
+    'Examine how students across the school are handling NESA directive verbs. For each verb that appears with enough signal, surface the pattern in how it is being executed. This is the single most actionable diagnostic for HSC writing — it tells leadership which verbs need whole-faculty PD.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      verbs: {
+        type: 'array',
+        description: 'Up to 6 verbs with the strongest cross-school pattern. Skip verbs with insufficient signal.',
+        items: {
+          type: 'object',
+          properties: {
+            verb: { type: 'string', description: 'The NESA directive verb (e.g. "analyse", "evaluate", "justify").' },
+            handling_note: { type: 'string', description: 'One sentence describing how students are handling this verb (e.g. "Treated as describe — students list features without explaining significance" or "Well executed — most students sustain critical judgement with evidence").' },
+            faculties_involved: { type: 'array', items: { type: 'string' }, description: 'Faculties (KLAs) where this pattern is visible.' },
+            severity: { type: 'string', enum: ['strength', 'mixed', 'concern'], description: "'strength' if the verb is being handled well, 'concern' if students consistently fall short, 'mixed' if patterns vary." },
+          },
+          required: ['verb', 'handling_note', 'faculties_involved', 'severity'],
+        },
+      },
+      overall_pattern: { type: 'string', description: '1-2 sentences summarising the dominant cross-verb pattern leadership should action.' },
+    },
+    required: ['verbs', 'overall_pattern'],
+  },
+};
+
+export const COMMON_GAPS_TOOL: Tool = {
+  name: 'provide_common_gaps',
+  description: 'Top 5 gaps appearing in AI improvement feedback across the whole cohort (not just the bottom decile). These drive whole-staff PD priorities.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      gaps: {
+        type: 'array',
+        description: 'Exactly 5 cohort-wide gaps, ranked by prevalence.',
+        items: {
+          type: 'object',
+          properties: {
+            rank: { type: 'integer', minimum: 1, maximum: 5 },
+            headline: { type: 'string' },
+            detail: { type: 'string' },
+            faculties_involved: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['rank', 'headline', 'detail', 'faculties_involved'],
+        },
+      },
+      scope_note: { type: 'string' },
+    },
+    required: ['gaps', 'scope_note'],
+  },
+};
+
+export const THINGS_DONE_WELL_TOOL: Tool = {
+  name: 'provide_things_done_well',
+  description: 'Top 3 things students across the school are consistently doing well, drawn from AI strength feedback. Useful for sharing best practice between faculties and for celebrating wins in faculty meetings.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      strengths: {
+        type: 'array',
+        description: 'Exactly 3 strengths, most prevalent first.',
+        items: {
+          type: 'object',
+          properties: {
+            rank: { type: 'integer', minimum: 1, maximum: 3 },
+            headline: { type: 'string' },
+            detail: { type: 'string' },
+            faculties_involved: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['rank', 'headline', 'detail', 'faculties_involved'],
+        },
+      },
+      scope_note: { type: 'string' },
+    },
+    required: ['strengths', 'scope_note'],
+  },
+};
+
 export const SCHOOL_INSIGHTS_TOOL: Tool = {
   name: 'provide_school_insights',
   description:
