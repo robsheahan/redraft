@@ -85,12 +85,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .maybeSingle();
     if (!school) return res.status(404).json({ error: 'School not found.' });
 
+    // Determine the viewer's faculty scope. Admins (school admin OR global
+    // admin) are unrestricted. Leaders with a non-empty faculties array see
+    // only those faculties' cards from by_faculty, with school-wide
+    // aggregates suppressed so they can't be misread.
+    const { data: grant } = await supabase
+      .from('school_members')
+      .select('role, faculties')
+      .eq('school_id', schoolId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    const isAdminViewer = isGlobalAdmin(user.email) || (grant && grant.role === 'admin');
+    const restrictedFaculties = (!isAdminViewer
+      && grant
+      && grant.role === 'leader'
+      && Array.isArray(grant.faculties)
+      && grant.faculties.length > 0)
+        ? (grant.faculties as string[])
+        : null;
+
+    let insights = school.insights_cache || null;
+    let restrictedView = false;
+    if (insights && restrictedFaculties) {
+      const filteredFaculty = (insights.by_faculty || []).filter((f: any) => restrictedFaculties.includes(f.faculty));
+      insights = {
+        by_faculty: filteredFaculty,
+        restricted_view: true,
+        viewer_faculties: restrictedFaculties,
+      };
+      restrictedView = true;
+    }
+
     const stats = await collectScopeStats(supabase, schoolId);
     return res.status(200).json({
       school: { id: school.id, name: school.name },
       caller_role: callerRole,
+      caller_faculties: restrictedFaculties,
+      restricted_view: restrictedView,
       stats,
-      insights: school.insights_cache || null,
+      insights,
       task_count: school.insights_cache_task_count || 0,
       generated_at: school.insights_cache_generated_at || null,
     });

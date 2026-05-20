@@ -56,20 +56,52 @@
     .access-section { background: #fff; border-radius: 12px; padding: 20px 24px; margin-top: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
     .access-section h2 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
     .access-section .sub { font-size: 13px; color: #6b7280; margin-bottom: 16px; line-height: 1.55; }
-    .access-add-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px; background: #fdf6ee; border: 1px solid #f0e6d6; border-radius: 8px; margin-bottom: 16px; align-items: center; }
-    .access-add-row input, .access-add-row select { padding: 8px 12px; border: 1px solid #e8e0d4; border-radius: 6px; font-family: inherit; font-size: 13.5px; outline: none; background: #fff; color: #111827; }
-    .access-add-row input { flex: 1 1 240px; min-width: 200px; }
-    .access-add-row input:focus, .access-add-row select:focus { border-color: #ed7615; box-shadow: 0 0 0 2px rgba(237,118,21,0.15); }
-    .access-add-row button { padding: 8px 16px; background: #ed7615; color: #fff; border: 0; border-radius: 6px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .access-add-row button:hover { background: #d4690f; }
-    .access-add-row button:disabled { background: #9ca3af; cursor: not-allowed; }
     .access-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-    .access-table th { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f0e6d6; font-weight: 700; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
-    .access-table td { padding: 10px; border-bottom: 1px solid #f5f0e8; color: #374151; vertical-align: middle; }
+    .access-table th { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f0e6d6; font-weight: 700; color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; background: #fdf6ee; }
+    .access-table td { padding: 11px 10px; border-bottom: 1px solid #f5f0e8; color: #374151; vertical-align: middle; }
     .access-table tr:last-child td { border-bottom: none; }
-    .access-table select { padding: 4px 8px; border: 1px solid #e8e0d4; border-radius: 4px; font-family: inherit; font-size: 13px; background: #fff; color: #111827; }
-    .access-table button { padding: 5px 10px; background: #fff; color: #dc2626; border: 1px solid #fecaca; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .access-table button:hover { background: #fef2f2; border-color: #dc2626; }
+    .access-table tr.clickable { cursor: pointer; }
+    .access-table tr.clickable:hover td { background: #fdfaf5; }
+    .access-grant-summary { font-size: 12.5px; color: #4b5563; }
+    .access-grant-summary.none { color: #9ca3af; font-style: italic; }
+    .access-faculty-chip { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 4px; background: #eef2ff; color: #4338ca; margin-right: 4px; margin-bottom: 2px; font-weight: 600; }
+
+    /* Modal */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(17,24,39,0.45); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+    .modal-backdrop.visible { display: flex; }
+    .modal { background: #fff; border-radius: 14px; max-width: 540px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.2); }
+    .modal-head { padding: 18px 22px; border-bottom: 1px solid #f0e6d6; display: flex; align-items: center; justify-content: space-between; }
+    .modal-head h3 { font-size: 16px; font-weight: 700; }
+    .modal-head .modal-close { background: transparent; border: 0; color: #9ca3af; font-size: 22px; cursor: pointer; line-height: 1; }
+    .modal-body { padding: 18px 22px; }
+    .modal-target { padding: 12px 14px; background: #fdf6ee; border: 1px solid #f0e6d6; border-radius: 8px; margin-bottom: 18px; }
+    .modal-target .name { font-size: 14px; font-weight: 700; color: #111827; }
+    .modal-target .email { font-size: 12.5px; color: #6b7280; font-family: monospace; margin-top: 2px; }
+    .modal-group { margin-bottom: 18px; }
+    .modal-group h4 { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+    .modal-radio { display: block; padding: 12px 14px; border: 1px solid #e8e0d4; border-radius: 8px; cursor: pointer; margin-bottom: 8px; transition: all 0.15s; }
+    .modal-radio:hover { border-color: #d1d5db; }
+    .modal-radio.is-active { border-color: #ed7615; background: #fef3e6; }
+    .modal-radio input { margin-right: 8px; accent-color: #ed7615; }
+    .modal-radio .label { font-weight: 600; font-size: 14px; color: #111827; }
+    .modal-radio .desc { font-size: 12.5px; color: #6b7280; margin-top: 2px; padding-left: 22px; line-height: 1.45; }
+    .modal-faculty-toggle { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #fdf6ee; border: 1px solid #f0e6d6; border-radius: 8px; margin-bottom: 12px; cursor: pointer; }
+    .modal-faculty-toggle input { accent-color: #ed7615; }
+    .modal-faculty-toggle .lab { font-weight: 600; font-size: 13.5px; color: #111827; }
+    .modal-faculties { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 6px; padding: 4px 0; }
+    .modal-faculties.is-disabled { opacity: 0.4; pointer-events: none; }
+    .modal-faculty { display: flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid #e8e0d4; border-radius: 6px; cursor: pointer; font-size: 13px; color: #374151; transition: all 0.15s; }
+    .modal-faculty:hover { border-color: #d1d5db; }
+    .modal-faculty.is-checked { background: #fef3e6; border-color: #ed7615; color: #ed7615; font-weight: 600; }
+    .modal-faculty input { accent-color: #ed7615; }
+    .modal-actions { padding: 14px 22px 18px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f0e6d6; }
+    .modal-actions .left { display: flex; gap: 8px; }
+    .modal-actions button { padding: 8px 16px; border-radius: 6px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit; border: 1px solid #e8e0d4; background: #fff; color: #374151; }
+    .modal-actions button.primary { background: #ed7615; color: #fff; border-color: #ed7615; }
+    .modal-actions button.primary:hover { background: #d4690f; }
+    .modal-actions button.danger { color: #dc2626; border-color: #fecaca; }
+    .modal-actions button.danger:hover { background: #fef2f2; border-color: #dc2626; }
+    .modal-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .generate-section { margin-bottom: 22px; background: #fff; border-radius: 12px; padding: 18px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
     .generate-section .gen-text { flex: 1; min-width: 220px; }
@@ -243,15 +275,13 @@
       if (d.caller_role === 'admin') {
         html += '<div class="access-section">';
         html += '<h2>Manage access</h2>';
-        html += '<p class="sub">Add other staff at ' + e(d.school.name) + ' as <strong>admin</strong> (can manage members + view) or <strong>leader</strong> (view only). The person must already have a ProofReady account.</p>';
-        html += '<div class="access-add-row">';
-        html += '<input type="email" id="addEmail" placeholder="staff.member@school.edu.au" autocomplete="off">';
-        html += '<select id="addRole"><option value="leader">Leader (view)</option><option value="admin">Admin (manage + view)</option></select>';
-        html += '<button id="addBtn">Add member</button>';
-        html += '</div>';
-        html += '<div id="membersTable"><div class="detail-loading">Loading members...</div></div>';
+        html += '<p class="sub">Every staff member registered at ' + e(d.school.name) + ' (matched by email domain) is listed below. Click a row to set what they can see.</p>';
+        html += '<div id="membersTable"><div class="detail-loading">Loading staff list...</div></div>';
         html += '</div>';
       }
+
+      // Modal scaffold (always present in DOM; only opened by admins)
+      html += '<div class="modal-backdrop" id="accessModal">' + buildModalShell() + '</div>';
 
       c.innerHTML = html;
 
@@ -263,11 +293,42 @@
         el.addEventListener('click', () => toggleDetail(el.dataset.kind));
       });
 
-      // Wire Manage access controls + load member list
+      // Wire Manage access controls + load staff list
       if (d.caller_role === 'admin') {
-        document.getElementById('addBtn').addEventListener('click', addMember);
         loadMembers();
       }
+
+      // Modal close-on-backdrop
+      const backdrop = document.getElementById('accessModal');
+      backdrop.addEventListener('click', (ev) => {
+        if (ev.target === backdrop) closeAccessModal();
+      });
+    }
+
+    function buildModalShell() {
+      return [
+        '<div class="modal" onclick="event.stopPropagation()">',
+        '  <div class="modal-head"><h3 id="modalTitle">Set access</h3><button class="modal-close" onclick="closeAccessModal()">×</button></div>',
+        '  <div class="modal-body">',
+        '    <div class="modal-target" id="modalTarget"></div>',
+        '    <div class="modal-group" id="modalRoleGroup">',
+        '      <h4>Access level</h4>',
+        '      <label class="modal-radio" data-role="none"><input type="radio" name="modalRole" value="none"><span class="label">No access</span><div class="desc">They keep their teacher account but cannot open this dashboard.</div></label>',
+        '      <label class="modal-radio" data-role="leader"><input type="radio" name="modalRole" value="leader"><span class="label">Leader — view insights</span><div class="desc">Read-only access. Can be scoped to specific faculties below.</div></label>',
+        '      <label class="modal-radio" data-role="admin"><input type="radio" name="modalRole" value="admin"><span class="label">Admin — view + manage other members</span><div class="desc">Full access to every faculty plus this Manage access panel.</div></label>',
+        '    </div>',
+        '    <div class="modal-group" id="modalFacultiesGroup">',
+        '      <h4>Faculties they can view</h4>',
+        '      <label class="modal-faculty-toggle"><input type="checkbox" id="modalFacAll"><span class="lab">All faculties (no restriction)</span></label>',
+        '      <div class="modal-faculties" id="modalFacGrid"></div>',
+        '    </div>',
+        '  </div>',
+        '  <div class="modal-actions">',
+        '    <div class="left"><button class="danger" id="modalRemove" style="display:none">Remove access</button></div>',
+        '    <div><button onclick="closeAccessModal()">Cancel</button> <button class="primary" id="modalSave">Save</button></div>',
+        '  </div>',
+        '</div>',
+      ].join('\n');
     }
 
     function kpi(kind, label, value, sub) {
@@ -356,88 +417,186 @@
       return html;
     }
 
+    let availableFaculties = [];
+    let staffCache = [];
+
     async function loadMembers() {
       const target = document.getElementById('membersTable');
       if (!target || !currentData) return;
       try {
         const res = await authFetch('/api/school-members?school_id=' + encodeURIComponent(currentData.school.id));
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Could not load members.');
-        target.innerHTML = renderMembers(data.members || []);
-        target.querySelectorAll('select.member-role').forEach(sel => {
-          sel.addEventListener('change', () => changeMemberRole(sel.dataset.userId, sel.value));
-        });
-        target.querySelectorAll('button.member-remove').forEach(btn => {
-          btn.addEventListener('click', () => removeMember(btn.dataset.userId, btn.dataset.name));
+        if (!res.ok) throw new Error(data.error || 'Could not load staff.');
+        availableFaculties = data.faculties || [];
+        staffCache = data.members || [];
+        target.innerHTML = renderStaffList(staffCache);
+        target.querySelectorAll('tr.clickable').forEach(tr => {
+          tr.addEventListener('click', () => openAccessModal(tr.dataset.userId));
         });
       } catch (err) {
         target.innerHTML = '<div class="detail-empty">' + e(err.message) + '</div>';
       }
     }
 
-    function renderMembers(members) {
-      if (members.length === 0) {
-        return '<div class="detail-empty">No leadership members yet. Add the first one above.</div>';
+    function renderStaffList(staff) {
+      if (staff.length === 0) {
+        return '<div class="detail-empty">No school staff registered yet. Once teachers sign up with a matching school email domain, they will appear here.</div>';
       }
-      let html = '<table class="access-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Added</th><th></th></tr></thead><tbody>';
-      members.forEach(m => {
-        const date = m.created_at ? new Date(m.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
-        html += '<tr><td>' + e(m.name) + '</td><td class="detail-mono">' + e(m.email) + '</td><td><select class="member-role" data-user-id="' + e(m.user_id) + '">';
-        html += '<option value="leader"' + (m.role === 'leader' ? ' selected' : '') + '>Leader</option>';
-        html += '<option value="admin"' + (m.role === 'admin' ? ' selected' : '') + '>Admin</option>';
-        html += '</select></td><td>' + e(date) + '</td><td style="text-align:right"><button class="member-remove" data-user-id="' + e(m.user_id) + '" data-name="' + e(m.name) + '">Remove</button></td></tr>';
+      let html = '<table class="access-table"><thead><tr><th>Name</th><th>Email</th><th>Access</th></tr></thead><tbody>';
+      staff.forEach(s => {
+        html += '<tr class="clickable" data-user-id="' + e(s.user_id) + '">';
+        html += '<td>' + e(s.name) + '</td>';
+        html += '<td class="detail-mono">' + e(s.email) + '</td>';
+        html += '<td>' + renderGrantSummary(s) + '</td>';
+        html += '</tr>';
       });
       html += '</tbody></table>';
       return html;
     }
 
-    async function addMember() {
-      const emailEl = document.getElementById('addEmail');
-      const roleEl = document.getElementById('addRole');
-      const btn = document.getElementById('addBtn');
-      const email = emailEl.value.trim();
-      const role = roleEl.value;
-      if (!email) { emailEl.focus(); return; }
-      btn.disabled = true; btn.textContent = 'Adding...';
+    function renderGrantSummary(s) {
+      if (s.role === 'admin') {
+        return '<span class="detail-role-pill admin">Admin — full access</span>';
+      }
+      if (s.role === 'leader') {
+        if (!s.faculties || s.faculties.length === 0) {
+          return '<span class="detail-role-pill leader">Leader — all faculties</span>';
+        }
+        return '<span class="detail-role-pill leader">Leader</span> '
+          + s.faculties.map(f => '<span class="access-faculty-chip">' + e(f) + '</span>').join('');
+      }
+      return '<span class="access-grant-summary none">No access</span>';
+    }
+
+    let modalTargetUserId = null;
+
+    function openAccessModal(userId) {
+      const s = staffCache.find(x => x.user_id === userId);
+      if (!s) return;
+      modalTargetUserId = userId;
+
+      document.getElementById('modalTitle').textContent = 'Set access for ' + s.name;
+      document.getElementById('modalTarget').innerHTML =
+        '<div class="name">' + e(s.name) + '</div><div class="email">' + e(s.email) + '</div>';
+
+      // Role radios
+      const currentRole = s.role || 'none';
+      document.querySelectorAll('input[name="modalRole"]').forEach(r => {
+        r.checked = (r.value === currentRole);
+      });
+      syncRoleHighlight();
+
+      // Faculty checkboxes
+      const grid = document.getElementById('modalFacGrid');
+      grid.innerHTML = availableFaculties.map(f =>
+        '<label class="modal-faculty"><input type="checkbox" value="' + e(f) + '"> ' + e(f) + '</label>'
+      ).join('');
+      const facCheckboxes = grid.querySelectorAll('input[type="checkbox"]');
+      const selected = new Set(s.faculties || []);
+      facCheckboxes.forEach(cb => { cb.checked = selected.has(cb.value); });
+      facCheckboxes.forEach(cb => cb.addEventListener('change', () => {
+        cb.closest('.modal-faculty').classList.toggle('is-checked', cb.checked);
+        document.getElementById('modalFacAll').checked = false;
+        syncFacToggle();
+      }));
+      grid.querySelectorAll('.modal-faculty').forEach(el => {
+        el.classList.toggle('is-checked', el.querySelector('input').checked);
+      });
+      // "All faculties" toggle
+      const allCb = document.getElementById('modalFacAll');
+      allCb.checked = (currentRole === 'leader' && selected.size === 0);
+      allCb.onchange = () => {
+        if (allCb.checked) {
+          facCheckboxes.forEach(cb => { cb.checked = false; cb.closest('.modal-faculty').classList.remove('is-checked'); });
+        }
+      };
+      syncFacToggle();
+
+      // Wire role radios to re-sync UI
+      document.querySelectorAll('input[name="modalRole"]').forEach(r => r.onchange = () => {
+        syncRoleHighlight();
+        syncFacToggle();
+      });
+
+      // Remove button visibility
+      const removeBtn = document.getElementById('modalRemove');
+      removeBtn.style.display = s.role ? '' : 'none';
+      removeBtn.onclick = handleRemove;
+
+      // Save button
+      document.getElementById('modalSave').onclick = handleSave;
+
+      document.getElementById('accessModal').classList.add('visible');
+    }
+
+    function closeAccessModal() {
+      document.getElementById('accessModal').classList.remove('visible');
+      modalTargetUserId = null;
+    }
+
+    function syncRoleHighlight() {
+      document.querySelectorAll('.modal-radio').forEach(r => {
+        const input = r.querySelector('input');
+        r.classList.toggle('is-active', input.checked);
+      });
+    }
+
+    function syncFacToggle() {
+      const role = document.querySelector('input[name="modalRole"]:checked')?.value || 'none';
+      const facGroup = document.getElementById('modalFacultiesGroup');
+      // Faculties only apply to leader. Hide for admin/none.
+      facGroup.style.display = role === 'leader' ? '' : 'none';
+    }
+
+    async function handleSave() {
+      const role = document.querySelector('input[name="modalRole"]:checked')?.value;
+      if (!role) return;
+      const btn = document.getElementById('modalSave');
+      btn.disabled = true; btn.textContent = 'Saving...';
       try {
-        const res = await authFetch('/api/school-members', {
-          method: 'POST',
-          body: JSON.stringify({ school_id: currentData.school.id, email, role }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to add.');
-        emailEl.value = '';
+        if (role === 'none') {
+          // Remove the grant entirely
+          const res = await authFetch('/api/school-members?school_id=' + encodeURIComponent(currentData.school.id) + '&user_id=' + encodeURIComponent(modalTargetUserId), { method: 'DELETE' });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Failed to update.');
+        } else {
+          let faculties = [];
+          if (role === 'leader') {
+            const allCb = document.getElementById('modalFacAll');
+            if (!allCb.checked) {
+              faculties = Array.from(document.querySelectorAll('#modalFacGrid input[type="checkbox"]:checked')).map(cb => cb.value);
+              if (faculties.length === 0) {
+                btn.disabled = false; btn.textContent = 'Save';
+                alert('Pick at least one faculty, or check "All faculties" to grant unrestricted access.');
+                return;
+              }
+            }
+          }
+          const res = await authFetch('/api/school-members', {
+            method: 'PUT',
+            body: JSON.stringify({ school_id: currentData.school.id, user_id: modalTargetUserId, role, faculties }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Failed to update.');
+        }
+        closeAccessModal();
         await loadMembers();
       } catch (err) {
         alert(err.message);
       } finally {
-        btn.disabled = false; btn.textContent = 'Add member';
+        btn.disabled = false; btn.textContent = 'Save';
       }
     }
 
-    async function changeMemberRole(userId, role) {
+    async function handleRemove() {
+      const s = staffCache.find(x => x.user_id === modalTargetUserId);
+      if (!s) return;
+      if (!confirm('Remove ' + s.name + '\'s access to the insights dashboard?')) return;
       try {
-        const res = await authFetch('/api/school-members', {
-          method: 'PUT',
-          body: JSON.stringify({ school_id: currentData.school.id, user_id: userId, role }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to update.');
-        await loadMembers();
-      } catch (err) {
-        alert(err.message);
-        await loadMembers();
-      }
-    }
-
-    async function removeMember(userId, name) {
-      if (!confirm('Remove ' + name + ' from this school\'s leadership? They will lose access to the insights dashboard.')) return;
-      try {
-        const res = await authFetch('/api/school-members?school_id=' + encodeURIComponent(currentData.school.id) + '&user_id=' + encodeURIComponent(userId), {
-          method: 'DELETE',
-        });
+        const res = await authFetch('/api/school-members?school_id=' + encodeURIComponent(currentData.school.id) + '&user_id=' + encodeURIComponent(modalTargetUserId), { method: 'DELETE' });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to remove.');
+        closeAccessModal();
         await loadMembers();
       } catch (err) {
         alert(err.message);
@@ -447,6 +606,17 @@
     function renderInsights(ins) {
       if (!ins) return '';
       let html = '';
+
+      if (ins.restricted_view) {
+        const fac = (ins.viewer_faculties || []).map(f => '<strong>' + e(f) + '</strong>').join(', ');
+        html += '<div class="section" style="border-left:3px solid #ed7615">'
+          + '<div class="section-title" style="color:#b45309;letter-spacing:0.5px">FACULTY-RESTRICTED VIEW</div>'
+          + '<p class="section-text" style="font-size:14px">You can see insights for ' + fac + ' only. School-wide aggregates are hidden — ask your school admin if you need broader access.</p>'
+          + '</div>';
+        if (!ins.by_faculty || ins.by_faculty.length === 0) {
+          html += '<div class="section"><p class="section-text" style="color:#9ca3af">No tasks with class-level feedback exist yet in the faculties you have access to.</p></div>';
+        }
+      }
 
       if (ins.school_snapshot) {
         html += '<div class="section snapshot"><div class="section-title"><span class="section-dot"></span>School snapshot</div>';
