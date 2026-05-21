@@ -178,6 +178,7 @@
       if (c.course) html += '<div class="course-label">' + e(c.course) + '</div>';
       if (!c.archived_at) {
         html += '<div class="header-actions">';
+        html += '<a href="insights.html?class_id=' + encodeURIComponent(c.id) + '" class="btn btn-outline">Insights</a>';
         html += '<a href="new-task.html?class=' + encodeURIComponent(c.id) + '" class="btn btn-primary">+ New task</a>';
         html += '</div>';
       }

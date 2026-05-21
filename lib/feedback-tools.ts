@@ -415,3 +415,101 @@ export const SCHOOL_INSIGHTS_TOOL: Tool = {
     ],
   },
 };
+
+// ─────────────── Single-student LLM card tools ───────────────
+
+export const STUDENT_TOP_MISTAKES_TOOL: Tool = {
+  name: 'provide_student_top_mistakes',
+  description:
+    'Identify the 3 most recurring mistakes appearing across one student\'s AI improvement feedback. The audience is the student\'s teacher — be specific, name the student, and tie each mistake to something teachable.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      mistakes: {
+        type: 'array',
+        description: 'Exactly 3 mistakes, ranked by how often they appear across this student\'s submissions.',
+        items: {
+          type: 'object',
+          properties: {
+            rank: { type: 'integer', minimum: 1, maximum: 3 },
+            headline: { type: 'string', description: 'One short sentence naming the recurring mistake.' },
+            detail: { type: 'string', description: '1-2 sentences expanding what the pattern looks like in this student\'s writing and what specifically would address it.' },
+          },
+          required: ['rank', 'headline', 'detail'],
+        },
+      },
+      scope_note: { type: 'string', description: '1 sentence on the sample (how many of this student\'s submissions were analysed).' },
+    },
+    required: ['mistakes', 'scope_note'],
+  },
+};
+
+export const STUDENT_STRETCH_GOALS_TOOL: Tool = {
+  name: 'provide_student_stretch_goals',
+  description:
+    'For one student, identify the 3 highest-impact next-step recommendations to lift their work. Personalised to their writing patterns, not generic advice.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      next_steps: {
+        type: 'array',
+        description: 'Exactly 3 next steps, ordered by impact.',
+        items: {
+          type: 'object',
+          properties: {
+            rank: { type: 'integer', minimum: 1, maximum: 3 },
+            headline: { type: 'string', description: 'One sentence naming the stretch step for this student.' },
+            detail: { type: 'string', description: '1-2 sentences explaining what the upgrade looks like for this student specifically.' },
+          },
+          required: ['rank', 'headline', 'detail'],
+        },
+      },
+      scope_note: { type: 'string', description: '1 sentence on the sample.' },
+    },
+    required: ['next_steps', 'scope_note'],
+  },
+};
+
+export const STUDENT_STRENGTHS_TOOL: Tool = {
+  name: 'provide_student_strengths',
+  description: 'Top 3 strengths this student is demonstrating consistently across their AI feedback. Drawn from the strengths and what_youve_done_well sections.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      strengths: {
+        type: 'array',
+        description: 'Exactly 3 strengths, ranked by how consistent they are across this student\'s submissions.',
+        items: {
+          type: 'object',
+          properties: {
+            rank: { type: 'integer', minimum: 1, maximum: 3 },
+            headline: { type: 'string' },
+            detail: { type: 'string' },
+          },
+          required: ['rank', 'headline', 'detail'],
+        },
+      },
+      scope_note: { type: 'string' },
+    },
+    required: ['strengths', 'scope_note'],
+  },
+};
+
+export const STUDENT_SUMMARY_TOOL: Tool = {
+  name: 'provide_student_summary',
+  description:
+    'Write a 4–6 sentence report-style narrative paragraph for one student that a classroom teacher could use as the starting point for a parent meeting, report comment, or feedback chat. Address the student in third person, name them, and ground every claim in their actual feedback corpus.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      summary_paragraph: {
+        type: 'string',
+        description: '4–6 sentences. Open with where the student sits overall, then their key strength(s), then their key priority(ies), and close with a concrete next step. Address the student by name in third person. Do NOT predict marks or bands.',
+      },
+      headline_strength: { type: 'string', description: 'One short sentence — the single thing this student is doing best.' },
+      headline_priority: { type: 'string', description: 'One short sentence — the single most impactful thing to address next.' },
+      tone_note: { type: 'string', description: 'One sentence describing the overall tone of their writing development (e.g. "Showing steady gains across drafts", "Plateauing — same priorities recurring across tasks", "Improving in structure but content depth still uneven").' },
+    },
+    required: ['summary_paragraph', 'headline_strength', 'headline_priority', 'tone_note'],
+  },
+};

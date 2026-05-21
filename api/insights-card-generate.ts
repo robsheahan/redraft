@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
 import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
-import { resolveInsightsAccess, getSchoolTeacherIds, listAllAuthUsers } from '../lib/schools.js';
+import { resolveInsightsAccess, getSchoolTeacherIds, listAllAuthUsers, getInScopeStudentIds, getInScopeClassIds } from '../lib/schools.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import {
@@ -19,6 +19,10 @@ import {
   VERB_DEPTH_TOOL,
   COMMON_GAPS_TOOL,
   THINGS_DONE_WELL_TOOL,
+  STUDENT_TOP_MISTAKES_TOOL,
+  STUDENT_STRETCH_GOALS_TOOL,
+  STUDENT_STRENGTHS_TOOL,
+  STUDENT_SUMMARY_TOOL,
 } from '../lib/feedback-tools.js';
 
 /**
@@ -180,6 +184,149 @@ function buildStrengthsPrompt(rows: any[]): string {
   return `Below are ${rows.length} per-submission strength notes. Surface the top 3 cross-cohort strengths.\n\n${lines}`;
 }
 
+// ─────────────── Single-student kinds ───────────────
+
+const STUDENT_LLM_FLOOR = 3;
+
+const STUDENT_KIND_CONFIG: Record<string, {
+  tool: any;
+  endpointName: string;
+  buildSystemPrompt: (studentName: string, sample: number) => string;
+  buildUserPrompt: (rows: any[], ctx: { studentName: string }) => string;
+}> = {
+  student_top_mistakes: {
+    tool: STUDENT_TOP_MISTAKES_TOOL,
+    endpointName: 'insights-card-student-top-mistakes',
+    buildSystemPrompt: (studentName, sample) => [
+      `You are a senior NSW NESA-trained educator. The audience is ${studentName}'s classroom teacher, who is preparing personalised feedback.`,
+      `Student: ${studentName}`,
+      `Sample size: ${sample} of this student's submissions with AI feedback.`,
+      ``,
+      `Identify the 3 mistakes recurring across this student's writing. Be specific to what's in their feedback corpus.`,
+      ``,
+      `RULES:`,
+      `- Concrete, specific patterns visible in this student's work.`,
+      `- Frame each as something teachable.`,
+      `- You MAY name the student (it's their own teacher reading this).`,
+      `- Do not predict marks or bands. Ever.`,
+      `- Use NESA marker vocabulary where it sharpens the point.`,
+    ].join('\n'),
+    buildUserPrompt: (rows, ctx) => buildStudentImprovementsPrompt(rows, ctx.studentName),
+  },
+  student_stretch_goals: {
+    tool: STUDENT_STRETCH_GOALS_TOOL,
+    endpointName: 'insights-card-student-stretch-goals',
+    buildSystemPrompt: (studentName, sample) => [
+      `You are a senior NSW NESA-trained educator advising a teacher on next-step recommendations for ${studentName}.`,
+      `Student: ${studentName}`,
+      `Sample size: ${sample} of this student's submissions with AI feedback.`,
+      ``,
+      `Identify the 3 highest-impact next steps personalised to this student. These are stretch goals — push their work to the next level given their current pattern.`,
+      ``,
+      `RULES:`,
+      `- Be specific to what THIS student's feedback shows — not generic stretch advice.`,
+      `- Frame each as a concrete writing move (e.g. "Sustain critical evaluation through paragraph 3, not just the introduction").`,
+      `- No mark/band predictions.`,
+      `- You may name the student.`,
+    ].join('\n'),
+    buildUserPrompt: (rows, ctx) => buildStudentImprovementsPrompt(rows, ctx.studentName),
+  },
+  student_strengths: {
+    tool: STUDENT_STRENGTHS_TOOL,
+    endpointName: 'insights-card-student-strengths',
+    buildSystemPrompt: (studentName, sample) => [
+      `You are a senior NSW NESA-trained educator advising a teacher on what ${studentName} is doing well.`,
+      `Student: ${studentName}`,
+      `Sample size: ${sample} of this student's submissions with AI feedback.`,
+      ``,
+      `Identify the 3 strengths showing up most consistently in this student's writing. Drawn from strength / "what you've done well" sections of their AI feedback.`,
+      ``,
+      `RULES:`,
+      `- Specific to this student, not generic praise.`,
+      `- You may name the student.`,
+      `- No mark/band predictions.`,
+    ].join('\n'),
+    buildUserPrompt: (rows, ctx) => buildStudentStrengthsPrompt(rows, ctx.studentName),
+  },
+  student_summary: {
+    tool: STUDENT_SUMMARY_TOOL,
+    endpointName: 'insights-card-student-summary',
+    buildSystemPrompt: (studentName, sample) => [
+      `You are a senior NSW NESA-trained educator writing a brief progress narrative on ${studentName} for their classroom teacher to use as a starting point for a report comment, parent meeting, or feedback chat.`,
+      `Student: ${studentName}`,
+      `Sample size: ${sample} of this student's submissions with AI feedback.`,
+      ``,
+      `Write a tight 4–6 sentence paragraph addressed in third person to the teacher. Open with where the student sits overall (without using mark/band language), then their key strength(s), then their key priority(ies), and close with a concrete next step.`,
+      ``,
+      `RULES:`,
+      `- Address the student by name in third person ("Sam consistently…", "Their writing tends to…").`,
+      `- Ground every claim in the feedback corpus provided. No invention.`,
+      `- No mark/band/score predictions.`,
+      `- Tone: honest, practical, teacher-to-teacher. Not parent-facing yet — the teacher will adapt it.`,
+    ].join('\n'),
+    buildUserPrompt: (rows, ctx) => buildStudentSummaryPrompt(rows, ctx.studentName),
+  },
+};
+
+function buildStudentImprovementsPrompt(rows: any[], studentName: string): string {
+  const lines = rows.map((r, i) => {
+    const fb = r.feedback || {};
+    const imp = fb.improvements;
+    const summary = imp && Array.isArray(imp.summary) ? imp.summary : (Array.isArray(imp) ? imp : []);
+    const detail = imp && Array.isArray(imp.detail) ? imp.detail : [];
+    const top = (fb.top_priority && fb.top_priority.summary) || fb.top_priority || '';
+    return [
+      `--- ${studentName}, submission #${i + 1} ---`,
+      `Course: ${r.course || '(unknown)'}  Task: ${r.task_title}  Draft: v${r.draft_version || 1}`,
+      r.mark_pct != null ? `Mark: ${Math.round(r.mark_pct)}%` : '',
+      `Top priority: ${top}`,
+      `Improvements summary: ${JSON.stringify(summary)}`,
+      detail.length ? `Improvements detail: ${JSON.stringify(detail).slice(0, 1500)}` : '',
+    ].filter(Boolean).join('\n');
+  }).join('\n\n');
+  return `Below are ${rows.length} of ${studentName}'s submissions. Identify patterns specific to this student.\n\n${lines}`;
+}
+
+function buildStudentStrengthsPrompt(rows: any[], studentName: string): string {
+  const lines = rows.map((r, i) => {
+    const fb = r.feedback || {};
+    const w = fb.what_youve_done_well;
+    const summary = w && Array.isArray(w.summary) ? w.summary : (Array.isArray(w) ? w : []);
+    const detail = w && Array.isArray(w.detail) ? w.detail : [];
+    return [
+      `--- ${studentName}, submission #${i + 1} ---`,
+      `Course: ${r.course || '(unknown)'}  Task: ${r.task_title}`,
+      `Strengths summary: ${JSON.stringify(summary)}`,
+      detail.length ? `Strengths detail: ${JSON.stringify(detail).slice(0, 1000)}` : '',
+    ].filter(Boolean).join('\n');
+  }).join('\n\n');
+  return `Below are ${rows.length} of ${studentName}'s submissions. Surface this student's most consistent strengths.\n\n${lines}`;
+}
+
+function buildStudentSummaryPrompt(rows: any[], studentName: string): string {
+  // Summary needs the full picture: strengths + improvements + verb check.
+  const lines = rows.map((r, i) => {
+    const fb = r.feedback || {};
+    const imp = fb.improvements;
+    const impSummary = imp && Array.isArray(imp.summary) ? imp.summary : (Array.isArray(imp) ? imp : []);
+    const w = fb.what_youve_done_well;
+    const wSummary = w && Array.isArray(w.summary) ? w.summary : (Array.isArray(w) ? w : []);
+    const top = (fb.top_priority && fb.top_priority.summary) || fb.top_priority || '';
+    const verbCheck = fb.task_verb_check;
+    const verbSummary = (verbCheck && (verbCheck.summary || verbCheck)) || '';
+    return [
+      `--- ${studentName}, submission #${i + 1} ---`,
+      `Course: ${r.course || '(unknown)'}  Task: ${r.task_title}  Draft: v${r.draft_version || 1}`,
+      r.mark_pct != null ? `Mark: ${Math.round(r.mark_pct)}%` : '',
+      `Top priority: ${top}`,
+      `Strengths summary: ${JSON.stringify(wSummary)}`,
+      `Improvements summary: ${JSON.stringify(impSummary)}`,
+      verbSummary ? `Verb-handling note: ${typeof verbSummary === 'string' ? verbSummary.slice(0, 400) : JSON.stringify(verbSummary).slice(0, 400)}` : '',
+    ].filter(Boolean).join('\n');
+  }).join('\n\n');
+  return `Below are ${rows.length} of ${studentName}'s submissions. Write the narrative summary now.\n\n${lines}`;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (applyCors(req, res)) return;
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -188,10 +335,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!user) return res.status(401).json({ error: 'Not authenticated' });
 
   const kind = String(req.body?.kind || '').trim();
-  if (!KIND_CONFIG[kind]) {
-    return res.status(400).json({ error: 'kind must be one of: ' + Object.keys(KIND_CONFIG).join(', ') });
+  const isStudentKind = kind.startsWith('student_');
+  if (isStudentKind && !STUDENT_KIND_CONFIG[kind]) {
+    return res.status(400).json({ error: 'kind must be one of: ' + Object.keys(STUDENT_KIND_CONFIG).join(', ') });
   }
-  const cfg = KIND_CONFIG[kind];
+  if (!isStudentKind && !KIND_CONFIG[kind]) {
+    const all = [...Object.keys(KIND_CONFIG), ...Object.keys(STUDENT_KIND_CONFIG)];
+    return res.status(400).json({ error: 'kind must be one of: ' + all.join(', ') });
+  }
 
   const supabase = getSupabase();
   const overrideId = req.body?.school_id ? String(req.body.school_id) : null;
@@ -200,7 +351,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     isGlobalAdmin: isGlobalAdmin(user),
   });
   if (!access) return res.status(404).json({ error: 'Not found' });
-  const { schoolId, schoolName, restrictedFaculties } = access;
+  const { schoolId, schoolName, callerRole, restrictedFaculties } = access;
+
+  // ── Student-kind branch ─────────────────────────────────────────────
+  // Single-student LLM cards run a separate flow: scope check, pull only
+  // this student's submissions, build prompts with their name, no cache.
+  if (isStudentKind) {
+    const studentCfg = STUDENT_KIND_CONFIG[kind];
+    return handleStudentKind(req, res, {
+      supabase,
+      user,
+      kind,
+      cfg: studentCfg,
+      callerRole,
+      schoolId,
+      restrictedFaculties,
+    });
+  }
+  const cfg = KIND_CONFIG[kind];
 
   const rawFilters = parseFiltersFromQuery(req.body as any);
   const filters = applyFacultyScope(rawFilters, restrictedFaculties);
@@ -209,10 +377,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   delete (filters as any)._denied;
 
-  // Rate-limit per school — each card kind has its own endpoint name so
-  // the bucket is naturally scoped per (school, kind) without needing to
-  // smuggle the kind into the user_id (which must be a valid UUID FK).
-  const rateLimit = await checkAndLogRateLimit(supabase, schoolId, {
+  // Rate-limit per school (or per-user when no school is resolved for a
+  // teacher) — each card kind has its own endpoint name so the bucket is
+  // naturally scoped per (subject, kind) without needing to smuggle the
+  // kind into the user_id.
+  const rateSubject = schoolId || user.id;
+  const rateLimit = await checkAndLogRateLimit(supabase, rateSubject, {
     endpoint: cfg.endpointName,
     perUserPerHour: 5,
     globalPerDay: 200,
@@ -222,9 +392,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded. Please try again later.' });
   }
 
-  // Pull submissions in scope.
+  // Pull submissions in scope. Teacher tier sees only their own classes.
   const allUsers = await listAllAuthUsers(supabase);
-  const teacherIds = await getSchoolTeacherIds(supabase, schoolId, allUsers as any);
+  const teacherIds = callerRole === 'teacher'
+    ? [user.id]
+    : await getSchoolTeacherIds(supabase, schoolId, allUsers as any);
   if (teacherIds.length === 0) {
     return res.status(400).json({ error: 'No teachers in scope yet.' });
   }
@@ -291,6 +463,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'No submissions with AI feedback in scope yet. Have students submit drafts to generate feedback first.' });
   }
 
+  // Class-level teacher view needs a 10-submission floor — otherwise the
+  // LLM is synthesising from a sample too small to surface patterns.
+  if (callerRole === 'teacher' && submissions.length < 10) {
+    return res.status(400).json({
+      error: 'This card needs at least 10 submissions with AI feedback before it can run. Keep encouraging drafts and try again.',
+    });
+  }
+
   // Compute mark % for decile-based kinds.
   const enriched = submissions.map(s => {
     const t = taskMap[s.task_id] || {};
@@ -312,12 +492,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let rows: any[];
   if (kind === 'bottom_decile' || kind === 'top_decile') {
     const graded = enriched.filter(r => r.mark_pct != null);
-    if (graded.length < 5) {
-      return res.status(400).json({ error: 'Not enough graded submissions yet. This card needs at least 5 marked submissions in scope.' });
+    const gradedFloor = callerRole === 'teacher' ? 4 : 5;
+    if (graded.length < gradedFloor) {
+      return res.status(400).json({ error: `Not enough graded submissions yet. This card needs at least ${gradedFloor} marked submissions in scope.` });
     }
     graded.sort((a, b) => (kind === 'bottom_decile' ? (a.mark_pct! - b.mark_pct!) : (b.mark_pct! - a.mark_pct!)));
-    const decileCount = Math.max(3, Math.min(MAX_SUBMISSIONS_TO_FEED, Math.ceil(graded.length / 10)));
-    rows = graded.slice(0, decileCount);
+    // Teacher tier (single class) uses quartile rather than decile — a
+    // 10-student class produces only 1 decile-student, which is useless
+    // for pattern-matching. Stretch goals / top mistakes for the top or
+    // bottom 25% of the class is the sweet spot.
+    const fraction = callerRole === 'teacher' ? 4 : 10;
+    const sliceCount = Math.max(3, Math.min(MAX_SUBMISSIONS_TO_FEED, Math.ceil(graded.length / fraction)));
+    rows = graded.slice(0, sliceCount);
   } else {
     // Verb depth / common gaps / things done well — feed whole cohort, capped.
     rows = enriched.slice(0, MAX_SUBMISSIONS_TO_FEED);
@@ -359,20 +545,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // -- Cache --
+  // Teacher tier doesn't write to the school-keyed cache (it'd collide
+  // with the school view's cached card for the same kind). Teachers
+  // regenerate fresh each click; the rate-limiter caps spend.
   const filtersToStore = { ...filters };
   delete (filtersToStore as any)._denied;
-  await supabase
-    .from('school_insights_cards')
-    .upsert({
-      school_id: schoolId,
-      card_kind: kind,
-      content: value,
-      filters: filtersToStore,
-      source_submission_count: rows.length,
-      source_task_count: new Set(rows.map(r => r.task_title)).size,
-      generated_at: new Date().toISOString(),
-      generated_by: user.id,
-    });
+  if (callerRole !== 'teacher' && schoolId) {
+    await supabase
+      .from('school_insights_cards')
+      .upsert({
+        school_id: schoolId,
+        card_kind: kind,
+        content: value,
+        filters: filtersToStore,
+        source_submission_count: rows.length,
+        source_task_count: new Set(rows.map(r => r.task_title)).size,
+        generated_at: new Date().toISOString(),
+        generated_by: user.id,
+      });
+  }
 
   return res.status(200).json({
     kind,
@@ -380,6 +571,155 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     filters: filtersToStore,
     source_submission_count: rows.length,
     source_task_count: new Set(rows.map(r => r.task_title)).size,
+    generated_at: new Date().toISOString(),
+  });
+}
+
+// ─────────────── Student-kind handler ───────────────
+
+async function handleStudentKind(
+  req: VercelRequest,
+  res: VercelResponse,
+  args: {
+    supabase: ReturnType<typeof getSupabase>;
+    user: { id: string; email?: string | null };
+    kind: string;
+    cfg: typeof STUDENT_KIND_CONFIG[string];
+    callerRole: 'admin' | 'leader' | 'teacher';
+    schoolId: string;
+    restrictedFaculties: string[] | null;
+  },
+) {
+  const { supabase, user, kind, cfg, callerRole, schoolId, restrictedFaculties } = args;
+  const studentId = (req.body?.student_id ? String(req.body.student_id) : '').trim();
+  if (!studentId) return res.status(400).json({ error: 'student_id is required for student-* kinds.' });
+
+  // Rate-limit per (subject, kind, student) — endpointName already names
+  // the kind, so include student_id in the rate-limit subject so spamming
+  // one student doesn't lock out other students for the same caller.
+  const rateSubject = schoolId || user.id;
+  const rateLimit = await checkAndLogRateLimit(supabase, rateSubject, {
+    endpoint: cfg.endpointName + ':' + studentId.slice(0, 8),
+    perUserPerHour: 8,   // 4 cards × 2 regens per hour per student
+    globalPerDay: 400,
+  });
+  if (!rateLimit.ok) {
+    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded. Please try again later.' });
+  }
+
+  // Scope check.
+  const allowedStudents = new Set(await getInScopeStudentIds(
+    supabase, callerRole, user.id, schoolId, restrictedFaculties,
+  ));
+  if (!allowedStudents.has(studentId)) {
+    return res.status(404).json({ error: 'Student not visible to you.' });
+  }
+
+  // Caller's in-scope classes containing this student.
+  const callerClassIds = await getInScopeClassIds(
+    supabase, callerRole, user.id, schoolId, restrictedFaculties,
+  );
+  const { data: memberships } = await supabase
+    .from('class_members').select('class_id').eq('student_id', studentId).in('class_id', callerClassIds);
+  const studentClassIds = (memberships || []).map(m => m.class_id);
+  if (studentClassIds.length === 0) {
+    return res.status(400).json({ error: 'This student has no submissions in your scope yet.' });
+  }
+
+  const { data: taskRows } = await supabase
+    .from('tasks').select('id, title, course, class_id, total_marks').in('class_id', studentClassIds);
+  const taskMap: Record<string, any> = {};
+  (taskRows || []).forEach(t => { taskMap[t.id] = t; });
+  const taskIds = Object.keys(taskMap);
+  if (taskIds.length === 0) {
+    return res.status(400).json({ error: 'This student has no submissions in your scope yet.' });
+  }
+
+  const { data: rawSubs } = await supabase
+    .from('submissions')
+    .select('id, task_id, draft_version, graded_at, total_mark, feedback, created_at')
+    .eq('student_id', studentId)
+    .in('task_id', taskIds);
+
+  // Need feedback to synthesise from. Floor at 3 submissions w/ feedback.
+  const withFeedback = (rawSubs || []).filter(s => s.feedback);
+  if (withFeedback.length < STUDENT_LLM_FLOOR) {
+    return res.status(400).json({
+      error: `Not enough data yet. This card needs at least ${STUDENT_LLM_FLOOR} submissions with AI feedback for this student (currently ${withFeedback.length}).`,
+    });
+  }
+
+  // Keep the latest draft per task — drafts are useful for the velocity SQL
+  // card but each task's "final" feedback is the strongest signal for
+  // synthesis. (Multiple drafts of one task can otherwise double-weight
+  // that task's themes in the prompt.)
+  const latestByTask = new Map<string, any>();
+  for (const s of withFeedback) {
+    const k = s.task_id;
+    const prev = latestByTask.get(k);
+    if (!prev || (s.created_at || '') > (prev.created_at || '')) latestByTask.set(k, s);
+  }
+  const subs = [...latestByTask.values()].sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+
+  // Enrich for the prompt.
+  const enriched = subs.map(s => {
+    const t = taskMap[s.task_id] || {};
+    const markPct = (s.graded_at && s.total_mark != null && t.total_marks)
+      ? (Number(s.total_mark) / Number(t.total_marks)) * 100
+      : null;
+    return {
+      feedback: s.feedback,
+      course: t.course,
+      task_title: t.title,
+      draft_version: s.draft_version,
+      mark_pct: markPct,
+    };
+  });
+
+  // Student name (for prompt + response context).
+  const { data: { user: studentUser } } = await supabase.auth.admin.getUserById(studentId);
+  const meta = (studentUser?.user_metadata || {}) as any;
+  const studentName = meta.display_name || meta.full_name || meta.name || studentUser?.email || 'this student';
+
+  // -- Anthropic call --
+  let value: any;
+  try {
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const result = await callTool<Record<string, any>>({
+      client,
+      model: MODEL,
+      max_tokens: 2000,
+      temperature: 0.2,
+      system: cfg.buildSystemPrompt(studentName, enriched.length),
+      user: cfg.buildUserPrompt(enriched, { studentName }),
+      tool: cfg.tool,
+    });
+    value = result.value;
+  } catch (err: any) {
+    captureError(err, { stage: 'insights-card-generate', kind, student_id: studentId, user_id: user.id });
+    return res.status(500).json({ error: err?.message || 'Failed to generate.' });
+  }
+
+  // Validate required keys.
+  const requiredKeys: Record<string, string[]> = {
+    student_top_mistakes:  ['mistakes', 'scope_note'],
+    student_stretch_goals: ['next_steps', 'scope_note'],
+    student_strengths:     ['strengths', 'scope_note'],
+    student_summary:       ['summary_paragraph', 'headline_strength', 'headline_priority', 'tone_note'],
+  };
+  const missing = (requiredKeys[kind] || []).filter(k => !(k in (value || {})));
+  if (missing.length > 0) {
+    captureError(new Error('Incomplete tool output: missing ' + missing.join(', ')), { kind, student_id: studentId });
+    return res.status(502).json({ error: 'Generation finished but the response was incomplete. Try again — usually clears on retry.' });
+  }
+
+  return res.status(200).json({
+    kind,
+    student_id: studentId,
+    content: value,
+    source_submission_count: enriched.length,
+    source_task_count: new Set(enriched.map(r => r.task_title)).size,
     generated_at: new Date().toISOString(),
   });
 }

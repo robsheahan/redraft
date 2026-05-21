@@ -218,31 +218,38 @@ export async function getSchoolStudentIds(
 
 /**
  * Standard auth + school-resolution shared by every insights endpoint.
- * Returns the school the caller is allowed to view (with their effective
- * role + faculty scope), or null if they should be 404'd.
+ * Returns the caller's effective role + (optional) school context.
  *
- *   - Global admins pass ?school_id=… (or it's in the body) to view any
- *     school; without it they're forced to use the admin meta page.
- *   - Everyone else resolves their own school via school_members / LTI /
- *     email-domain match.
- *   - Faculty scope is derived from school_members.faculties (only applies
- *     to role='leader'; admins are unrestricted).
+ * Three tiers:
+ *   - 'admin'   — explicit school_members admin row, or a global admin
+ *     viewing any school via ?school_id=…
+ *   - 'leader'  — explicit school_members leader row (optionally faculty-
+ *     scoped via the faculties[] column)
+ *   - 'teacher' — default for any authenticated user with no school grant.
+ *     Sees only their own classes; school context is best-effort (resolved
+ *     via LTI / email-domain if available, otherwise empty).
+ *
+ * Returns null only for anonymous callers (no user). Everyone else gets at
+ * least 'teacher' access — scope is enforced downstream by callers, not
+ * here.
  */
 export interface InsightsAccess {
   schoolId: string;
   schoolName: string;
-  callerRole: 'admin' | 'leader' | null;
+  callerRole: 'admin' | 'leader' | 'teacher';
   restrictedFaculties: string[] | null;
 }
 
 export async function resolveInsightsAccess(
   supabase: SupabaseClient,
-  user: { id: string; email?: string | null },
+  user: { id: string; email?: string | null } | null,
   opts: { overrideSchoolId?: string | null; isGlobalAdmin: boolean },
 ): Promise<InsightsAccess | null> {
+  if (!user) return null;
+
   let schoolId = '';
   let schoolName = '';
-  let callerRole: 'admin' | 'leader' | null = null;
+  let callerRole: 'admin' | 'leader' | 'teacher' = 'teacher';
 
   if (opts.overrideSchoolId && opts.isGlobalAdmin) {
     const { data: s } = await supabase
@@ -256,18 +263,22 @@ export async function resolveInsightsAccess(
     callerRole = 'admin';
   } else {
     const ctx = await resolveUserSchool(supabase, user.id);
-    if (!ctx) return null;
-    const allowed = ctx.role !== null
-      || await canViewInsights(supabase, user.id, ctx.school_id)
-      || opts.isGlobalAdmin;
-    if (!allowed) return null;
-    schoolId = ctx.school_id;
-    schoolName = ctx.school_name;
-    callerRole = ctx.role;
+    if (ctx) {
+      schoolId = ctx.school_id;
+      schoolName = ctx.school_name;
+      // ctx.role is 'admin' | 'leader' | null. Null = inferred member only
+      // (LTI/domain) → falls through to default 'teacher'. Global admins
+      // viewing their own school still see it as 'admin'.
+      if (ctx.role) callerRole = ctx.role;
+      else if (opts.isGlobalAdmin) callerRole = 'admin';
+    } else if (opts.isGlobalAdmin) {
+      // Global admin with no school context — still an admin.
+      callerRole = 'admin';
+    }
   }
 
-  // Faculty scope only applies to leaders. Admins and global admins see
-  // everything regardless of any faculties[] entry.
+  // Faculty scope only applies to leaders. Admins, global admins, and
+  // teachers (own-class scope) are unaffected.
   let restrictedFaculties: string[] | null = null;
   if (callerRole === 'leader' && !opts.isGlobalAdmin) {
     const { data: grant } = await supabase
@@ -285,9 +296,89 @@ export async function resolveInsightsAccess(
 }
 
 /**
- * Whether the user can access the insights dashboard for a school.
- * Currently: any explicit school_member (admin or leader). Global admins
- * (from ADMIN_EMAILS) are handled by the API layer, not here.
+ * Class IDs owned by a given user (teacher_id match). Used to scope the
+ * teacher-tier insights view to that teacher's own classes, and to verify
+ * ownership when a ?class_id= filter is supplied.
+ */
+export async function getOwnedClassIds(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<string[]> {
+  const { data } = await supabase
+    .from('classes')
+    .select('id')
+    .eq('teacher_id', userId);
+  return (data || []).map(r => r.id);
+}
+
+/**
+ * Class IDs visible to the caller — the basis for student-scope queries.
+ * Teacher → their own classes. Leader/admin → every class at their school
+ * (optionally filtered to the leader's restricted faculties). Returns an
+ * empty array rather than null when no classes resolve.
+ */
+export async function getInScopeClassIds(
+  supabase: SupabaseClient,
+  callerRole: 'admin' | 'leader' | 'teacher',
+  userId: string,
+  schoolId: string,
+  restrictedFaculties: string[] | null,
+): Promise<string[]> {
+  if (callerRole === 'teacher') return getOwnedClassIds(supabase, userId);
+
+  if (!schoolId) return [];
+  const teacherIds = await getSchoolTeacherIds(supabase, schoolId);
+  if (teacherIds.length === 0) return [];
+  const { data } = await supabase
+    .from('classes')
+    .select('id, course')
+    .in('teacher_id', teacherIds);
+  const rows = data || [];
+  if (!restrictedFaculties || restrictedFaculties.length === 0) {
+    return rows.map(r => r.id);
+  }
+  const allow = new Set(restrictedFaculties);
+  // Course → faculty lookup happens in the caller (we don't import the
+  // courses data here to keep this module pure). Pass the course through;
+  // the caller filters. Simpler: import here.
+  const { getDisciplineForCourse } = await import('../data/nesa-courses.js');
+  return rows
+    .filter(r => {
+      const f = r.course ? (getDisciplineForCourse(r.course) || 'Other') : 'Other';
+      return allow.has(f);
+    })
+    .map(r => r.id);
+}
+
+/**
+ * Student IDs visible to the caller — distinct student_ids enrolled in any
+ * class returned by getInScopeClassIds. Used by the student search +
+ * single-student cards endpoint to verify access.
+ */
+export async function getInScopeStudentIds(
+  supabase: SupabaseClient,
+  callerRole: 'admin' | 'leader' | 'teacher',
+  userId: string,
+  schoolId: string,
+  restrictedFaculties: string[] | null,
+): Promise<string[]> {
+  const classIds = await getInScopeClassIds(supabase, callerRole, userId, schoolId, restrictedFaculties);
+  if (classIds.length === 0) return [];
+  const { data } = await supabase
+    .from('class_members')
+    .select('student_id')
+    .in('class_id', classIds);
+  const out = new Set<string>();
+  (data || []).forEach(r => { if (r.student_id) out.add(r.student_id); });
+  return [...out];
+}
+
+/**
+ * Whether the user has an explicit school_members grant (admin or leader).
+ * NOT a general "can see insights" check — teachers without a grant can
+ * still see class-level insights via resolveInsightsAccess. Used only by
+ * endpoints that are intentionally gated to leader/admin (e.g. the
+ * school-wide synthesis in insights-synthesis.ts).
  */
 export async function canViewInsights(
   supabase: SupabaseClient,

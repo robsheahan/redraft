@@ -305,6 +305,45 @@
 
     .loading { text-align: center; padding: 60px; color: #9ca3af; font-size: 14px; }
     .error-msg { text-align: center; padding: 40px; color: #dc2626; font-size: 14px; }
+
+    /* Student search box + autocomplete */
+    .student-search { position: relative; display: inline-flex; align-items: center; gap: 6px; }
+    .student-search-input { font-family: inherit; font-size: 13px; padding: 7px 12px 7px 30px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; min-width: 220px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+    .student-search-input:focus { border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.12); }
+    .student-search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 13px; pointer-events: none; }
+    .student-search-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 6px; border-radius: 4px; }
+    .student-search-clear:hover { color: #374151; background: #f3f4f6; }
+    .student-search-dropdown { position: absolute; top: calc(100% + 4px); left: 0; min-width: 320px; max-width: 460px; background: #fff; border: 1px solid #e8e0d4; border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,0.12); z-index: 50; max-height: 360px; overflow-y: auto; display: none; }
+    .student-search-dropdown.visible { display: block; }
+    .student-search-result { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f5f0e8; font-size: 13px; }
+    .student-search-result:last-child { border-bottom: none; }
+    .student-search-result:hover, .student-search-result.is-highlighted { background: #fdf6ee; }
+    .student-search-result .name { font-weight: 600; color: #111827; }
+    .student-search-result .meta { font-size: 11.5px; color: #6b7280; margin-top: 2px; }
+    .student-search-empty { padding: 14px; font-size: 12.5px; color: #9ca3af; font-style: italic; text-align: center; }
+
+    /* Student-mode chip in the header */
+    .student-mode-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; background: #fdf6ee; border: 1px solid #f0e6d6; border-radius: 100px; font-size: 12.5px; color: #374151; font-weight: 500; margin-left: 8px; }
+    .student-mode-chip .student-mode-x { background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 4px; border-radius: 4px; }
+    .student-mode-chip .student-mode-x:hover { color: #374151; background: rgba(0,0,0,0.05); }
+
+    /* Student header strip (replaces KPI strip in student mode) */
+    .student-header { background: #fff; border-radius: 12px; padding: 18px 22px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+    .student-header .who { display: flex; flex-direction: column; gap: 4px; }
+    .student-header .name { font-size: 20px; font-weight: 800; color: #111827; letter-spacing: -0.3px; }
+    .student-header .sub { font-size: 13px; color: #6b7280; }
+    .student-header .stats { display: flex; gap: 22px; }
+    .student-header .stat-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #9ca3af; margin-bottom: 2px; }
+    .student-header .stat-value { font-size: 18px; font-weight: 800; color: #111827; }
+
+    /* Student summary hero card */
+    .student-summary-hero { background: linear-gradient(135deg, #fef3e6 0%, #fdf6ee 100%); border-radius: 14px; padding: 24px 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); border-left: 4px solid #ed7615; grid-column: span 12; }
+    .student-summary-hero .hero-label { font-size: 11px; font-weight: 700; color: #ed7615; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+    .student-summary-hero .hero-paragraph { font-size: 15.5px; line-height: 1.7; color: #1f2937; }
+    .student-summary-hero .hero-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(237,118,21,0.2); font-size: 13px; }
+    .student-summary-hero .hero-meta .label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
+    .student-summary-hero .hero-meta .value { color: #374151; line-height: 1.55; }
+    .student-summary-hero .hero-tone { margin-top: 14px; font-size: 12.5px; color: #92400e; font-style: italic; }
     .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
     .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
     .site-footer a:hover { color: #6b7280; }
@@ -344,7 +383,15 @@
 
     // Active filter state (synced to URL). UI elements + every API call
     // consult this; updating it triggers a refetch + re-render.
-    const FILTER_KEYS = ['faculty', 'course', 'class_id', 'year_level'];
+    // student_id flips the page into single-student mode: cohort cards
+    // are replaced with the seven student-scoped cards.
+    const FILTER_KEYS = ['faculty', 'course', 'class_id', 'year_level', 'student_id'];
+    // In-memory cache of the currently-loaded student's metadata, set by
+    // the student-mode fetch so re-renders without a refetch keep working.
+    let currentStudent = null;
+    // Display name for the selected student — used in the header before the
+    // student API responds, so the chip doesn't show a UUID.
+    let selectedStudentName = '';
     function readFiltersFromUrl() {
       const u = new URLSearchParams(window.location.search);
       const out = {};
@@ -402,12 +449,40 @@
     async function reloadData() {
       const myToken = ++reloadToken;
       const container = document.getElementById('content');
+
+      // Student-mode branch: when student_id is set in filters, fetch the
+      // single-student endpoint instead of the cohort one. The cohort
+      // cards endpoint is still called in parallel so the filter bar's
+      // dropdown options (class list etc.) stay populated for navigation.
+      if (activeFilters.student_id) {
+        const studentQs = (SCHOOL_ID_OVERRIDE ? '?school_id=' + encodeURIComponent(SCHOOL_ID_OVERRIDE) + '&' : '?')
+          + 'student_id=' + encodeURIComponent(activeFilters.student_id);
+        const [studentRes, cohortRes] = await Promise.all([
+          authFetch('/api/insights-student' + studentQs),
+          authFetch('/api/insights-cards' + buildQueryStringExcluding('student_id')),
+        ]);
+        if (myToken !== reloadToken) return;
+        if (!studentRes.ok) {
+          const err = await studentRes.json().catch(() => ({}));
+          container.innerHTML = '<div class="error-msg">' + e(err.error || 'Could not load student insights.') + '</div>';
+          return;
+        }
+        currentStudent = await studentRes.json();
+        currentCards = cohortRes.ok ? await cohortRes.json() : { caller_role: currentStudent.caller_role, school: currentStudent.school, cards: { llm: {} }, filters: { options: { classes: [], faculties: [], courses: [], year_levels: [] } } };
+        currentData = { school: currentCards.school || currentStudent.school, caller_role: currentStudent.caller_role, insights: null };
+        selectedStudentName = currentStudent.student?.display_name || '';
+        render();
+        return;
+      }
+
+      // Cohort-mode (existing).
+      currentStudent = null;
       const qs = buildQueryString();
       const [cardsRes, synthRes] = await Promise.all([
         authFetch('/api/insights-cards' + qs),
         authFetch('/api/insights-synthesis' + qs),
       ]);
-      if (myToken !== reloadToken) return; // a newer reload superseded us
+      if (myToken !== reloadToken) return;
       if (!cardsRes.ok) {
         if (cardsRes.status === 404 || cardsRes.status === 403) {
           container.innerHTML =
@@ -428,38 +503,76 @@
       render();
     }
 
+    // Helper: build a query string that omits a specific filter key. Used
+    // when fetching cohort data alongside student-mode so the filter bar
+    // options stay populated under the cohort's full scope, not narrowed
+    // by an active student_id.
+    function buildQueryStringExcluding(omitKey) {
+      const u = new URLSearchParams();
+      if (SCHOOL_ID_OVERRIDE) u.set('school_id', SCHOOL_ID_OVERRIDE);
+      FILTER_KEYS.forEach(k => { if (k !== omitKey && activeFilters[k]) u.set(k, activeFilters[k]); });
+      const s = u.toString();
+      return s ? '?' + s : '';
+    }
+
     function render() {
       const c = document.getElementById('content');
       const d = currentData;
+      const role = (currentCards && currentCards.caller_role) || (currentStudent && currentStudent.caller_role) || d.caller_role || 'teacher';
+      const isTeacher = role === 'teacher';
+      const isStudentMode = !!(activeFilters.student_id && currentStudent);
       let html = '';
+
+      // ── Student-mode view (search-driven single student) ──────────
+      if (isStudentMode) {
+        c.innerHTML = renderStudentView(role, isTeacher);
+        // Wire generic UI (logout-style nav already exists at outer scope)
+        const teacherPicker = document.getElementById('teacherClassPicker');
+        if (teacherPicker) {
+          teacherPicker.addEventListener('change', (ev) => setFilter('class_id', ev.target.value || null));
+        }
+        wireStudentSearch();
+        document.querySelectorAll('[data-llm-generate]').forEach(b => {
+          b.addEventListener('click', () => generateLLMCard(b.dataset.llmGenerate));
+        });
+        return;
+      }
 
       // Header
       html += '<div class="page-header">';
       if (SCHOOL_ID_OVERRIDE) {
         html += '<a href="/admin.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#6b7280;text-decoration:none;font-weight:500;background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 12px;margin-bottom:12px">← Back to admin overview</a>';
       }
-      html += '<h1>School Insights';
-      if (d.caller_role) {
-        html += '<span class="role-pill">' + e(d.caller_role) + '</span>';
+      const titleText = isTeacher ? 'Class Insights' : 'School Insights';
+      const pillLabel = role === 'admin' ? 'ADMIN' : role === 'leader' ? 'LEADERSHIP' : 'CLASS VIEW';
+      html += '<h1>' + titleText
+        + '<span class="role-pill">' + e(pillLabel) + '</span>'
+        + '</h1>';
+      if (isTeacher) {
+        html += '<div class="school-name" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'
+          + renderTeacherClassPicker(currentCards)
+          + renderStudentSearchBox()
+          + '</div>';
+      } else {
+        html += '<div class="school-name">' + e(d.school.name) + '</div>';
       }
-      html += '</h1>';
-      html += '<div class="school-name">' + e(d.school.name) + '</div>';
       html += '</div>';
 
-      // KPI strip (clickable — expands a detail panel below)
-      // Prefer cards-endpoint counts (faculty-scoped) over synthesis stats.
-      const s = (currentCards && currentCards.counts) || d.stats || {};
-      const tasksWithFb = (s.tasks_with_class_feedback != null) ? s.tasks_with_class_feedback : (s.tasks_with_feedback || 0);
-      const totalTasks = (s.tasks != null) ? s.tasks : (s.tasks_total || 0);
-      html += '<div class="kpi-strip">';
-      html += kpi('teachers',    'Teachers',    s.teachers || 0);
-      html += kpi('classes',     'Classes',     s.classes || 0);
-      html += kpi('tasks',       'Tasks',       totalTasks, tasksWithFb + ' with class feedback');
-      html += kpi('submissions', 'Submissions', s.submissions || 0);
-      html += '</div>';
+      // KPI strip + filter bar — leader/admin only. Teacher tier replaces
+      // both with the class picker above.
+      if (!isTeacher) {
+        const s = (currentCards && currentCards.counts) || d.stats || {};
+        const tasksWithFb = (s.tasks_with_class_feedback != null) ? s.tasks_with_class_feedback : (s.tasks_with_feedback || 0);
+        const totalTasks = (s.tasks != null) ? s.tasks : (s.tasks_total || 0);
+        html += '<div class="kpi-strip">';
+        html += kpi('teachers',    'Teachers',    s.teachers || 0);
+        html += kpi('classes',     'Classes',     s.classes || 0);
+        html += kpi('tasks',       'Tasks',       totalTasks, tasksWithFb + ' with class feedback');
+        html += kpi('submissions', 'Submissions', s.submissions || 0);
+        html += '</div>';
 
-      // Filter bar
-      html += renderFilterBar(currentCards);
+        html += renderFilterBar(currentCards);
+      }
 
       // Detail panel — populated when a KPI is clicked
       html += '<div class="detail-panel" id="detailPanel"></div>';
@@ -482,7 +595,11 @@
       if (d.caller_role === 'admin') {
         html += '<div class="access-section">';
         html += '<h2>Manage access</h2>';
-        html += '<p class="sub">Every staff member registered at ' + e(d.school.name) + ' (matched by email domain) is listed below. Click a row to set what they can see.</p>';
+        html += '<p class="sub">Every staff member registered at ' + e(d.school.name) + ' (matched by email domain) is listed below. Click a row to promote a teacher to leader or admin access.</p>';
+        html += '<div class="access-default-row" style="display:flex;align-items:flex-start;gap:14px;padding:14px 16px;background:#fdf6ee;border:1px solid #f0e6d6;border-radius:8px;margin-bottom:14px">';
+        html += '<div style="flex-shrink:0;font-size:11px;font-weight:700;padding:4px 10px;border-radius:100px;background:#fff;color:#6b7280;text-transform:uppercase;letter-spacing:0.4px;border:1px solid #e8e0d4">Default</div>';
+        html += '<div style="font-size:13px;color:#374151;line-height:1.55"><strong style="color:#111827">Teacher (class view only).</strong> All teachers in your school get class-level insights for their own classes by default. No grant is needed — promote a staff member below to give them leader or admin access to the school-wide view.</div>';
+        html += '</div>';
         html += '<div id="membersTable"><div class="detail-loading">Loading staff list...</div></div>';
         html += '</div>';
       }
@@ -499,6 +616,17 @@
       document.querySelectorAll('.kpi').forEach(el => {
         el.addEventListener('click', () => toggleDetail(el.dataset.kind));
       });
+
+      // Wire teacher class picker
+      const teacherPicker = document.getElementById('teacherClassPicker');
+      if (teacherPicker) {
+        teacherPicker.addEventListener('change', (ev) => {
+          setFilter('class_id', ev.target.value || null);
+        });
+      }
+
+      // Wire student search (autocomplete + clear)
+      wireStudentSearch();
 
       // Wire filter bar
       wireFilterBar();
@@ -555,8 +683,11 @@
         .map(c => ({ value: c.id, label: c.name || '(untitled)', meta: c.course }));
       html += filterPill('class_id', 'Class', labelFor('class_id'), classOpts);
 
+      // Individual student search (everywhere)
+      html += renderStudentSearchBox();
+
       // Active chips
-      const activeKeys = FILTER_KEYS.filter(k => activeFilters[k]);
+      const activeKeys = FILTER_KEYS.filter(k => activeFilters[k] && k !== 'student_id');
       if (activeKeys.length > 0) {
         html += '<div class="filter-chips">';
         activeKeys.forEach(k => {
@@ -1150,8 +1281,293 @@
 
     // ─────────────── Card renderers ───────────────
 
+    // ─────────────── Single-student view ───────────────
+
+    function renderStudentView(role, isTeacher) {
+      const s = currentStudent;
+      const stu = s.student || {};
+      const cd = s.cards || {};
+      const llm = cd.llm || {};
+      const eligible = cd.llm_eligible !== false;
+      const floor = cd.llm_floor || 3;
+
+      let html = '';
+
+      // Header with class picker (teacher) / school name (leader/admin) + student search box.
+      html += '<div class="page-header">';
+      if (SCHOOL_ID_OVERRIDE) {
+        html += '<a href="/admin.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#6b7280;text-decoration:none;font-weight:500;background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.1);border-radius:6px;padding:5px 12px;margin-bottom:12px">← Back to admin overview</a>';
+      }
+      const titleText = isTeacher ? 'Class Insights' : 'School Insights';
+      const pillLabel = role === 'admin' ? 'ADMIN' : role === 'leader' ? 'LEADERSHIP' : 'CLASS VIEW';
+      html += '<h1>' + titleText + '<span class="role-pill">' + e(pillLabel) + '</span></h1>';
+      if (isTeacher) {
+        html += '<div class="school-name" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'
+          + renderTeacherClassPicker(currentCards || { filters: { options: { classes: [] } } })
+          + renderStudentSearchBox()
+          + '</div>';
+      } else {
+        html += '<div class="school-name" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'
+          + e((currentCards && currentCards.school && currentCards.school.name) || (s.school && s.school.id) || '')
+          + renderStudentSearchBox()
+          + '</div>';
+      }
+      html += '</div>';
+
+      // Student header strip — replaces KPI strip in student mode.
+      const lastActivity = stu.last_activity ? new Date(stu.last_activity).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+      const classList = (stu.classes || []).map(c => c.name).filter(Boolean).join(', ') || '—';
+      html += '<div class="student-header">';
+      html += '<div class="who">'
+        + '<div class="name">' + e(stu.display_name || '(unknown)') + '</div>'
+        + '<div class="sub">' + (stu.year_level ? 'Year ' + stu.year_level + ' · ' : '') + e(classList) + (stu.email ? ' · ' + e(stu.email) : '') + '</div>'
+        + '</div>';
+      html += '<div class="stats">'
+        + '<div><div class="stat-label">Submissions</div><div class="stat-value">' + (stu.total_submissions || 0) + '</div></div>'
+        + '<div><div class="stat-label">With feedback</div><div class="stat-value">' + (stu.submissions_with_feedback || 0) + '</div></div>'
+        + '<div><div class="stat-label">Last active</div><div class="stat-value" style="font-size:14px;font-weight:600">' + e(lastActivity) + '</div></div>'
+        + '</div>';
+      html += '</div>';
+
+      // Cards grid. If below the LLM floor, the four LLM cards show a
+      // "Not enough data yet" state. The three SQL cards always render
+      // whatever data exists.
+      html += '<div class="cards-grid">';
+
+      // Hero summary card (top)
+      html += renderStudentSummaryHero(llm.student_summary, eligible, floor, stu);
+
+      // SQL cards
+      html += '<div class="card card-span-6">'
+        + cardHeader('Mark distribution', 'This student\'s graded submissions')
+        + renderStudentMarkDistribution(cd.mark_distribution)
+        + '</div>';
+      html += '<div class="card card-span-6">'
+        + cardHeader('Improvement velocity', 'Priority shifts across their drafts')
+        + renderImprovementVelocity(cd.improvement_velocity)
+        + '</div>';
+      html += '<div class="card card-span-12">'
+        + cardHeader('Keyword struggles', 'NESA terms most often flagged across this student\'s feedback')
+        + renderKeywordStruggles(cd.keyword_struggles)
+        + '</div>';
+
+      // LLM cards (per-student kinds)
+      html += '<div class="card card-span-6">' + renderStudentLLMCard('student_top_mistakes', llm.student_top_mistakes, {
+        title: 'Top 3 mistakes',
+        sub: 'Recurring patterns across ' + (stu.display_name ? stu.display_name.split(' ')[0] : 'this student') + '\'s feedback',
+        emptyTeaser: 'Generate to surface the 3 mistakes appearing most often in this student\'s AI feedback. Useful for personalised follow-up.',
+        render: renderStudentMistakes,
+        eligible, floor,
+      }) + '</div>';
+
+      html += '<div class="card card-span-6">' + renderStudentLLMCard('student_stretch_goals', llm.student_stretch_goals, {
+        title: 'Stretch goals',
+        sub: 'Personalised next steps to lift this student\'s work',
+        emptyTeaser: 'Generate to identify the 3 highest-impact next steps for this student specifically.',
+        render: renderStudentStretchGoals,
+        eligible, floor,
+      }) + '</div>';
+
+      html += '<div class="card card-span-12">' + renderStudentLLMCard('student_strengths', llm.student_strengths, {
+        title: '3 things done well',
+        sub: 'Strengths showing up consistently in this student\'s writing',
+        emptyTeaser: 'Generate to identify the 3 strengths this student is consistently demonstrating. Useful for celebrating progress.',
+        render: renderStudentStrengths,
+        eligible, floor,
+      }) + '</div>';
+
+      html += '</div>';
+      return html;
+    }
+
+    function renderStudentSummaryHero(cache, eligible, floor, stu) {
+      const content = cache && cache.content;
+      if (!eligible) {
+        return '<div class="student-summary-hero">'
+          + '<div class="hero-label">Student summary</div>'
+          + '<div class="hero-paragraph" style="color:#92400e;font-size:14px;font-style:italic">Not enough data yet — this student has '
+          + (stu.submissions_with_feedback || 0) + ' submission' + ((stu.submissions_with_feedback || 0) === 1 ? '' : 's')
+          + ' with AI feedback. At least ' + floor + ' are needed before a meaningful summary can be generated.</div>'
+          + '</div>';
+      }
+      if (!content) {
+        return '<div class="student-summary-hero">'
+          + '<div class="hero-label">Student summary</div>'
+          + '<div class="hero-paragraph" style="font-style:italic;color:#6b7280">A short report-style narrative on this student\'s progress, ready to drop into a report comment or parent-meeting note.</div>'
+          + '<div style="margin-top:14px"><button class="btn-synthesise" data-llm-generate="student_summary">Generate</button></div>'
+          + '</div>';
+      }
+      let html = '<div class="student-summary-hero">';
+      html += '<div class="hero-label">Student summary</div>';
+      html += '<div class="hero-paragraph">' + e(content.summary_paragraph || '') + '</div>';
+      if (content.tone_note) {
+        html += '<div class="hero-tone">' + e(content.tone_note) + '</div>';
+      }
+      html += '<div class="hero-meta">';
+      html += '<div><div class="label">Key strength</div><div class="value">' + e(content.headline_strength || '') + '</div></div>';
+      html += '<div><div class="label">Top priority</div><div class="value">' + e(content.headline_priority || '') + '</div></div>';
+      html += '</div>';
+      html += '<div style="margin-top:14px;display:flex;align-items:center;gap:10px"><button class="btn-synthesise" style="padding:6px 12px;font-size:12px" data-llm-generate="student_summary">Regenerate</button>';
+      if (cache.generated_at) {
+        const when = new Date(cache.generated_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        html += '<span style="font-size:11.5px;color:#9ca3af">updated ' + e(when) + '</span>';
+      }
+      html += '</div>';
+      html += '</div>';
+      return html;
+    }
+
+    function renderStudentLLMCard(kind, cache, opts) {
+      const hasContent = !!(cache && cache.content);
+      if (!opts.eligible) {
+        return '<div class="synthesis-head">'
+          + '<div><h3 style="font-size:14.5px">' + e(opts.title) + '</h3>'
+          + '<div class="meta" style="font-size:11.5px;color:#9ca3af;margin-top:2px">' + e(opts.sub) + '</div>'
+          + '</div></div>'
+          + '<div class="card-empty"><strong>Not enough data yet</strong>This card needs at least ' + opts.floor + ' submissions with AI feedback before it can run.</div>';
+      }
+      let html = '<div class="synthesis-head">';
+      html += '<div><h3 style="font-size:14.5px">' + e(opts.title) + '</h3>';
+      html += '<div class="meta" style="font-size:11.5px;color:#9ca3af;margin-top:2px">' + e(opts.sub) + '</div>';
+      if (hasContent && cache.generated_at) {
+        const when = new Date(cache.generated_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const ctx = [];
+        if (cache.source_submission_count) ctx.push(cache.source_submission_count + ' submissions');
+        ctx.push('updated ' + when);
+        html += '<div class="meta" style="margin-top:4px">' + e(ctx.join(' · ')) + '</div>';
+      }
+      html += '</div>';
+      html += '<button class="btn-synthesise" style="padding:6px 12px;font-size:12px" data-llm-generate="' + e(kind) + '">'
+        + (hasContent ? 'Regenerate' : 'Generate') + '</button>';
+      html += '</div>';
+      if (!hasContent) {
+        html += '<div class="card-empty" style="margin-top:8px;font-size:13px;color:#6b7280">' + e(opts.emptyTeaser) + '</div>';
+      } else {
+        html += opts.render(cache.content);
+      }
+      return html;
+    }
+
+    function renderStudentMistakes(c) {
+      const items = (c && c.mistakes) || [];
+      if (items.length === 0) return '<div class="card-empty">No content.</div>';
+      let html = '<ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px">';
+      items.forEach(m => {
+        html += '<li><strong style="color:#111827">' + e(m.headline || '') + '</strong><div style="font-size:13px;color:#374151;line-height:1.55;margin-top:3px">' + e(m.detail || '') + '</div></li>';
+      });
+      html += '</ol>';
+      if (c.scope_note) html += '<div style="font-size:11.5px;color:#9ca3af;margin-top:10px;font-style:italic">' + e(c.scope_note) + '</div>';
+      return html;
+    }
+
+    function renderStudentStretchGoals(c) {
+      const items = (c && c.next_steps) || [];
+      if (items.length === 0) return '<div class="card-empty">No content.</div>';
+      let html = '<ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px">';
+      items.forEach(m => {
+        html += '<li><strong style="color:#111827">' + e(m.headline || '') + '</strong><div style="font-size:13px;color:#374151;line-height:1.55;margin-top:3px">' + e(m.detail || '') + '</div></li>';
+      });
+      html += '</ol>';
+      if (c.scope_note) html += '<div style="font-size:11.5px;color:#9ca3af;margin-top:10px;font-style:italic">' + e(c.scope_note) + '</div>';
+      return html;
+    }
+
+    function renderStudentStrengths(c) {
+      const items = (c && c.strengths) || [];
+      if (items.length === 0) return '<div class="card-empty">No content.</div>';
+      let html = '<ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px">';
+      items.forEach(m => {
+        html += '<li><strong style="color:#111827">' + e(m.headline || '') + '</strong><div style="font-size:13px;color:#374151;line-height:1.55;margin-top:3px">' + e(m.detail || '') + '</div></li>';
+      });
+      html += '</ol>';
+      if (c.scope_note) html += '<div style="font-size:11.5px;color:#9ca3af;margin-top:10px;font-style:italic">' + e(c.scope_note) + '</div>';
+      return html;
+    }
+
+    function renderStudentMarkDistribution(d) {
+      if (!d || !d.total) {
+        return '<div class="card-empty"><strong>No graded submissions yet</strong>Once teachers mark this student\'s work, A–E band counts and a task-by-task list appear here.</div>';
+      }
+      // Reuse the same band rendering as the cohort card, then append a
+      // per-task list.
+      let html = renderMarkDistribution(d);
+      const tasks = d.per_task || [];
+      if (tasks.length > 0) {
+        html += '<div style="margin-top:12px;border-top:1px solid #f0e6d6;padding-top:10px">'
+          + '<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px">By task</div>';
+        tasks.forEach(t => {
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:4px 0;border-bottom:1px solid #f5f0e8">'
+            + '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#374151">' + e(t.task_title) + '</div>'
+            + '<div style="font-weight:700;color:#111827;margin-left:10px">' + t.awarded + '/' + t.out_of + '</div>'
+            + '<div style="font-size:11px;font-weight:700;padding:1px 7px;border-radius:100px;margin-left:8px;background:#fdf6ee;color:#ed7615">' + e(t.band) + '</div>'
+            + '</div>';
+        });
+        html += '</div>';
+      }
+      return html;
+    }
+
+    function renderTeacherCardsGrid(cards) {
+      const cd = cards.cards;
+      const llm = cd.llm || {};
+      let html = '<div class="cards-grid">';
+
+      // 1. Mark distribution
+      html += '<div class="card card-span-6">'
+        + cardHeader('Mark distribution', 'NESA Common Grade Scale')
+        + renderMarkDistribution(cd.mark_distribution)
+        + '</div>';
+
+      // 2. Improvement velocity — feedback priority shifts across drafts
+      html += '<div class="card card-span-6">'
+        + cardHeader('Improvement velocity', 'Which priorities students addressed between drafts')
+        + renderImprovementVelocity(cd.improvement_velocity)
+        + '</div>';
+
+      // 3. Keyword struggles (NESA directive verbs) → verb_depth LLM card
+      html += '<div class="card card-span-12">' + renderLLMCard('verb_depth', llm.verb_depth, {
+        title: 'Keyword struggles',
+        sub: 'How students handle each NESA directive verb (analyse, evaluate, justify, …)',
+        emptyTeaser: 'Generate to map how students in this class handle each NESA directive verb. Highlights which verbs they execute well and where they fall short.',
+        render: renderVerbDepth,
+      }) + '</div>';
+
+      // 4. Top 3 mistakes → common_gaps
+      html += '<div class="card card-span-6">' + renderLLMCard('common_gaps', llm.common_gaps, {
+        title: 'Top 3 mistakes',
+        sub: 'Recurring improvement themes across the class',
+        emptyTeaser: 'Generate to surface the 3 mistakes appearing most often in this class\'s AI feedback. Useful for planning targeted lessons.',
+        render: renderListedItems,
+      }) + '</div>';
+
+      // 5. Stretch goals → top_decile (quartile mode at class scope)
+      html += '<div class="card card-span-6">' + renderLLMCard('top_decile', llm.top_decile, {
+        title: 'Stretch goals',
+        sub: 'Highest-impact next steps for the strongest students',
+        emptyTeaser: 'Generate to identify the most useful next steps for the top-performing students in this class — moving "high" responses to "exceptional".',
+        render: renderTopDecile,
+      }) + '</div>';
+
+      // 6. 3 things done well → things_done_well
+      html += '<div class="card card-span-12">' + renderLLMCard('things_done_well', llm.things_done_well, {
+        title: '3 things done well',
+        sub: 'Strengths showing up consistently across the class',
+        emptyTeaser: 'Generate to identify the 3 strengths students in this class are consistently demonstrating. Useful for celebrating progress.',
+        render: renderListedItems,
+      }) + '</div>';
+
+      html += '</div>';
+      return html;
+    }
+
     function renderCardsGrid(cards, synth) {
       if (!cards || !cards.cards) return '';
+      // Teacher tier (default for any teacher with no school grant) sees a
+      // pared-down six-card grid scoped to their own classes. Leaders and
+      // admins see the full school dashboard.
+      if (cards.caller_role === 'teacher') {
+        return renderTeacherCardsGrid(cards);
+      }
       const cd = cards.cards;
       let html = '<div class="cards-grid">';
 
@@ -1401,7 +1817,7 @@
       const btn = document.querySelector('[data-llm-generate="' + kind + '"]');
       const loading = document.getElementById('llmLoading_' + kind);
       const body = document.getElementById('llmBody_' + kind);
-      if (btn) btn.disabled = true;
+      if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
       if (body) body.style.display = 'none';
       if (loading) loading.classList.add('visible');
       try {
@@ -1410,12 +1826,26 @@
         const res = await authFetch('/api/insights-card-generate', { method: 'POST', body: JSON.stringify(filterBody) });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to generate');
-        // Reload all cards (simpler than patching the DOM)
+        // Student-mode cards aren't cached on the server, so patch in-memory
+        // state and re-render rather than calling reloadData (which would
+        // discard the fresh content).
+        if (activeFilters.student_id && currentStudent) {
+          currentStudent.cards = currentStudent.cards || {};
+          currentStudent.cards.llm = currentStudent.cards.llm || {};
+          currentStudent.cards.llm[kind] = {
+            content: data.content,
+            generated_at: data.generated_at,
+            source_submission_count: data.source_submission_count,
+          };
+          render();
+          return;
+        }
+        // Cohort mode: reload all cards (the new content lives in the cache).
         await reloadData();
       } catch (err) {
         if (loading) loading.classList.remove('visible');
         if (body) body.style.display = '';
-        if (btn) btn.disabled = false;
+        if (btn) { btn.disabled = false; btn.textContent = 'Generate'; }
         alert(err.message);
       }
     }
@@ -1444,18 +1874,17 @@
     function renderImprovementVelocity(d) {
       const sample = (d && d.sample_size) || 0;
       if (sample === 0) {
-        return '<div class="card-empty"><strong>No multi-draft data yet</strong>Once students submit more than one draft on the same task, this card quantifies how much their AI feedback improves between v1 and the final draft.</div>';
+        return '<div class="card-empty"><strong>No multi-draft data yet</strong>Once students submit more than one draft on the same task, this card shows which AI priorities they addressed, which stuck around, and which new gaps emerged.</div>';
       }
-      const delta = d.avg_delta_pct || 0;
-      const colour = delta >= 25 ? '#15803d' : delta >= 10 ? '#d97706' : '#991b1b';
-      let html = '<div style="display:flex;flex-direction:column;gap:8px">';
+      const addressed = d.addressed_rate || 0;
+      const colour = addressed >= 60 ? '#15803d' : addressed >= 30 ? '#d97706' : '#991b1b';
+      let html = '<div style="display:flex;flex-direction:column;gap:10px">';
       html += '<div><span style="font-size:30px;font-weight:800;color:' + colour + ';letter-spacing:-0.5px">'
-        + (delta > 0 ? '−' : delta < 0 ? '+' : '') + Math.abs(delta).toFixed(0) + '%'
-        + '</span><span style="font-size:13px;color:#6b7280;margin-left:8px">improvement points between v1 → final</span></div>';
+        + addressed.toFixed(0) + '%'
+        + '</span><span style="font-size:13px;color:#6b7280;margin-left:8px">of students addressed at least one priority in their next draft</span></div>';
       html += '<div style="font-size:12.5px;color:#374151;line-height:1.55">'
         + 'Sample: <strong>' + sample + '</strong> student–task pair' + (sample === 1 ? '' : 's') + ' with 2+ drafts. '
-        + 'Average <strong>' + (d.avg_v1 || 0).toFixed(1) + '</strong> improvement points in v1, '
-        + '<strong>' + (d.avg_vN || 0).toFixed(1) + '</strong> in the final draft.'
+        + 'Avg priorities listed: <strong>' + (d.avg_v1 || 0).toFixed(1) + '</strong> in v1 → <strong>' + (d.avg_vN || 0).toFixed(1) + '</strong> in the final draft.'
         + '</div>';
       const total = sample;
       const pct = n => total > 0 ? (n / total) * 100 : 0;
@@ -1465,10 +1894,26 @@
       if (d.increased > 0) html += '<div class="marking-seg" style="flex:' + pct(d.increased) + ';background:#991b1b" title="' + d.increased + ' regressed">' + (pct(d.increased) >= 14 ? d.increased : '') + '</div>';
       html += '</div>';
       html += '<div style="display:flex;gap:14px;font-size:11.5px;color:#6b7280">'
-        + '<span><span class="marking-legend-dot marked" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#15803d;margin-right:4px"></span><strong style="color:#111827">' + d.decreased + '</strong> improved</span>'
-        + '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9ca3af;margin-right:4px"></span><strong style="color:#111827">' + d.unchanged + '</strong> unchanged</span>'
-        + '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#991b1b;margin-right:4px"></span><strong style="color:#111827">' + d.increased + '</strong> regressed</span>'
+        + '<span><span class="marking-legend-dot marked" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#15803d;margin-right:4px"></span><strong style="color:#111827">' + (d.decreased || 0) + '</strong> fewer priorities</span>'
+        + '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9ca3af;margin-right:4px"></span><strong style="color:#111827">' + (d.unchanged || 0) + '</strong> same count</span>'
+        + '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#991b1b;margin-right:4px"></span><strong style="color:#111827">' + (d.increased || 0) + '</strong> more</span>'
         + '</div>';
+      const tp = (d.top_persistent || []).slice(0, 3);
+      const tr = (d.top_regressions || []).slice(0, 3);
+      if (tp.length > 0 || tr.length > 0) {
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px">';
+        if (tp.length > 0) {
+          html += '<div><div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">Sticky priorities</div>';
+          tp.forEach(t => { html += '<div style="font-size:12.5px;color:#374151;line-height:1.5">· ' + e(t.title) + ' <span style="color:#9ca3af">(' + t.count + ')</span></div>'; });
+          html += '</div>';
+        } else { html += '<div></div>'; }
+        if (tr.length > 0) {
+          html += '<div><div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">Newly emerged</div>';
+          tr.forEach(t => { html += '<div style="font-size:12.5px;color:#374151;line-height:1.5">· ' + e(t.title) + ' <span style="color:#9ca3af">(' + t.count + ')</span></div>'; });
+          html += '</div>';
+        } else { html += '<div></div>'; }
+        html += '</div>';
+      }
       html += '</div>';
       return html;
     }
@@ -1499,6 +1944,155 @@
       if (sub) h += '<span class="card-h-sub">' + e(sub) + '</span>';
       h += '</div>';
       return h;
+    }
+
+    function renderStudentSearchBox() {
+      const selectedId = activeFilters.student_id || '';
+      const label = selectedId ? (selectedStudentName || 'Selected student') : '';
+      let html = '<div class="student-search" id="studentSearchWrap">';
+      if (selectedId) {
+        html += '<span class="student-mode-chip"><strong style="color:#111827">' + e(label) + '</strong>'
+          + '<button class="student-mode-x" id="studentClearBtn" title="Back to cohort view">×</button>'
+          + '</span>';
+      } else {
+        html += '<span class="student-search-icon">🔍</span>';
+        html += '<input type="text" class="student-search-input" id="studentSearchInput" placeholder="Search a student (by surname)…" autocomplete="off" />';
+        html += '<div class="student-search-dropdown" id="studentSearchDropdown"></div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    // Search-input state
+    let studentSearchDebounce = null;
+    let studentSearchInflight = 0;
+    let studentSearchHighlight = -1;
+    let studentSearchResults = [];
+
+    function wireStudentSearch() {
+      const input = document.getElementById('studentSearchInput');
+      const dropdown = document.getElementById('studentSearchDropdown');
+      const clearBtn = document.getElementById('studentClearBtn');
+      if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+          selectedStudentName = '';
+          setFilter('student_id', null);
+        });
+      }
+      if (!input || !dropdown) return;
+      input.addEventListener('input', () => {
+        const q = input.value.trim();
+        if (studentSearchDebounce) clearTimeout(studentSearchDebounce);
+        if (q.length < 2) {
+          dropdown.classList.remove('visible');
+          dropdown.innerHTML = '';
+          studentSearchResults = [];
+          return;
+        }
+        studentSearchDebounce = setTimeout(() => doStudentSearch(q), 250);
+      });
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'ArrowDown') {
+          ev.preventDefault();
+          if (studentSearchResults.length === 0) return;
+          studentSearchHighlight = Math.min(studentSearchHighlight + 1, studentSearchResults.length - 1);
+          paintStudentDropdown();
+        } else if (ev.key === 'ArrowUp') {
+          ev.preventDefault();
+          studentSearchHighlight = Math.max(studentSearchHighlight - 1, 0);
+          paintStudentDropdown();
+        } else if (ev.key === 'Enter') {
+          if (studentSearchHighlight >= 0 && studentSearchResults[studentSearchHighlight]) {
+            ev.preventDefault();
+            pickStudent(studentSearchResults[studentSearchHighlight]);
+          }
+        } else if (ev.key === 'Escape') {
+          dropdown.classList.remove('visible');
+        }
+      });
+      input.addEventListener('blur', () => {
+        // Defer to allow click on dropdown row.
+        setTimeout(() => dropdown.classList.remove('visible'), 150);
+      });
+      input.addEventListener('focus', () => {
+        if (studentSearchResults.length > 0) dropdown.classList.add('visible');
+      });
+    }
+
+    async function doStudentSearch(q) {
+      const dropdown = document.getElementById('studentSearchDropdown');
+      if (!dropdown) return;
+      const myReq = ++studentSearchInflight;
+      const qs = '?q=' + encodeURIComponent(q) + (SCHOOL_ID_OVERRIDE ? '&school_id=' + encodeURIComponent(SCHOOL_ID_OVERRIDE) : '');
+      const r = await authFetch('/api/insights-students-search' + qs);
+      if (myReq !== studentSearchInflight) return;
+      if (!r.ok) {
+        dropdown.innerHTML = '<div class="student-search-empty">Search failed. Try again.</div>';
+        dropdown.classList.add('visible');
+        return;
+      }
+      const body = await r.json();
+      studentSearchResults = body.rows || [];
+      studentSearchHighlight = studentSearchResults.length > 0 ? 0 : -1;
+      paintStudentDropdown();
+    }
+
+    function paintStudentDropdown() {
+      const dropdown = document.getElementById('studentSearchDropdown');
+      if (!dropdown) return;
+      if (studentSearchResults.length === 0) {
+        dropdown.innerHTML = '<div class="student-search-empty">No students found.</div>';
+        dropdown.classList.add('visible');
+        return;
+      }
+      let html = '';
+      studentSearchResults.forEach((r, i) => {
+        const cls = 'student-search-result' + (i === studentSearchHighlight ? ' is-highlighted' : '');
+        const subline = [
+          r.year_level ? 'Year ' + r.year_level : '',
+          r.class_summary || '',
+          r.email || '',
+        ].filter(Boolean).join(' · ');
+        html += '<div class="' + cls + '" data-student-pick="' + e(r.id) + '">'
+          + '<div class="name">' + e(r.display_name) + '</div>'
+          + '<div class="meta">' + e(subline) + '</div>'
+          + '</div>';
+      });
+      dropdown.innerHTML = html;
+      dropdown.classList.add('visible');
+      dropdown.querySelectorAll('[data-student-pick]').forEach(el => {
+        el.addEventListener('mousedown', (ev) => {
+          ev.preventDefault();
+          const id = el.dataset.studentPick;
+          const row = studentSearchResults.find(r => r.id === id);
+          if (row) pickStudent(row);
+        });
+      });
+    }
+
+    function pickStudent(row) {
+      selectedStudentName = row.display_name || '';
+      const dropdown = document.getElementById('studentSearchDropdown');
+      if (dropdown) dropdown.classList.remove('visible');
+      setFilter('student_id', row.id);
+    }
+
+    function renderTeacherClassPicker(cards) {
+      // Class options come from the cards API, already scoped to the
+      // teacher's owned classes (teacherIds = [user.id] on the server).
+      const opts = (cards && cards.filters && cards.filters.options && cards.filters.options.classes) || [];
+      const selected = (activeFilters.class_id || '').trim();
+      let html = '<label style="display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:#374151;font-weight:500">'
+        + 'Showing: '
+        + '<select id="teacherClassPicker" style="font-family:inherit;font-size:13.5px;padding:6px 10px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-weight:500;cursor:pointer;min-width:240px">';
+      html += '<option value=""' + (selected ? '' : ' selected') + '>All my classes</option>';
+      opts.forEach(c => {
+        const sel = selected === c.id ? ' selected' : '';
+        const label = c.name + (c.course ? ' — ' + c.course : '');
+        html += '<option value="' + e(c.id) + '"' + sel + '>' + e(label) + '</option>';
+      });
+      html += '</select></label>';
+      return html;
     }
 
     function renderActivityCard(activity) {

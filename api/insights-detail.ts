@@ -63,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     isGlobalAdmin: isGlobalAdmin(user),
   });
   if (!access) return res.status(404).json({ error: 'Not found' });
-  const { schoolId, restrictedFaculties } = access;
+  const { schoolId, callerRole, restrictedFaculties } = access;
 
   const rawFilters = parseFiltersFromQuery(req.query as any);
   const filters = applyFacultyScope(rawFilters, restrictedFaculties);
@@ -80,7 +80,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const allUsers = await listAllAuthUsers(supabase);
-  const teacherIds = await getSchoolTeacherIds(supabase, schoolId, allUsers as any);
+  // Teacher tier sees only their own classes — same constraint as the
+  // cards endpoint. ?class_id= they don't own falls out via the
+  // teacher_id IN clause below.
+  const teacherIds = callerRole === 'teacher'
+    ? [user.id]
+    : await getSchoolTeacherIds(supabase, schoolId, allUsers as any);
   if (teacherIds.length === 0) return res.status(200).json({ rows: [] });
 
   // Build the canonical maps once.

@@ -81,7 +81,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Share the listUsers fetch across helpers — same pattern as admin-stats.
   // Paginate through Supabase's 1000/page cap so we don't silently truncate.
   const allUsers = await listAllAuthUsers(supabase);
-  const teacherIds = await getSchoolTeacherIds(supabase, schoolId, allUsers as any);
+
+  // Teacher tier sees only their own classes (regardless of school context).
+  // Leader/admin tiers see every teacher at the school. A teacher passing a
+  // ?class_id= they don't own falls out naturally — the classes query is
+  // constrained to teacher_id IN [user.id] so unowned class_ids return zero
+  // rows downstream.
+  const teacherIds = callerRole === 'teacher'
+    ? [user.id]
+    : await getSchoolTeacherIds(supabase, schoolId, allUsers as any);
 
   const userInfo: Record<string, { name: string; email: string }> = {};
   (allUsers as any[]).forEach(u => {
@@ -274,20 +282,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const keywordStruggles = computeKeywordStruggles(submissions);
 
   // -- Cached LLM cards (Tier A) --
-  const { data: llmRows } = await supabase
-    .from('school_insights_cards')
-    .select('card_kind, content, filters, source_submission_count, source_task_count, generated_at')
-    .eq('school_id', schoolId);
+  // Teacher tier doesn't use the school-keyed cache (it's per-school, not
+  // per-teacher or per-class). Teachers regenerate fresh each click; the
+  // rate-limiter caps spend. Leaders/admins continue to read from cache.
   const llm: Record<string, any> = {};
-  (llmRows || []).forEach(r => {
-    llm[r.card_kind] = {
-      content: r.content,
-      filters: r.filters || {},
-      source_submission_count: r.source_submission_count,
-      source_task_count: r.source_task_count,
-      generated_at: r.generated_at,
-    };
-  });
+  if (callerRole !== 'teacher' && schoolId) {
+    const { data: llmRows } = await supabase
+      .from('school_insights_cards')
+      .select('card_kind, content, filters, source_submission_count, source_task_count, generated_at')
+      .eq('school_id', schoolId);
+    (llmRows || []).forEach(r => {
+      llm[r.card_kind] = {
+        content: r.content,
+        filters: r.filters || {},
+        source_submission_count: r.source_submission_count,
+        source_task_count: r.source_task_count,
+        generated_at: r.generated_at,
+      };
+    });
+  }
 
   // -- Counts (header KPI strip) --
   const counts = {
@@ -383,13 +396,21 @@ function computePerCriterionLows(submissions: any[]) {
 }
 
 /**
- * "Do multi-draft students improve?" — for each (student, task) pair
- * with two or more drafts, compare the count of improvement bullets in
- * the AI feedback between v1 and the final draft. Fewer bullets = the
- * model found fewer things to flag = improvement.
+ * Improvement velocity = how students' AI feedback priorities shift
+ * between drafts. For each (student, task) pair with ≥2 drafts, we diff
+ * the improvement-summary titles between draft 1 and draft N:
  *
- * Output is intentionally a simple % reduction figure; deeper analysis
- * (mark deltas) is harder because we rarely grade every draft.
+ *   - addressed:  a priority listed in draft 1 is no longer listed in N
+ *   - persistent: still listed in N (the student didn't shift it)
+ *   - regressed:  newly listed in N (a new gap the model surfaced)
+ *
+ * Aggregate at class level:
+ *   - addressed_rate: % of students who addressed at least one priority
+ *   - top_persistent: themes that stuck around across multiple students
+ *   - regressions:   themes newly raised in later drafts across students
+ *
+ * Fallback aggregate (legacy fields kept for the school dashboard's UI):
+ * avg bullet counts + decreased/increased/unchanged tally.
  */
 function computeImprovementVelocity(submissions: any[]) {
   const byPair: Record<string, any[]> = {};
@@ -398,31 +419,62 @@ function computeImprovementVelocity(submissions: any[]) {
     const key = s.student_id + '|' + s.task_id;
     (byPair[key] ||= []).push(s);
   }
+
   let sampleSize = 0;
+  let studentsWithAnyAddressed = 0;
   let v1ImprSum = 0;
   let vNImprSum = 0;
   let increased = 0;
   let decreased = 0;
   let unchanged = 0;
+  const persistentCounts: Record<string, number> = {};
+  const regressionCounts: Record<string, number> = {};
+
   for (const subs of Object.values(byPair)) {
     if (subs.length < 2) continue;
     subs.sort((a, b) => (a.draft_version || 0) - (b.draft_version || 0));
     const first = subs[0];
     const last = subs[subs.length - 1];
-    const c1 = countImprovements(first?.feedback);
-    const cN = countImprovements(last?.feedback);
-    if (c1 == null || cN == null) continue;
+    const v1Titles = extractImprovementTitles(first?.feedback);
+    const vNTitles = extractImprovementTitles(last?.feedback);
+    if (v1Titles == null || vNTitles == null) continue;
     sampleSize++;
+
+    const c1 = v1Titles.length;
+    const cN = vNTitles.length;
     v1ImprSum += c1;
     vNImprSum += cN;
     if (cN < c1) decreased++;
     else if (cN > c1) increased++;
     else unchanged++;
+
+    const v1Set = new Set(v1Titles.map(normaliseTitle));
+    const vNSet = new Set(vNTitles.map(normaliseTitle));
+    let addressedOne = false;
+    for (const t of v1Set) {
+      if (!vNSet.has(t)) addressedOne = true;
+      else persistentCounts[t] = (persistentCounts[t] || 0) + 1;
+    }
+    for (const t of vNSet) {
+      if (!v1Set.has(t)) regressionCounts[t] = (regressionCounts[t] || 0) + 1;
+    }
+    if (addressedOne) studentsWithAnyAddressed++;
   }
-  if (sampleSize === 0) return { sample_size: 0, avg_v1: 0, avg_vN: 0, avg_delta_pct: 0, decreased: 0, increased: 0, unchanged: 0 };
-  const avgV1 = v1ImprSum / sampleSize;
-  const avgVN = vNImprSum / sampleSize;
+
+  const topPersistent = Object.entries(persistentCounts)
+    .map(([title, count]) => ({ title, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+  const topRegressions = Object.entries(regressionCounts)
+    .map(([title, count]) => ({ title, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  const avgV1 = sampleSize > 0 ? v1ImprSum / sampleSize : 0;
+  const avgVN = sampleSize > 0 ? vNImprSum / sampleSize : 0;
   const deltaPct = avgV1 > 0 ? ((avgV1 - avgVN) / avgV1) * 100 : 0;
+  const addressedRate = sampleSize > 0 ? (studentsWithAnyAddressed / sampleSize) * 100 : 0;
+
   return {
     sample_size: sampleSize,
     avg_v1: avgV1,
@@ -431,16 +483,30 @@ function computeImprovementVelocity(submissions: any[]) {
     decreased,
     increased,
     unchanged,
+    addressed_rate: addressedRate,
+    students_with_any_addressed: studentsWithAnyAddressed,
+    top_persistent: topPersistent,
+    top_regressions: topRegressions,
   };
 }
 
-function countImprovements(feedback: any): number | null {
+function extractImprovementTitles(feedback: any): string[] | null {
   if (!feedback || typeof feedback !== 'object') return null;
   const imp = feedback.improvements;
   if (!imp || typeof imp !== 'object') return null;
-  if (Array.isArray(imp.summary)) return imp.summary.length;
-  if (Array.isArray(imp)) return imp.length;
-  return null;
+  const arr = Array.isArray(imp.summary) ? imp.summary : (Array.isArray(imp) ? imp : null);
+  if (!arr) return null;
+  // Each summary item is either a string ("verb depth") or an object with
+  // a title-ish field. Be liberal in what we accept.
+  return arr.map((item: any): string => {
+    if (typeof item === 'string') return item;
+    if (item && typeof item === 'object') return item.title || item.heading || item.label || item.priority || '';
+    return '';
+  }).filter((t: string) => t.trim().length > 0);
+}
+
+function normaliseTitle(t: string): string {
+  return t.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 /**
@@ -615,7 +681,7 @@ function computeMarkByFaculty(submissions: any[], taskMap: any) {
 function emptyResponse(
   schoolId: string,
   schoolName: string,
-  callerRole: 'admin' | 'leader' | null,
+  callerRole: 'admin' | 'leader' | 'teacher' | null,
   restrictedFaculties: string[] | null,
 ) {
   return {
@@ -633,7 +699,7 @@ function emptyResponse(
       marking: { total: 0, marked: 0, awaiting_marking: 0, unmarked: 0 },
       teacher_activity: [],
       per_criterion_lows: { rows: [], total_analyzed: 0 },
-      improvement_velocity: { sample_size: 0, avg_v1: 0, avg_vN: 0, avg_delta_pct: 0, decreased: 0, increased: 0, unchanged: 0 },
+      improvement_velocity: { sample_size: 0, avg_v1: 0, avg_vN: 0, avg_delta_pct: 0, decreased: 0, increased: 0, unchanged: 0, addressed_rate: 0, students_with_any_addressed: 0, top_persistent: [], top_regressions: [] },
       keyword_struggles: { rows: [], total_analyzed: 0 },
     },
     counts: {
