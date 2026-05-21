@@ -312,7 +312,9 @@
     .student-search { position: relative; display: inline-flex; align-items: center; gap: 6px; }
     .student-search-input { font-family: inherit; font-size: 13px; padding: 7px 12px 7px 30px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; min-width: 220px; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
     .student-search-input:focus { border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.12); }
-    .student-search-icon { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 13px; pointer-events: none; }
+    .student-search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none; display: inline-flex; }
+    .student-search-icon svg { display: block; }
+    .student-search-input:focus ~ .student-search-icon { color: #ed7615; }
     .student-search-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: #9ca3af; cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 6px; border-radius: 4px; }
     .student-search-clear:hover { color: #374151; background: #f3f4f6; }
     .student-search-dropdown { position: absolute; top: calc(100% + 4px); left: 0; min-width: 320px; max-width: 460px; background: #fff; border: 1px solid #e8e0d4; border-radius: 8px; box-shadow: 0 6px 24px rgba(0,0,0,0.12); z-index: 50; max-height: 360px; overflow-y: auto; display: none; }
@@ -1961,8 +1963,8 @@
           + '<button class="student-mode-x" id="studentClearBtn" title="Back to cohort view">×</button>'
           + '</span>';
       } else {
-        html += '<span class="student-search-icon">🔍</span>';
         html += '<input type="text" class="student-search-input" id="studentSearchInput" placeholder="Search a student (by surname)…" autocomplete="off" />';
+        html += '<span class="student-search-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg></span>';
         html += '<div class="student-search-dropdown" id="studentSearchDropdown"></div>';
       }
       html += '</div>';
