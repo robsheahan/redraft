@@ -303,7 +303,9 @@
     .empty-state .back-cta { display: inline-block; margin-top: 14px; padding: 9px 18px; background: #ed7615; color: #fff; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600; }
     .empty-state .back-cta:hover { background: #d4690f; }
 
-    .loading { text-align: center; padding: 60px; color: #9ca3af; font-size: 14px; }
+    .loading { text-align: center; padding: 60px; color: #9ca3af; font-size: 14px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid #f0e6d6; border-top-color: #ed7615; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .error-msg { text-align: center; padding: 40px; color: #dc2626; font-size: 14px; }
 
     /* Student search box + autocomplete */
@@ -359,7 +361,7 @@
   </nav>
 
   <div class="container" id="content">
-    <div class="loading">Loading insights...</div>
+    <div class="loading"><div class="spinner" aria-hidden="true"></div>Loading insights…</div>
   </div>
 
   <div class="site-footer">
@@ -455,6 +457,14 @@
       // cards endpoint is still called in parallel so the filter bar's
       // dropdown options (class list etc.) stay populated for navigation.
       if (activeFilters.student_id) {
+        // Only show the loading state if we're not already mid-pick (the
+        // pickStudent() handler already painted one) and we're switching
+        // students or arriving on this URL fresh.
+        if (!currentStudent || currentStudent.student?.id !== activeFilters.student_id) {
+          if (container && !container.querySelector('.spinner')) {
+            container.innerHTML = '<div class="loading"><div class="spinner" aria-hidden="true"></div>Loading student insights…</div>';
+          }
+        }
         const studentQs = (SCHOOL_ID_OVERRIDE ? '?school_id=' + encodeURIComponent(SCHOOL_ID_OVERRIDE) + '&' : '?')
           + 'student_id=' + encodeURIComponent(activeFilters.student_id);
         const [studentRes, cohortRes] = await Promise.all([
@@ -1964,10 +1974,13 @@
     }
 
     // Search-input state
+    const STUDENT_SEARCH_MIN_CHARS = 1;
+    const STUDENT_SEARCH_DEBOUNCE_MS = 120;
     let studentSearchDebounce = null;
     let studentSearchInflight = 0;
     let studentSearchHighlight = -1;
     let studentSearchResults = [];
+    let studentSearchLastQuery = '';
 
     function wireStudentSearch() {
       const input = document.getElementById('studentSearchInput');
@@ -1983,13 +1996,23 @@
       input.addEventListener('input', () => {
         const q = input.value.trim();
         if (studentSearchDebounce) clearTimeout(studentSearchDebounce);
-        if (q.length < 2) {
+        if (q.length < STUDENT_SEARCH_MIN_CHARS) {
           dropdown.classList.remove('visible');
           dropdown.innerHTML = '';
           studentSearchResults = [];
+          studentSearchLastQuery = '';
           return;
         }
-        studentSearchDebounce = setTimeout(() => doStudentSearch(q), 250);
+        // Show the dropdown immediately with a Searching… placeholder so
+        // the user has feedback that something is happening, even before
+        // the network round-trip resolves. Avoid flashing a fresh
+        // skeleton when the user is just refining the query — keep the
+        // previous results visible until the new ones arrive.
+        if (studentSearchResults.length === 0) {
+          dropdown.innerHTML = '<div class="student-search-empty">Searching…</div>';
+          dropdown.classList.add('visible');
+        }
+        studentSearchDebounce = setTimeout(() => doStudentSearch(q), STUDENT_SEARCH_DEBOUNCE_MS);
       });
       input.addEventListener('keydown', (ev) => {
         if (ev.key === 'ArrowDown') {
@@ -2023,6 +2046,7 @@
       const dropdown = document.getElementById('studentSearchDropdown');
       if (!dropdown) return;
       const myReq = ++studentSearchInflight;
+      studentSearchLastQuery = q;
       const qs = '?q=' + encodeURIComponent(q) + (SCHOOL_ID_OVERRIDE ? '&school_id=' + encodeURIComponent(SCHOOL_ID_OVERRIDE) : '');
       const r = await authFetch('/api/insights-students-search' + qs);
       if (myReq !== studentSearchInflight) return;
@@ -2041,7 +2065,7 @@
       const dropdown = document.getElementById('studentSearchDropdown');
       if (!dropdown) return;
       if (studentSearchResults.length === 0) {
-        dropdown.innerHTML = '<div class="student-search-empty">No students found.</div>';
+        dropdown.innerHTML = '<div class="student-search-empty">No students found for &ldquo;' + e(studentSearchLastQuery) + '&rdquo;.</div>';
         dropdown.classList.add('visible');
         return;
       }
@@ -2054,7 +2078,7 @@
           r.email || '',
         ].filter(Boolean).join(' · ');
         html += '<div class="' + cls + '" data-student-pick="' + e(r.id) + '">'
-          + '<div class="name">' + e(r.display_name) + '</div>'
+          + '<div class="name">' + highlightMatch(r.display_name, studentSearchLastQuery) + '</div>'
           + '<div class="meta">' + e(subline) + '</div>'
           + '</div>';
       });
@@ -2070,11 +2094,38 @@
       });
     }
 
+    // Highlight the matched substring in the dropdown name so the user
+    // can see why a result came back.
+    function highlightMatch(name, q) {
+      if (!q || !name) return e(name || '');
+      const lower = name.toLowerCase();
+      const ql = q.toLowerCase();
+      const i = lower.indexOf(ql);
+      if (i < 0) return e(name);
+      return e(name.slice(0, i))
+        + '<mark style="background:#fef3e6;color:#ed7615;padding:0 2px;border-radius:3px">'
+        + e(name.slice(i, i + q.length))
+        + '</mark>'
+        + e(name.slice(i + q.length));
+    }
+
     function pickStudent(row) {
       selectedStudentName = row.display_name || '';
       const dropdown = document.getElementById('studentSearchDropdown');
       if (dropdown) dropdown.classList.remove('visible');
+      // Show an immediate loading state in the content area so the page
+      // doesn't appear frozen while the student endpoint loads.
+      showLoadingFor('Loading insights for ' + selectedStudentName + '…');
       setFilter('student_id', row.id);
+    }
+
+    // Render a loading state in the main content area. Used while the
+    // student endpoint resolves, or on initial page load if we want a
+    // friendlier message than the default boot string.
+    function showLoadingFor(message) {
+      const c = document.getElementById('content');
+      if (!c) return;
+      c.innerHTML = '<div class="loading"><div class="spinner" aria-hidden="true"></div>' + e(message || 'Loading…') + '</div>';
     }
 
     function renderTeacherClassPicker(cards) {
