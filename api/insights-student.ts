@@ -19,7 +19,6 @@ import { getDisciplineForCourse } from '../data/nesa-courses.js';
  *   - student header (name, email, year level, classes they're in)
  *   - mark_distribution (A–E + per-task list)
  *   - improvement_velocity (their priority shifts across drafts)
- *   - keyword_struggles (NESA terms in their AI feedback)
  *   - llm: cached content shape for the 4 LLM card kinds + eligibility flag
  *
  * Scope: the requested student must be in the caller's set of in-scope
@@ -43,17 +42,6 @@ function bandFor(awarded: number, total: number): string {
   for (const b of NESA_BANDS) if (pct >= b.minPct) return b.code;
   return 'E';
 }
-
-const STRUGGLE_KEYWORDS = [
-  'analyse', 'evaluate', 'justify', 'assess', 'explain', 'discuss', 'compare',
-  'contrast', 'examine', 'describe', 'identify', 'outline', 'synthesise',
-  'apply', 'demonstrate', 'critique',
-  'evidence', 'examples', 'structure', 'thesis', 'argument', 'conclusion',
-  'introduction', 'paragraph', 'topic sentence', 'transitions', 'cohesion',
-  'terminology', 'vocabulary', 'concept', 'context', 'audience', 'purpose',
-  'depth', 'detail', 'specificity', 'critical thinking', 'reasoning',
-  'integration', 'connection', 'relevance', 'sustained',
-];
 
 const LLM_FLOOR = 3; // min submissions-with-feedback before LLM cards run
 
@@ -155,9 +143,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ── Improvement velocity (per-student, across their own tasks) ────
   const improvementVelocity = computeStudentVelocity(subs);
 
-  // ── Keyword struggles (their feedback only) ───────────────────────
-  const keywordStruggles = computeStudentKeywordStruggles(subs);
-
   // ── LLM eligibility ───────────────────────────────────────────────
   const llmEligible = submissionsWithFeedback.length >= LLM_FLOOR;
 
@@ -182,7 +167,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     cards: {
       mark_distribution: markDistribution,
       improvement_velocity: improvementVelocity,
-      keyword_struggles: keywordStruggles,
       llm_eligible: llmEligible,
       llm_floor: LLM_FLOOR,
       // LLM card content is loaded via /api/insights-card-generate with
@@ -320,35 +304,3 @@ function computeStudentVelocity(subs: any[]) {
   };
 }
 
-function computeStudentKeywordStruggles(subs: any[]) {
-  const counts: Record<string, number> = {};
-  for (const k of STRUGGLE_KEYWORDS) counts[k] = 0;
-  let analysed = 0;
-  const wordRe = (kw: string) => new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
-  const compiled = STRUGGLE_KEYWORDS.map(k => ({ kw: k, re: wordRe(k) }));
-  for (const s of subs) {
-    const fb = s.feedback;
-    if (!fb || typeof fb !== 'object') continue;
-    const parts: string[] = [];
-    const collect = (v: any) => {
-      if (!v) return;
-      if (typeof v === 'string') parts.push(v);
-      else if (Array.isArray(v)) v.forEach(collect);
-      else if (typeof v === 'object') { if (typeof v.summary !== 'undefined') collect(v.summary); if (typeof v.detail !== 'undefined') collect(v.detail); }
-    };
-    collect(fb.improvements);
-    collect(fb.top_priority);
-    if (parts.length === 0) continue;
-    const text = parts.join(' ');
-    analysed++;
-    for (const { kw, re } of compiled) {
-      if (re.test(text)) counts[kw]++;
-    }
-  }
-  const rows = Object.entries(counts)
-    .filter(([_, c]) => c > 0)
-    .map(([keyword, count]) => ({ keyword, count, pct: analysed > 0 ? (count / analysed) * 100 : 0 }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
-  return { rows, total_analyzed: analysed };
-}

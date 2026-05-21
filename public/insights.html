@@ -1356,10 +1356,6 @@
         + cardHeader('Improvement velocity', 'Priority shifts across their drafts')
         + renderImprovementVelocity(cd.improvement_velocity)
         + '</div>';
-      html += '<div class="card card-span-12">'
-        + cardHeader('Keyword struggles', 'NESA terms most often flagged across this student\'s feedback')
-        + renderKeywordStruggles(cd.keyword_struggles)
-        + '</div>';
 
       // LLM cards (per-student kinds)
       html += '<div class="card card-span-6">' + renderStudentLLMCard('student_top_mistakes', llm.student_top_mistakes, {
