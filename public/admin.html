@@ -92,7 +92,16 @@
       document.getElementById('navUser').textContent = user.email;
 
       const container = document.getElementById('content');
-      const res = await authFetch('/api/admin-stats');
+      let res;
+      try {
+        res = await authFetch('/api/admin-stats');
+      } catch (err) {
+        // Network failure after authFetch's one transparent retry — show a
+        // user-facing retry state instead of a stuck page (Sentry
+        // PROOFREADY-1 was this case on mobile iOS).
+        container.innerHTML = '<div class="error">Couldn\'t reach the server. Check your connection and <a href="javascript:location.reload()" style="text-decoration:underline">try again</a>.</div>';
+        return;
+      }
       if (!res.ok) {
         container.innerHTML = '<div class="error">Access denied. This page is for administrators only.</div>';
         return;

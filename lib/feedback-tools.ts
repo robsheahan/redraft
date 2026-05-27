@@ -513,3 +513,89 @@ export const STUDENT_SUMMARY_TOOL: Tool = {
     required: ['summary_paragraph', 'headline_strength', 'headline_priority', 'tone_note'],
   },
 };
+
+/**
+ * Lightweight schema used by the silent insights pass on marked_task /
+ * quick_task submissions. Output is never shown to students — it feeds the
+ * cohort LLM cards and the student profile only. Same shape as the relevant
+ * subset of HOLISTIC_FEEDBACK_TOOL so the existing consumers
+ * (insights-card-generate, lib/student-profile) work without changes.
+ */
+export const INSIGHTS_SIGNALS_TOOL: Tool = {
+  name: 'provide_insights_signals',
+  description:
+    'Extract structured signals from a student draft for school-level analytics. Never shown to the student — these feed cohort LLM cards and the student profile only.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      what_youve_done_well: {
+        type: 'object',
+        properties: {
+          summary: {
+            type: 'array',
+            items: { type: 'string' },
+            description: '2–3 short strength tags, 5–10 words each. Aggregate-friendly phrasing.',
+          },
+        },
+        required: ['summary'],
+      },
+      task_verb_check: {
+        type: 'object',
+        properties: {
+          summary: {
+            type: 'string',
+            description: 'One sentence on whether the draft operates at the depth the directive verb requires.',
+          },
+        },
+        required: ['summary'],
+      },
+      improvements: {
+        type: 'object',
+        properties: {
+          summary: {
+            type: 'array',
+            items: { type: 'string' },
+            description: '2–4 short improvement tags, 5–10 words each. Aggregate-friendly phrasing.',
+          },
+          detail: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'One short sentence per tag explaining what the student needs to do differently.',
+          },
+        },
+        required: ['summary', 'detail'],
+      },
+      top_priority: {
+        type: 'string',
+        description: 'One sentence — the single most useful next step.',
+      },
+    },
+    required: ['what_youve_done_well', 'task_verb_check', 'improvements', 'top_priority'],
+  },
+};
+
+export const CLASS_PROFILE_SUMMARY_TOOL: Tool = {
+  name: 'synthesise_class_profile_summary',
+  description:
+    'Aggregate the longitudinal profiles of a class\'s currently-enrolled students into a coherent picture of where the cohort stands as it enters this class. Use this when a teacher wants to know what the class looks like coming in, before they\'ve set tasks of their own.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      aggregate_narrative: {
+        type: 'string',
+        description: '3–5 sentences describing the cohort\'s baseline as they enter this class. What is consistently strong, what is consistently a priority, what variation exists. Aggregate only — never name individual students.',
+      },
+      top_strengths: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Top 3 strengths that recur across multiple students\' profiles. Each 5–12 words.',
+      },
+      top_priorities: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Top 3 priorities that recur across multiple students\' profiles. Each 5–12 words. These should be patterns the teacher can target in their first few weeks of lessons.',
+      },
+    },
+    required: ['aggregate_narrative', 'top_strengths', 'top_priorities'],
+  },
+};

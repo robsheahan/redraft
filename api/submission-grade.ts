@@ -17,6 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     total_mark,
     teacher_comment,
     teacher_annotations,
+    completion_status,
   } = req.body || {};
 
   if (!submission_id) return res.status(400).json({ error: 'submission_id is required.' });
@@ -25,6 +26,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (teacher_annotations != null && !Array.isArray(teacher_annotations)) {
     return res.status(400).json({ error: 'teacher_annotations must be an array.' });
+  }
+  if (completion_status != null && completion_status !== 'completed') {
+    return res.status(400).json({ error: 'completion_status must be "completed" or null.' });
   }
 
   const supabase = getSupabase();
@@ -46,6 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     total_mark: total_mark ?? null,
     teacher_comment: teacher_comment ?? null,
     teacher_annotations: teacher_annotations ?? null,
+    completion_status: completion_status ?? null,
     graded_by: user.id,
   };
   if (!submission.graded_at) patch.graded_at = new Date().toISOString();
@@ -59,6 +64,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .delete()
     .eq('student_id', submission.student_id)
     .eq('task_id', submission.task_id);
+
+  // Invalidate the longitudinal profile cache — new marking data means the
+  // next profile read should regenerate.
+  const { error: profileCacheErr } = await supabase
+    .from('student_profile_synthesis')
+    .delete()
+    .eq('student_id', submission.student_id);
+  if (profileCacheErr) {
+    captureError(new Error(profileCacheErr.message), { stage: 'profile-cache-invalidate', submission_id });
+  }
 
   const taskTotalMarks = (submission.tasks as any)?.total_marks;
   if (typeof total_mark === 'number' && typeof taskTotalMarks === 'number' && taskTotalMarks > 0) {

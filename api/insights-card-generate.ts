@@ -9,6 +9,7 @@ import {
   parseFiltersFromQuery,
   applyFacultyScope,
   userIdsForYearLevel,
+  getTimeWindowCutoff,
 } from '../lib/insights-filters.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
@@ -23,6 +24,7 @@ import {
   STUDENT_STRETCH_GOALS_TOOL,
   STUDENT_STRENGTHS_TOOL,
   STUDENT_SUMMARY_TOOL,
+  CLASS_PROFILE_SUMMARY_TOOL,
 } from '../lib/feedback-tools.js';
 
 /**
@@ -336,11 +338,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const kind = String(req.body?.kind || '').trim();
   const isStudentKind = kind.startsWith('student_');
+  const isClassProfileKind = kind === 'class_profile_summary';
   if (isStudentKind && !STUDENT_KIND_CONFIG[kind]) {
     return res.status(400).json({ error: 'kind must be one of: ' + Object.keys(STUDENT_KIND_CONFIG).join(', ') });
   }
-  if (!isStudentKind && !KIND_CONFIG[kind]) {
-    const all = [...Object.keys(KIND_CONFIG), ...Object.keys(STUDENT_KIND_CONFIG)];
+  if (!isStudentKind && !isClassProfileKind && !KIND_CONFIG[kind]) {
+    const all = [...Object.keys(KIND_CONFIG), ...Object.keys(STUDENT_KIND_CONFIG), 'class_profile_summary'];
     return res.status(400).json({ error: 'kind must be one of: ' + all.join(', ') });
   }
 
@@ -363,6 +366,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       user,
       kind,
       cfg: studentCfg,
+      callerRole,
+      schoolId,
+      restrictedFaculties,
+    });
+  }
+
+  // ── Class-profile-summary branch ────────────────────────────────────
+  // Aggregates the longitudinal profiles of currently-enrolled students into
+  // a cohort baseline picture. Read from student_profile_synthesis, never
+  // touches raw drafts — so a new teacher inheriting students sees patterns
+  // without seeing the prior teacher's submissions.
+  if (isClassProfileKind) {
+    return handleClassProfileSummary(req, res, {
+      supabase,
+      user,
       callerRole,
       schoolId,
       restrictedFaculties,
@@ -410,22 +428,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (classIds.length === 0) return res.status(400).json({ error: 'No classes in scope yet.' });
 
   const { data: rawTasks } = await supabase
-    .from('tasks').select('id, title, question, course, class_id, total_marks').in('class_id', classIds);
+    .from('tasks').select('id, title, question, course, class_id, total_marks, task_mode').in('class_id', classIds);
   const taskMap: Record<string, any> = {};
   (rawTasks || []).forEach(t => {
     const cls = classMap[t.class_id];
     taskMap[t.id] = {
       ...t,
       faculty: t.course ? (getDisciplineForCourse(t.course) || cls?.faculty || 'Other') : (cls?.faculty || 'Other'),
+      task_mode: t.task_mode || 'feedback_task',
     };
   });
   const taskIds = Object.keys(taskMap);
   if (taskIds.length === 0) return res.status(400).json({ error: 'No tasks in scope yet.' });
 
-  const { data: rawSubs } = await supabase
+  const subsCutoff = getTimeWindowCutoff(filters.time_window);
+  let subsQuery = supabase
     .from('submissions')
     .select('id, task_id, student_id, draft_version, graded_at, total_mark, feedback, created_at')
     .in('task_id', taskIds);
+  if (subsCutoff) subsQuery = subsQuery.gte('created_at', subsCutoff.toISOString());
+  const { data: rawSubs } = await subsQuery;
 
   const allowedStudentIds = filters.year_level != null
     ? userIdsForYearLevel(allUsers as any, filters.year_level)
@@ -471,10 +493,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  // Compute mark % for decile-based kinds.
+  // Compute mark % for decile-based kinds. quick_task is "not a graded
+  // task" by design, so its mark_pct stays null even if the teacher chose
+  // to give it a number — keeps it out of decile sampling.
   const enriched = submissions.map(s => {
     const t = taskMap[s.task_id] || {};
-    const markPct = (s.graded_at && s.total_mark != null && t.total_marks)
+    const isGradedMode = t.task_mode !== 'quick_task';
+    const markPct = (isGradedMode && s.graded_at && s.total_mark != null && t.total_marks)
       ? (Number(s.total_mark) / Number(t.total_marks)) * 100
       : null;
     return {
@@ -484,6 +509,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       course: t.course,
       task_title: t.title,
       task_question: t.question || '',
+      task_mode: t.task_mode,
       mark_pct: markPct,
     };
   });
@@ -722,4 +748,173 @@ async function handleStudentKind(
     source_task_count: new Set(enriched.map(r => r.task_title)).size,
     generated_at: new Date().toISOString(),
   });
+}
+
+/**
+ * class_profile_summary — aggregate the longitudinal profiles of one class's
+ * currently-enrolled students. Profile-only; never touches raw drafts.
+ *
+ * Privacy: the prompt is given anonymised profile lines (no student names, no
+ * draft quotes — the profile narratives are LLM-synthesised abstracts that
+ * already strip raw content at generation time, per lib/student-profile.ts).
+ */
+async function handleClassProfileSummary(
+  req: VercelRequest,
+  res: VercelResponse,
+  args: {
+    supabase: ReturnType<typeof getSupabase>;
+    user: { id: string; email?: string | null };
+    callerRole: 'admin' | 'leader' | 'teacher';
+    schoolId: string;
+    restrictedFaculties: string[] | null;
+  },
+) {
+  const { supabase, user, callerRole, schoolId, restrictedFaculties } = args;
+  const classId = (req.body?.class_id ? String(req.body.class_id) : '').trim();
+  if (!classId) return res.status(400).json({ error: 'class_id is required for class_profile_summary.' });
+
+  // Access check — the caller must have this class in scope.
+  const callerClassIds = await getInScopeClassIds(supabase, callerRole, user.id, schoolId, restrictedFaculties);
+  if (!callerClassIds.includes(classId)) {
+    return res.status(403).json({ error: 'You do not have access to this class.' });
+  }
+
+  // Rate-limit on the same per-card buckets so a teacher hammering refresh
+  // doesn't drain the global LLM budget.
+  const rateSubject = schoolId || user.id;
+  const rateLimit = await checkAndLogRateLimit(supabase, rateSubject, {
+    endpoint: 'insights-card-class-profile',
+    perUserPerHour: 6,
+    globalPerDay: 300,
+  });
+  if (!rateLimit.ok) {
+    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded. Please try again later.' });
+  }
+
+  // Enrolled students.
+  const { data: members } = await supabase
+    .from('class_members').select('student_id').eq('class_id', classId);
+  const studentIds = (members || []).map(m => m.student_id).filter(Boolean) as string[];
+  if (studentIds.length === 0) {
+    return res.status(400).json({ error: 'This class has no enrolled students yet.' });
+  }
+
+  // Read cached profiles for the cohort. We intentionally do NOT regenerate
+  // missing profiles here — that would spawn N LLM calls on page load. Profiles
+  // populate as teachers view individual students or as marking/feedback events
+  // land. Anyone missing today gets surfaced as needing more data.
+  const { data: profileRows } = await supabase
+    .from('student_profile_synthesis')
+    .select('student_id, narrative, headline_strength, headline_priority, metrics, submission_count_at_generation')
+    .in('student_id', studentIds);
+  const profileMap = new Map<string, any>();
+  (profileRows || []).forEach(p => profileMap.set(p.student_id, p));
+
+  let established = 0;
+  let developing = 0;
+  let newCount = 0;
+  let missing = 0;
+  const profileLines: string[] = [];
+  for (const sid of studentIds) {
+    const p = profileMap.get(sid);
+    if (!p) { missing++; continue; }
+    const status = (p.metrics?.profile_status as string) || 'new';
+    if (status === 'established') established++;
+    else if (status === 'developing') developing++;
+    else newCount++;
+
+    const themes: string[] = Array.isArray(p.metrics?.improvement_themes) ? p.metrics.improvement_themes : [];
+    const strengths: string[] = Array.isArray(p.metrics?.strength_themes) ? p.metrics.strength_themes : [];
+    profileLines.push([
+      `Profile (anonymised, status=${status}):`,
+      `  headline_strength: ${p.headline_strength || ''}`,
+      `  headline_priority: ${p.headline_priority || ''}`,
+      themes.length ? `  improvement_themes: ${themes.slice(0, 5).join(' | ')}` : '',
+      strengths.length ? `  strength_themes: ${strengths.slice(0, 5).join(' | ')}` : '',
+      p.narrative ? `  narrative: ${String(p.narrative).slice(0, 400)}` : '',
+    ].filter(Boolean).join('\n'));
+  }
+
+  // Too few established profiles → skip the LLM call and surface the breakdown.
+  // 3 is the floor — below that, "aggregate" is misleading.
+  if (profileLines.length < 3) {
+    return res.status(200).json({
+      kind: 'class_profile_summary',
+      class_id: classId,
+      content: {
+        aggregate_narrative:
+          `This class has too few existing profiles for a meaningful baseline yet. ${missing + newCount} of ${studentIds.length} students need more drafts before patterns emerge. The picture will fill in as marking lands this term.`,
+        top_strengths: [],
+        top_priorities: [],
+      },
+      cohort_breakdown: {
+        total_students: studentIds.length,
+        established_count: established,
+        developing_count: developing,
+        new_count: newCount,
+        missing_profiles: missing,
+      },
+      generated_at: new Date().toISOString(),
+    });
+  }
+
+  const system = [
+    `You are aggregating the longitudinal academic profiles of students currently enrolled in one class.`,
+    ``,
+    `Your job is to give the class teacher a picture of where this cohort stands as they enter the class — informed by the students' history across ProofReady, not just this class's work.`,
+    ``,
+    `HARD RULES:`,
+    `- Aggregate only. NEVER name an individual student.`,
+    `- No mark or band predictions.`,
+    `- Frame priorities as patterns the teacher can target in their first few weeks of lessons.`,
+    `- Recognise variation honestly: if the cohort is mixed, say so. Don't homogenise.`,
+    ``,
+    `Cohort breakdown:`,
+    `- Total students enrolled: ${studentIds.length}`,
+    `- Established profiles (6+ submissions in their history): ${established}`,
+    `- Developing (3–5 submissions): ${developing}`,
+    `- New to ProofReady (≤2 submissions): ${newCount}`,
+    `- Students with no profile cached yet: ${missing}`,
+  ].join('\n');
+
+  const userPrompt = `Below are ${profileLines.length} anonymised student profiles drawn from the cohort. Synthesise the class-level baseline.\n\n${profileLines.join('\n\n')}`;
+
+  try {
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const result = await callTool<Record<string, any>>({
+      client,
+      model: MODEL,
+      max_tokens: 1500,
+      temperature: 0.2,
+      system,
+      user: userPrompt,
+      tool: CLASS_PROFILE_SUMMARY_TOOL,
+    });
+    const value = result.value;
+
+    const requiredKeys = ['aggregate_narrative', 'top_strengths', 'top_priorities'];
+    const missingKeys = requiredKeys.filter(k => !(k in (value || {})));
+    if (missingKeys.length > 0) {
+      captureError(new Error('Incomplete tool output: missing ' + missingKeys.join(', ')), { kind: 'class_profile_summary', class_id: classId });
+      return res.status(502).json({ error: 'Generation finished but the response was incomplete. Try again — usually clears on retry.' });
+    }
+
+    return res.status(200).json({
+      kind: 'class_profile_summary',
+      class_id: classId,
+      content: value,
+      cohort_breakdown: {
+        total_students: studentIds.length,
+        established_count: established,
+        developing_count: developing,
+        new_count: newCount,
+        missing_profiles: missing,
+      },
+      generated_at: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    captureError(err, { stage: 'insights-card-class-profile', class_id: classId, user_id: user.id });
+    return res.status(500).json({ error: err?.message || 'Failed to generate.' });
+  }
 }

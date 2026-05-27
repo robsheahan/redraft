@@ -20,16 +20,26 @@
  * what their school admin granted.
  */
 
+export type TimeWindow = '12_months' | 'this_year' | 'all_time';
+export const DEFAULT_TIME_WINDOW: TimeWindow = '12_months';
+
 export interface InsightsFilters {
   faculty?: string | null;
   course?: string | null;
   class_id?: string | null;
   year_level?: number | null;
+  /**
+   * Rolling time window applied to the submissions sample. Defaults to
+   * 12 months — set explicitly to 'all_time' on every caller that should
+   * see unbounded history (e.g. longitudinal class baseline + student
+   * profile endpoints). Cohort cards honour this filter.
+   */
+  time_window?: TimeWindow;
 }
 
 export function parseFiltersFromQuery(q: Record<string, any> | undefined): InsightsFilters {
-  if (!q) return {};
-  const out: InsightsFilters = {};
+  const out: InsightsFilters = { time_window: DEFAULT_TIME_WINDOW };
+  if (!q) return out;
   const f = (q.faculty || '').toString().trim();
   if (f) out.faculty = f;
   const c = (q.course || '').toString().trim();
@@ -41,7 +51,37 @@ export function parseFiltersFromQuery(q: Record<string, any> | undefined): Insig
     const n = parseInt(yl, 10);
     if (Number.isFinite(n) && n >= 4 && n <= 12) out.year_level = n;
   }
+  const tw = (q.time_window || '').toString().trim();
+  if (tw === 'this_year' || tw === 'all_time' || tw === '12_months') {
+    out.time_window = tw;
+  }
   return out;
+}
+
+/**
+ * Resolve the time-window filter to an ISO timestamp cutoff. Submissions
+ * with `created_at >= cutoff` are in scope. Returns null for 'all_time'
+ * (caller skips the filter altogether).
+ */
+export function getTimeWindowCutoff(
+  window: TimeWindow | undefined,
+  now: Date = new Date(),
+): Date | null {
+  if (!window || window === 'all_time') return null;
+  if (window === 'this_year') {
+    return new Date(now.getFullYear(), 0, 1, 0, 0, 0);
+  }
+  // Default: 12-month rolling.
+  const cutoff = new Date(now);
+  cutoff.setMonth(cutoff.getMonth() - 12);
+  return cutoff;
+}
+
+/** Human label for the active window — used in UI scope strings. */
+export function formatTimeWindow(window: TimeWindow | undefined): string {
+  if (window === 'all_time') return 'All time';
+  if (window === 'this_year') return 'This year';
+  return 'Last 12 months';
 }
 
 /**
@@ -69,6 +109,8 @@ export function applyFacultyScope(
 }
 
 export function isFilterActive(filters: InsightsFilters): boolean {
+  // time_window is excluded — it always has a default, so its presence isn't
+  // a signal that the user has actively narrowed the scope.
   return !!(filters.faculty || filters.course || filters.class_id || filters.year_level);
 }
 

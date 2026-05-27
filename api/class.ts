@@ -87,7 +87,7 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
 
   let taskQuery = supabase
     .from('tasks')
-    .select('id, title, question, course, task_type, total_marks, due_date, outcomes, criteria, criteria_text, notes, published_at, created_at')
+    .select('id, title, question, course, task_type, task_mode, completion_only, total_marks, due_date, outcomes, criteria, criteria_text, notes, published_at, created_at')
     .eq('class_id', idParam)
     .order('created_at', { ascending: false });
   if (!isOwner) taskQuery = taskQuery.not('published_at', 'is', null);
@@ -211,7 +211,7 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
   if (allClassIds.length > 0) {
     const { data: allTasks } = await supabase
       .from('tasks')
-      .select('id, class_id, title, question, task_type, total_marks, due_date, published_at, created_at')
+      .select('id, class_id, title, question, task_type, task_mode, completion_only, total_marks, due_date, published_at, created_at')
       .in('class_id', allClassIds)
       .order('created_at', { ascending: false });
     (allTasks || []).forEach((t: any) => {

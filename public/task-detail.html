@@ -284,6 +284,14 @@
     }
     .btn-generate:hover { background: #d4690f; box-shadow: 0 4px 12px rgba(237,118,21,0.35); }
     .btn-generate:disabled { background: #9ca3af; cursor: not-allowed; box-shadow: none; }
+    .btn-mark-all {
+      background: #ed7615; color: #fff; border: none;
+      padding: 7px 14px; border-radius: 7px; font-size: 13px; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: background 0.15s;
+      box-shadow: 0 2px 6px rgba(237,118,21,0.25);
+    }
+    .btn-mark-all:hover:not(:disabled) { background: #d4690f; }
+    .btn-mark-all:disabled { opacity: 0.6; cursor: wait; }
     /* Loading overlay (mirrors the student submit page) */
     .loading-overlay { display: none; text-align: center; padding: 48px 20px; }
     .loading-overlay.visible { display: block; }
@@ -336,8 +344,8 @@
     }
     .submissions-count {
       display: inline-block; margin-left: 8px;
-      font-size: 13px; font-weight: 700; color: #b45309;
-      background: #fef3e6; padding: 2px 10px; border-radius: 100px;
+      font-size: 13px; font-weight: 700; color: #4b5563;
+      background: #e5e7eb; padding: 2px 10px; border-radius: 100px;
       vertical-align: middle;
     }
     .submission-card {
@@ -444,6 +452,20 @@
     }
     .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
     .site-footer a:hover { color: #6b7280; }
+    input[type="checkbox"] {
+      appearance: none; -webkit-appearance: none;
+      width: 18px; height: 18px; flex-shrink: 0;
+      border: 1.5px solid #d1d5db; border-radius: 4px;
+      background: #fff; cursor: pointer; position: relative;
+      vertical-align: middle; margin: 0;
+    }
+    input[type="checkbox"]:checked { background: #ed7615; border-color: #ed7615; }
+    input[type="checkbox"]:checked::after {
+      content: ''; position: absolute; left: 5px; top: 1px;
+      width: 5px; height: 10px;
+      border: solid #fff; border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
   </style>
 </head>
 <body>
@@ -496,6 +518,7 @@
         studentMap[key].drafts.push(s);
       });
       const students = Object.values(studentMap);
+      window.__taskStudents = students;
 
       let html = '';
 
@@ -510,8 +533,9 @@
       if (classId) html += '<div style="font-size:13px;color:#6b7280;margin-bottom:6px"><a href="class-detail.html?id=' + encodeURIComponent(classId) + '" style="color:#6b7280;text-decoration:none">← Back to class</a></div>';
       html += '<h1>' + e(task.title || task.question || 'Untitled task') + statusChip + '</h1>';
       if (task.course) html += '<div class="task-course">' + e(task.course) + '</div>';
-      html += '</div><div>';
+      html += '</div><div style="display:flex;gap:8px;align-items:center">';
       if (isPublished) {
+        html += '<button class="btn-edit" id="shareLinkBtn" onclick="copyTaskShareLink()" title="Copy a link to send to students in this class">Share link</button>';
         html += '<button class="btn-edit" onclick="togglePublish(false)">Unpublish</button>';
       } else {
         html += '<button class="btn-save" onclick="togglePublish(true)">Publish</button>';
@@ -540,10 +564,17 @@
 
       html += '</div>';
 
-      // Generate class feedback button
+      // Generate class feedback button. Label flips to "class summary" on
+      // quick tasks since students never received student-facing AI feedback
+      // there — the teacher's synthesis is more of a teaching summary than
+      // a feedback round-up.
       const hasSavedClassFeedback = !!(task.class_feedback && Object.keys(task.class_feedback).length);
+      const isQuickTask = task.task_mode === 'quick_task';
+      const generateLabel = isQuickTask
+        ? (hasSavedClassFeedback ? 'Regenerate class summary' : 'Generate class summary')
+        : (hasSavedClassFeedback ? 'Regenerate class feedback' : 'Generate class feedback');
       html += '<div class="generate-section">';
-      html += '<button class="btn-generate" id="generateBtn" ' + (students.length === 0 ? 'disabled' : '') + '>' + (hasSavedClassFeedback ? 'Regenerate class feedback' : 'Generate class feedback') + '</button>';
+      html += '<button class="btn-generate" id="generateBtn" ' + (students.length === 0 ? 'disabled' : '') + '>' + generateLabel + '</button>';
       if (students.length === 0) {
         html += '<div class="generate-hint">No submissions yet — students need to submit drafts first.</div>';
       } else {
@@ -556,7 +587,21 @@
 
       // Submissions list
       html += '<div class="submissions-section">';
-      html += '<h2>Submissions <span class="submissions-count">' + students.length + '</span></h2>';
+      html += '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">';
+      html += '<h2 style="margin:0">Submissions <span class="submissions-count">' + students.length + '</span></h2>';
+      // Bulk "Mark all Complete" button — only on quick tasks. Marks every
+      // not-yet-graded submission as complete in one go. Saves teachers from
+      // clicking through 28 individual submissions for an in-class task.
+      if (currentTask.task_mode === 'quick_task') {
+        const unmarkedCount = students.filter(s => {
+          const latest = s.drafts && s.drafts[0];
+          return latest && !latest.graded_at;
+        }).length;
+        if (unmarkedCount > 0) {
+          html += '<button type="button" class="btn-mark-all" id="markAllCompleteBtn" onclick="markAllComplete()">Mark all complete (' + unmarkedCount + ')</button>';
+        }
+      }
+      html += '</div>';
       if (students.length === 0) {
         html += '<div class="submission-card"><div style="padding:16px 20px;font-size:14px;color:#9ca3af">No submissions yet</div></div>';
       } else {
@@ -570,9 +615,14 @@
           const finalDraft = stu.drafts.find(d => d.submitted_for_marking);
           let statusPill = '';
           if (gradedDraft) {
-            const total = gradedDraft.total_mark != null ? gradedDraft.total_mark : '—';
-            const max = currentTask.total_marks || '—';
-            statusPill = '<span class="submission-status-pill marked">Marked &middot; ' + e(String(total)) + '/' + e(String(max)) + '</span>';
+            if (gradedDraft.total_mark == null) {
+              // Quick task marked complete (or any graded submission with no
+              // numeric mark) — show just "Marked" without a fake fraction.
+              statusPill = '<span class="submission-status-pill marked">Marked</span>';
+            } else {
+              const max = currentTask.total_marks || '—';
+              statusPill = '<span class="submission-status-pill marked">Marked &middot; ' + e(String(gradedDraft.total_mark)) + '/' + e(String(max)) + '</span>';
+            }
           } else if (finalDraft) {
             statusPill = '<span class="submission-status-pill ready">Ready to mark</span>';
           } else {
@@ -678,13 +728,15 @@
             clearInterval(loadingInterval);
             overlay.remove();
             renderClassFeedback(data.feedback, data.submission_count);
-            btn.textContent = 'Regenerate class feedback';
+            const quickLabels = currentTask && currentTask.task_mode === 'quick_task';
+            btn.textContent = quickLabels ? 'Regenerate class summary' : 'Regenerate class feedback';
             btn.disabled = false;
           } catch (err) {
             clearInterval(loadingInterval);
             overlay.remove();
             alert(err.message);
-            btn.textContent = 'Generate class feedback';
+            const quickLabels = currentTask && currentTask.task_mode === 'quick_task';
+            btn.textContent = quickLabels ? 'Generate class summary' : 'Generate class feedback';
             btn.disabled = false;
           }
         });
@@ -698,11 +750,15 @@
       html += '<div class="detail-value' + (!task.task_type ? ' empty' : '') + '">' + e(task.task_type || 'Not set') + '</div></div>';
 
       html += '<div class="detail-row"><div class="detail-label">Marking criteria</div>';
+      // Guarded — if /js/rubric.js failed to load, render raw criteria text.
+      var renderRubricSafe = (typeof renderRubric === 'function')
+        ? renderRubric
+        : function (text) { return '<pre style="white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.55">' + e(String(text || '')) + '</pre>'; };
       if (task.criteria_text) {
-        html += renderRubric(task.criteria_text, e, task.criteria_structured);
+        html += renderRubricSafe(task.criteria_text, e, task.criteria_structured);
       } else if (task.criteria && task.criteria.length > 0) {
         var fallback = task.criteria.map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n');
-        html += renderRubric(fallback, e);
+        html += renderRubricSafe(fallback, e);
       } else {
         html += '<div class="detail-value empty">Not set</div>';
       }
@@ -820,6 +876,93 @@
       }
     }
 
+    // Copy a direct link to the task's student submit page. Auth still gates
+    // access — only enrolled students in the class can actually open it —
+    // so this is purely a convenience for teachers running an in-class task.
+    async function copyTaskShareLink() {
+      if (!currentTask || !currentTask.id) return;
+      const btn = document.getElementById('shareLinkBtn');
+      const url = window.location.origin + '/submit.html?task_id=' + encodeURIComponent(currentTask.id);
+      const restore = btn ? btn.textContent : '';
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url);
+        } else {
+          // Fallback for browsers without the async clipboard API.
+          const ta = document.createElement('textarea');
+          ta.value = url;
+          ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.focus(); ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        if (btn) {
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = restore; }, 2000);
+        }
+      } catch (err) {
+        // Last-resort fallback: prompt with the URL so the teacher can copy manually.
+        window.prompt('Copy the link to send to your students:', url);
+      }
+    }
+
+    // Bulk-mark every not-yet-graded submission as complete. Quick-task only.
+    // Fans out parallel PUTs to /api/submission-grade with a small concurrency
+    // limit so we don't slam Supabase or trip rate limits on bigger classes.
+    async function markAllComplete() {
+      if (!currentTask || currentTask.task_mode !== 'quick_task') return;
+      // Build the worklist: every student's latest draft that isn't graded yet.
+      const targets = [];
+      (window.__taskStudents || []).forEach(stu => {
+        const latest = stu.drafts && stu.drafts[0];
+        if (latest && !latest.graded_at && latest.id) targets.push(latest.id);
+      });
+      if (targets.length === 0) {
+        alert('Nothing to mark — every submission is already graded.');
+        return;
+      }
+      if (!confirm('Mark all ' + targets.length + ' submission' + (targets.length === 1 ? '' : 's') + ' as complete? You can still edit any of them individually afterwards.')) return;
+
+      const btn = document.getElementById('markAllCompleteBtn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Marking…'; }
+
+      // Chunk to 5 concurrent requests at a time.
+      const CONCURRENCY = 5;
+      const failures = [];
+      let i = 0;
+      async function worker() {
+        while (i < targets.length) {
+          const id = targets[i++];
+          try {
+            const res = await authFetch('/api/submission-grade', {
+              method: 'PUT',
+              body: JSON.stringify({
+                submission_id: id,
+                completion_status: 'completed',
+                criterion_marks: null,
+                total_mark: null,
+                teacher_annotations: [],
+              }),
+            });
+            if (!res.ok) {
+              const data = await res.json().catch(() => ({}));
+              failures.push(data.error || ('Failed: ' + id.slice(0, 8)));
+            }
+          } catch (err) {
+            failures.push(err.message);
+          }
+        }
+      }
+      const workers = Array.from({ length: Math.min(CONCURRENCY, targets.length) }, worker);
+      await Promise.all(workers);
+
+      if (failures.length > 0) {
+        alert('Marked ' + (targets.length - failures.length) + ' of ' + targets.length + '. ' + failures.length + ' failed:\n\n' + failures.slice(0, 5).join('\n'));
+      }
+      location.reload();
+    }
+
     async function togglePublish(publish) {
       try {
         const res = await authFetch('/api/task', {
@@ -907,14 +1050,14 @@
                   '&submission_id=' + encodeURIComponent(d.id);
       let html = '<div class="draft-actions">';
       if (d.graded_at) {
-        const total = d.total_mark != null ? d.total_mark : '—';
-        const max   = currentTask.total_marks || '—';
-        html += '<span class="graded-pill">Marked — ' + e(String(total)) + ' / ' + e(String(max)) + '</span>';
+        if (d.total_mark == null) {
+          html += '<span class="graded-pill">Completed</span>';
+        } else {
+          const max = currentTask.total_marks || '—';
+          html += '<span class="graded-pill">Marked — ' + e(String(d.total_mark)) + ' / ' + e(String(max)) + '</span>';
+        }
         html += '<a class="btn-mark-submission edit" href="' + url + '">Edit grade</a>';
       } else {
-        if (d.submitted_for_marking) {
-          html += '<span class="ready-pill">Ready for marking</span>';
-        }
         html += '<a class="btn-mark-submission" href="' + url + '">Mark this submission</a>';
       }
       html += '</div>';

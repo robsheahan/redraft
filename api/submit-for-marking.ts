@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { captureError } from './../lib/sentry.js';
+import { generateInsightsSignals } from '../lib/insights-signals-feedback.js';
 
 const MAX_DRAFT_CHARS = 50_000;
 
@@ -52,7 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Read task context for the submission row
   const { data: task } = await supabase
-    .from('tasks').select('id, question, course, class_id').eq('id', task_id as string).maybeSingle();
+    .from('tasks').select('id, question, course, class_id, task_mode').eq('id', task_id as string).maybeSingle();
   if (!task) return res.status(404).json({ error: 'Task not found.' });
 
   // Confirm the student is a member of the class
@@ -68,13 +69,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .order('draft_version', { ascending: false }).limit(1);
   const nextVersion = (existingDrafts && existingDrafts[0]?.draft_version ? existingDrafts[0].draft_version : 0) + 1;
 
+  // Silent insights pass — only for marked_task and quick_task. The student
+  // never sees this output; it exists to feed cohort cards + student profile.
+  // For feedback_task, prior draft rows already carry rich feedback, so this
+  // locked row stays feedback:null (existing behaviour).
+  let insightsFeedback: any = null;
+  const taskMode = (task as any).task_mode as string | undefined;
+  const wantsSilentInsights = taskMode === 'marked_task' || taskMode === 'quick_task';
+  if (wantsSilentInsights) {
+    try {
+      insightsFeedback = await generateInsightsSignals({
+        course: (task as any).course || null,
+        question: (task as any).question || '',
+        draft: draftText,
+      });
+    } catch (err) {
+      // Don't fail the submission — the student's work is the product, the
+      // AI signal is the side-effect. Log it; teacher can still mark.
+      captureError(err, { stage: 'submit-for-marking-haiku', task_id, user_id: user.id, task_mode: taskMode });
+      insightsFeedback = null;
+    }
+  }
+
   const { error: insertErr } = await supabase.from('submissions').insert({
     student_id: user.id,
     task_id: task_id as string,
     question: task.question,
     course: task.course,
     draft_text: draftText,
-    feedback: null,
+    feedback: insightsFeedback,
     draft_version: nextVersion,
     submitted_for_marking: true,
     keystroke_count: typeof keystroke_count === 'number' ? keystroke_count : null,
@@ -92,6 +115,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   await supabase
     .from('draft_autosaves').delete()
     .eq('student_id', user.id).eq('task_id', task_id as string);
+
+  // Fresh insights data → invalidate the longitudinal profile cache so the
+  // next read regenerates. Fire-and-forget; matches the pattern in
+  // submission-grade.ts / generate-feedback.ts.
+  if (insightsFeedback) {
+    supabase.from('student_profile_synthesis')
+      .delete()
+      .eq('student_id', user.id)
+      .then(({ error }) => {
+        if (error) captureError(error, { stage: 'profile-cache-invalidate-submit', task_id, user_id: user.id });
+      });
+  }
 
   return res.status(200).json({ ok: true, draft_version: nextVersion });
 }

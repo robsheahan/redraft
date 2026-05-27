@@ -74,12 +74,44 @@
     .tasks-grid { display: flex; flex-direction: column; gap: 10px; }
     .task-card { background: #fff; border-radius: 10px; padding: 18px 22px; text-decoration: none; color: inherit; display: flex; align-items: center; justify-content: space-between; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); transition: box-shadow 0.15s, transform 0.15s; }
     .task-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
+    /* Assessment tasks get an orange left accent + stronger shadow so they
+       stand out from lightweight quick tasks at a glance. */
+    .task-card.is-assessment {
+      border-left: 4px solid #ed7615;
+      box-shadow: 0 2px 8px rgba(237,118,21,0.10), 0 0 0 1px rgba(237,118,21,0.10);
+    }
+    .task-card.is-assessment:hover { box-shadow: 0 6px 18px rgba(237,118,21,0.18); }
     .task-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
     .task-meta { font-size: 13px; color: #6b7280; }
     .status-chip { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 3px 10px; border-radius: 4px; white-space: nowrap; }
     .status-draft { color: #92400e; background: #fef3c7; }
     .status-published { color: #15803d; background: #dcfce7; }
     .task-card-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+    /* Per-task 3-dot action menu */
+    .task-actions { position: relative; display: inline-flex; }
+    .task-actions-toggle {
+      background: transparent; border: 1px solid transparent; cursor: pointer;
+      font-size: 18px; line-height: 1; color: #6b7280; padding: 4px 10px;
+      border-radius: 6px; font-family: inherit;
+      letter-spacing: 1px;
+    }
+    .task-actions-toggle:hover { background: rgba(0,0,0,0.05); color: #1f2937; }
+    .task-actions-menu {
+      display: none; position: absolute; top: calc(100% + 4px); right: 0;
+      background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+      min-width: 160px; padding: 4px; z-index: 30;
+    }
+    .task-actions-menu.open { display: block; }
+    .task-actions-menu button {
+      display: block; width: 100%; text-align: left;
+      background: transparent; border: none; cursor: pointer;
+      padding: 8px 12px; border-radius: 5px; font-size: 13px;
+      color: #1f2937; font-family: inherit;
+    }
+    .task-actions-menu button:hover { background: #f5f0e8; }
+    .task-actions-menu button.danger { color: #dc2626; }
+    .task-actions-menu button.danger:hover { background: #fef2f2; }
     .task-stat-pill {
       display: inline-flex; align-items: center; gap: 5px;
       font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 100px;
@@ -178,7 +210,6 @@
       if (c.course) html += '<div class="course-label">' + e(c.course) + '</div>';
       if (!c.archived_at) {
         html += '<div class="header-actions">';
-        html += '<a href="insights.html?class_id=' + encodeURIComponent(c.id) + '" class="btn btn-outline">Insights</a>';
         html += '<a href="new-task.html?class=' + encodeURIComponent(c.id) + '" class="btn btn-primary">+ New task</a>';
         html += '</div>';
       }
@@ -212,7 +243,8 @@
           const chip = t.published_at
             ? '<span class="status-chip status-published">Published</span>'
             : '<span class="status-chip status-draft">Draft</span>';
-          html += '<a href="task-detail.html?id=' + encodeURIComponent(t.id) + '" class="task-card">';
+          const cardCls = 'task-card' + ((t.task_mode && t.task_mode !== 'quick_task') ? ' is-assessment' : '');
+          html += '<a href="task-detail.html?id=' + encodeURIComponent(t.id) + '" class="' + cardCls + '">';
           html += '<div style="flex:1;min-width:0"><div class="task-title">' + e(t.title || t.question || 'Untitled task') + '</div>';
           var metaParts = [];
           if (t.task_type) metaParts.push(e(t.task_type));
@@ -221,15 +253,28 @@
           html += '<div class="task-meta">' + metaParts.join(' · ') + '</div></div>';
 
           html += '<div class="task-card-right">';
-          // Marking stats — only meaningful for published tasks with submissions
-          if (t.published_at && typeof t.submitted_count === 'number' && t.submitted_count > 0) {
-            html += '<span class="task-stat-pill submitted">' + t.submitted_count + ' submitted</span>';
-            html += '<span class="task-stat-pill marked">' + (t.marked_count || 0) + ' marked</span>';
+          // Marking stats — only on published tasks. Teacher knows what
+          // they've marked, so just surface the two numbers that matter:
+          // submitted as a fraction of the class, and what's still unmarked.
+          if (t.published_at) {
+            const submitted = (typeof t.submitted_count === 'number') ? t.submitted_count : 0;
+            html += '<span class="task-stat-pill submitted">' + submitted + '/' + members.length + ' submitted</span>';
             const toMark = t.to_mark_count || 0;
             if (toMark > 0) html += '<span class="task-stat-pill to-mark">' + toMark + ' unmarked</span>';
-            if (t.ready_count > 0) html += '<span class="task-stat-pill ready">' + t.ready_count + ' ready</span>';
           }
           html += chip;
+          html += '<div class="task-actions">';
+          html += '<button type="button" class="task-actions-toggle" data-task-action="toggle" data-task-id="' + e(t.id) + '" aria-label="Task actions">⋯</button>';
+          html += '<div class="task-actions-menu" data-task-id="' + e(t.id) + '">';
+          html += '<button type="button" data-task-action="share" data-task-id="' + e(t.id) + '">Share link</button>';
+          if (t.published_at) {
+            html += '<button type="button" data-task-action="unpublish" data-task-id="' + e(t.id) + '">Unpublish</button>';
+          } else {
+            html += '<button type="button" data-task-action="publish" data-task-id="' + e(t.id) + '">Publish</button>';
+          }
+          html += '<button type="button" class="danger" data-task-action="delete" data-task-id="' + e(t.id) + '">Delete task</button>';
+          html += '</div>';
+          html += '</div>';
           html += '</div>';
           html += '</a>';
         });
@@ -252,6 +297,99 @@
       html += '</div>';
 
       document.getElementById('content').innerHTML = html;
+      wireTaskActions();
+    }
+
+    // Per-task 3-dot menu. The task card itself is an <a> so we capture
+    // clicks before they bubble, prevent default navigation, and route
+    // each action to its handler.
+    function wireTaskActions() {
+      document.querySelectorAll('[data-task-action]').forEach(function (btn) {
+        btn.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          var action = btn.dataset.taskAction;
+          var id = btn.dataset.taskId;
+          if (!id) return;
+          if (action === 'toggle') return toggleTaskMenu(id);
+          // Any action click closes the menu first.
+          closeAllTaskMenus();
+          if (action === 'share') return shareTaskLink(id, btn);
+          if (action === 'unpublish') return setTaskPublished(id, false);
+          if (action === 'publish') return setTaskPublished(id, true);
+          if (action === 'delete') return deleteTaskFromList(id);
+        });
+      });
+    }
+
+    function toggleTaskMenu(id) {
+      var open = document.querySelector('.task-actions-menu[data-task-id="' + id + '"]');
+      var wasOpen = open && open.classList.contains('open');
+      closeAllTaskMenus();
+      if (!wasOpen && open) open.classList.add('open');
+    }
+    function closeAllTaskMenus() {
+      document.querySelectorAll('.task-actions-menu.open').forEach(function (m) { m.classList.remove('open'); });
+    }
+    // Close any open task menu when clicking outside.
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest || !e.target.closest('.task-actions')) closeAllTaskMenus();
+    });
+
+    async function shareTaskLink(id, btn) {
+      var url = window.location.origin + '/submit.html?task_id=' + encodeURIComponent(id);
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url);
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.focus(); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta);
+        }
+        flashToast('Link copied — paste it to your students.');
+      } catch (err) {
+        window.prompt('Copy the link to send to your students:', url);
+      }
+    }
+
+    async function setTaskPublished(id, publish) {
+      try {
+        var res = await authFetch('/api/task', {
+          method: 'PUT',
+          body: JSON.stringify({ id: id, publish: !!publish }),
+        });
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to update task.');
+        location.reload();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function deleteTaskFromList(id) {
+      if (!confirm('Delete this task? This also removes any submissions students have made for it. Can\'t be undone.')) return;
+      try {
+        var res = await authFetch('/api/task', {
+          method: 'DELETE',
+          body: JSON.stringify({ id: id }),
+        });
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to delete task.');
+        location.reload();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // Tiny inline toast for "Link copied" — no dependency on a banner system.
+    function flashToast(msg) {
+      var t = document.createElement('div');
+      t.textContent = msg;
+      t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:1000;box-shadow:0 8px 24px rgba(0,0,0,0.18);';
+      document.body.appendChild(t);
+      setTimeout(function () { t.style.transition = 'opacity 0.3s'; t.style.opacity = '0'; }, 1700);
+      setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 2100);
     }
 
     function toggleMenu(ev) {

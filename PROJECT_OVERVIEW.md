@@ -16,7 +16,7 @@ Concretely: no mark/band predictions, no content rewriting, marker-voice prompts
 - **Frontend:** Vanilla JS + HTML in `public/`. No framework, no build step. Supabase JS SDK loaded from CDN.
 - **Backend:** TypeScript serverless handlers in `api/` using `@vercel/node`.
 - **Database / auth:** Supabase (Sydney region, project ref `jcxcbqsxshlwwvxlyyfd`). NOT to be confused with Citrafort's separate Supabase project (`kjueriejebawtccuqxid`) — different app.
-- **AI:** Anthropic Claude Sonnet 4.6 via `@anthropic-ai/sdk`. Three parallel passes per submission; tool-call schemas for structured outputs.
+- **AI:** Anthropic via `@anthropic-ai/sdk`. Claude Sonnet 4.6 for student-facing feedback (three parallel passes) and longitudinal profile synthesis; Claude Haiku 4.5 for the silent insights-signals pass on marked-only / quick tasks (~$0.004 per call vs ~$0.10–0.20 for Sonnet). All endpoints use tool-call schemas for structured outputs.
 - **Email:** Resend (outbound, custom proofready.app domain). Cloudflare Email Routing for inbound `help@`.
 - **Auth providers:** Supabase email/password + Google OAuth + Canvas LTI 1.3 launch.
 - **Observability:** Sentry (browser + Node.js projects).
@@ -46,18 +46,29 @@ There are two independent role systems:
 - `auth.users` — Supabase auth, with `user_metadata.role` ∈ {teacher, student}, `display_name`, optional `graduation_year` (used for student year-level filter).
 - `classes` — `id`, `code` (6-char join code), `teacher_id`, `name`, `course`, `created_at`, `archived_at`.
 - `class_members` — `class_id`, `student_id`, `joined_at`. Composite PK.
-- `tasks` — `id`, `class_id`, `title`, `question`, `course`, `task_type`, `total_marks`, `due_date`, `outcomes` (jsonb), `criteria` (jsonb), `criteria_text`, `notes`, `published_at`, `created_at`, `class_feedback` + `class_feedback_count` + `class_feedback_generated_at` (cached class-level synthesis), `typed_response_only` (boolean, default true). LTI columns: `lti_platform_id`, `lti_resource_link_id`, `lti_line_item_url`, `lti_ags_lineitems_url`.
-- `submissions` — `id`, `student_id`, `task_id`, `question`, `course`, `draft_text`, `feedback` (jsonb), `draft_version`, `created_at`. Capped at 3 drafts per student per task. Typing telemetry: `keystroke_count`, `paste_attempts_blocked`, `typing_session_count`, `total_typing_time_ms`, `time_to_first_keystroke_ms`. Teacher grading: `criterion_marks` (jsonb), `total_mark`, `teacher_comment`, `teacher_annotations` (jsonb — array of `{quote, comment, category, start, end}` with categories `praise`/`improve`/`note`), `graded_at`, `graded_by`. Final-submission flag: `submitted_for_marking` (boolean).
+- `tasks` — `id`, `class_id`, `title`, `question`, `course`, `task_type`, `task_mode` (text, default `feedback_task`; CHECK ∈ {`feedback_task`, `marked_task`, `quick_task`}), `completion_only` (boolean, default false — quick_task only), `total_marks`, `due_date`, `outcomes` (jsonb), `criteria` (jsonb), `criteria_text`, `notes`, `published_at`, `created_at`, `class_feedback` + `class_feedback_count` + `class_feedback_generated_at` (cached class-level synthesis), `typed_response_only` (boolean, default true). LTI columns: `lti_platform_id`, `lti_resource_link_id`, `lti_line_item_url`, `lti_ags_lineitems_url`.
+- `submissions` — `id`, `student_id`, `task_id`, `question`, `course`, `draft_text`, `feedback` (jsonb), `draft_version`, `created_at`. Capped at 3 drafts per student per task on `feedback_task`; single submission on `marked_task` / `quick_task`. Typing telemetry: `keystroke_count`, `paste_attempts_blocked`, `typing_session_count`, `total_typing_time_ms`, `time_to_first_keystroke_ms`. Teacher grading: `criterion_marks` (jsonb), `total_mark`, `teacher_comment`, `teacher_annotations` (jsonb — array of `{quote, comment, category, start, end}` with categories `praise`/`improve`/`note`), `completion_status` (text, only `'completed'` or null — set when a quick_task is marked "complete" without a numeric mark), `graded_at`, `graded_by`. Final-submission flag: `submitted_for_marking` (boolean).
 - `draft_autosaves` — `student_id`, `task_id`, `draft_text`, `telemetry` (jsonb), `updated_at`. Composite PK. Persistent in-progress drafts. Cleared on successful submission.
 - `api_call_log` — rate-limit + spend tracking. `user_id`, `endpoint`, `created_at`.
 - `schools` — `id`, `name`, `primary_domain`, `secondary_domains` (text[]), `insights_cache` (jsonb), `insights_cache_task_count`, `insights_cache_generated_at`.
 - `school_members` — `school_id`, `user_id`, `role` ∈ {`admin`, `leader`}, `faculties` (text[], leaders only).
 - `school_insights_cards` — per-school per-kind LLM card cache. `(school_id, card_kind)` PK. Student-kind cards are NOT cached here.
+- `student_profile_synthesis` — one row per student. Cached longitudinal academic profile (LLM-synthesised narrative + headline strength/priority + metrics jsonb including improvement_themes, strength_themes, mark_trend, profile_status ∈ {`established`, `developing`, `new`}). Row is deleted (invalidated) on any grading event, feedback generation, or marked/quick-task submission, then lazily regenerated on next read. Contains no draft quotes — safe to surface to any current teacher of the student.
 - `lti_platforms` — one row per Canvas instance (issuer, client_id, deployment_id, hostname, JWKS + auth URLs, school_name, school_id).
 - `lti_nonces` — short-lived OIDC handshake nonces.
 - `lti_user_mappings` — Canvas user_id ↔ auth.users.id, per platform.
 - `lti_course_mappings` — Canvas course_id ↔ classes.id, per platform.
 - `lti_dl_sessions` — short-lived deep-linking sessions.
+
+## Task modes
+
+Every task is one of three modes (stored in `tasks.task_mode`). The UI currently exposes only two choices — "Assessment task" and "Quick task" — and the API maps to the three DB values. `marked_task` is kept in the CHECK constraint for legacy rows but no longer produced by `task.ts`.
+
+- **`feedback_task`** — the original behaviour. Three-pass Sonnet feedback shown to the student. Requires criteria. Up to 3 drafts per student. Counts toward mark distribution once graded.
+- **`marked_task`** — silent Haiku insights pass at submit time; student sees no feedback. Single submission. Requires criteria. Goes into the mark distribution. Legacy mode — new tasks no longer choose this.
+- **`quick_task`** — silent Haiku insights pass at submit time; student sees no feedback. Single submission. No criteria. **Does NOT contribute to mark distribution** (cohort mark cards ignore it by design). Feeds the LLM cohort cards and student profiles. Teacher can mark it with a number, or "mark as complete" (`completion_only` task flag → `submissions.completion_status = 'completed'`).
+
+The silent Haiku pass lives in `lib/insights-signals-feedback.ts`. It writes a shape that matches the relevant subset of the holistic-feedback tool, so existing cohort cards and the student profile synthesis consume it with no branching.
 
 ## Core flows
 
@@ -68,7 +79,7 @@ There are two independent role systems:
 
 ### Class + task lifecycle
 1. Teacher creates a class on `new-class.html` (auto-generates 6-char join code).
-2. Composes a task on `new-task.html` — question, criteria (rubric or band-style), outcomes, total marks, due date. `typed_response_only` toggle defaults ON.
+2. Composes a task on `new-task.html` — picks **Assessment task** (feedback_task; requires criteria) or **Quick task** (quick_task; criteria optional, can be number-marked or completion-only). Sets question, outcomes, total marks, due date. `typed_response_only` toggle defaults ON.
 3. Saves as draft OR publishes. Students see only published tasks.
 4. Shares the join code (or, for LTI-linked classes, students auto-enrol via NRPS on teacher launch).
 
@@ -76,24 +87,28 @@ There are two independent role systems:
 1. Joins a class with the code on `student.html`, or auto-enrolled via LTI.
 2. Opens `submit.html` for a task.
 3. Writes draft in the textarea. When `typed_response_only`: paste/drop blocked with a toast, mobile screens show "open on laptop" guard, autosaves every ~1.5s to `draft_autosaves`, typing telemetry captured.
-4. Two submit paths:
-   - **Get AI feedback** — runs `/api/generate-feedback` (three Claude passes). Counts toward the 3-draft cap.
-   - **Submit for marking** — runs `/api/submit-for-marking` (no Claude call, locks the task for this student).
+4. Submit paths depend on task mode:
+   - **`feedback_task`** — "Get AI feedback" runs `/api/generate-feedback` (three Sonnet passes; counts toward 3-draft cap), or "Submit for marking" runs `/api/submit-for-marking` (no AI call, locks the task).
+   - **`marked_task` / `quick_task`** — only "Submit for marking" is offered. `/api/submit-for-marking` runs the silent Haiku insights pass (`generateInsightsSignals`) and writes the structured output to `submissions.feedback` for downstream insights — but the UI never surfaces it to the student.
 5. Locked state shows once any submission has `graded_at` OR `submitted_for_marking = true`.
 
-### Three-pass AI feedback (`api/generate-feedback.ts`)
+### Three-pass AI feedback — feedback_task only (`api/generate-feedback.ts`)
 Three parallel Anthropic calls via `Promise.allSettled`. Wall-clock = max(pass1, pass2, pass3), not sum.
 
 - **Pass 1 — Holistic** (`prompts/feedback-system.ts`): load-bearing. Builds a system prompt injecting NESA glossary, performance bands, marking principles, SOLO taxonomy, verb-depth map, common pitfalls, discipline-specific persona, marker-voice reference (NESA Notes), subject-specific terminology. Strict no-band/no-rewrite rules. Returns `improvements`, `what_youve_done_well`, `top_priority`, `task_verb_check`.
 - **Pass 2 — Criterion-by-criterion**: skipped if no criteria provided. Per-criterion verdict + recommendation.
 - **Pass 3 — Inline annotations** (`lib/generate-inline-suggestions.ts`): returns annotations anchored to verbatim quote substrings of the draft (the model is told to mark up like a teacher's pen). Each annotation's quote is validated to exist in the draft.
 
-Rate-limited 10/hr per user, 5000/day global.
+Rate-limited 10/hr per user, 5000/day global. Generation events invalidate the student's `student_profile_synthesis` cache.
+
+### Silent insights signals pass — marked_task / quick_task (`lib/insights-signals-feedback.ts`)
+Single Haiku 4.5 call invoked from `/api/submit-for-marking` when `tasks.task_mode ∈ {marked_task, quick_task}`. Returns the same shape as a subset of the holistic-feedback tool (`what_youve_done_well`, `task_verb_check`, `improvements`, `top_priority`) so cohort cards + the student-profile synthesis pass consume it without branching. Cost is roughly $0.004/call. Failures don't fail the submission — the student's work still lands; only the side-effect signal is lost. Successful runs invalidate the student's profile cache.
 
 ### Teacher marking (`mark-submission.html` → `submission-grade.ts`)
 - Two-column layout. Student draft on the left with text-selection annotation tool (select text → "+ Annotate" → category + comment). Rubric mark entry on the right.
 - Per-criterion inputs for criterion-list rubrics, single overall input for band-style.
-- On save: writes `criterion_marks`, `total_mark`, `teacher_comment`, `teacher_annotations`, `graded_at`, `graded_by`. Clears the matching `draft_autosaves` row. Fires AGS passback to Canvas SpeedGrader if the task is LTI-linked.
+- For `quick_task` with `completion_only`, the UI offers a "mark as complete" toggle instead of (or alongside) a numeric mark — sets `submissions.completion_status = 'completed'`.
+- On save: writes `criterion_marks`, `total_mark`, `teacher_comment`, `teacher_annotations`, `completion_status`, `graded_at`, `graded_by`. Clears the matching `draft_autosaves` row. Invalidates the student's `student_profile_synthesis` cache. Fires AGS passback to Canvas SpeedGrader if the task is LTI-linked.
 
 ### Student results view
 - `my-results.html` — student "markbook". Summary strip (classes, tasks, marked, overall average), one card per class with class average, then per-task rows with status (not submitted / due soon / overdue / submitted / submitted late / marked) and mark.
@@ -120,16 +135,20 @@ The largest subsystem outside the core feedback flow. Three-tier access (teacher
 ### Two views
 
 **Cohort view** — default when no `student_id` filter set. The cards depend on tier:
-- Teacher (class scope): mark distribution + improvement velocity + keyword struggles (verb_depth LLM) + top 3 mistakes (common_gaps LLM) + stretch goals (top_decile LLM, quartile mode) + 3 things done well (things_done_well LLM)
+- Teacher (class scope): **class profile summary** (LLM, aggregated from `student_profile_synthesis` rows of currently-enrolled students) + mark distribution + improvement velocity + keyword struggles (verb_depth LLM) + top 3 mistakes (common_gaps LLM) + stretch goals (top_decile LLM, quartile mode) + 3 things done well (things_done_well LLM)
 - Leader/admin (school scope): activity sparkline, faculty engagement, mark distribution, mark by faculty, marking progress, teacher activity, per-criterion lows, improvement velocity, keyword struggles, plus all five Tier-A LLM cards (bottom_decile, top_decile, verb_depth, common_gaps, things_done_well)
 
-**Individual student view** — triggered by selecting a student from the search box. Available to all tiers. Five metric cards + a hero summary card:
-1. Hero: **Student summary** (LLM, span 12) — 4–6 sentence report-style narrative + headline strength + headline priority + tone note
-2. **Mark distribution** (span 6) — A–E band counts + per-task list (this student only)
+A **time-window filter** applies to all submissions queries via `getTimeWindowCutoff` in `lib/insights-filters.ts` — limits subs to a recent window so cards reflect current cohort behaviour rather than historical baselines.
+
+**Individual student view** — triggered by selecting a student from the search box. Available to all tiers. Loads the longitudinal profile via `/api/student-profile` and renders metric cards alongside it:
+1. Hero: **Student profile** (LLM, span 12) — longitudinal narrative + headline strength + headline priority + improvement / strength themes + profile_status (established / developing / new). Cached in `student_profile_synthesis`; regenerated lazily on cache miss.
+2. **Mark distribution** (span 6) — A–E band counts + per-task list (this student only). Excludes `quick_task` submissions by design.
 3. **Improvement velocity** (span 6) — their own draft-to-draft priority shifts: addressed / persistent / regressed themes
 4. **Top 3 mistakes** (LLM, span 6) — recurring patterns in their improvement feedback
 5. **Stretch goals** (LLM, span 6) — personalised next steps
 6. **3 things done well** (LLM, span 12) — consistent strengths
+
+Quick-task submissions never contribute to mark-percentage stats — `insights-card-generate.ts` zeroes `mark_pct` whenever `task_mode = 'quick_task'`, even if the teacher chose to give it a number. They still feed cohort LLM cards via their silent Haiku feedback.
 
 ### Scope rules (enforced server-side)
 
@@ -146,8 +165,10 @@ A teacher passing `?class_id=` for a class they don't own naturally returns zero
 - Cohort cards for leader/admin tier: cached in `school_insights_cards` keyed by `(school_id, card_kind)`. Stored with the filter context used at generation time. UI shows a "stale scope" banner if active filters don't match.
 - Teacher tier cohort cards: cache bypassed entirely — class scope would corrupt the school-keyed cache. Each click regenerates fresh; rate-limit caps spend.
 - Student cards (all four kinds): no cache. Regenerated fresh each click. In-memory client-side state holds the result for re-renders without re-fetching.
+- Student profile (`student_profile_synthesis`): per-student row, invalidated on every grading event, AI-feedback generation, and marked/quick-task submission. Cache hits are free; misses regenerate via Sonnet and persist.
+- Class profile summary (`class_profile_summary` kind): generated on demand from currently-cached student profiles for the class — does NOT spawn N profile generations on click. Students without a cached profile are surfaced as "needs more data".
 
-Rate limit: 5/hr per user per card kind for cohort; 8/hr per student per kind on student cards (bucket key includes a short student_id prefix so spamming one student doesn't lock out others).
+Rate limit: 5/hr per user per card kind for cohort; 8/hr per student per kind on student cards (bucket key includes a short student_id prefix so spamming one student doesn't lock out others). Class profile summary: 6/hr per school, 300/day global. Student profile generation: 30/hr per user, 800/day global (cache hits are not rate-limited).
 
 ### Floors
 
@@ -186,6 +207,8 @@ Rate limit: 5/hr per user per card kind for cohort; 8/hr per student per kind on
 - `POST /api/insights-card-generate` — Generate one Tier-A LLM card. Body: `{ kind, school_id?, faculty?, course?, class_id?, year_level?, student_id? }`. Kinds:
   - Cohort: `bottom_decile`, `top_decile`, `verb_depth`, `common_gaps`, `things_done_well`
   - Student: `student_top_mistakes`, `student_stretch_goals`, `student_strengths`, `student_summary`
+  - Class: `class_profile_summary` (requires `class_id`, aggregates cached student profiles)
+- `GET /api/student-profile?student_id=…` — Longitudinal student profile. Returns cache hit if present, otherwise regenerates via Sonnet and persists. Access: the student themselves OR a teacher/leader/admin whose insights scope includes the student.
 - `GET /api/admin-stats` — Internal admin dashboard data. Gated by `ADMIN_USER_IDS`/`ADMIN_EMAILS`.
 
 ### LTI 1.3
@@ -198,10 +221,10 @@ Rate limit: 5/hr per user per card kind for cohort; 8/hr per student per kind on
 
 ### `api/`
 Feedback: `generate-feedback.ts`, `generate-class-feedback.ts`
-Submissions: `submit-for-marking.ts`, `submission-grade.ts`, `task-submissions.ts`, `task-csv.ts`, `task.ts`, `draft-autosave.ts`
+Submissions: `submit-for-marking.ts` (also runs the silent Haiku pass for marked/quick tasks), `submission-grade.ts`, `task-submissions.ts`, `task-csv.ts`, `task.ts` (validates task_mode + criteria + completion_only), `draft-autosave.ts`
 Auth: `signup.ts`, `request-password-reset.ts`, `set-role.ts`
 Classes + user: `class.ts`, `me.ts`
-Insights: `insights-cards.ts`, `insights-student.ts`, `insights-students-search.ts`, `insights-detail.ts`, `insights-synthesis.ts`, `insights-card-generate.ts`
+Insights: `insights-cards.ts`, `insights-student.ts`, `insights-students-search.ts`, `insights-detail.ts`, `insights-synthesis.ts`, `insights-card-generate.ts`, `student-profile.ts`
 Admin: `admin-stats.ts`
 Contact: `contact.ts`
 LTI: `api/lti/*` — `jwks.ts`, `login.ts`, `launch.ts`, `deep-link.ts`
@@ -211,13 +234,15 @@ LTI: `api/lti/*` — `jwks.ts`, `login.ts`, `launch.ts`, `deep-link.ts`
 - `cors.ts` — `applyCors()` for api.proofready.app
 - `extract-json.ts` — `extractFirstJsonObject(text)` — robustly pulls balanced JSON from a model response
 - `generate-inline-suggestions.ts` — Pass 3 implementation
+- `insights-signals-feedback.ts` — silent Haiku pass for marked/quick task submissions
+- `student-profile.ts` — `readCachedProfile()` + `regenerateProfile()` for the longitudinal profile
 - `rate-limit.ts` — per-user-per-hour + global-per-day caps, logs to `api_call_log`
 - `sentry.ts` — Sentry init + `captureError`
 - `task-verbs.ts` — NESA directive verb extraction from a question string
 - `user-names.ts` — `getUserInfoBatch()` with 30s cache
-- `feedback-tools.ts` — Tool schemas for all Claude tool-call endpoints (holistic, criteria, inline, rubric parse, class feedback, school insights, the five Tier-A cohort cards, and the four student-scope cards)
+- `feedback-tools.ts` — Tool schemas for all Claude tool-call endpoints (holistic, criteria, inline, rubric parse, class feedback, school insights, the five Tier-A cohort cards, the four student-scope cards, the insights-signals Haiku tool, and the class_profile_summary tool)
 - `anthropic-tool-call.ts` — `callTool<T>()` wrapper
-- `insights-filters.ts` — Filter parsing, faculty-scope clamping, year-level helpers
+- `insights-filters.ts` — Filter parsing, faculty-scope clamping, year-level helpers, `getTimeWindowCutoff()`
 - `schools.ts` — School resolution, scope helpers (`resolveInsightsAccess`, `getOwnedClassIds`, `getInScopeClassIds`, `getInScopeStudentIds`, `getSchoolTeacherIds`, `getSchoolStudentIds`, `canViewInsights`, `listAllAuthUsers`)
 - `admin.ts` — `isGlobalAdmin()` — `ADMIN_USER_IDS` first, falls back to `ADMIN_EMAILS`
 - LTI: `lib/lti/*` — `config.ts`, `jwt.ts`, `nonce.ts`, `roles.ts`, `user-provision.ts`, `course-provision.ts`, `service-auth.ts`, `nrps.ts`, `ags.ts`
@@ -225,6 +250,7 @@ LTI: `api/lti/*` — `jwks.ts`, `login.ts`, `launch.ts`, `deep-link.ts`
 ### `prompts/`
 - `feedback-system.ts` — Pass 1 system + user prompt
 - `inline-suggestions-system.ts` / `inline-suggestions-user.ts` — Pass 3
+- `insights-signals-system.ts` — Haiku silent-pass system + user prompt
 
 ### `data/`
 - `nesa-reference.ts` — GLOSSARY, PERFORMANCE_BANDS, MARKING_PRINCIPLES, SOLO_LEVELS, VERB_DEPTH_MAP, COMMON_PITFALLS, FEEDBACK_PRINCIPLES
@@ -240,16 +266,19 @@ Student: `student.html`, `class-view.html`, `submit.html`, `feedback.html`, `my-
 Teacher: `teacher.html`, `new-class.html`, `class-detail.html`, `new-task.html`, `task-detail.html`, `mark-submission.html`, `teacher-markbook.html`
 Insights: `insights.html` (single page — handles cohort + student modes, all three tiers)
 Admin: `admin.html`
+LTI: `lti-not-ready.html` (shown when an LTI launch lands before the teacher has finished provisioning the class/task)
+Marketing: `deck.html` (rewritten from `/deck`; source HTML in `pitch/pitch-deck.html`)
 Policy: `compliance.html`, `privacy.html`, `terms.html`, `contact.html`
+Account: `profile.html`
 Shared JS: `js/app.js` (Supabase client, `authFetch`, `requireAuth`, `apiUrl`, Sentry init), `js/rubric.js` (rubric parser/renderer — pipe-table, band-style, criterion-list, letter-band, multi-part HSC, flattened-table; modes `display` / `mark-entry` / `graded`), `js/nesa-courses.js` (course autocomplete), `js/contact-modal.js`
 
 ### `scripts/`
-- SQL migrations: `classes-migration.sql`, `class-feedback-migration.sql`, `rls-policies.sql`, `scale-indexes.sql`, `lti-migration.sql`, `typed-response-only-migration.sql`, `teacher-marking-migration.sql`, `submit-for-marking-migration.sql`, `insights-cards-cache.sql`
-- One-offs: `backfill-inline-suggestions.ts`, `scrape-nesa-feedback.ts`, `generate-lti-keypair.ts`
+- SQL migrations: `classes-migration.sql`, `class-feedback-migration.sql`, `rls-policies.sql`, `scale-indexes.sql`, `lti-migration.sql`, `typed-response-only-migration.sql`, `teacher-marking-migration.sql`, `submit-for-marking-migration.sql`, `insights-cards-cache.sql`, `task-modes-migration.sql`, `student-profile-migration.sql`
+- One-offs: `backfill-inline-suggestions.ts`, `scrape-nesa-feedback.ts`, `generate-lti-keypair.ts`, `diagnose-pcs-search.ts`
 - Smoke tests: `lti-smoke-test.ts`, `insights-teacher-smoke-test.ts`, `insights-student-smoke-test.ts`
 
 ### Config
-- `vercel.json` — `maxDuration: 300` (Pro plan), rewrites `/lti/*` → `/api/lti/*`
+- `vercel.json` — `maxDuration: 300` (Pro plan), rewrites `/lti/*` → `/api/lti/*` and `/deck` → `/deck.html`
 - `tsconfig.json` — NodeNext modules to match Vercel runtime
 - `package.json` — `@anthropic-ai/sdk`, `@supabase/supabase-js`, `@sentry/node`, `@vercel/node`, `jose`
 
@@ -273,6 +302,8 @@ Shared JS: `js/app.js` (Supabase client, `authFetch`, `requireAuth`, `apiUrl`, S
 - **Typed-response-only as default** (`typed_response_only` = true). Paste/drop blocked, mobile warned off, autosave + telemetry. Designed so a draft submitted to ProofReady is actually the student's own typing.
 - **api.proofready.app subdomain** is Cloudflare DNS-only, not orange-cloud. Cloudflare's 100s edge proxy timeout would kill long Anthropic calls; bypassing it gives us Vercel's full 300s on Pro.
 - **Insights student-name policy.** School-wide and cohort prompts forbid naming students ("aggregate only"). Student-scope prompts (`student_*` kinds) explicitly allow naming — the teacher is already authorised to see this student. The no-mark/no-band rule still applies.
+- **Student profile privacy contract.** The longitudinal profile synthesis never sees raw draft text, never sees verbatim annotation quotes, and is forbidden from quoting or paraphrasing student writing. This is what makes the profile safe to surface to any current teacher of the student — including one inheriting students mid-year who never saw the previous class's drafts. The privacy policy explicitly covers this for `marked_task` / `quick_task` paths: silent AI pass, never shown to the student, used only for aggregate cohort signals + the profile, no model training, no cross-school sharing.
+- **Quick task is "not a graded task" by design.** Even when a teacher gives a quick_task a numeric mark, it stays out of mark distribution / decile cards. It feeds LLM cohort cards and the student profile only. Mark-card logic in `insights-card-generate.ts` zeroes `mark_pct` for `task_mode = 'quick_task'`.
 
 ## Known issues / gotchas
 

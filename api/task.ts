@@ -28,6 +28,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
+type TaskMode = 'feedback_task' | 'marked_task' | 'quick_task';
+
+/**
+ * Validate and normalise the task_mode supplied by the client.
+ *
+ * The UI exposes two choices: "Assessment task" (feedback_task) and
+ * "Quick task" (quick_task). marked_task is kept in the DB CHECK constraint
+ * so legacy rows still validate, but the API no longer produces new ones.
+ *
+ * Legacy clients that send student_feedback_enabled instead of task_mode
+ * are tolerated for one transition: feedback_enabled=true → feedback_task,
+ * false → quick_task. (The hybrid marked_task path is no longer reachable.)
+ */
+function resolveTaskMode(body: any): TaskMode {
+  const raw = body && typeof body.task_mode === 'string' ? body.task_mode : null;
+  if (raw === 'feedback_task' || raw === 'quick_task' || raw === 'marked_task') return raw;
+  if (typeof body?.student_feedback_enabled === 'boolean') {
+    return body.student_feedback_enabled ? 'feedback_task' : 'quick_task';
+  }
+  return 'feedback_task'; // default for legacy/unknown
+}
+
 async function handleGet(req: VercelRequest, res: VercelResponse) {
   const user = await verifyAuth(req);
   if (!user) return res.status(401).json({ error: 'Not authenticated' });
@@ -73,7 +95,11 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
   if (!user) return res.status(401).json({ error: 'Not authenticated' });
 
   const supabase = getSupabase();
-  const { class_id, course, title, question, task_type, total_marks, due_date, outcomes, criteria, criteria_text, notes, publish, typed_response_only } = req.body || {};
+  const {
+    class_id, course, title, question, task_type, total_marks, due_date,
+    outcomes, criteria, criteria_text, notes, publish, typed_response_only,
+    completion_only,
+  } = req.body || {};
 
   if (!class_id) return res.status(400).json({ error: 'class_id is required — tasks must belong to a class.' });
   if (!question || !String(question).trim()) return res.status(400).json({ error: 'Task question is required.' });
@@ -82,10 +108,24 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
   if (!cls) return res.status(404).json({ error: 'Class not found.' });
   if (cls.teacher_id !== user.id) return res.status(403).json({ error: 'You can only add tasks to your own classes.' });
 
+  const taskMode = resolveTaskMode(req.body);
+  const hasCriteria = !!(criteria_text && String(criteria_text).trim());
+  if (taskMode === 'feedback_task' && !hasCriteria) {
+    return res.status(400).json({ error: 'Assessment tasks need marking criteria. Either add criteria or switch to a quick task.' });
+  }
+
   // AI-parse the rubric synchronously so the renderer never has to. Returns
   // null on any failure — the renderer falls back to the client-side regex
   // parser in that case.
-  const criteriaStructured = criteria_text ? await parseRubricWithAI(String(criteria_text)) : null;
+  const criteriaStructured = hasCriteria ? await parseRubricWithAI(String(criteria_text)) : null;
+
+  // completion_only is only meaningful for quick_task. Client may send it
+  // explicitly, but we derive a sensible default: quick_task + no criteria
+  // → completion-only marking.
+  let resolvedCompletionOnly = false;
+  if (taskMode === 'quick_task') {
+    resolvedCompletionOnly = typeof completion_only === 'boolean' ? completion_only : !hasCriteria;
+  }
 
   const { data, error } = await supabase.from('tasks').insert({
     class_id,
@@ -94,6 +134,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     title: title || null,
     question: question || null,
     task_type: task_type || null,
+    task_mode: taskMode,
     total_marks: total_marks || null,
     due_date: due_date || null,
     outcomes: outcomes || [],
@@ -103,6 +144,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     notes: notes || null,
     published_at: publish ? new Date().toISOString() : null,
     typed_response_only: typeof typed_response_only === 'boolean' ? typed_response_only : true,
+    completion_only: resolvedCompletionOnly,
   }).select('*').single();
 
   if (error) return res.status(500).json({ error: error.message });
@@ -113,12 +155,16 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   const user = await verifyAuth(req);
   if (!user) return res.status(401).json({ error: 'Not authenticated' });
 
-  const { id, course, title, question, task_type, total_marks, due_date, outcomes, criteria, criteria_text, notes, publish, typed_response_only } = req.body || {};
+  const {
+    id, course, title, question, task_type, total_marks, due_date,
+    outcomes, criteria, criteria_text, notes, publish, typed_response_only,
+    task_mode: incomingTaskMode, completion_only,
+  } = req.body || {};
   if (!id) return res.status(400).json({ error: 'Task id is required.' });
 
   const supabase = getSupabase();
   const { data: existing } = await supabase
-    .from('tasks').select('id, class_id, published_at, classes(teacher_id)').eq('id', id).maybeSingle();
+    .from('tasks').select('id, class_id, published_at, criteria_text, task_mode, classes(teacher_id)').eq('id', id).maybeSingle();
   if (!existing) return res.status(404).json({ error: 'Task not found.' });
   const teacherId = (existing.classes as any)?.teacher_id;
   if (teacherId !== user.id) return res.status(403).json({ error: 'You can only update your own tasks.' });
@@ -144,6 +190,31 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     patch.criteria_structured = patch.criteria_text
       ? await parseRubricWithAI(String(patch.criteria_text))
       : null;
+  }
+
+  // Allow the client to change task_mode directly. If it does, validate
+  // that the post-update state is consistent (assessment requires criteria).
+  const modeInBody = typeof incomingTaskMode === 'string';
+  const criteriaInPatch = Object.prototype.hasOwnProperty.call(patch, 'criteria_text');
+  const newMode = modeInBody ? resolveTaskMode(req.body) : (existing.task_mode as TaskMode);
+  const effectiveCriteria = criteriaInPatch ? patch.criteria_text : (existing as any).criteria_text;
+  const hasCriteriaNow = !!(effectiveCriteria && String(effectiveCriteria).trim());
+  if (modeInBody && newMode === 'feedback_task' && !hasCriteriaNow) {
+    return res.status(400).json({ error: 'Assessment tasks need marking criteria. Either add criteria or switch to a quick task.' });
+  }
+  if (modeInBody) patch.task_mode = newMode;
+
+  // completion_only: derive defensively from the new mode + criteria. Only
+  // quick_task without criteria gets completion-only by default; everything
+  // else gets it off so stale flags don't surface in the marking UI.
+  if (modeInBody || criteriaInPatch || typeof completion_only === 'boolean') {
+    if (newMode !== 'quick_task') {
+      patch.completion_only = false;
+    } else {
+      patch.completion_only = typeof completion_only === 'boolean'
+        ? completion_only
+        : !hasCriteriaNow;
+    }
   }
 
   if (typeof publish === 'boolean') {

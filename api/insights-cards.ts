@@ -11,6 +11,7 @@ import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import {
   parseFiltersFromQuery,
   applyFacultyScope,
+  getTimeWindowCutoff,
   userIdsForYearLevel,
   isFilterActive,
 } from '../lib/insights-filters.js';
@@ -118,17 +119,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { data: rawTasks } = classIds.length > 0
     ? await supabase
       .from('tasks')
-      .select('id, title, class_id, course, total_marks, published_at, created_at, class_feedback_count')
+      .select('id, title, class_id, course, total_marks, published_at, created_at, class_feedback_count, task_mode')
       .in('class_id', classIds)
     : { data: [] as any[] };
 
   const taskIds = (rawTasks || []).map(t => t.id);
-  const { data: rawSubs } = taskIds.length > 0
-    ? await supabase
+  const subsCutoff = getTimeWindowCutoff(filters.time_window);
+  let rawSubs: any[] = [];
+  if (taskIds.length > 0) {
+    let q = supabase
       .from('submissions')
       .select('id, task_id, student_id, draft_version, graded_at, total_mark, criterion_marks, feedback, created_at, submitted_for_marking')
-      .in('task_id', taskIds)
-    : { data: [] as any[] };
+      .in('task_id', taskIds);
+    if (subsCutoff) q = q.gte('created_at', subsCutoff.toISOString());
+    const { data } = await q;
+    rawSubs = data || [];
+  }
 
   // Tag classes + tasks with faculty (from course → NESA discipline).
   const classMap: Record<string, { id: string; name: string; course: string; teacher_id: string; faculty: string }> = {};
@@ -158,6 +164,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       published_at: t.published_at,
       created_at: t.created_at,
       faculty,
+      task_mode: t.task_mode || 'feedback_task',
       has_class_feedback: !!t.class_feedback_count,
     };
   });
@@ -273,7 +280,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   });
 
   // -- Card: Per-criterion lows --
-  const perCriterionLows = computePerCriterionLows(submissions);
+  const perCriterionLows = computePerCriterionLows(submissions, taskMap);
 
   // -- Card: Improvement velocity --
   const improvementVelocity = computeImprovementVelocity(submissions);
@@ -365,11 +372,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
  * submissions.criterion_marks (jsonb array of {name, mark, max}) and
  * groups by exact criterion name.
  */
-function computePerCriterionLows(submissions: any[]) {
+function computePerCriterionLows(submissions: any[], taskMap: any) {
   const map: Record<string, { sum_pct: number; count: number }> = {};
   let analysed = 0;
   for (const s of submissions) {
     if (!s.graded_at) continue;
+    const t = taskMap[s.task_id];
+    // quick_task has no criteria by definition — skip even if some stale
+    // criterion_marks rows exist.
+    if (t && t.task_mode === 'quick_task') continue;
     const cm = s.criterion_marks;
     if (!Array.isArray(cm)) continue;
     let counted = false;
@@ -653,6 +664,9 @@ function computeMarkDistribution(submissions: any[], taskMap: any) {
     if (s.graded_at == null || s.total_mark == null) continue;
     const t = taskMap[s.task_id];
     if (!t || !t.total_marks) continue;
+    // quick_task is "not a graded task" by design — exclude even if the
+    // teacher chose to give it a number.
+    if (t.task_mode === 'quick_task') continue;
     const code = bandFor(Number(s.total_mark), Number(t.total_marks));
     counts[code]++;
     total++;
@@ -666,6 +680,7 @@ function computeMarkByFaculty(submissions: any[], taskMap: any) {
     if (s.graded_at == null || s.total_mark == null) continue;
     const t = taskMap[s.task_id];
     if (!t || !t.total_marks) continue;
+    if (t.task_mode === 'quick_task') continue;
     const f = t.faculty;
     byFaculty[f] ||= { faculty: f, counts: { A: 0, B: 0, C: 0, D: 0, E: 0 }, total: 0 };
     const code = bandFor(Number(s.total_mark), Number(t.total_marks));

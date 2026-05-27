@@ -113,6 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     let classId: string | null = null;
     let isTeacher = role === 'teacher';
+    let studentAwaitingTeacherSetup = false;
     if (context) {
       if (isTeacher) {
         const provision = await provisionClass({
@@ -140,6 +141,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (mapping?.class_id) {
           classId = mapping.class_id as string;
           await enrolStudent(classId, userResult.userId);
+        } else {
+          studentAwaitingTeacherSetup = true;
         }
       }
     }
@@ -153,7 +156,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       agsLineItems: ags?.lineitems,
     });
 
-    const target = buildTarget({ isTeacher, classId, taskId: linkedTaskId });
+    const target = buildTarget({ isTeacher, classId, taskId: linkedTaskId, studentAwaitingTeacherSetup });
     const loginUrl = await generateLoginUrl(email, `${SITE_ORIGIN}${target}`);
     res.redirect(302, loginUrl);
   } catch (err) {
@@ -212,6 +215,7 @@ function buildTarget(opts: {
   isTeacher: boolean;
   classId: string | null;
   taskId: string | null;
+  studentAwaitingTeacherSetup?: boolean;
 }): string {
   if (opts.taskId) {
     return opts.isTeacher
@@ -223,5 +227,6 @@ function buildTarget(opts: {
       ? `/class-detail.html?class_id=${opts.classId}`
       : `/class-view.html?class_id=${opts.classId}`;
   }
+  if (opts.studentAwaitingTeacherSetup) return '/lti-not-ready.html';
   return opts.isTeacher ? '/teacher.html' : '/student.html';
 }

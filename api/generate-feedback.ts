@@ -400,6 +400,16 @@ Assess this draft against each marking criterion above. Address every criterion 
         time_to_first_keystroke_ms: typeof time_to_first_keystroke_ms === 'number' ? time_to_first_keystroke_ms : null,
       });
 
+      // Invalidate the longitudinal profile cache — AI feedback is treated as
+      // a quality signal alongside teacher marks, so each fresh draft should
+      // refresh the profile on next read.
+      supabase.from('student_profile_synthesis')
+        .delete()
+        .eq('student_id', user.id)
+        .then(({ error }) => {
+          if (error) captureError(error, { stage: 'profile-cache-invalidate', user_id: user.id });
+        });
+
       if (task_id) {
         supabase.from('draft_autosaves')
           .delete()

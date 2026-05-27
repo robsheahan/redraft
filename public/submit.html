@@ -253,11 +253,20 @@
       html += '<div class="task-question-wrap"><h4>Task description</h4>';
       html += '<div class="task-question">' + renderTaskDescription(questionText, e) + '</div></div>';
       if (criteriaText) {
-        html += '<div class="criteria-display"><h4>Marking criteria</h4>' + renderRubric(criteriaText, e, t.criteria_structured) + '</div>';
+        // Guarded — if /js/rubric.js failed to load (extension blockers etc.)
+        // show the raw criteria text instead of crashing.
+        const rubricHtml = (typeof renderRubric === 'function')
+          ? renderRubric(criteriaText, e, t.criteria_structured)
+          : '<pre style="white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.55">' + e(criteriaText) + '</pre>';
+        html += '<div class="criteria-display"><h4>Marking criteria</h4>' + rubricHtml + '</div>';
       }
       html += '</div>';
 
-      html += '<div class="divider">Your draft</div>';
+      // Quick / marked tasks use "response" terminology — students aren't
+      // iterating on drafts, they're submitting once.
+      const _taskMode = t.task_mode || 'feedback_task';
+      const _isFeedbackTask = _taskMode === 'feedback_task';
+      html += '<div class="divider">' + (_isFeedbackTask ? 'Your draft' : 'Your response') + '</div>';
 
       // Locking: graded > submitted-for-marking > normal.
       const gradedDraft = priorDrafts.find(d => d.graded_at);
@@ -282,10 +291,17 @@
         return;
       }
 
-      // Draft-progress banner (only shown if the student has at least one prior draft)
+      // Task mode determines the UI: feedback_task = current behaviour with
+      // drafts + AI feedback. marked_task / quick_task = single submission,
+      // no AI feedback shown to the student.
+      const taskMode = t.task_mode || 'feedback_task';
+      const isFeedbackTask = taskMode === 'feedback_task';
+
       const used = priorDrafts.length;
       const remaining = Math.max(0, MAX_DRAFTS - used);
-      if (used > 0) {
+      // Draft-progress banner only meaningful for feedback_task (other modes
+      // are single-submission, so there are no "drafts used / remaining").
+      if (isFeedbackTask && used > 0) {
         const dots = Array.from({ length: MAX_DRAFTS }, (_, i) =>
           '<span class="dot' + (i < used ? ' filled' : '') + '"></span>').join('');
         let bannerClass = 'draft-banner';
@@ -308,7 +324,7 @@
         html += '</div>';
       }
 
-      if (used >= MAX_DRAFTS) {
+      if (isFeedbackTask && used >= MAX_DRAFTS) {
         html += '<div class="cap-state">';
         html += '<h3>You\'ve used all 3 drafts</h3>';
         html += '<p>You can no longer submit new drafts for this task. Open your previous feedback to review what to change for your final submission.</p>';
@@ -329,10 +345,14 @@
           if (typedOnly) {
             html += '<div class="typed-only-banner"><span class="pill">Typed only</span><span>Pasting is disabled for this task. ProofReady records your typing for your teacher.</span></div>';
           }
-          const heading = 'Write your draft response';
+          const heading = isFeedbackTask ? 'Write your draft response' : 'Write your response';
           html += '<h3>' + e(heading) + '</h3>';
           let subtitle;
-          if (used === 0) {
+          if (!isFeedbackTask) {
+            subtitle = typedOnly
+              ? "Write your response below. Your work autosaves every few seconds — you can close the tab and come back. You can only submit once, so check your work before you click Submit."
+              : "Write your response below. You can only submit once, so check your work before you click Submit.";
+          } else if (used === 0) {
             subtitle = typedOnly
               ? "Write your draft below. Your work autosaves every few seconds — you can close the tab and come back."
               : "Enter your draft below exactly as you've written it.";
@@ -347,10 +367,18 @@
           html += '<div class="save-indicator" id="saveIndicator"></div>';
           html += '</div>';
           html += '<div class="submit-row">';
-          html += '<button class="submit-btn" onclick="submit()">Get feedback</button>';
-          html += '<button class="submit-final-btn" onclick="submitForMarking()">Submit for marking</button>';
+          if (isFeedbackTask) {
+            html += '<button class="submit-btn" onclick="submit()">Get feedback</button>';
+            html += '<button class="submit-final-btn" onclick="submitForMarking()">Submit for marking</button>';
+          } else {
+            html += '<button class="submit-final-btn" onclick="submitForMarking()" style="max-width:340px">Submit</button>';
+          }
           html += '</div>';
-          html += '<div class="submit-final-hint">"Get feedback" gives you formative feedback on your draft (counts toward your 3-draft cap). "Submit for marking" is your final — your teacher will mark it and you can\'t submit again.</div>';
+          if (isFeedbackTask) {
+            html += '<div class="submit-final-hint">"Get feedback" gives you formative feedback on your draft (counts toward your 3-draft cap). "Submit for marking" is your final — your teacher will mark it and you can\'t submit again.</div>';
+          } else {
+            html += '<div class="submit-final-hint">Once submitted, you can\'t resubmit. Your teacher will mark this and you\'ll see your result when they\'re done.</div>';
+          }
           html += '</div>';
         }
       }
@@ -573,15 +601,18 @@
       if (!draft) { alert('Type your response first.'); return; }
       if (draft.length < 50) { alert('Your response is too short. Write at least a paragraph.'); return; }
 
-      const ok = confirm(
-        'Submit this for marking?\n\n' +
-        'Your teacher will mark it as your final response. You will not be able to submit any more drafts for this task, and ProofReady will not generate feedback on this submission.'
-      );
+      const taskMode = (currentTask && currentTask.task_mode) || 'feedback_task';
+      const isFeedbackTask = taskMode === 'feedback_task';
+      const confirmMsg = isFeedbackTask
+        ? 'Submit this for marking?\n\nYour teacher will mark it as your final response. You will not be able to submit any more drafts for this task, and ProofReady will not generate feedback on this submission.'
+        : 'Submit this response?\n\nYour teacher will mark it. You can only submit once for this task — make sure you\'re ready.';
+      const ok = confirm(confirmMsg);
       if (!ok) return;
 
       submissionInFlight = true;
       const finalBtn = document.querySelector('.submit-final-btn');
       const aiBtn = document.querySelector('.submit-btn');
+      const originalLabel = finalBtn ? finalBtn.textContent : '';
       if (finalBtn) { finalBtn.disabled = true; finalBtn.textContent = 'Submitting...'; }
       if (aiBtn) aiBtn.disabled = true;
 
@@ -604,7 +635,10 @@
         window.location.reload();
       } catch (err) {
         alert(err.message);
-        if (finalBtn) { finalBtn.disabled = false; finalBtn.textContent = 'Submit for marking'; }
+        if (finalBtn) {
+          finalBtn.disabled = false;
+          finalBtn.textContent = originalLabel || (isFeedbackTask ? 'Submit for marking' : 'Submit');
+        }
         if (aiBtn) aiBtn.disabled = false;
         submissionInFlight = false;
       }

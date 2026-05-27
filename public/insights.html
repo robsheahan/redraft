@@ -351,12 +351,125 @@
     .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
     .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
     .site-footer a:hover { color: #6b7280; }
+
+    /* Class overview panel — aggregates enrolled students' longitudinal
+       profiles. Styled to match the standard cohort cards so it slots in
+       cleanly at the top of the cards grid. */
+    .baseline-panel {
+      grid-column: 1 / -1;
+      background: #fff; border-radius: 12px; padding: 18px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+    .baseline-panel .head {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 14px; margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .baseline-panel h3 { font-size: 16px; font-weight: 700; margin: 0 0 2px; color: #111827; }
+    .baseline-panel .sub { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+    .baseline-panel .narrative {
+      font-size: 13.5px; line-height: 1.55; color: #374151; margin: 4px 0 16px;
+    }
+    .baseline-breakdown {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+      margin-bottom: 16px;
+    }
+    .baseline-breakdown .item {
+      background: #fdf6ee; border: 1px solid #f0e6d6;
+      padding: 10px 12px; border-radius: 8px;
+    }
+    .baseline-breakdown .num {
+      font-size: 22px; font-weight: 800; color: #111827; line-height: 1;
+    }
+    .baseline-breakdown .lbl {
+      font-size: 10px; color: #9ca3af; margin-top: 4px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .baseline-twoup {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 22px;
+    }
+    .baseline-twoup .col h5 {
+      font-size: 10.5px; color: #b45309; text-transform: uppercase;
+      letter-spacing: 0.7px; font-weight: 700; margin-bottom: 8px;
+    }
+    .baseline-twoup ul {
+      list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px;
+    }
+    .baseline-twoup li {
+      font-size: 13px; color: #374151; line-height: 1.45;
+      padding-left: 14px; position: relative;
+    }
+    .baseline-twoup li::before {
+      content: '→'; color: #ed7615; position: absolute; left: 0; font-weight: 700;
+    }
+    .baseline-btn {
+      background: #ed7615; color: #fff; border: none;
+      padding: 6px 12px; border-radius: 7px; font-weight: 700;
+      font-size: 12px; cursor: pointer; font-family: inherit;
+      transition: background 0.15s;
+    }
+    .baseline-btn:disabled { opacity: 0.6; cursor: wait; }
+    .baseline-btn:hover:not(:disabled) { background: #d4690f; }
+    .baseline-empty {
+      font-size: 13px; color: #6b7280; line-height: 1.55;
+      padding: 8px 0;
+    }
+
+    /* Student longitudinal profile panel — sits above the student cards grid */
+    .student-profile-panel {
+      background: #fff; border-radius: 12px; padding: 20px 24px;
+      margin-bottom: 18px;
+      border-left: 4px solid #ed7615;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .student-profile-panel .ribbon {
+      font-size: 10.5px; font-weight: 700; color: #b45309;
+      text-transform: uppercase; letter-spacing: 0.7px;
+      margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+    }
+    .student-profile-panel .status-pill {
+      display: inline-block; background: #fef3e6; color: #b45309;
+      font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 100px;
+      letter-spacing: 0.4px;
+    }
+    .student-profile-panel .status-pill.new { background: #f3f4f6; color: #6b7280; }
+    .student-profile-panel .status-pill.developing { background: #fef9c3; color: #854d0e; }
+    .student-profile-panel .narrative {
+      font-size: 14px; line-height: 1.55; color: #1f2937; margin-bottom: 14px;
+    }
+    .student-profile-panel .twocol {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 22px;
+    }
+    .student-profile-panel .twocol .key {
+      font-size: 10.5px; font-weight: 700; color: #6b7280;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+    }
+    .student-profile-panel .twocol .val {
+      font-size: 13.5px; color: #1f2937; line-height: 1.5;
+    }
+    .student-profile-panel .loading {
+      font-size: 13px; color: #6b7280; padding: 8px 0;
+    }
+    input[type="checkbox"] {
+      appearance: none; -webkit-appearance: none;
+      width: 18px; height: 18px; flex-shrink: 0;
+      border: 1.5px solid #d1d5db; border-radius: 4px;
+      background: #fff; cursor: pointer; position: relative;
+      vertical-align: middle; margin: 0;
+    }
+    input[type="checkbox"]:checked { background: #ed7615; border-color: #ed7615; }
+    input[type="checkbox"]:checked::after {
+      content: ''; position: absolute; left: 5px; top: 1px;
+      width: 5px; height: 10px;
+      border: solid #fff; border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
   </style>
 </head>
 <body>
   <nav class="nav">
     <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
     <div class="nav-right">
+      <a href="/teacher.html" class="nav-logout" style="text-decoration:none;display:inline-block">Home</a>
       <span id="navUser"></span>
       <button class="nav-logout" onclick="logout()">Log out</button>
     </div>
@@ -389,13 +502,29 @@
     // consult this; updating it triggers a refetch + re-render.
     // student_id flips the page into single-student mode: cohort cards
     // are replaced with the seven student-scoped cards.
-    const FILTER_KEYS = ['faculty', 'course', 'class_id', 'year_level', 'student_id'];
+    const FILTER_KEYS = ['faculty', 'course', 'class_id', 'year_level', 'student_id', 'time_window'];
+    const TIME_WINDOW_OPTIONS = [
+      { value: '12_months', label: 'Last 12 months' },
+      { value: 'this_year', label: 'This year' },
+      { value: 'all_time',  label: 'All time' },
+    ];
+    const DEFAULT_TIME_WINDOW = '12_months';
     // In-memory cache of the currently-loaded student's metadata, set by
     // the student-mode fetch so re-renders without a refetch keep working.
     let currentStudent = null;
     // Display name for the selected student — used in the header before the
     // student API responds, so the chip doesn't show a UUID.
     let selectedStudentName = '';
+    // Longitudinal-data state.
+    // currentClassBaseline holds the generated class_profile_summary result for
+    // the active class_id filter. Cleared whenever filters change so the user
+    // sees a fresh "Generate" button when they switch classes.
+    let currentClassBaseline = null;
+    // currentStudentProfile holds the cross-teacher longitudinal profile for
+    // the currently-selected student. Auto-loaded after a student is selected;
+    // the endpoint is cache-first so this is usually instant.
+    let currentStudentProfile = null;
+    let studentProfileLoading = false;
     function readFiltersFromUrl() {
       const u = new URLSearchParams(window.location.search);
       const out = {};
@@ -423,11 +552,16 @@
     function setFilter(key, value) {
       if (value == null || value === '') delete activeFilters[key];
       else activeFilters[key] = String(value);
+      // Class-scoped generated content is keyed to the active class_id —
+      // changing any filter invalidates the baseline so the user sees a fresh
+      // Generate state under the new scope.
+      currentClassBaseline = null;
       updateUrlForFilters();
       reloadData();
     }
     function clearAllFilters() {
       activeFilters = {};
+      currentClassBaseline = null;
       updateUrlForFilters();
       reloadData();
     }
@@ -483,12 +617,26 @@
         currentCards = cohortRes.ok ? await cohortRes.json() : { caller_role: currentStudent.caller_role, school: currentStudent.school, cards: { llm: {} }, filters: { options: { classes: [], faculties: [], courses: [], year_levels: [] } } };
         currentData = { school: currentCards.school || currentStudent.school, caller_role: currentStudent.caller_role, insights: null };
         selectedStudentName = currentStudent.student?.display_name || '';
+        // Auto-load this student's longitudinal profile if we don't already
+        // have it for the current ID. The endpoint is cache-first so usually
+        // returns instantly; on miss it regenerates via LLM (a few seconds).
+        const profileStudentId = activeFilters.student_id;
+        const needsProfile = !currentStudentProfile || currentStudentProfile._student_id !== profileStudentId;
+        if (needsProfile) {
+          currentStudentProfile = null;
+          studentProfileLoading = true;
+          render();
+          fetchStudentProfile(profileStudentId, myToken);
+          return;
+        }
         render();
         return;
       }
 
       // Cohort-mode (existing).
       currentStudent = null;
+      currentStudentProfile = null;
+      studentProfileLoading = false;
       const qs = buildQueryString();
       const [cardsRes, synthRes] = await Promise.all([
         authFetch('/api/insights-cards' + qs),
@@ -547,6 +695,8 @@
         document.querySelectorAll('[data-llm-generate]').forEach(b => {
           b.addEventListener('click', () => generateLLMCard(b.dataset.llmGenerate));
         });
+        const baselineBtn = document.querySelector('[data-baseline-generate]');
+        if (baselineBtn) baselineBtn.addEventListener('click', generateClassBaseline);
         return;
       }
 
@@ -651,6 +801,10 @@
         b.addEventListener('click', () => generateLLMCard(b.dataset.llmGenerate));
       });
 
+      // Wire longitudinal class baseline button (only present when class_id filter active).
+      const baselineBtn = document.querySelector('[data-baseline-generate]');
+      if (baselineBtn) baselineBtn.addEventListener('click', generateClassBaseline);
+
       // Wire Manage access controls + load staff list
       if (d.caller_role === 'admin') {
         loadMembers();
@@ -695,11 +849,14 @@
         .map(c => ({ value: c.id, label: c.name || '(untitled)', meta: c.course }));
       html += filterPill('class_id', 'Class', labelFor('class_id'), classOpts);
 
+      // Time window — always has a value; defaults to last 12 months.
+      html += filterPillForced('time_window', 'Time window', activeFilters.time_window, DEFAULT_TIME_WINDOW, TIME_WINDOW_OPTIONS);
+
       // Individual student search (everywhere)
       html += renderStudentSearchBox();
 
-      // Active chips
-      const activeKeys = FILTER_KEYS.filter(k => activeFilters[k] && k !== 'student_id');
+      // Active chips — exclude time_window (always set, shown on its pill).
+      const activeKeys = FILTER_KEYS.filter(k => activeFilters[k] && k !== 'student_id' && k !== 'time_window');
       if (activeKeys.length > 0) {
         html += '<div class="filter-chips">';
         activeKeys.forEach(k => {
@@ -722,6 +879,27 @@
       course: 'All courses',
       class_id: 'All classes',
     };
+
+    // Variant of filterPill for filters that always have a value (no "All"
+    // sentinel). Currently used by the time-window selector — there's no
+    // such thing as "no time window", it's always either 12 months / this
+    // year / all time.
+    function filterPillForced(key, label, currentVal, defaultVal, options) {
+      const effective = currentVal || defaultVal;
+      const selectedOpt = options.find(o => o.value === effective);
+      const currentLabel = selectedOpt ? selectedOpt.label : effective;
+      let html = '<div class="filter-pill" data-filter-pill="' + e(key) + '">';
+      html += '<button class="filter-pill-btn is-active" data-filter-toggle="' + e(key) + '">'
+        + '<span>' + e(label) + ': ' + e(currentLabel) + '</span><span class="chev">▾</span></button>';
+      html += '<div class="filter-menu">';
+      options.forEach(o => {
+        const sel = effective === o.value ? 'is-selected' : '';
+        html += '<button class="filter-option ' + sel + '" data-filter-set="' + e(key) + '" data-filter-value="' + e(o.value) + '">'
+          + e(o.label) + '</button>';
+      });
+      html += '</div></div>';
+      return html;
+    }
 
     function filterPill(key, label, currentVal, options) {
       const isActive = !!currentVal;
@@ -1341,6 +1519,11 @@
         + '</div>';
       html += '</div>';
 
+      // Longitudinal profile panel — cross-teacher, cross-year synthesis from
+      // the student's entire ProofReady history. Sits above the scope-limited
+      // cards below.
+      html += renderStudentProfilePanel();
+
       // Cards grid. If below the LLM floor, the four LLM cards show a
       // "Not enough data yet" state. The three SQL cards always render
       // whatever data exists.
@@ -1520,6 +1703,9 @@
       const llm = cd.llm || {};
       let html = '<div class="cards-grid">';
 
+      // 0. Longitudinal class baseline (only when a class is selected)
+      html += renderClassBaselinePanel();
+
       // 1. Mark distribution
       html += '<div class="card card-span-6">'
         + cardHeader('Mark distribution', 'NESA Common Grade Scale')
@@ -1578,6 +1764,10 @@
       }
       const cd = cards.cards;
       let html = '<div class="cards-grid">';
+
+      // 0. Longitudinal class baseline (only when a class is selected) — also
+      // shown for leader/admin scopes when they've drilled into a single class.
+      html += renderClassBaselinePanel();
 
       // Activity sparkline — full width
       html += '<div class="card card-span-12">'
@@ -1694,6 +1884,10 @@
         const bv = (b && b[k]) ? String(b[k]) : '';
         if (av !== bv) return false;
       }
+      // Time window — both sides default to '12_months' when unset.
+      const atw = (a && a.time_window) || DEFAULT_TIME_WINDOW;
+      const btw = (b && b.time_window) || DEFAULT_TIME_WINDOW;
+      if (atw !== btw) return false;
       return true;
     }
 
@@ -1745,6 +1939,9 @@
       if (f.faculty) parts.push(f.faculty);
       if (f.course) parts.push(f.course);
       if (f.class_id) parts.push('class');
+      const tw = (f.time_window) || DEFAULT_TIME_WINDOW;
+      const twOpt = TIME_WINDOW_OPTIONS.find(o => o.value === tw);
+      if (twOpt) parts.push(twOpt.label);
       return parts.join(' · ');
     }
 
@@ -1819,6 +2016,136 @@
       });
       html += '</ol>';
       return html;
+    }
+
+    // ── Longitudinal cohort baseline (stage D card) ─────────────────────
+    // Renders the "Class baseline" panel at the top of the cohort grid when
+    // a class_id filter is active. The panel shows aggregated patterns drawn
+    // from each enrolled student's longitudinal profile — useful before any
+    // tasks have been set this term.
+    function renderClassBaselinePanel() {
+      if (!activeFilters.class_id) return '';
+      let html = '<div class="baseline-panel">';
+      html += '<div class="head">';
+      html += '<div>';
+      html += '<h3>Class overview</h3>';
+      html += '<div class="sub">Generate information about class strengths and weaknesses, drawn from each enrolled student\'s ProofReady history.</div>';
+      html += '</div>';
+      html += '<button class="baseline-btn" data-baseline-generate type="button">'
+        + (currentClassBaseline ? 'Regenerate' : 'Generate')
+        + '</button>';
+      html += '</div>';
+
+      if (currentClassBaseline) {
+        const c = currentClassBaseline.content || {};
+        const b = currentClassBaseline.cohort_breakdown || {};
+        if (c.aggregate_narrative) {
+          html += '<div class="narrative">' + e(c.aggregate_narrative) + '</div>';
+        }
+        html += '<div class="baseline-breakdown">';
+        html += '<div class="item"><div class="num">' + (b.total_students || 0) + '</div><div class="lbl">Students enrolled</div></div>';
+        html += '<div class="item"><div class="num">' + (b.established_count || 0) + '</div><div class="lbl">Established profiles</div></div>';
+        html += '<div class="item"><div class="num">' + (b.developing_count || 0) + '</div><div class="lbl">Developing</div></div>';
+        html += '<div class="item"><div class="num">' + ((b.new_count || 0) + (b.missing_profiles || 0)) + '</div><div class="lbl">New to ProofReady</div></div>';
+        html += '</div>';
+        const strengths = c.top_strengths || [];
+        const priorities = c.top_priorities || [];
+        if (strengths.length || priorities.length) {
+          html += '<div class="baseline-twoup">';
+          html += '<div class="col"><h5>Top strengths coming in</h5><ul>';
+          strengths.forEach(s => { html += '<li>' + e(s) + '</li>'; });
+          if (!strengths.length) html += '<li style="opacity:0.6">No recurring strengths yet — too few established profiles.</li>';
+          html += '</ul></div>';
+          html += '<div class="col"><h5>Top priorities to target</h5><ul>';
+          priorities.forEach(p => { html += '<li>' + e(p) + '</li>'; });
+          if (!priorities.length) html += '<li style="opacity:0.6">No recurring priorities yet — too few established profiles.</li>';
+          html += '</ul></div>';
+          html += '</div>';
+        }
+      } else {
+        html += '<div class="baseline-empty">Click <strong>Generate</strong> to synthesise an overview of this class from each student\'s ProofReady history. Useful at the start of a term, or as a comparison against the current-term picture below.</div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    async function generateClassBaseline() {
+      const btn = document.querySelector('[data-baseline-generate]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+      try {
+        const body = {
+          kind: 'class_profile_summary',
+          class_id: activeFilters.class_id,
+        };
+        if (SCHOOL_ID_OVERRIDE) body.school_id = SCHOOL_ID_OVERRIDE;
+        const res = await authFetch('/api/insights-card-generate', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to generate baseline');
+        currentClassBaseline = data;
+        render();
+      } catch (err) {
+        if (btn) { btn.disabled = false; btn.textContent = currentClassBaseline ? 'Regenerate' : 'Generate'; }
+        alert(err.message);
+      }
+    }
+
+    // ── Longitudinal student profile (stage C panel) ────────────────────
+    // Cross-teacher, cross-year synthesis of one student. Auto-loaded on
+    // student selection; the API is cache-first so it's usually instant.
+    function renderStudentProfilePanel() {
+      if (studentProfileLoading) {
+        return '<div class="student-profile-panel">'
+          + '<div class="ribbon">Longitudinal profile</div>'
+          + '<div class="loading">Loading their ProofReady history…</div>'
+          + '</div>';
+      }
+      if (!currentStudentProfile) return '';
+      const p = currentStudentProfile;
+      const status = p.profile_status || 'new';
+      const statusLabel = status === 'established' ? 'Established profile'
+        : status === 'developing' ? 'Developing profile'
+        : 'New to ProofReady';
+
+      let html = '<div class="student-profile-panel">';
+      html += '<div class="ribbon">Longitudinal profile <span class="status-pill ' + e(status) + '">' + e(statusLabel) + '</span></div>';
+      if (p.narrative) html += '<div class="narrative">' + e(p.narrative) + '</div>';
+      if (p.headline_strength || p.headline_priority) {
+        html += '<div class="twocol">';
+        html += '<div><div class="key">Most consistent strength</div><div class="val">' + e(p.headline_strength || '—') + '</div></div>';
+        html += '<div><div class="key">Most useful next step</div><div class="val">' + e(p.headline_priority || '—') + '</div></div>';
+        html += '</div>';
+      }
+      if (p.profile_status_note && status !== 'established') {
+        html += '<div style="margin-top:12px;font-size:12px;color:#6b7280;font-style:italic">' + e(p.profile_status_note) + '</div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    async function fetchStudentProfile(studentId, requestToken) {
+      try {
+        const qs = '?student_id=' + encodeURIComponent(studentId)
+          + (SCHOOL_ID_OVERRIDE ? '&school_id=' + encodeURIComponent(SCHOOL_ID_OVERRIDE) : '');
+        const res = await authFetch('/api/student-profile' + qs);
+        if (requestToken !== reloadToken) return;
+        studentProfileLoading = false;
+        if (!res.ok) {
+          currentStudentProfile = null;
+          render();
+          return;
+        }
+        const data = await res.json();
+        currentStudentProfile = data.profile || null;
+        if (currentStudentProfile) currentStudentProfile._student_id = studentId;
+        render();
+      } catch (err) {
+        studentProfileLoading = false;
+        currentStudentProfile = null;
+        render();
+      }
     }
 
     async function generateLLMCard(kind) {

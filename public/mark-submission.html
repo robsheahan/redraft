@@ -175,6 +175,20 @@
 
     .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
     .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+    input[type="checkbox"] {
+      appearance: none; -webkit-appearance: none;
+      width: 18px; height: 18px; flex-shrink: 0;
+      border: 1.5px solid #d1d5db; border-radius: 4px;
+      background: #fff; cursor: pointer; position: relative;
+      vertical-align: middle; margin: 0;
+    }
+    input[type="checkbox"]:checked { background: #ed7615; border-color: #ed7615; }
+    input[type="checkbox"]:checked::after {
+      content: ''; position: absolute; left: 5px; top: 1px;
+      width: 5px; height: 10px;
+      border: solid #fff; border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
   </style>
 </head>
 <body>
@@ -254,6 +268,9 @@
         const row = (tsData.submissions || []).find(s => s.id === submissionId);
         if (!row) { container.innerHTML = '<div class="error">Submission not found in this task.</div>'; return; }
         submission = row;
+        // Stash the full submission list so "Save and Next" can find the
+        // next unmarked submission without re-fetching.
+        window.__allSubmissions = tsData.submissions || [];
         const studentName = row.student_name || 'Student';
 
         // Hydrate state from existing grade (if re-editing)
@@ -284,6 +301,7 @@
       const container = document.getElementById('content');
       const structured = task.criteria_structured || null;
       const format = structured ? structured.format : null;
+      const isCompletionOnly = task.task_mode === 'quick_task' && task.completion_only === true;
 
       let html = '';
       html += '<h1>Mark submission</h1>';
@@ -294,7 +312,12 @@
 
       html += '<div class="student-strip">';
       html += '<span class="student-name">' + e(studentName) + '</span>';
-      html += '<span class="draft-info">Draft ' + e(String(submission.draft_version || 1)) + '</span>';
+      // Quick tasks are single-submission, so the "Draft N" label is just
+      // noise — show "Response" instead. Assessment tasks keep the draft
+      // number since iteration matters there.
+      const isQuickTask = task.task_mode === 'quick_task';
+      const draftLabel = isQuickTask ? 'Response' : ('Draft ' + e(String(submission.draft_version || 1)));
+      html += '<span class="draft-info">' + draftLabel + '</span>';
       html += lateBadge(submission, task);
       if (submission.graded_at) {
         html += '<span class="badge" style="background:#d1fae5;color:#065f46">Already marked — editing</span>';
@@ -311,32 +334,68 @@
       html += '</div>';
       html += '</div>';
 
-      // Right: rubric + comment + annotations
+      // Right: completion-only OR rubric + comment + annotations
       html += '<div>';
+      if (isCompletionOnly) {
+        const alreadyComplete = submission.completion_status === 'completed';
+        html += '<div class="card">';
+        html += '<h3>Mark as complete</h3>';
+        html += '<p style="font-size:14px;color:#6b7280;margin-bottom:14px;line-height:1.55">This task is set to "mark as complete" rather than graded. Tick when the student has satisfactorily completed the task — no number mark required.</p>';
+        html += '<label style="display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;padding:10px 12px;background:#f5f0e8;border-radius:8px;margin-bottom:10px">';
+        html += '<input type="checkbox" id="completionCheckbox"' + (alreadyComplete ? ' checked' : '') + ' style="width:18px;height:18px;cursor:pointer">';
+        html += '<span><strong>Completed</strong> — student satisfactorily met the task.</span>';
+        html += '</label>';
+        html += '</div>';
+      } else {
       html += '<div class="card">';
       html += '<h3>Marking criteria</h3>';
-      html += renderRubric(task.criteria_text, e, structured, { mode: 'mark-entry' });
+      // Guarded — if /js/rubric.js failed to load, the structured mark-entry
+      // form can't render. Fall back to a single overall-mark input + the
+      // raw criteria text so the teacher can still grade.
+      if (typeof renderRubric === 'function') {
+        html += renderRubric(task.criteria_text, e, structured, { mode: 'mark-entry' });
+      } else {
+        html += '<pre style="white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.55;background:rgba(0,0,0,0.03);padding:10px;border-radius:6px">' + e(task.criteria_text || '') + '</pre>';
+        html += '<div style="margin-top:10px;font-size:12px;color:#9ca3af;font-style:italic">Rubric helper failed to load — enter the overall mark below. Refresh to retry the structured form.</div>';
+      }
       html += '<div class="total-row"><span class="total-label">Total</span><span class="total-value" id="totalDisplay">— / ' + e(String(task.total_marks || '—')) + '</span></div>';
-      if (!structured) {
-        html += '<p style="margin-top:10px;font-size:13px;color:#9ca3af">This task\'s rubric isn\'t machine-parsed. Enter the overall mark in the box below.</p>';
+      if (!structured || typeof renderRubric !== 'function') {
+        if (!structured) {
+          html += '<p style="margin-top:10px;font-size:13px;color:#9ca3af">This task\'s rubric isn\'t machine-parsed. Enter the overall mark in the box below.</p>';
+        }
         html += '<div class="rubric-mark-entry-overall"><label>Overall mark <input type="number" class="rubric-mark-input rubric-mark-overall" data-mode="band" min="0" step="0.5"></label></div>';
       }
       html += '</div>';
+      } // end !isCompletionOnly branch
 
       html += '<div class="card">';
       html += '<h3>Overall comment</h3>';
       html += '<textarea class="comment-area" id="teacherComment" placeholder="Write your overall feedback for this student\'s submission..."></textarea>';
       html += '</div>';
 
-      html += '<div class="card">';
-      html += '<h3>Inline annotations</h3>';
-      html += '<div class="annotation-cards" id="annotationCards">' + renderAnnotationCards() + '</div>';
-      html += '<p style="margin-top:10px;font-size:12.5px;color:#9ca3af">Select text in the student draft to add an annotation.</p>';
-      html += '</div>';
+      if (!isCompletionOnly) {
+        html += '<div class="card">';
+        html += '<h3>Inline annotations</h3>';
+        html += '<div class="annotation-cards" id="annotationCards">' + renderAnnotationCards() + '</div>';
+        html += '<p style="margin-top:10px;font-size:12.5px;color:#9ca3af">Select text in the student draft to add an annotation.</p>';
+        html += '</div>';
+      }
+
+      // Figure out whether there's a next unmarked submission to jump to.
+      // Drives whether "Save and next" appears alongside the regular Save.
+      const allSubs = window.__allSubmissions || [];
+      const currentIdx = allSubs.findIndex(s => s.id === submission.id);
+      const nextUnmarked = currentIdx >= 0
+        ? allSubs.slice(currentIdx + 1).find(s => !s.graded_at)
+            || allSubs.slice(0, currentIdx).find(s => !s.graded_at)
+        : null;
 
       html += '<div class="save-bar">';
-      html += '<div class="lock-note">Saving the grade <strong>locks</strong> this task for the student — they can no longer submit further drafts.</div>';
-      html += '<button type="button" class="btn btn-primary" id="saveGradeBtn" onclick="saveGrade()">Save grade</button>';
+      html += '<div class="lock-note">Saving <strong>locks</strong> this task for the student — they can no longer submit further drafts.</div>';
+      html += '<button type="button" class="btn btn-primary" id="saveGradeBtn" onclick="saveGrade()">' + (isCompletionOnly ? 'Save' : 'Save grade') + '</button>';
+      if (nextUnmarked) {
+        html += '<button type="button" class="btn btn-primary" id="saveNextBtn" onclick="saveGrade(\'' + e(nextUnmarked.id) + '\')" style="margin-left:8px">Save and next</button>';
+      }
       html += '</div>';
       html += '</div>'; // right col
 
@@ -540,13 +599,22 @@
 
     // ---- Save ----
 
-    async function saveGrade() {
+    async function saveGrade(nextSubmissionId) {
       const structured = task.criteria_structured || null;
       const format = structured ? structured.format : null;
+      const isCompletionOnly = task.task_mode === 'quick_task' && task.completion_only === true;
       let criterionMarks = null;
       let totalMark = null;
+      let completionStatus = null;
 
-      if (format === 'criterion') {
+      if (isCompletionOnly) {
+        const cb = document.getElementById('completionCheckbox');
+        if (!cb || !cb.checked) {
+          alert('Tick "Completed" to mark this submission, or leave it open until the student finishes.');
+          return;
+        }
+        completionStatus = 'completed';
+      } else if (format === 'criterion') {
         if (Object.keys(criterionMarksState).length === 0) {
           alert('Please enter a mark for at least one criterion.');
           return;
@@ -574,8 +642,10 @@
       const teacherComment = document.getElementById('teacherComment').value.trim();
 
       const btn = document.getElementById('saveGradeBtn');
+      const nextBtn = document.getElementById('saveNextBtn');
       btn.disabled = true;
       btn.textContent = 'Saving...';
+      if (nextBtn) nextBtn.disabled = true;
       try {
         const res = await authFetch('/api/submission-grade', {
           method: 'PUT',
@@ -584,16 +654,22 @@
             criterion_marks: criterionMarks,
             total_mark: totalMark,
             teacher_comment: teacherComment || null,
-            teacher_annotations: teacherAnnotations,
+            teacher_annotations: isCompletionOnly ? [] : teacherAnnotations,
+            completion_status: completionStatus,
           }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to save grade');
-        window.location.href = 'task-detail.html?id=' + encodeURIComponent(task.id);
+        if (nextSubmissionId) {
+          window.location.href = 'mark-submission.html?task_id=' + encodeURIComponent(task.id) + '&submission_id=' + encodeURIComponent(nextSubmissionId);
+        } else {
+          window.location.href = 'task-detail.html?id=' + encodeURIComponent(task.id);
+        }
       } catch (err) {
         alert(err.message);
         btn.disabled = false;
-        btn.textContent = 'Save grade';
+        btn.textContent = isCompletionOnly ? 'Save' : 'Save grade';
+        if (nextBtn) nextBtn.disabled = false;
       }
     }
     window.closeAnnotateDialog = closeAnnotateDialog;

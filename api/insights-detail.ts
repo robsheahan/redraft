@@ -7,6 +7,7 @@ import { isGlobalAdmin } from '../lib/admin.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import {
   parseFiltersFromQuery,
+  getTimeWindowCutoff,
   applyFacultyScope,
   userIdsForYearLevel,
 } from '../lib/insights-filters.js';
@@ -228,9 +229,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (kind === 'tasks') {
     const taskIds = filteredTasks.map(t => t.id);
     const subCounts: Record<string, number> = {};
+    const cutoff = getTimeWindowCutoff(filters.time_window);
     if (taskIds.length > 0) {
-      const { data: subs } = await supabase
-        .from('submissions').select('task_id').in('task_id', taskIds);
+      let q = supabase.from('submissions').select('task_id, created_at').in('task_id', taskIds);
+      if (cutoff) q = q.gte('created_at', cutoff.toISOString());
+      const { data: subs } = await q;
       (subs || []).forEach(s => { if (s.task_id) subCounts[s.task_id] = (subCounts[s.task_id] || 0) + 1; });
     }
     const rows = filteredTasks.map(t => {
@@ -257,11 +260,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (kind === 'submissions') {
     const taskIds = filteredTasks.map(t => t.id);
     if (taskIds.length === 0) return res.status(200).json({ rows: [] });
-    const { data: subs } = await supabase
+    const cutoff = getTimeWindowCutoff(filters.time_window);
+    let subQ = supabase
       .from('submissions')
       .select('id, task_id, student_id, draft_version, graded_at, total_mark, submitted_for_marking, created_at')
       .in('task_id', taskIds)
       .order('created_at', { ascending: false });
+    if (cutoff) subQ = subQ.gte('created_at', cutoff.toISOString());
+    const { data: subs } = await subQ;
 
     let filtered = (subs || []).filter(s => {
       if (allowedStudentIds && (!s.student_id || !allowedStudentIds.has(s.student_id))) return false;

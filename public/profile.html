@@ -67,6 +67,20 @@
 
     .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
     .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+    input[type="checkbox"] {
+      appearance: none; -webkit-appearance: none;
+      width: 18px; height: 18px; flex-shrink: 0;
+      border: 1.5px solid #d1d5db; border-radius: 4px;
+      background: #fff; cursor: pointer; position: relative;
+      vertical-align: middle; margin: 0;
+    }
+    input[type="checkbox"]:checked { background: #ed7615; border-color: #ed7615; }
+    input[type="checkbox"]:checked::after {
+      content: ''; position: absolute; left: 5px; top: 1px;
+      width: 5px; height: 10px;
+      border: solid #fff; border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
   </style>
 </head>
 <body>

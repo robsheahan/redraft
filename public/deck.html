@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title>ProofReady — Pitch deck</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --cream: #fdf6ee;
+      --cream-soft: #faf7f2;
+      --cream-warm: #fef3e6;
+      --cream-edge: #f0e6d6;
+      --ink: #111827;
+      --ink-soft: #1f2937;
+      --grey-1: #374151;
+      --grey-2: #4b5563;
+      --grey-3: #6b7280;
+      --grey-4: #9ca3af;
+      --grey-5: #d1d5db;
+      --orange: #ed7615;
+      --orange-dark: #b45309;
+      --orange-soft: #fcd9b6;
+      --green: #15803d;
+      --green-soft: #f0fdf4;
+      --green-edge: #bbf7d0;
+      --red: #dc2626;
+      --red-soft: #fef2f2;
+      --red-edge: #fecaca;
+      --blue: #1d4ed8;
+      --blue-soft: #eff6ff;
+      --blue-edge: #bfdbfe;
+      --purple: #6b21a8;
+      --purple-soft: #faf5ff;
+    }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: var(--ink);
+      background: #1a1715;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ------------------------------------------------------------------
+       Deck framework
+       ------------------------------------------------------------------ */
+    .deck { position: relative; width: 100vw; height: 100vh; }
+    .slide {
+      position: absolute; inset: 0;
+      display: none;
+      flex-direction: column;
+      background: var(--cream);
+      padding: 6vh 7vw;
+      overflow: hidden;
+    }
+    .slide.active { display: flex; }
+    .slide-num {
+      position: absolute; bottom: 22px; right: 28px;
+      font-size: 12px; font-weight: 600; color: var(--grey-4);
+      letter-spacing: 0.5px;
+    }
+    .slide-tag {
+      font-size: 11px; font-weight: 700; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--orange-dark);
+      margin-bottom: 14px;
+    }
+    .slide h1 {
+      font-size: 52px; font-weight: 800; letter-spacing: -1.4px;
+      line-height: 1.05; color: var(--ink); margin-bottom: 18px;
+    }
+    .slide h2 {
+      font-size: 36px; font-weight: 800; letter-spacing: -1px;
+      line-height: 1.1; color: var(--ink); margin-bottom: 14px;
+    }
+    .slide h3 {
+      font-size: 22px; font-weight: 700; letter-spacing: -0.4px;
+      color: var(--ink);
+    }
+    .slide .lede {
+      font-size: 22px; font-weight: 500; color: var(--grey-1);
+      max-width: 880px; line-height: 1.4;
+    }
+    .slide p { font-size: 16px; color: var(--grey-1); }
+
+    .deck-chrome {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      pointer-events: none;
+      display: flex; justify-content: space-between;
+      padding: 18px 28px;
+      font-size: 12px; color: var(--grey-4);
+      z-index: 100;
+    }
+    .deck-chrome .help { background: rgba(0,0,0,0.04); padding: 4px 10px; border-radius: 4px; }
+
+    .nav-arrow {
+      position: fixed; top: 50%; transform: translateY(-50%);
+      width: 48px; height: 48px; border-radius: 50%;
+      background: rgba(0,0,0,0.04); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; color: var(--grey-3);
+      transition: all 0.15s; z-index: 50; opacity: 0;
+    }
+    .deck:hover .nav-arrow { opacity: 1; }
+    .nav-arrow:hover { background: rgba(0,0,0,0.08); color: var(--ink); }
+    .nav-arrow.prev { left: 16px; }
+    .nav-arrow.next { right: 16px; }
+
+    /* Notes panel — toggle with N */
+    .notes-panel {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #1a1715; color: #f5f0e8;
+      padding: 18px 32px 22px;
+      font-size: 14px; line-height: 1.5;
+      max-height: 32vh; overflow: auto;
+      transform: translateY(100%); transition: transform 0.2s;
+      z-index: 120;
+      border-top: 2px solid var(--orange);
+    }
+    .notes-panel.visible { transform: translateY(0); }
+    .notes-panel h4 {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--orange); margin-bottom: 8px; font-weight: 700;
+    }
+    .notes-panel p { color: #e8e0d4; margin-bottom: 6px; font-size: 14px; }
+    .notes-panel ul { padding-left: 18px; margin-top: 4px; }
+    .notes-panel li { color: #e8e0d4; margin-bottom: 4px; }
+
+    /* ------------------------------------------------------------------
+       Mockup browser chrome — wraps every "screenshot"
+       ------------------------------------------------------------------ */
+    .mockup {
+      background: #fff; border-radius: 10px; overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.08);
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+    .mockup-bar {
+      background: #ece7df; padding: 9px 14px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid #d8d1c4;
+    }
+    .mockup-dot { width: 11px; height: 11px; border-radius: 50%; }
+    .mockup-dot.r { background: #ff5f57; }
+    .mockup-dot.y { background: #febc2e; }
+    .mockup-dot.g { background: #28c840; }
+    .mockup-url {
+      flex: 1; background: #fff; border-radius: 5px;
+      padding: 4px 10px; font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; color: var(--grey-2); margin-left: 8px;
+      border: 1px solid #d8d1c4;
+    }
+    .mockup-body { background: var(--cream-soft); }
+
+    /* ------------------------------------------------------------------
+       Product mini-styles (mirror real app)
+       ------------------------------------------------------------------ */
+    .pr-nav {
+      background: var(--cream); border-bottom: 1px solid var(--cream-edge);
+      padding: 10px 22px; display: flex; align-items: center; justify-content: space-between;
+    }
+    .pr-brand {
+      font-weight: 800; font-size: 17px; letter-spacing: -0.5px;
+      color: var(--ink); display: flex; align-items: center; gap: 8px;
+    }
+    .pr-brand-dot { width: 18px; height: 18px; background: var(--orange); border-radius: 4px; }
+    .pr-nav-right { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--grey-3); }
+    .pr-pill {
+      background: var(--cream-warm); color: var(--orange-dark);
+      border: 1px solid var(--orange-soft);
+      padding: 3px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+    }
+
+    .pr-card {
+      background: #fff; border-radius: 10px;
+      padding: 16px; border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .pr-card-title { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+    .pr-card-sub { font-size: 11px; color: var(--grey-3); }
+
+    .pr-btn-primary {
+      background: var(--orange); color: #fff; border: none;
+      padding: 8px 16px; border-radius: 7px; font-weight: 700; font-size: 13px;
+      box-shadow: 0 2px 8px rgba(237,118,21,0.3);
+    }
+    .pr-btn-ghost {
+      background: rgba(0,0,0,0.04); color: var(--grey-2);
+      padding: 8px 14px; border-radius: 7px; font-weight: 600; font-size: 12px;
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+
+    /* ============================================================
+       SLIDE 1 — Title
+       ============================================================ */
+    .s-title {
+      justify-content: center; align-items: flex-start;
+      background: linear-gradient(135deg, var(--cream) 0%, #fff 100%);
+    }
+    .s-title .brand-row {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 32px;
+    }
+    .s-title .brand-mark {
+      width: 56px; height: 56px; background: var(--orange);
+      border-radius: 14px; display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 900; font-size: 30px; letter-spacing: -1.5px;
+      box-shadow: 0 8px 20px rgba(237,118,21,0.35);
+    }
+    .s-title .brand-name { font-size: 38px; font-weight: 900; letter-spacing: -1.2px; }
+    .s-title h1 { font-size: 68px; max-width: 1100px; }
+    .s-title .deck-meta { margin-top: 40px; display: flex; gap: 60px; font-size: 15px; color: var(--grey-2); }
+    .s-title .deck-meta strong { display: block; color: var(--ink); font-size: 16px; margin-bottom: 2px; }
+
+    /* ============================================================
+       SLIDE 2 — The problem
+       ============================================================ */
+    .s-problem .stat-row {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+      margin-top: 40px; max-width: 1200px;
+    }
+    .s-problem .stat {
+      background: #fff; padding: 28px 26px; border-radius: 12px;
+      border-left: 4px solid var(--orange);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+    .s-problem .stat-num {
+      font-size: 44px; font-weight: 800; color: var(--orange-dark);
+      line-height: 1; margin-bottom: 12px; letter-spacing: -1.5px;
+    }
+    .s-problem .stat-text { font-size: 15px; color: var(--grey-1); line-height: 1.45; }
+
+    /* ============================================================
+       SLIDE 3 — Approach
+       ============================================================ */
+    .s-approach .quote {
+      font-size: 36px; font-weight: 700; line-height: 1.25; color: var(--ink);
+      max-width: 980px; letter-spacing: -0.8px; margin-bottom: 18px;
+    }
+    .s-approach .quote .acc { color: var(--orange); }
+    .s-approach .quote-attr {
+      font-size: 14px; color: var(--grey-3); margin-bottom: 50px;
+      letter-spacing: 0.4px;
+    }
+    .s-approach .rules-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+      max-width: 1200px;
+    }
+    .s-approach .rule {
+      background: #fff; padding: 22px; border-radius: 10px;
+      border-top: 3px solid var(--orange);
+    }
+    .s-approach .rule-num {
+      font-size: 11px; font-weight: 700; color: var(--orange-dark);
+      letter-spacing: 1px; margin-bottom: 6px;
+    }
+    .s-approach .rule-title { font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+    .s-approach .rule-body { font-size: 13px; color: var(--grey-2); line-height: 1.45; }
+
+    /* ============================================================
+       SLIDE 4 — Student drafting (mockup of submit.html)
+       ============================================================ */
+    .s-draft .layout {
+      display: grid; grid-template-columns: 1.4fr 1fr; gap: 30px; margin-top: 8px;
+      align-items: stretch;
+    }
+    .s-draft .caption-col h2 { margin-bottom: 18px; }
+    .s-draft .caption-col p { font-size: 17px; color: var(--grey-1); line-height: 1.5; margin-bottom: 18px; }
+    .s-draft .badge-list { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+    .s-draft .badge {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 10px 14px; background: #fff; border-radius: 8px;
+      border-left: 3px solid var(--orange);
+    }
+    .s-draft .badge-icon { color: var(--orange); flex-shrink: 0; padding-top: 1px; }
+    .s-draft .badge-icon svg { width: 20px; height: 20px; display: block; }
+    .s-draft .badge-text strong { display: block; font-size: 13px; color: var(--ink); margin-bottom: 1px; }
+    .s-draft .badge-text span { font-size: 12px; color: var(--grey-3); }
+
+    .mock-submit {
+      padding: 22px;
+    }
+    .mock-submit-head {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 14px;
+    }
+    .mock-submit-task-title { font-size: 16px; font-weight: 700; color: var(--ink); }
+    .mock-submit-task-meta { font-size: 11px; color: var(--grey-3); margin-top: 2px; }
+    .mock-submit-question {
+      font-size: 13px; color: var(--grey-1); line-height: 1.5;
+      background: var(--cream-warm); padding: 12px 14px; border-radius: 8px;
+      border-left: 3px solid var(--orange-soft);
+      margin-bottom: 14px;
+    }
+    .mock-submit-question strong { display: block; font-size: 11px; color: var(--orange-dark); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+    .mock-submit-area {
+      background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 8px;
+      padding: 14px; font-size: 12px; color: var(--grey-1); line-height: 1.55;
+      min-height: 220px;
+      position: relative;
+    }
+    .mock-submit-area::after {
+      content: '|'; color: var(--orange);
+      animation: caret 1s steps(1) infinite;
+    }
+    @keyframes caret { 50% { opacity: 0; } }
+    .mock-submit-toast {
+      position: absolute; top: 12px; right: 12px;
+      background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
+      padding: 6px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+      box-shadow: 0 4px 10px rgba(220,38,38,0.15);
+    }
+    .mock-submit-stats {
+      display: flex; gap: 14px; margin-top: 12px;
+      font-size: 11px; color: var(--grey-3);
+    }
+    .mock-submit-stats span strong { color: var(--ink); }
+    .mock-submit-stats .auto { color: var(--green); font-weight: 600; }
+
+    /* ============================================================
+       SLIDE 5 — Feedback view (mockup of feedback.html)
+       ============================================================ */
+    .s-feedback h2 { margin-bottom: 18px; }
+    .s-feedback .layout {
+      display: grid; grid-template-columns: 1fr 1.5fr; gap: 28px;
+      margin-top: 4px; flex: 1;
+    }
+    .s-feedback .summary { font-size: 16px; color: var(--grey-1); line-height: 1.5; margin-bottom: 16px; }
+    .s-feedback .signal-list { display: flex; flex-direction: column; gap: 10px; }
+    .s-feedback .signal {
+      background: #fff; padding: 12px 14px; border-radius: 8px;
+      border-left: 3px solid var(--orange);
+    }
+    .s-feedback .signal strong { display: block; font-size: 12px; color: var(--ink); margin-bottom: 3px; }
+    .s-feedback .signal span { font-size: 12px; color: var(--grey-2); }
+
+    .mock-feedback {
+      padding: 18px;
+    }
+    .mock-fb-tabs {
+      display: flex; gap: 4px; margin-bottom: 14px;
+      border-bottom: 1px solid var(--cream-edge);
+    }
+    .mock-fb-tab { font-size: 12px; padding: 6px 12px; color: var(--grey-3); border-bottom: 2px solid transparent; }
+    .mock-fb-tab.on { color: var(--orange-dark); border-bottom-color: var(--orange); font-weight: 700; }
+
+    .mock-fb-priority {
+      background: linear-gradient(135deg, var(--cream-warm) 0%, #fff 100%);
+      border: 1px solid var(--orange-soft); border-radius: 8px;
+      padding: 13px 15px; margin-bottom: 14px;
+    }
+    .mock-fb-priority h5 { font-size: 11px; color: var(--orange-dark); text-transform: uppercase; letter-spacing: 0.7px; font-weight: 700; margin-bottom: 4px; }
+    .mock-fb-priority p { font-size: 13px; color: var(--ink); line-height: 1.5; }
+
+    .mock-fb-list { display: flex; flex-direction: column; gap: 8px; }
+    .mock-fb-item {
+      background: #fff; border-radius: 7px;
+      padding: 10px 13px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    .mock-fb-item-head {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+    }
+    .mock-fb-item-cat {
+      font-size: 9px; padding: 2px 7px; border-radius: 100px;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+    }
+    .mock-fb-item-cat.improve { background: #fef3e6; color: var(--orange-dark); }
+    .mock-fb-item-cat.praise { background: var(--green-soft); color: var(--green); }
+    .mock-fb-item-cat.note { background: var(--blue-soft); color: var(--blue); }
+    .mock-fb-item-quote {
+      font-style: italic; font-size: 11px; color: var(--grey-2);
+      background: #f8f5f0; padding: 4px 8px; border-radius: 4px; border-left: 2px solid var(--orange-soft);
+      margin-bottom: 4px;
+    }
+    .mock-fb-item-body { font-size: 11.5px; color: var(--grey-1); line-height: 1.4; }
+
+    /* ============================================================
+       SLIDE 6 — Three pass architecture
+       ============================================================ */
+    .s-arch { background: linear-gradient(180deg, var(--cream) 0%, var(--cream-soft) 100%); }
+    .s-arch .three-up {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px;
+      max-width: 1200px; margin-top: 24px;
+    }
+    .s-arch .pass {
+      background: #fff; padding: 24px; border-radius: 14px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+      border-top: 4px solid var(--orange);
+      position: relative;
+    }
+    .s-arch .pass-num {
+      position: absolute; top: -22px; left: 22px;
+      background: var(--orange); color: #fff;
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 800;
+      box-shadow: 0 6px 14px rgba(237,118,21,0.4);
+    }
+    .s-arch .pass h3 { margin-top: 16px; margin-bottom: 10px; font-size: 20px; }
+    .s-arch .pass-detail { font-size: 13px; color: var(--grey-2); line-height: 1.55; margin-bottom: 14px; }
+    .s-arch .pass-output {
+      background: var(--cream-warm); padding: 8px 12px; border-radius: 6px;
+      font-size: 11px; color: var(--grey-1); font-family: 'JetBrains Mono', monospace;
+    }
+    .s-arch .footnote {
+      margin-top: 36px; padding: 16px 20px; max-width: 1200px;
+      background: #fff; border-radius: 10px;
+      border-left: 3px solid var(--orange);
+      font-size: 14px; color: var(--grey-1); line-height: 1.5;
+    }
+    .s-arch .footnote strong { color: var(--ink); }
+
+    /* ============================================================
+       SLIDE 7 — Calibration moat
+       ============================================================ */
+    .s-moat .moat-layout {
+      display: grid; grid-template-columns: 1fr 1.2fr; gap: 50px;
+      margin-top: 30px; align-items: center;
+    }
+    .s-moat .ingredients { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .s-moat .ingr {
+      background: #fff; padding: 11px 13px; border-radius: 7px;
+      border-left: 3px solid var(--orange);
+      font-size: 12.5px; color: var(--ink);
+    }
+    .s-moat .ingr small { display: block; color: var(--grey-3); font-size: 10.5px; margin-top: 1px; }
+    .s-moat .arrow-col {
+      position: relative; display: flex; flex-direction: column; align-items: center;
+      gap: 14px;
+    }
+    .s-moat .arrow {
+      width: 70px; height: 5px; background: var(--orange); border-radius: 2px;
+      position: relative;
+    }
+    .s-moat .arrow::after {
+      content: ''; position: absolute; right: -2px; top: -5px;
+      border: 7px solid transparent; border-left-color: var(--orange);
+    }
+    .s-moat .output-card {
+      background: var(--ink); color: #fff; padding: 28px 26px; border-radius: 14px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.18);
+    }
+    .s-moat .output-card h3 { color: #fff; font-size: 22px; margin-bottom: 10px; }
+    .s-moat .output-card p { color: #e8e0d4; font-size: 14px; line-height: 1.55; margin-bottom: 8px; }
+    .s-moat .output-card .pill {
+      display: inline-block; background: var(--orange); color: #fff;
+      padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.6px; margin-top: 12px;
+    }
+
+    /* ============================================================
+       SLIDE 8 — Guardrails
+       ============================================================ */
+    .s-rails .rails-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px;
+      max-width: 1100px; margin-top: 26px;
+    }
+    .s-rails .rail {
+      background: #fff; padding: 24px; border-radius: 12px;
+      display: flex; gap: 18px; align-items: flex-start;
+      border-top: 3px solid var(--orange);
+    }
+    .s-rails .rail-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: var(--cream-warm); display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--orange-dark);
+    }
+    .s-rails .rail-icon svg { width: 24px; height: 24px; display: block; }
+    .s-rails .rail-title { font-size: 18px; font-weight: 700; color: var(--ink); margin-bottom: 5px; }
+    .s-rails .rail-body { font-size: 14px; color: var(--grey-1); line-height: 1.5; }
+
+    /* ============================================================
+       SLIDE 9 — Teacher dashboard (mockup of teacher.html)
+       ============================================================ */
+    .s-teacher .layout { display: grid; grid-template-columns: 1fr 1.6fr; gap: 28px; margin-top: 12px; flex: 1; }
+    .s-teacher .caption-col p { font-size: 16px; color: var(--grey-1); line-height: 1.5; margin-bottom: 12px; }
+
+    .mock-teacher { padding: 22px; }
+    .mock-teacher-head {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-bottom: 16px;
+    }
+    .mock-teacher-greeting { font-size: 18px; font-weight: 800; color: var(--ink); letter-spacing: -0.3px; }
+    .mock-teacher-sub { font-size: 11px; color: var(--grey-3); margin-top: 1px; }
+    .mock-teacher-kpis {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px;
+    }
+    .mock-kpi { background: #fff; padding: 11px 13px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); }
+    .mock-kpi-num { font-size: 22px; font-weight: 800; color: var(--ink); line-height: 1; }
+    .mock-kpi-label { font-size: 10.5px; color: var(--grey-3); margin-top: 4px; }
+
+    .mock-classes-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px;
+    }
+    .mock-classes-title { font-size: 13px; font-weight: 700; color: var(--ink); }
+    .mock-classes { display: flex; flex-direction: column; gap: 8px; }
+    .mock-class-row {
+      background: #fff; padding: 11px 14px; border-radius: 8px;
+      display: grid; grid-template-columns: 1.4fr 1fr 1fr auto; gap: 12px;
+      align-items: center;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    .mock-class-name { font-size: 13px; font-weight: 700; color: var(--ink); }
+    .mock-class-sub { font-size: 10.5px; color: var(--grey-3); margin-top: 1px; }
+    .mock-class-cell { font-size: 11px; color: var(--grey-2); }
+    .mock-class-cell strong { color: var(--ink); }
+    .mock-class-code {
+      background: var(--cream-warm); color: var(--orange-dark);
+      font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700;
+      padding: 2px 8px; border-radius: 5px; letter-spacing: 1px;
+    }
+
+    /* ============================================================
+       SLIDE 10 — Mark submission (mockup of mark-submission.html)
+       ============================================================ */
+    .s-mark .layout { display: grid; grid-template-columns: 1fr 1.7fr; gap: 26px; flex: 1; margin-top: 12px; }
+    .s-mark .caption-col p { font-size: 16px; color: var(--grey-1); line-height: 1.5; margin-bottom: 12px; }
+
+    .mock-mark { padding: 16px; }
+    .mock-mark-head {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .mock-mark-title { font-size: 14px; font-weight: 800; color: var(--ink); }
+    .mock-mark-sub { font-size: 10.5px; color: var(--grey-3); margin-top: 2px; }
+    .mock-mark-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; }
+    .mock-mark-draft {
+      background: #fff; padding: 12px 14px; border-radius: 8px;
+      font-size: 11px; line-height: 1.5; color: var(--grey-1);
+      max-height: 280px; overflow: hidden;
+    }
+    .mock-mark-draft .annot {
+      background: rgba(237,118,21,0.18); padding: 1px 2px; border-radius: 2px;
+      border-bottom: 2px solid var(--orange);
+    }
+    .mock-mark-draft .annot.praise {
+      background: rgba(21,128,61,0.18); border-bottom-color: var(--green);
+    }
+    .mock-mark-pop {
+      position: relative; margin-top: 6px;
+      background: var(--ink); color: #fff; padding: 7px 10px; border-radius: 6px;
+      font-size: 10.5px; max-width: 240px;
+    }
+    .mock-mark-pop::before {
+      content: ''; position: absolute; top: -5px; left: 20px;
+      border: 5px solid transparent; border-bottom-color: var(--ink);
+    }
+
+    .mock-mark-rubric {
+      background: #fff; border-radius: 8px; padding: 14px;
+      font-size: 11px;
+    }
+    .mock-mark-rubric h5 { font-size: 11.5px; font-weight: 700; color: var(--ink); margin-bottom: 10px; }
+    .mock-rubric-row {
+      display: grid; grid-template-columns: 1fr auto; align-items: center;
+      padding: 7px 0; border-bottom: 1px solid var(--cream-edge);
+    }
+    .mock-rubric-row:last-of-type { border-bottom: none; }
+    .mock-rubric-label { font-size: 11px; color: var(--grey-1); }
+    .mock-rubric-input {
+      background: var(--cream-soft); border: 1px solid var(--cream-edge);
+      padding: 3px 9px; border-radius: 5px; font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; font-weight: 700; color: var(--ink); min-width: 56px; text-align: center;
+    }
+    .mock-rubric-total {
+      margin-top: 8px; padding-top: 10px; border-top: 2px solid var(--orange);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .mock-rubric-total strong { font-size: 13px; color: var(--ink); }
+    .mock-rubric-total .val { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; color: var(--orange-dark); }
+
+    .canvas-badge {
+      margin-top: 10px; background: var(--green-soft); color: var(--green);
+      font-size: 10.5px; padding: 5px 10px; border-radius: 5px;
+      border: 1px solid var(--green-edge); font-weight: 600;
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    /* ============================================================
+       SLIDES 11/12/13 — Insights mockups
+       ============================================================ */
+    .s-insights .layout { display: grid; grid-template-columns: 1fr 1.8fr; gap: 28px; flex: 1; margin-top: 14px; }
+    .s-insights h2 { margin-bottom: 14px; }
+    .s-insights .caption-col p { font-size: 16px; color: var(--grey-1); line-height: 1.5; margin-bottom: 14px; }
+    .s-insights .caption-col li {
+      font-size: 14px; color: var(--grey-1); margin-bottom: 8px;
+      padding-left: 16px; position: relative; line-height: 1.45;
+    }
+    .s-insights .caption-col li::before {
+      content: '→'; position: absolute; left: 0; color: var(--orange); font-weight: 700;
+    }
+
+    .mock-insights { padding: 16px; max-height: 100%; }
+    .mock-insights-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .mock-insights-title { font-size: 15px; font-weight: 800; color: var(--ink); }
+    .mock-insights-scope { font-size: 11px; color: var(--grey-3); }
+    .mock-insights-filters {
+      display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap;
+    }
+    .mock-filter {
+      background: #fff; border: 1px solid rgba(0,0,0,0.08);
+      padding: 4px 10px; border-radius: 6px;
+      font-size: 10.5px; color: var(--grey-2);
+    }
+    .mock-filter.on { background: var(--cream-warm); border-color: var(--orange-soft); color: var(--orange-dark); font-weight: 700; }
+
+    .mock-cards { display: grid; gap: 10px; }
+    .mock-card {
+      background: #fff; border-radius: 8px; padding: 12px 14px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    .mock-card-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .mock-card-title { font-size: 12px; font-weight: 700; color: var(--ink); }
+    .mock-card-tag { font-size: 9px; color: var(--orange-dark); background: var(--cream-warm); padding: 2px 7px; border-radius: 100px; letter-spacing: 0.4px; font-weight: 700; }
+    .mock-card-body { font-size: 11px; color: var(--grey-1); line-height: 1.45; }
+
+    /* mark distribution mini-chart */
+    .mock-bars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; align-items: end; height: 70px; margin: 5px 0 7px; }
+    .mock-bar { background: linear-gradient(180deg, var(--orange) 0%, var(--orange-dark) 100%); border-radius: 3px 3px 0 0; min-height: 4px; position: relative; }
+    .mock-bar-label { position: absolute; bottom: -16px; left: 0; right: 0; text-align: center; font-size: 9px; color: var(--grey-3); }
+    .mock-bar-val { position: absolute; top: -14px; left: 0; right: 0; text-align: center; font-size: 9px; color: var(--ink); font-weight: 700; }
+
+    /* mini list */
+    .mock-list-item {
+      display: flex; gap: 8px; padding: 4px 0;
+      font-size: 11px; color: var(--grey-1); line-height: 1.4;
+    }
+    .mock-list-item .num { color: var(--orange-dark); font-weight: 800; font-size: 11px; min-width: 14px; }
+
+    /* sparkline */
+    .mock-spark { display: flex; gap: 2px; align-items: end; height: 30px; }
+    .mock-spark span { flex: 1; background: var(--orange-soft); border-radius: 2px 2px 0 0; }
+
+    /* leadership cards (slide 13) — faculty rows, mini bar rows, hero stat */
+    .mock-perf-row {
+      display: grid; grid-template-columns: 1fr auto auto;
+      gap: 10px; align-items: center;
+      padding: 5px 0; border-bottom: 1px solid var(--cream-edge);
+      font-size: 11px;
+    }
+    .mock-perf-row:last-child { border-bottom: none; }
+    .mock-perf-row .mock-perf-name { color: var(--grey-1); }
+    .mock-perf-row .mock-perf-grade {
+      font-family: 'JetBrains Mono', monospace; font-weight: 800;
+      color: var(--ink); font-size: 12px;
+      background: var(--cream-warm); padding: 1px 7px; border-radius: 4px;
+      min-width: 30px; text-align: center;
+    }
+    .mock-perf-row .mock-perf-trend {
+      font-size: 13px; font-weight: 800; min-width: 18px; text-align: center;
+    }
+    .mock-perf-row .mock-perf-trend.up { color: var(--green); }
+    .mock-perf-row .mock-perf-trend.up2 { color: var(--green); }
+    .mock-perf-row .mock-perf-trend.down { color: var(--red); }
+    .mock-perf-row .mock-perf-trend.flat { color: var(--grey-4); }
+
+    .mock-bar-row {
+      display: grid; grid-template-columns: 70px 1fr 40px;
+      gap: 8px; align-items: center; margin-bottom: 6px;
+    }
+    .mock-bar-row .mock-bar-lbl { font-size: 10.5px; color: var(--grey-2); }
+    .mock-bar-row .mock-bar-track {
+      height: 8px; background: var(--cream-edge); border-radius: 3px; overflow: hidden;
+    }
+    .mock-bar-row .mock-bar-fill {
+      height: 100%; background: linear-gradient(90deg, var(--orange-dark) 0%, var(--orange) 100%);
+      border-radius: 3px;
+    }
+    .mock-bar-row .mock-bar-num {
+      font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+      font-weight: 700; color: var(--ink); text-align: right;
+    }
+
+    .mock-velocity-hero {
+      margin-bottom: 10px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--cream-edge);
+    }
+    .mock-velocity-hero .num {
+      font-size: 30px; font-weight: 800; color: var(--orange-dark);
+      line-height: 1; letter-spacing: -1px;
+    }
+    .mock-velocity-hero .sub {
+      font-size: 10.5px; color: var(--grey-3); margin-top: 3px; line-height: 1.4;
+    }
+
+    /* student hero (slide 12) */
+    .mock-hero {
+      background: linear-gradient(135deg, var(--ink) 0%, #2d2724 100%);
+      color: #fff; padding: 16px; border-radius: 10px; margin-bottom: 10px;
+    }
+    .mock-hero-name { font-size: 15px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.3px; }
+    .mock-hero-meta { font-size: 10.5px; color: var(--grey-5); margin-bottom: 10px; }
+    .mock-hero-body { font-size: 11.5px; color: #e8e0d4; line-height: 1.55; }
+    .mock-hero-tags { display: flex; gap: 5px; margin-top: 10px; }
+    .mock-hero-tag {
+      font-size: 9.5px; padding: 2px 7px; border-radius: 100px;
+      background: rgba(237,118,21,0.25); color: var(--orange-soft); font-weight: 600;
+    }
+
+    /* ============================================================
+       SLIDE 14 — Canvas LTI
+       ============================================================ */
+    .s-canvas .canvas-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+      margin-top: 32px; max-width: 1200px;
+    }
+    .s-canvas .cnv-card {
+      background: #fff; padding: 22px; border-radius: 12px;
+      border-top: 4px solid var(--orange); position: relative;
+    }
+    .s-canvas .cnv-card .step-num {
+      position: absolute; top: -16px; right: 18px;
+      background: var(--ink); color: #fff;
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800;
+    }
+    .s-canvas .cnv-icon { margin-bottom: 16px; color: var(--orange); }
+    .s-canvas .cnv-icon svg { width: 34px; height: 34px; display: block; }
+    .s-canvas .cnv-card h3 { font-size: 16px; margin-bottom: 6px; }
+    .s-canvas .cnv-card p { font-size: 13px; color: var(--grey-2); line-height: 1.45; }
+    .s-canvas .cnv-footnote {
+      margin-top: 36px; padding: 18px 22px; max-width: 1200px;
+      background: #fff; border-radius: 10px;
+      border-left: 3px solid var(--orange);
+      font-size: 14px; color: var(--grey-1); line-height: 1.5;
+    }
+    .s-canvas .cnv-footnote strong { color: var(--ink); }
+    .s-canvas .cnv-pilot {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--cream-warm); color: var(--orange-dark);
+      padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;
+    }
+
+    /* ============================================================
+       SLIDE 15 — Privacy & integrity
+       ============================================================ */
+    .s-privacy .principles {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+      max-width: 1100px; margin-top: 26px;
+    }
+    .s-privacy .pr-pill-card {
+      background: #fff; padding: 22px; border-radius: 12px;
+      display: flex; gap: 16px;
+      border-left: 4px solid var(--orange);
+    }
+    .s-privacy .pr-pill-card .ic { flex-shrink: 0; color: var(--orange); }
+    .s-privacy .pr-pill-card .ic svg { width: 34px; height: 34px; display: block; }
+    .s-privacy .pr-pill-card h3 { font-size: 18px; margin-bottom: 5px; }
+    .s-privacy .pr-pill-card p { font-size: 14px; color: var(--grey-2); line-height: 1.5; }
+
+    /* ============================================================
+       SLIDE 16 — Pilot
+       ============================================================ */
+    .s-pilot { justify-content: center; }
+    .s-pilot h1 { font-size: 56px; max-width: 1000px; margin-bottom: 24px; }
+    .s-pilot .lede { margin-bottom: 36px; }
+    .s-pilot .pilot-row {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+      max-width: 1100px; margin-bottom: 36px;
+    }
+    .s-pilot .pilot-card {
+      background: #fff; padding: 24px; border-radius: 14px;
+      border-top: 4px solid var(--orange);
+    }
+    .s-pilot .pilot-card h3 { font-size: 17px; margin-bottom: 8px; }
+    .s-pilot .pilot-card p { font-size: 14px; color: var(--grey-2); line-height: 1.5; }
+    .s-pilot .cta {
+      background: var(--ink); color: #fff; padding: 24px 30px; border-radius: 14px;
+      max-width: 1100px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .s-pilot .cta h3 { color: #fff; font-size: 22px; letter-spacing: -0.4px; }
+    .s-pilot .cta p { color: #e8e0d4; font-size: 14px; margin-top: 4px; }
+    .s-pilot .cta .cta-pill {
+      background: var(--orange); color: #fff; padding: 10px 22px; border-radius: 100px;
+      font-size: 14px; font-weight: 700;
+    }
+
+    /* ============================================================
+       Print fallback — one slide per page
+       ============================================================ */
+    @media print {
+      html, body { overflow: visible; height: auto; background: #fff; }
+      @page { size: 297mm 167mm; margin: 0; } /* 16:9 */
+      .deck-chrome, .nav-arrow, .notes-panel { display: none !important; }
+      .slide {
+        display: flex !important;
+        position: relative !important; inset: auto !important;
+        width: 297mm; height: 167mm;
+        page-break-after: always; break-after: page;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- ============================================================
+       SLIDE 1 — Title
+       ============================================================ -->
+  <section class="slide s-title active" data-slide="1"
+    data-notes="Title slide. Pause. Greet the room. Brief intro: I'm Rob, PDHPE teacher in NSW. Built ProofReady for my own marking workload first. Now piloting in Canvas. Today: 15 minutes, then your questions.">
+    <div class="brand-row">
+      <div class="brand-mark">P</div>
+      <div class="brand-name">ProofReady</div>
+    </div>
+    <h1>Marker-voice formative feedback on every HSC draft.</h1>
+    <p class="lede" style="margin-top: 18px;">Calibrated against NESA Notes from the Marking Centre. Designed to support learning — not replace marking.</p>
+    <div class="deck-meta">
+      <div><strong>Rob Sheahan</strong>Founder</div>
+      <div><strong>proofready.app</strong>NSW-built, Sydney-hosted</div>
+    </div>
+    <div class="slide-num">01</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 2 — Problem
+       ============================================================ -->
+  <section class="slide s-problem" data-slide="2"
+    data-notes="The problem. Anchor on workload but pivot to LEARNING impact. The reason senior teachers ration draft feedback is not laziness — it's arithmetic. The result is that students don't see what NESA wants until the HSC. We can change that.">
+    <div class="slide-tag">The opportunity</div>
+    <h2>Draft feedback is high-leverage teaching.<br>We help teachers give more of it.</h2>
+    <p class="lede" style="margin-top: 14px;">Every Stage 6 faculty navigates the same trade-off: depth of feedback against how quickly students see it. ProofReady tilts the balance.</p>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-num">20 min</div>
+        <div class="stat-text">What a careful marker spends reading and annotating a single Stage 6 draft. Valuable work &mdash; and in short supply during assessment season.</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">5+ classes</div>
+        <div class="stat-text">Typical Stage 6 teaching load. Multiple formal tasks per class, per term. Depth of feedback is always competing with turnaround.</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">1 day</div>
+        <div class="stat-text">When formative feedback lands best &mdash; while a student&rsquo;s thinking is still fresh. ProofReady helps teachers hit that window.</div>
+      </div>
+    </div>
+    <div class="slide-num">02</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 3 — Approach
+       ============================================================ -->
+  <section class="slide s-approach" data-slide="3"
+    data-notes="Our approach. This is the moment to set expectations. We are NOT here to grade students. We are NOT here to write their essays. We exist to compress one specific bottleneck: the draft-to-marker-voice loop. Read the quote aloud — slowly.">
+    <div class="slide-tag">Our approach</div>
+    <h2 style="margin-bottom: 24px;">A single design question shapes every decision we make.</h2>
+    <div class="quote">&ldquo;How can we get the most accurate possible feedback to <span class="acc">mimic that of a professional, experienced teacher?</span>&rdquo;</div>
+    <div class="quote-attr">— Central design question for ProofReady</div>
+    <div class="rules-grid">
+      <div class="rule">
+        <div class="rule-num">RULE 01</div>
+        <div class="rule-title">We don&rsquo;t grade.</div>
+        <div class="rule-body">No marks predicted. No bands estimated. The teacher remains the assessor.</div>
+      </div>
+      <div class="rule">
+        <div class="rule-num">RULE 02</div>
+        <div class="rule-title">We don&rsquo;t rewrite.</div>
+        <div class="rule-body">No paragraphs returned. Feedback names what to fix and why &mdash; not how.</div>
+      </div>
+      <div class="rule">
+        <div class="rule-num">RULE 03</div>
+        <div class="rule-title">Marker voice.</div>
+        <div class="rule-body">Every response is calibrated against NESA Notes from the Marking Centre 2021&ndash;2024.</div>
+      </div>
+      <div class="rule">
+        <div class="rule-num">RULE 04</div>
+        <div class="rule-title">3 drafts, max.</div>
+        <div class="rule-body">Hard cap per task. Prevents dependency. The fourth submission goes straight to the teacher.</div>
+      </div>
+    </div>
+    <div class="slide-num">03</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 4 — Student drafting
+       ============================================================ -->
+  <section class="slide s-draft" data-slide="4"
+    data-notes="The student writing experience. The headline here is integrity: what you see is what was typed. Point out the blocked-paste toast, the keystroke counter, the autosave indicator. This matters for parents and faculty heads who worry about AI-assisted submissions.">
+    <div class="slide-tag">What the student sees · drafting</div>
+    <div class="layout">
+      <div class="caption-col">
+        <h2>The draft is theirs.<br>We make sure of it.</h2>
+        <p>Default behaviour on every task is typed-only. Paste is blocked, mobile is warned off, and autosave runs every 1.5 seconds so a student never loses a paragraph.</p>
+        <div class="badge-list">
+          <div class="badge">
+            <div class="badge-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="6" y="4" width="12" height="18" rx="2"/>
+                <path d="M9 4V3a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1"/>
+                <line x1="9.5" y1="11.5" x2="14.5" y2="16.5"/>
+                <line x1="14.5" y1="11.5" x2="9.5" y2="16.5"/>
+              </svg>
+            </div>
+            <div class="badge-text"><strong>Paste blocked, toast shown</strong><span>Drop, paste, drag &mdash; all intercepted on the task.</span></div>
+          </div>
+          <div class="badge">
+            <div class="badge-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="13" r="8"/>
+                <path d="M12 9v4l2.5 2.5"/>
+                <path d="M9.5 2.5h5"/>
+                <path d="M12 2.5V5"/>
+              </svg>
+            </div>
+            <div class="badge-text"><strong>Keystroke &amp; session telemetry</strong><span>Total typing time and session count are saved with the draft.</span></div>
+          </div>
+          <div class="badge">
+            <div class="badge-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6.5 18.5a4 4 0 0 1-.7-7.94A6 6 0 0 1 17 9a4.5 4.5 0 0 1 .5 8.85"/>
+                <polyline points="9 14 11 16 15 12"/>
+              </svg>
+            </div>
+            <div class="badge-text"><strong>Autosave to server every 1.5s</strong><span>No lost work, no Word-doc shuffling, no submit-deadline panic.</span></div>
+          </div>
+          <div class="badge">
+            <div class="badge-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="13" rx="2"/>
+                <line x1="2" y1="20" x2="22" y2="20"/>
+              </svg>
+            </div>
+            <div class="badge-text"><strong>Phones nudged to laptop</strong><span>HSC writing happens on a keyboard. We say so up front.</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot r"></div><div class="mockup-dot y"></div><div class="mockup-dot g"></div>
+          <div class="mockup-url">proofready.app/submit.html?task_id=…</div>
+        </div>
+        <div class="mockup-body mock-submit">
+          <div class="pr-nav" style="margin: -22px -22px 18px;">
+            <div class="pr-brand"><div class="pr-brand-dot"></div>ProofReady</div>
+            <div class="pr-nav-right">
+              <span class="pr-pill">Year 12 PDHPE</span>
+              <span>Mia Tahir</span>
+            </div>
+          </div>
+          <div class="mock-submit-head">
+            <div>
+              <div class="mock-submit-task-title">Health Priorities — extended response</div>
+              <div class="mock-submit-task-meta">Draft 2 of 3 · 20 marks · Due Friday</div>
+            </div>
+            <button class="pr-btn-primary">Get feedback</button>
+          </div>
+          <div class="mock-submit-question">
+            <strong>Task question</strong>
+            Analyse the role of social determinants of health in explaining the inequalities experienced by Aboriginal and Torres Strait Islander peoples.
+          </div>
+          <div class="mock-submit-area">
+            Social determinants of health describe the conditions in which people are born, grow, live and age — and these conditions are not distributed equally. For Aboriginal and Torres Strait Islander peoples, the inequalities seen in life expectancy, infant mortality and chronic disease burden cannot be explained by individual choices alone. Income, education, housing, employment, and access to culturally safe healthcare are all upstream factors that shape health outcomes long before a person ever sees a clinician.<br><br>
+            One clear example is the impact of remoteness on access to primary care. Roughly 19% of Indigenous Australians live in remote or very remote areas, where general practitioners and specialist services are scarce
+            <div class="mock-submit-toast">⛔ Paste blocked</div>
+          </div>
+          <div class="mock-submit-stats">
+            <span><strong>2,847</strong> keystrokes</span>
+            <span><strong>3</strong> sessions</span>
+            <span><strong>00:34:12</strong> typing time</span>
+            <span class="auto">● Autosaved 2s ago</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">04</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 5 — Feedback view
+       ============================================================ -->
+  <section class="slide s-feedback" data-slide="5"
+    data-notes="The feedback view is where the product earns its name. Three things to call out: the holistic top-priority panel sounds like an experienced PDHPE marker (because the prompt is calibrated to one); the inline annotations point to verbatim quotes from the draft, never paraphrased; the criterion-by-criterion verdicts sit alongside, so the student sees structure not just sentiment. No marks. No band predictions. By design.">
+    <div class="slide-tag">What the student sees · feedback</div>
+    <h2>Marker-voice feedback. Anchored to the draft.</h2>
+    <div class="layout">
+      <div class="caption-col">
+        <p class="summary">Every response is generated by three Claude calls in parallel: holistic, criterion-by-criterion, and inline annotations pinned to the student&rsquo;s own words.</p>
+        <div class="signal-list">
+          <div class="signal">
+            <strong>Top priority</strong><span>What an experienced marker would put first.</span>
+          </div>
+          <div class="signal">
+            <strong>Strengths to keep</strong><span>Two or three things the draft already does well.</span>
+          </div>
+          <div class="signal">
+            <strong>Verb-depth check</strong><span>Did they actually <em>analyse</em>, or just <em>describe</em>?</span>
+          </div>
+          <div class="signal">
+            <strong>Inline annotations</strong><span>Verbatim quotes the model marks like a pen on paper.</span>
+          </div>
+        </div>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot r"></div><div class="mockup-dot y"></div><div class="mockup-dot g"></div>
+          <div class="mockup-url">proofready.app/feedback.html?submission_id=…</div>
+        </div>
+        <div class="mockup-body mock-feedback">
+          <div class="mock-fb-tabs">
+            <div class="mock-fb-tab on">Holistic</div>
+            <div class="mock-fb-tab">Criteria</div>
+            <div class="mock-fb-tab">Inline annotations</div>
+            <div class="mock-fb-tab">Marked by your teacher</div>
+          </div>
+          <div class="mock-fb-priority">
+            <h5>Top priority</h5>
+            <p>You&rsquo;ve identified the right determinants &mdash; income, remoteness, cultural safety &mdash; but the response stays at the level of <em>description</em>. The directive is <em>analyse</em>. Push one of your examples (remoteness is your strongest) into a clear causal chain: which determinant causes which mechanism, and which specific health inequality results. NESA markers reward analytical depth here, not breadth.</p>
+          </div>
+          <div class="mock-fb-list">
+            <div class="mock-fb-item">
+              <div class="mock-fb-item-head">
+                <span class="mock-fb-item-cat improve">Improve</span>
+                <strong style="font-size: 11px;">Causal chains, not lists</strong>
+              </div>
+              <div class="mock-fb-item-quote">&ldquo;Income, education, housing, employment, and access to culturally safe healthcare are all upstream factors&hellip;&rdquo;</div>
+              <div class="mock-fb-item-body">Strong listing of determinants. Choose one and follow it through to a measurable outcome: e.g. lower income → delayed presentation → higher rates of preventable hospitalisation.</div>
+            </div>
+            <div class="mock-fb-item">
+              <div class="mock-fb-item-head">
+                <span class="mock-fb-item-cat praise">Praise</span>
+                <strong style="font-size: 11px;">Specific statistic, well-deployed</strong>
+              </div>
+              <div class="mock-fb-item-quote">&ldquo;Roughly 19% of Indigenous Australians live in remote or very remote areas&hellip;&rdquo;</div>
+              <div class="mock-fb-item-body">This kind of grounded figure is what HSC markers look for &mdash; use it to anchor your next analytical step, not just to set context.</div>
+            </div>
+            <div class="mock-fb-item">
+              <div class="mock-fb-item-head">
+                <span class="mock-fb-item-cat note">Note</span>
+                <strong style="font-size: 11px;">Cultural safety</strong>
+              </div>
+              <div class="mock-fb-item-body">You mention culturally safe healthcare once. The PDHPE syllabus expects this thread to recur in any analysis of Indigenous health inequalities &mdash; don&rsquo;t treat it as a single example.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">05</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 6 — Three pass architecture
+       ============================================================ -->
+  <section class="slide s-arch" data-slide="6"
+    data-notes="A glimpse under the hood for the technical people in the room. Three parallel Claude calls. Wall-clock time is the slowest one, not the sum of three — that matters because students don't tolerate 45-second waits. Pass 1 is load-bearing; passes 2 and 3 are best-effort.">
+    <div class="slide-tag">How it works</div>
+    <h2>Three Claude calls. One coherent response.</h2>
+    <p class="lede">Each draft fans out into three parallel passes. The slowest pass sets the wait time &mdash; not the sum of the three.</p>
+    <div class="three-up">
+      <div class="pass">
+        <div class="pass-num">1</div>
+        <h3>Holistic feedback</h3>
+        <p class="pass-detail">The load-bearing call. A subject-specific persona reads the full draft against the task verb, NESA glossary, verb-depth map, SOLO taxonomy, performance bands and common pitfalls.</p>
+        <div class="pass-output">→ top_priority<br>→ improvements[]<br>→ strengths[]<br>→ verb_check</div>
+      </div>
+      <div class="pass">
+        <div class="pass-num">2</div>
+        <h3>Criterion-by-criterion</h3>
+        <p class="pass-detail">Runs only if the task has a rubric. Returns a verdict and a single recommendation per criterion. Skipped silently when no criteria are set, so freeform tasks still work.</p>
+        <div class="pass-output">→ criterion[].verdict<br>→ criterion[].recommend</div>
+      </div>
+      <div class="pass">
+        <div class="pass-num">3</div>
+        <h3>Inline annotations</h3>
+        <p class="pass-detail">Returns short comments pinned to <em>verbatim</em> quotes from the draft. Every quote is validated server-side against the source &mdash; the model is told to mark up like a teacher&rsquo;s pen.</p>
+        <div class="pass-output">→ annotation[].quote<br>→ annotation[].category<br>→ annotation[].comment</div>
+      </div>
+    </div>
+    <div class="footnote">
+      <strong>Why it&rsquo;s fast:</strong> three calls fanned out via Promise.allSettled. Wall-clock = max(p1, p2, p3) ≈ 25&ndash;40 seconds, not the 90+ seconds a sequential chain would take. Students stay in flow; teachers don&rsquo;t field &ldquo;is it broken?&rdquo; questions.
+    </div>
+    <div class="slide-num">06</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 7 — Calibration moat
+       ============================================================ -->
+  <section class="slide s-moat" data-slide="7"
+    data-notes="This is the moat slide. Generic LLMs give generic feedback. We inject NESA-specific calibration material into every prompt — and we've curated it ourselves. NESA Notes from the Marking Centre 2021–2024 are scraped, indexed by subject, and pulled into the system prompt at runtime. This is what a teacher means by 'marker voice'. Without this, you get ChatGPT. With this, you get an HSC marker.">
+    <div class="slide-tag">The moat</div>
+    <h2>Generic LLM = generic feedback.<br>Calibrated LLM = marker-grade.</h2>
+    <div class="moat-layout">
+      <div class="ingredients">
+        <div class="ingr">NESA glossary<small>Directive verbs &amp; scope</small></div>
+        <div class="ingr">Performance bands<small>Stage 6 descriptors</small></div>
+        <div class="ingr">Verb-depth map<small>Identify → Analyse → Critically Evaluate</small></div>
+        <div class="ingr">SOLO taxonomy<small>Pre/Uni/Multi/Relational/Extended</small></div>
+        <div class="ingr">Common pitfalls<small>NESA-flagged failure modes</small></div>
+        <div class="ingr">Subject persona<small>13 KLAs, distinct voice</small></div>
+        <div class="ingr">Subject glossaries<small>Terminology banks per KLA</small></div>
+        <div class="ingr">Marker voice corpus<small>NESA Notes 2021&ndash;2024</small></div>
+      </div>
+      <div class="arrow-col">
+        <div class="arrow"></div>
+        <div class="output-card">
+          <h3>Pass-1 system prompt</h3>
+          <p>Every holistic feedback request is wrapped in this calibration material at runtime, tuned to the student&rsquo;s subject and the task&rsquo;s directive verb.</p>
+          <p>What comes back doesn&rsquo;t just <em>sound</em> like a marker. It uses the right vocabulary, attacks the right weaknesses, and gives the same kind of next-step a senior teacher would write in the margin.</p>
+          <span class="pill">Curated against NESA standards</span>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">07</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 8 — Guardrails
+       ============================================================ -->
+  <section class="slide s-rails" data-slide="8"
+    data-notes="These four guardrails are the difference between 'AI in the classroom' and 'AI that works in the classroom'. Each one was a deliberate choice. Walk through them — these answer the four objections you'll hear from any deputy principal.">
+    <div class="slide-tag">Hard guardrails</div>
+    <h2>Built to support learning. Not replace it.</h2>
+    <div class="rails-grid">
+      <div class="rail">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2 4 5v6c0 5 3.4 9.4 8 10.5 4.6-1.1 8-5.5 8-10.5V5l-8-3z"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <div class="rail-title">No marks. No band predictions. Ever.</div>
+          <div class="rail-body">Hard-coded in the prompt. The model refuses to estimate a mark even when explicitly asked. Assessment stays with the teacher, where it belongs.</div>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+        </div>
+        <div>
+          <div class="rail-title">No content rewriting.</div>
+          <div class="rail-body">Feedback says <em>what</em> to fix and <em>why</em>. Never <em>how</em>. The student writes the next sentence themselves &mdash; that&rsquo;s where the learning happens.</div>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="6" width="20" height="13" rx="2"/>
+            <line x1="6" y1="10" x2="6.01" y2="10"/>
+            <line x1="10" y1="10" x2="10.01" y2="10"/>
+            <line x1="14" y1="10" x2="14.01" y2="10"/>
+            <line x1="18" y1="10" x2="18.01" y2="10"/>
+            <line x1="7" y1="15" x2="17" y2="15"/>
+          </svg>
+        </div>
+        <div>
+          <div class="rail-title">Typed-only by default.</div>
+          <div class="rail-body">Paste blocked. Drop blocked. Keystroke and session telemetry stored with every draft. A teacher can prove what was typed, by whom, when.</div>
+        </div>
+      </div>
+      <div class="rail">
+        <div class="rail-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+            <polyline points="2 17 12 22 22 17"/>
+            <polyline points="2 12 12 17 22 12"/>
+          </svg>
+        </div>
+        <div>
+          <div class="rail-title">3 drafts per task, max.</div>
+          <div class="rail-body">Prevents AI-feedback dependency and caps cost. After draft 3, the next submission goes directly to the teacher &mdash; no more model feedback.</div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">08</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 9 — Teacher dashboard
+       ============================================================ -->
+  <section class="slide s-teacher" data-slide="9"
+    data-notes="The teacher experience. This is what a head of faculty sees when they log in. Note the join codes — schools without an LMS can use ProofReady today via codes. Schools on Canvas get students enrolled automatically via LTI. No teacher CSV uploads ever.">
+    <div class="slide-tag">What the teacher sees</div>
+    <h2>One dashboard. Every class. Every draft.</h2>
+    <div class="layout">
+      <div class="caption-col">
+        <p>Teachers create a task once, publish to a class, and ProofReady handles the rest. Roster sync via Canvas LTI is automatic; non-Canvas schools use 6-character join codes.</p>
+        <p>Live counters show which students have started, which have a draft pending review, and which have been marked. No spreadsheet juggling.</p>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot r"></div><div class="mockup-dot y"></div><div class="mockup-dot g"></div>
+          <div class="mockup-url">proofready.app/teacher.html</div>
+        </div>
+        <div class="mockup-body mock-teacher">
+          <div class="pr-nav" style="margin: -22px -22px 16px;">
+            <div class="pr-brand"><div class="pr-brand-dot"></div>ProofReady</div>
+            <div class="pr-nav-right">
+              <span class="pr-pill">Insights</span>
+              <span>Mr Sheahan</span>
+            </div>
+          </div>
+          <div class="mock-teacher-head">
+            <div>
+              <div class="mock-teacher-greeting">Good morning, Rob.</div>
+              <div class="mock-teacher-sub">3 classes · 14 drafts awaiting your review</div>
+            </div>
+            <button class="pr-btn-primary">+ New task</button>
+          </div>
+          <div class="mock-teacher-kpis">
+            <div class="mock-kpi">
+              <div class="mock-kpi-num">82</div>
+              <div class="mock-kpi-label">Students</div>
+            </div>
+            <div class="mock-kpi">
+              <div class="mock-kpi-num">11</div>
+              <div class="mock-kpi-label">Active tasks</div>
+            </div>
+            <div class="mock-kpi">
+              <div class="mock-kpi-num">14</div>
+              <div class="mock-kpi-label">To mark</div>
+            </div>
+            <div class="mock-kpi">
+              <div class="mock-kpi-num">312</div>
+              <div class="mock-kpi-label">Drafts this term</div>
+            </div>
+          </div>
+          <div class="mock-classes-head">
+            <div class="mock-classes-title">Your classes</div>
+            <a style="font-size: 11px; color: var(--orange-dark); text-decoration: none;">+ New class</a>
+          </div>
+          <div class="mock-classes">
+            <div class="mock-class-row">
+              <div>
+                <div class="mock-class-name">Year 12 PDHPE — Period 3</div>
+                <div class="mock-class-sub">28 students · PDHPE Stage 6</div>
+              </div>
+              <div class="mock-class-cell">Active task: <strong>Health Priorities</strong></div>
+              <div class="mock-class-cell">To mark: <strong>6</strong></div>
+              <div class="mock-class-code">7K2QFX</div>
+            </div>
+            <div class="mock-class-row">
+              <div>
+                <div class="mock-class-name">Year 11 PDHPE — Period 1</div>
+                <div class="mock-class-sub">31 students · PDHPE Stage 6 Preliminary</div>
+              </div>
+              <div class="mock-class-cell">Active task: <strong>Body in Motion</strong></div>
+              <div class="mock-class-cell">To mark: <strong>5</strong></div>
+              <div class="mock-class-code">M9PQ4B</div>
+            </div>
+            <div class="mock-class-row">
+              <div>
+                <div class="mock-class-name">Year 12 CAFS — Period 5</div>
+                <div class="mock-class-sub">23 students · Community &amp; Family Studies Stage 6</div>
+              </div>
+              <div class="mock-class-cell">Active task: <strong>Research Project</strong></div>
+              <div class="mock-class-cell">To mark: <strong>3</strong></div>
+              <div class="mock-class-code">RT88KJ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">09</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 10 — Marking
+       ============================================================ -->
+  <section class="slide s-mark" data-slide="10"
+    data-notes="Teacher marking. The two-column layout shows the student's draft on the left with the teacher's annotation tool. On the right, the rubric. Marks and comments push back to Canvas SpeedGrader automatically. The teacher never has to log into two places to mark.">
+    <div class="slide-tag">What the teacher sees · marking</div>
+    <h2>Mark in ProofReady.<br>Grades land in Canvas.</h2>
+    <div class="layout">
+      <div class="caption-col">
+        <p>Select any phrase to add a teacher annotation. Praise, improve, or note &mdash; colour-coded distinct from AI annotations so the student can tell the human commentary apart.</p>
+        <p>Enter marks against the rubric. The total updates live. When you save, AGS posts the mark + comment to Canvas SpeedGrader. No double entry.</p>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot r"></div><div class="mockup-dot y"></div><div class="mockup-dot g"></div>
+          <div class="mockup-url">proofready.app/mark-submission.html?submission_id=…</div>
+        </div>
+        <div class="mockup-body mock-mark">
+          <div class="mock-mark-head">
+            <div>
+              <div class="mock-mark-title">Health Priorities — Mia Tahir</div>
+              <div class="mock-mark-sub">Year 12 PDHPE · Draft 3 · 20 marks · Submitted Tue 14 May</div>
+            </div>
+            <button class="pr-btn-primary">Save &amp; push to Canvas</button>
+          </div>
+          <div class="mock-mark-grid">
+            <div class="mock-mark-draft">
+              Social determinants of health describe the conditions in which people are born, grow, live and age &mdash; and these conditions are <span class="annot praise">not distributed equally</span>. For Aboriginal and Torres Strait Islander peoples, the inequalities seen in life expectancy, infant mortality and chronic disease burden cannot be explained by individual choices alone. Income, education, housing, employment, and access to culturally safe healthcare are all upstream factors that shape health outcomes long before a person ever sees a clinician.
+              <br><br>
+              One clear example is the impact of <span class="annot">remoteness on access to primary care</span>. Roughly 19% of Indigenous Australians live in remote or very remote areas, where general practitioners and specialist services are scarce.
+              <div class="mock-mark-pop">
+                + Annotate &nbsp; · &nbsp; <span style="color: var(--orange-soft);">Praise</span> &nbsp; <span style="color: var(--orange-soft);">Improve</span> &nbsp; <span style="color: var(--orange-soft);">Note</span>
+              </div>
+            </div>
+            <div class="mock-mark-rubric">
+              <h5>Rubric — Health Priorities</h5>
+              <div class="mock-rubric-row">
+                <div class="mock-rubric-label">Identifies determinants</div>
+                <div class="mock-rubric-input">5 / 5</div>
+              </div>
+              <div class="mock-rubric-row">
+                <div class="mock-rubric-label">Analyses causal chains</div>
+                <div class="mock-rubric-input">3 / 5</div>
+              </div>
+              <div class="mock-rubric-row">
+                <div class="mock-rubric-label">Uses syllabus terminology</div>
+                <div class="mock-rubric-input">4 / 5</div>
+              </div>
+              <div class="mock-rubric-row">
+                <div class="mock-rubric-label">Structure &amp; clarity</div>
+                <div class="mock-rubric-input">4 / 5</div>
+              </div>
+              <div class="mock-rubric-total">
+                <strong>Total</strong>
+                <div class="val">16 / 20</div>
+              </div>
+              <div class="canvas-badge">● Will post to Canvas SpeedGrader on save</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">10</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 11 — Insights cohort
+       ============================================================ -->
+  <section class="slide s-insights" data-slide="11"
+    data-notes="Class insights. This is the cohort view a teacher sees for one of their classes. The cards are LLM-synthesised from every draft submitted by that class — they answer 'what does this class need from my next lesson?' The mark distribution is from teacher-entered marks, not AI estimates.">
+    <div class="slide-tag">Insights · cohort view</div>
+    <h2>What does this class need from your next lesson?</h2>
+    <div class="layout">
+      <div class="caption-col">
+        <p>Insights run against every draft and every mark in the class. The system synthesises recurring weaknesses, common strengths, and stretch goals &mdash; calibrated against NESA marker patterns.</p>
+        <ul style="list-style: none; padding: 0; margin-top: 12px;">
+          <li>Mark distribution from teacher-entered marks</li>
+          <li>Top 3 recurring mistakes across the cohort</li>
+          <li>Stretch goals modelled on top-quartile responses</li>
+          <li>Three things this class consistently does well</li>
+        </ul>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot r"></div><div class="mockup-dot y"></div><div class="mockup-dot g"></div>
+          <div class="mockup-url">proofready.app/insights.html?class_id=…</div>
+        </div>
+        <div class="mockup-body mock-insights">
+          <div class="mock-insights-head">
+            <div>
+              <div class="mock-insights-title">Year 12 PDHPE — Period 3</div>
+              <div class="mock-insights-scope">28 students · 4 tasks · 76 marked submissions</div>
+            </div>
+            <button class="pr-btn-ghost">Switch to school view →</button>
+          </div>
+          <div class="mock-insights-filters">
+            <div class="mock-filter on">This term</div>
+            <div class="mock-filter">All tasks</div>
+            <div class="mock-filter">PDHPE Stage 6</div>
+            <div class="mock-filter">Search a student…</div>
+          </div>
+          <div class="mock-cards" style="grid-template-columns: 1fr 1fr;">
+            <div class="mock-card">
+              <div class="mock-card-head">
+                <div class="mock-card-title">Mark distribution</div>
+                <div class="mock-card-tag">Term 2</div>
+              </div>
+              <div class="mock-bars" style="margin-top: 14px;">
+                <div class="mock-bar" style="height: 28%;"><span class="mock-bar-val">2</span><span class="mock-bar-label">E</span></div>
+                <div class="mock-bar" style="height: 44%;"><span class="mock-bar-val">5</span><span class="mock-bar-label">D</span></div>
+                <div class="mock-bar" style="height: 86%;"><span class="mock-bar-val">11</span><span class="mock-bar-label">C</span></div>
+                <div class="mock-bar" style="height: 64%;"><span class="mock-bar-val">8</span><span class="mock-bar-label">B</span></div>
+                <div class="mock-bar" style="height: 22%;"><span class="mock-bar-val">2</span><span class="mock-bar-label">A</span></div>
+              </div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-card-head">
+                <div class="mock-card-title">Top 3 mistakes</div>
+                <div class="mock-card-tag">LLM</div>
+              </div>
+              <div class="mock-card-body">
+                <div class="mock-list-item"><span class="num">1.</span><span>Listing determinants rather than analysing causal chains.</span></div>
+                <div class="mock-list-item"><span class="num">2.</span><span>Surface use of statistics without linking to the syllabus point.</span></div>
+                <div class="mock-list-item"><span class="num">3.</span><span>Cultural safety treated as a one-off rather than a recurring lens.</span></div>
+              </div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-card-head">
+                <div class="mock-card-title">3 things done well</div>
+                <div class="mock-card-tag">LLM</div>
+              </div>
+              <div class="mock-card-body">
+                <div class="mock-list-item"><span class="num">+</span><span>Strong use of contemporary Australian health statistics.</span></div>
+                <div class="mock-list-item"><span class="num">+</span><span>Clear topic sentences that signal the analytical move.</span></div>
+                <div class="mock-list-item"><span class="num">+</span><span>Comfort with the &ldquo;social model&rdquo; vocabulary.</span></div>
+              </div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-card-head">
+                <div class="mock-card-title">Stretch goals — top quartile</div>
+                <div class="mock-card-tag">LLM</div>
+              </div>
+              <div class="mock-card-body">
+                <div class="mock-list-item"><span class="num">→</span><span>Push from <em>analyse</em> to <em>critically evaluate</em> with counter-argument.</span></div>
+                <div class="mock-list-item"><span class="num">→</span><span>Layer two determinants in a single example for compound depth.</span></div>
+                <div class="mock-list-item"><span class="num">→</span><span>Bring in policy responses (Closing the Gap targets) as evaluation lens.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">11</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 12 — Insights individual student
+       ============================================================ -->
+  <section class="slide s-insights" data-slide="12"
+    data-notes="Individual student view. This is what you open before a parent meeting, or when you're writing a report comment. The hero summary card reads like a half-term narrative report — strengths, priorities, tone. Below it: that student's own mark distribution, their recurring mistakes, and stretch goals personalised to them.">
+    <div class="slide-tag">Insights · individual student</div>
+    <h2>Open one student. Two minutes to a report comment.</h2>
+    <div class="layout">
+      <div class="caption-col">
+        <p>Search the typeahead in the cohort view, pick a name, and the page reloads scoped to that student. Six personalised cards generated on demand.</p>
+        <ul style="list-style: none; padding: 0; margin-top: 12px;">
+          <li>4&ndash;6 sentence narrative summary</li>
+          <li>Strengths consistent across drafts</li>
+          <li>Recurring patterns in feedback</li>
+          <li>Stretch goals calibrated to where they are</li>
+        </ul>
+        <p style="margin-top: 18px; padding-left: 14px; border-left: 3px solid var(--orange); font-size: 14px;">Designed for parent meetings, report comments, and the conversation a senior teacher has with a head of faculty about a struggling student.</p>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot r"></div><div class="mockup-dot y"></div><div class="mockup-dot g"></div>
+          <div class="mockup-url">proofready.app/insights.html?student_id=…</div>
+        </div>
+        <div class="mockup-body mock-insights">
+          <div class="mock-insights-head">
+            <div>
+              <div class="mock-insights-title">Mia Tahir</div>
+              <div class="mock-insights-scope">Year 12 · PDHPE · 4 marked drafts</div>
+            </div>
+            <button class="pr-btn-ghost">← Back to class</button>
+          </div>
+          <div class="mock-hero">
+            <div class="mock-hero-name">Mia Tahir — half-term summary</div>
+            <div class="mock-hero-meta">Year 12 PDHPE · drafted Apr&ndash;May · 4 submissions</div>
+            <div class="mock-hero-body">
+              Mia&rsquo;s drafts show a confident grasp of PDHPE terminology and a developing instinct for statistical evidence. Her recurring difficulty is the analytical move &mdash; she consistently identifies determinants and contexts, but tends to stop short of the causal mechanism the syllabus asks for. Across four drafts the gap has narrowed: her most recent response shows a sustained chain of reasoning for one example. The next stretch is layering two determinants in the same analysis, and bringing in policy as an evaluative lens.
+            </div>
+            <div class="mock-hero-tags">
+              <span class="mock-hero-tag">Strength: terminology</span>
+              <span class="mock-hero-tag">Priority: causal depth</span>
+              <span class="mock-hero-tag">Tone: improving</span>
+            </div>
+          </div>
+          <div class="mock-cards" style="grid-template-columns: 1fr 1fr;">
+            <div class="mock-card">
+              <div class="mock-card-head">
+                <div class="mock-card-title">Her mark distribution</div>
+                <div class="mock-card-tag">4 tasks</div>
+              </div>
+              <div class="mock-bars" style="margin-top: 14px; height: 50px;">
+                <div class="mock-bar" style="height: 0%;"><span class="mock-bar-label">E</span></div>
+                <div class="mock-bar" style="height: 0%;"><span class="mock-bar-label">D</span></div>
+                <div class="mock-bar" style="height: 45%;"><span class="mock-bar-val">1</span><span class="mock-bar-label">C</span></div>
+                <div class="mock-bar" style="height: 80%;"><span class="mock-bar-val">2</span><span class="mock-bar-label">B</span></div>
+                <div class="mock-bar" style="height: 45%;"><span class="mock-bar-val">1</span><span class="mock-bar-label">A</span></div>
+              </div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-card-head">
+                <div class="mock-card-title">Recurring patterns</div>
+                <div class="mock-card-tag">LLM</div>
+              </div>
+              <div class="mock-card-body">
+                <div class="mock-list-item"><span class="num">1.</span><span>Strong topic sentences, weaker follow-through.</span></div>
+                <div class="mock-list-item"><span class="num">2.</span><span>Tends to describe rather than analyse the strongest example.</span></div>
+                <div class="mock-list-item"><span class="num">3.</span><span>Single-determinant explanations; rarely layers two.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">12</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 13 — Insights leader view
+       ============================================================ -->
+  <section class="slide s-insights" data-slide="13"
+    data-notes="Leadership view. This is the slide that closes leadership audiences. For the first time, a head of teaching and learning can see formative-assessment patterns across every faculty in real time. Compare PDHPE to English. See where marking turnaround is fastest. Spot calibration drift between faculties. Identify the school-wide weakness theme for the next professional learning day. Walk through each card.">
+    <div class="slide-tag">Insights · school-wide</div>
+    <h2>Every faculty. Every teacher. Every draft.<br>One picture.</h2>
+    <div class="layout">
+      <div class="caption-col">
+        <p>For the first time, leadership teams can see formative-assessment patterns across the whole school in real time &mdash; not just term-end results.</p>
+        <ul style="list-style: none; padding: 0; margin-top: 12px;">
+          <li>Faculty-by-faculty performance &amp; trend</li>
+          <li>Marking turnaround you can hold teachers to</li>
+          <li>Cross-school improvement velocity</li>
+          <li>School-wide weakness themes your PL days can target</li>
+        </ul>
+      </div>
+      <div class="mockup">
+        <div class="mockup-bar">
+          <div class="mockup-dot r"></div><div class="mockup-dot y"></div><div class="mockup-dot g"></div>
+          <div class="mockup-url">proofready.app/insights.html?school_id=…</div>
+        </div>
+        <div class="mockup-body mock-insights">
+          <div class="mock-insights-head">
+            <div>
+              <div class="mock-insights-title">Penrith Christian School &mdash; Term 2</div>
+              <div class="mock-insights-scope">9 teachers · 14 classes · 412 marked submissions · 1,284 drafts</div>
+            </div>
+            <button class="pr-btn-ghost">Export report</button>
+          </div>
+          <div class="mock-cards" style="grid-template-columns: 1fr 1fr 1fr;">
+            <div class="mock-card">
+              <div class="mock-card-head">
+                <div class="mock-card-title">Faculty performance</div>
+                <div class="mock-card-tag">Avg + trend</div>
+              </div>
+              <div style="margin-top: 6px;">
+                <div class="mock-perf-row"><span class="mock-perf-name">CAFS</span><span class="mock-perf-grade">A-</span><span class="mock-perf-trend up2">↑↑</span></div>
+                <div class="mock-perf-row"><span class="mock-perf-name">PDHPE</span><span class="mock-perf-grade">B+</span><span class="mock-perf-trend up">↑</span></div>
+                <div class="mock-perf-row"><span class="mock-perf-name">English</span><span class="mock-perf-grade">B+</span><span class="mock-perf-trend flat">→</span></div>
+                <div class="mock-perf-row"><span class="mock-perf-name">Legal Studies</span><span class="mock-perf-grade">B+</span><span class="mock-perf-trend flat">→</span></div>
+                <div class="mock-perf-row"><span class="mock-perf-name">Modern History</span><span class="mock-perf-grade">B</span><span class="mock-perf-trend flat">→</span></div>
+                <div class="mock-perf-row"><span class="mock-perf-name">Economics</span><span class="mock-perf-grade">B</span><span class="mock-perf-trend down">↓</span></div>
+              </div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-card-head">
+                <div class="mock-card-title">Marking turnaround</div>
+                <div class="mock-card-tag">Days to mark</div>
+              </div>
+              <div style="margin-top: 10px;">
+                <div class="mock-bar-row"><span class="mock-bar-lbl">CAFS</span><div class="mock-bar-track"><div class="mock-bar-fill" style="width: 32%;"></div></div><span class="mock-bar-num">1.9d</span></div>
+                <div class="mock-bar-row"><span class="mock-bar-lbl">PDHPE</span><div class="mock-bar-track"><div class="mock-bar-fill" style="width: 38%;"></div></div><span class="mock-bar-num">2.3d</span></div>
+                <div class="mock-bar-row"><span class="mock-bar-lbl">Legal</span><div class="mock-bar-track"><div class="mock-bar-fill" style="width: 47%;"></div></div><span class="mock-bar-num">2.8d</span></div>
+                <div class="mock-bar-row"><span class="mock-bar-lbl">English</span><div class="mock-bar-track"><div class="mock-bar-fill" style="width: 52%;"></div></div><span class="mock-bar-num">3.1d</span></div>
+                <div class="mock-bar-row"><span class="mock-bar-lbl">Modern Hist</span><div class="mock-bar-track"><div class="mock-bar-fill" style="width: 63%;"></div></div><span class="mock-bar-num">3.8d</span></div>
+                <div class="mock-bar-row"><span class="mock-bar-lbl">Economics</span><div class="mock-bar-track"><div class="mock-bar-fill" style="width: 70%;"></div></div><span class="mock-bar-num">4.2d</span></div>
+              </div>
+            </div>
+            <div class="mock-card">
+              <div class="mock-card-head">
+                <div class="mock-card-title">Improvement velocity</div>
+                <div class="mock-card-tag">Draft 1 → 3</div>
+              </div>
+              <div class="mock-velocity-hero">
+                <div class="num">73%</div>
+                <div class="sub">of students show measurable improvement between draft 1 and draft 3</div>
+              </div>
+              <div>
+                <div class="mock-perf-row"><span class="mock-perf-name">PDHPE</span><span class="mock-perf-grade">81%</span><span class="mock-perf-trend up">↑</span></div>
+                <div class="mock-perf-row"><span class="mock-perf-name">CAFS</span><span class="mock-perf-grade">78%</span><span class="mock-perf-trend up">↑</span></div>
+                <div class="mock-perf-row"><span class="mock-perf-name">English</span><span class="mock-perf-grade">76%</span><span class="mock-perf-trend up">↑</span></div>
+                <div class="mock-perf-row"><span class="mock-perf-name">Economics</span><span class="mock-perf-grade">62%</span><span class="mock-perf-trend flat">→</span></div>
+              </div>
+            </div>
+            <div class="mock-card" style="grid-column: 1 / -1;">
+              <div class="mock-card-head">
+                <div class="mock-card-title">Cross-faculty weakness themes &mdash; informing next PL day</div>
+                <div class="mock-card-tag">LLM</div>
+              </div>
+              <div class="mock-card-body">
+                <div class="mock-list-item"><span class="num">1.</span><span>Across PDHPE, English &amp; Legal: directive verb depth &mdash; describing where the task asks to analyse or critically evaluate.</span></div>
+                <div class="mock-list-item"><span class="num">2.</span><span>Across Economics &amp; Modern History: statistics deployed as decoration rather than evidence in causal arguments.</span></div>
+                <div class="mock-list-item"><span class="num">3.</span><span>School-wide: conclusion paragraphs that summarise rather than synthesise.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">13</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 14 — Canvas LTI
+       ============================================================ -->
+  <section class="slide s-canvas" data-slide="14"
+    data-notes="The Canvas integration is the make-or-break for any school already on an LMS. We support LTI 1.3 end-to-end — that's the modern standard. Teachers stay in Canvas. Students stay in Canvas. Grades land in SpeedGrader automatically. The PCS pilot is running on this now.">
+    <div class="slide-tag">Canvas LTI 1.3</div>
+    <h2>Teachers stay in Canvas.<br>Students stay in Canvas.</h2>
+    <p class="lede">A full LTI 1.3 integration &mdash; OIDC, deep linking, NRPS roster sync, AGS grade passback. No CSV uploads. No separate logins.</p>
+    <div class="canvas-row">
+      <div class="cnv-card">
+        <div class="step-num">1</div>
+        <div class="cnv-icon">
+          <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9.5" cy="14" r="4.5"/>
+            <path d="M14 14h11"/>
+            <path d="M21 14v3.5"/>
+            <path d="M25 14v2"/>
+          </svg>
+        </div>
+        <h3>Single sign-on</h3>
+        <p>Teachers click ProofReady from inside Canvas. We authenticate via Canvas&rsquo;s OIDC. Zero passwords.</p>
+      </div>
+      <div class="cnv-card">
+        <div class="step-num">2</div>
+        <div class="cnv-icon">
+          <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 22v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="10" cy="9" r="3.5"/>
+            <path d="M24 22v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M17 5.13a3.5 3.5 0 0 1 0 6.77"/>
+          </svg>
+        </div>
+        <h3>Roster sync</h3>
+        <p>NRPS pulls the entire course roster into ProofReady on first launch. Students auto-enrol.</p>
+      </div>
+      <div class="cnv-card">
+        <div class="step-num">3</div>
+        <div class="cnv-icon">
+          <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 17a4 4 0 0 0 5.66 0l4-4a4 4 0 0 0-5.66-5.66l-1 1"/>
+            <path d="M17 11a4 4 0 0 0-5.66 0l-4 4a4 4 0 0 0 5.66 5.66l1-1"/>
+          </svg>
+        </div>
+        <h3>Deep linking</h3>
+        <p>Teachers add ProofReady tasks to a Canvas assignment via the standard external-tool picker.</p>
+      </div>
+      <div class="cnv-card">
+        <div class="step-num">4</div>
+        <div class="cnv-icon">
+          <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 18v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/>
+            <polyline points="18 9 14 5 10 9"/>
+            <line x1="14" y1="5" x2="14" y2="17"/>
+          </svg>
+        </div>
+        <h3>Grade passback</h3>
+        <p>Marks &amp; comments post back to Canvas SpeedGrader as soon as the teacher saves.</p>
+      </div>
+    </div>
+    <div class="slide-num">14</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 15 — Privacy & integrity
+       ============================================================ -->
+  <section class="slide s-privacy" data-slide="15"
+    data-notes="The privacy and integrity slide. This is where deputy principals lean in. Australian-hosted data, no model training on student work, encrypted in transit and at rest. Teachers control retention. Built by a NSW teacher who shares your obligations under the NSW Privacy and Personal Information Protection Act.">
+    <div class="slide-tag">Privacy &amp; integrity</div>
+    <h2>Privacy and integrity, by design.</h2>
+    <div class="principles">
+      <div class="pr-pill-card">
+        <div class="ic">
+          <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="20" height="7" rx="2"/>
+            <rect x="4" y="17" width="20" height="7" rx="2"/>
+            <line x1="8" y1="7.5" x2="8" y2="7.5"/>
+            <line x1="8" y1="20.5" x2="8" y2="20.5"/>
+            <line x1="12" y1="7.5" x2="20" y2="7.5"/>
+            <line x1="12" y1="20.5" x2="20" y2="20.5"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Sydney-hosted data</h3>
+          <p>Supabase Australia region. Student drafts, feedback, marks &mdash; all stored on Australian soil. Encrypted in transit and at rest.</p>
+        </div>
+      </div>
+      <div class="pr-pill-card">
+        <div class="ic">
+          <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 3 5 7v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V7l-9-4z"/>
+            <path d="M10 14l3 3 5-6"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Never used to train models</h3>
+          <p>Anthropic&rsquo;s API ToS forbid training on customer data. Your students&rsquo; words don&rsquo;t become someone else&rsquo;s model.</p>
+        </div>
+      </div>
+      <div class="pr-pill-card">
+        <div class="ic">
+          <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="13" width="16" height="11" rx="2"/>
+            <path d="M9 13V9a5 5 0 0 1 10 0v4"/>
+            <circle cx="14" cy="18" r="1.4" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <div>
+          <h3>School-controlled retention</h3>
+          <p>Delete a class, remove a student&rsquo;s work, archive a term. Standard controls. We don&rsquo;t hold what your school doesn&rsquo;t need us to.</p>
+        </div>
+      </div>
+      <div class="pr-pill-card">
+        <div class="ic">
+          <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 4H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-4-4z"/>
+            <polyline points="10 15 13 18 18 12"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Aligned with NSW obligations</h3>
+          <p>Designed in step with PPIPA, the NSW Department&rsquo;s AI guidance for schools, and NESA assessment integrity principles.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-num">15</div>
+  </section>
+
+  <!-- ============================================================
+       SLIDE 16 — Pilot & next steps
+       ============================================================ -->
+  <section class="slide s-pilot" data-slide="16"
+    data-notes="The close. Three things to land: (1) you're not the first — PCS is running this live. (2) Pilot is free for 90 days, no card on file. (3) The calibration data is open — we share what feeds the marker voice with pilot schools. Then pause. Let them ask questions.">
+    <div class="slide-tag">Next steps</div>
+    <h1>Let&rsquo;s pilot ProofReady at your school.</h1>
+    <p class="lede">A 90-day evaluation with one faculty, fully supported. No card on file. Calibration data shared with you.</p>
+    <div class="pilot-row">
+      <div class="pilot-card">
+        <h3>One faculty, one term</h3>
+        <p>Start with a single faculty &mdash; usually English or PDHPE. Run it for 10&ndash;12 weeks. Evaluate against your own marker calibration.</p>
+      </div>
+      <div class="pilot-card">
+        <h3>Full Canvas integration</h3>
+        <p>We&rsquo;ll work with your IT contact to register the LTI 1.3 developer key. Same setup as PCS &mdash; we have the runbook.</p>
+      </div>
+      <div class="pilot-card">
+        <h3>Free during the pilot</h3>
+        <p>No card on file. Pricing only discussed after week 8, with concrete usage data. You can stop at any time, no obligation.</p>
+      </div>
+    </div>
+    <div class="cta">
+      <div>
+        <h3>Want to talk specifics?</h3>
+        <p>rob@proofready.app · proofready.app</p>
+      </div>
+      <div class="cta-pill">Let&rsquo;s pilot this</div>
+    </div>
+    <div class="slide-num">16</div>
+  </section>
+
+</div>
+
+<button class="nav-arrow prev" onclick="go(-1)">‹</button>
+<button class="nav-arrow next" onclick="go(1)">›</button>
+
+<div class="notes-panel" id="notes">
+  <h4>Speaker notes</h4>
+  <p id="notes-body"></p>
+</div>
+
+<div class="deck-chrome">
+  <div class="help">← → arrow keys · N for speaker notes · F for fullscreen · P for print</div>
+  <div id="counter">1 / 16</div>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const counter = document.getElementById('counter');
+  const notes = document.getElementById('notes');
+  const notesBody = document.getElementById('notes-body');
+  let i = 0;
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    counter.textContent = (i + 1) + ' / ' + slides.length;
+    notesBody.textContent = slides[i].dataset.notes || '';
+    history.replaceState(null, '', '#' + (i + 1));
+  }
+  function go(d) { show(i + d); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') { show(0); }
+    else if (e.key === 'End') { show(slides.length - 1); }
+    else if (e.key.toLowerCase() === 'n') { notes.classList.toggle('visible'); }
+    else if (e.key.toLowerCase() === 'f') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+    else if (e.key.toLowerCase() === 'p') { window.print(); }
+    else if (/^[0-9]$/.test(e.key)) { show(parseInt(e.key, 10) - 1); }
+  });
+
+  // Deep-link via hash
+  const initial = parseInt(window.location.hash.slice(1), 10);
+  if (!isNaN(initial) && initial >= 1) show(initial - 1);
+  else show(0);
+</script>
+
+</body>
+</html>

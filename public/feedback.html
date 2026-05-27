@@ -852,12 +852,23 @@
       }
       html += '</div>';
 
-      // Per-criterion breakdown via renderRubric in graded mode
+      // Per-criterion breakdown via renderRubric in graded mode.
+      // Guarded — if /js/rubric.js failed to load (extension blockers etc.)
+      // we fall back to a plain criterion-marks table rather than crashing
+      // the whole teacher view.
       const structured = task.criteria_structured || null;
       const marks = grade.criterion_marks || null;
       if (structured && marks) {
         html += '<div class="teacher-section-title">Criterion breakdown</div>';
-        html += renderRubric(task.criteria_text, e, structured, { mode: 'graded', marks: marks });
+        if (typeof renderRubric === 'function') {
+          html += renderRubric(task.criteria_text, e, structured, { mode: 'graded', marks: marks });
+        } else {
+          html += '<div class="teacher-comment-block">';
+          Object.entries(marks).forEach(([k, v]) => {
+            html += '<div style="padding:4px 0;display:flex;justify-content:space-between"><span>' + e(k) + '</span><strong>' + e(String(v)) + '</strong></div>';
+          });
+          html += '</div>';
+        }
       }
 
       // Teacher comment

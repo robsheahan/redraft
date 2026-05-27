@@ -54,7 +54,23 @@ async function authFetch(url, options = {}) {
   const token = await getAccessToken();
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (token) headers['Authorization'] = 'Bearer ' + token;
-  return fetch(apiUrl(url), { ...options, headers });
+  const init = { ...options, headers };
+  const resolved = apiUrl(url);
+  try {
+    return await fetch(resolved, init);
+  } catch (err) {
+    // Safari/iOS surfaces transient mobile-network failures as
+    // `TypeError: Load failed` (Chrome: `TypeError: Failed to fetch`).
+    // For idempotent methods, one retry with a tiny backoff swallows
+    // most signal blips. Non-idempotent methods propagate immediately
+    // so we never risk a duplicate POST/PUT/DELETE.
+    const method = (init.method || 'GET').toUpperCase();
+    const isIdempotent = method === 'GET' || method === 'HEAD';
+    const isNetworkError = err instanceof TypeError;
+    if (!isIdempotent || !isNetworkError) throw err;
+    await new Promise(r => setTimeout(r, 600));
+    return await fetch(resolved, init);
+  }
 }
 
 async function requireAuth(expectedRole) {
