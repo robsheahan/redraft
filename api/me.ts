@@ -93,7 +93,7 @@ async function returnResults(_req: VercelRequest, res: VercelResponse, userId: s
 
   const { data: tasks, error: tasksErr } = await supabase
     .from('tasks')
-    .select('id, class_id, title, question, course, total_marks, due_date, published_at, criteria_structured, criteria_text')
+    .select('id, class_id, title, question, course, total_marks, due_date, published_at, criteria_structured, criteria_text, hide_criteria_from_students')
     .in('class_id', classIds)
     .not('published_at', 'is', null)
     .order('due_date', { ascending: true });
@@ -125,9 +125,17 @@ async function returnResults(_req: VercelRequest, res: VercelResponse, userId: s
   const tasksByClass: Record<string, any[]> = {};
   (tasks || []).forEach(t => {
     if (!tasksByClass[t.class_id]) tasksByClass[t.class_id] = [];
+    const sub = submissionsByTask[t.id] || null;
+    // hide_criteria_from_students: strip rubric until the student's own
+    // submission has been graded. Once graded, rubric reveals so the
+    // per-criterion mark breakdown on feedback.html has something to render.
+    const hideRubric = !!t.hide_criteria_from_students && !(sub && sub.graded_at);
+    const taskOut = hideRubric
+      ? { ...t, criteria_text: null, criteria_structured: null }
+      : t;
     tasksByClass[t.class_id].push({
-      ...t,
-      submission: submissionsByTask[t.id] || null,
+      ...taskOut,
+      submission: sub,
     });
   });
 

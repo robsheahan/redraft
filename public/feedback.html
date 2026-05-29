@@ -757,7 +757,14 @@
       // switches when the source rubric was band-style — in that case the
       // model returned synthesised quality dimensions rather than named
       // criteria, so "by marking criterion" reads oddly.
-      if (fb.criteria_feedback && Array.isArray(fb.criteria_feedback) && fb.criteria_feedback.length) {
+      //
+      // hide_criteria_from_students: suppress this section until the
+      // teacher has graded the submission. Covers two cases:
+      //   (a) flag set before submission — Pass 2 was skipped, criteria_feedback is null.
+      //   (b) flag toggled on after a draft already has criteria_feedback persisted —
+      //       we hide the historical content too, until graded.
+      var _hideCritFb = !!task.hide_criteria_from_students && !teacherGrade;
+      if (!_hideCritFb && fb.criteria_feedback && Array.isArray(fb.criteria_feedback) && fb.criteria_feedback.length) {
         var criteriaHeading = fb.is_band_rubric
           ? 'Feedback by quality dimension'
           : 'Feedback by marking criterion';

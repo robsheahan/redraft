@@ -236,10 +236,16 @@
       const t = currentTask;
       document.title = (t.title || 'Task') + ' — ProofReady';
       const questionText = t.question || '';
-      const criteriaText = t.criteria_text
-        || (t.criteria && t.criteria.length > 0
-          ? t.criteria.map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n')
-          : null);
+      // hide_criteria_from_students: skip the rubric block entirely. The API
+      // also strips criteria_text + criteria_structured from the student
+      // payload until graded, so this is belt-and-braces.
+      const hideRubric = !!t.hide_criteria_from_students;
+      const criteriaText = hideRubric
+        ? null
+        : (t.criteria_text
+          || (t.criteria && t.criteria.length > 0
+            ? t.criteria.map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n')
+            : null));
 
       let html = '';
       html += '<h1>' + e(t.title || t.question || 'Task') + '</h1>';
@@ -409,6 +415,11 @@
           maxDrafts: MAX_DRAFTS,
         }
       }));
+      // hide_criteria_from_students: don't seed rubric fields into
+      // sessionStorage either — feedback.html refetches the task and the API
+      // gates criteria until graded, but stripping here means a non-graded
+      // first render can't show the rubric via cached state.
+      var _hideRubricSS = !!currentTask.hide_criteria_from_students;
       sessionStorage.setItem('proofready_task', JSON.stringify({
         task_id: currentTask.id,
         title: currentTask.title,
@@ -416,8 +427,9 @@
         course: currentTask.course,
         total_marks: currentTask.total_marks || null,
         due_date: currentTask.due_date || null,
-        criteria_text: currentTask.criteria_text || null,
-        criteria_structured: currentTask.criteria_structured || null,
+        criteria_text: _hideRubricSS ? null : (currentTask.criteria_text || null),
+        criteria_structured: _hideRubricSS ? null : (currentTask.criteria_structured || null),
+        hide_criteria_from_students: _hideRubricSS,
         teacher_name: currentTask.class ? currentTask.class.teacher_name : null,
         class_name: currentTask.class ? currentTask.class.name : null,
       }));
@@ -774,6 +786,7 @@
         }
 
         sessionStorage.setItem('proofready_feedback', JSON.stringify(data));
+        var _hideRubricSS2 = !!currentTask.hide_criteria_from_students;
         sessionStorage.setItem('proofready_task', JSON.stringify({
           task_id: currentTask.id,
           title: currentTask.title,
@@ -781,8 +794,9 @@
           course: currentTask.course,
           total_marks: currentTask.total_marks || null,
           due_date: currentTask.due_date || null,
-          criteria_text: currentTask.criteria_text || null,
-          criteria_structured: currentTask.criteria_structured || null,
+          criteria_text: _hideRubricSS2 ? null : (currentTask.criteria_text || null),
+          criteria_structured: _hideRubricSS2 ? null : (currentTask.criteria_structured || null),
+          hide_criteria_from_students: _hideRubricSS2,
           teacher_name: currentTask.class ? currentTask.class.teacher_name : null,
           class_name: currentTask.class ? currentTask.class.name : null,
         }));

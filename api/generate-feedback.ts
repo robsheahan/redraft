@@ -277,7 +277,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Pass 2 prompt (independent — doesn't depend on Pass 1). Runs for both
     // band-style and per-criterion rubrics; the system prompt switches on
     // isBandRubric (see buildCriteriaCheckPrompt above).
-    const hasCriteria = !!(rawCriteriaText && rawCriteriaText.trim()) || mappedCriteria.length > 0;
+    // hide_criteria_from_students: skip Pass 2 entirely. The student should
+    // never see criterion-by-criterion AI feedback when the teacher has
+    // chosen exam-style mode. The rubric + per-criterion teacher marks
+    // reveal post-grading via feedback.html's teacher tab.
+    const hideCriteriaFromStudent = !!(resolvedTask && (resolvedTask as any).hide_criteria_from_students);
+    const hasCriteria = !hideCriteriaFromStudent && (!!(rawCriteriaText && rawCriteriaText.trim()) || mappedCriteria.length > 0);
     const criteriaBlock: string = (criteriaTextForModel && criteriaTextForModel.trim())
       || (mappedCriteria.length > 0
           ? mappedCriteria.map((c, i) => `${i + 1}. ${c.name} (${c.maxMarks} marks): ${c.description}`).join('\n')

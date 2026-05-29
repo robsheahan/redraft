@@ -494,6 +494,15 @@ Criteria 2: Use of relevant examples and evidence (3-5 marks)
 Criteria 3: Analysis and critical thinking (2-4 marks)
 Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         </div>
+        <div class="form-group">
+          <div class="toggle-card" id="hideCriteriaCard">
+            <input type="checkbox" id="hideCriteriaToggle">
+            <div class="toggle-body">
+              <label for="hideCriteriaToggle">Hide criteria from students (exam-style)</label>
+              <div class="toggle-sub">Students won't see the rubric while writing, and the AI won't return criterion-by-criterion feedback. The rubric and your per-criterion marks reveal once you've graded their submission. Off by default.</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Step 4: Optional -->
@@ -680,6 +689,8 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         : null;
       const notes = (notesTextarea && notesTextarea.value) || null;
       const typed_response_only = document.getElementById('typedOnlyToggle').checked;
+      const hideCriteriaEl = document.getElementById('hideCriteriaToggle');
+      const hide_criteria_from_students = !!(hideCriteriaEl && hideCriteriaEl.checked);
 
       try {
         const res = await authFetch('/api/task', {
@@ -687,6 +698,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
           body: JSON.stringify({
             class_id: currentClassId, course, title, question, total_marks, due_date,
             outcomes, criteria_text, notes, publish: !!publish, typed_response_only,
+            hide_criteria_from_students,
             task_mode, completion_only,
           }),
         });

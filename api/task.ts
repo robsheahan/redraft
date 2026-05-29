@@ -83,6 +83,25 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
   const payload: any = { ...task };
   if (!isOwner) delete payload.notes;
 
+  // hide_criteria_from_students: strip criteria fields from the student view
+  // until the teacher has graded their submission for this task. Once graded,
+  // the rubric reveals alongside the per-criterion mark breakdown.
+  if (!isOwner && task.hide_criteria_from_students) {
+    const { data: gradedSub } = await supabase
+      .from('submissions')
+      .select('id')
+      .eq('task_id', id)
+      .eq('student_id', user.id)
+      .not('graded_at', 'is', null)
+      .limit(1)
+      .maybeSingle();
+    if (!gradedSub) {
+      payload.criteria_text = null;
+      payload.criteria_structured = null;
+      payload.criteria = [];
+    }
+  }
+
   return res.status(200).json({
     task: payload,
     class: { id: cls.id, name: cls.name, course: cls.course },
@@ -98,7 +117,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
   const {
     class_id, course, title, question, task_type, total_marks, due_date,
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
-    completion_only,
+    hide_criteria_from_students, completion_only,
   } = req.body || {};
 
   if (!class_id) return res.status(400).json({ error: 'class_id is required — tasks must belong to a class.' });
@@ -144,6 +163,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     notes: notes || null,
     published_at: publish ? new Date().toISOString() : null,
     typed_response_only: typeof typed_response_only === 'boolean' ? typed_response_only : true,
+    hide_criteria_from_students: typeof hide_criteria_from_students === 'boolean' ? hide_criteria_from_students : false,
     completion_only: resolvedCompletionOnly,
   }).select('*').single();
 
@@ -158,6 +178,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   const {
     id, course, title, question, task_type, total_marks, due_date,
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
+    hide_criteria_from_students,
     task_mode: incomingTaskMode, completion_only,
   } = req.body || {};
   if (!id) return res.status(400).json({ error: 'Task id is required.' });
@@ -181,6 +202,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     criteria_text: criteria_text ?? undefined,
     notes: notes ?? undefined,
     typed_response_only: typeof typed_response_only === 'boolean' ? typed_response_only : undefined,
+    hide_criteria_from_students: typeof hide_criteria_from_students === 'boolean' ? hide_criteria_from_students : undefined,
   };
   Object.keys(patch).forEach(k => patch[k] === undefined && delete patch[k]);
 
