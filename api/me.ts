@@ -93,7 +93,7 @@ async function returnResults(_req: VercelRequest, res: VercelResponse, userId: s
 
   const { data: tasks, error: tasksErr } = await supabase
     .from('tasks')
-    .select('id, class_id, title, question, course, total_marks, due_date, published_at, criteria_structured, criteria_text, hide_criteria_from_students')
+    .select('id, class_id, title, question, course, total_marks, due_date, published_at, criteria_structured, criteria_text, hide_criteria_from_students, subject_type, marking_guideline')
     .in('class_id', classIds)
     .not('published_at', 'is', null)
     .order('due_date', { ascending: true });
@@ -126,12 +126,19 @@ async function returnResults(_req: VercelRequest, res: VercelResponse, userId: s
   (tasks || []).forEach(t => {
     if (!tasksByClass[t.class_id]) tasksByClass[t.class_id] = [];
     const sub = submissionsByTask[t.id] || null;
-    // hide_criteria_from_students: strip rubric until the student's own
-    // submission has been graded. Once graded, rubric reveals so the
-    // per-criterion mark breakdown on feedback.html has something to render.
-    const hideRubric = !!t.hide_criteria_from_students && !(sub && sub.graded_at);
-    const taskOut = hideRubric
-      ? { ...t, criteria_text: null, criteria_structured: null }
+    const isGraded = !!(sub && sub.graded_at);
+    // Strip rubric / marking guideline until the student's own submission
+    // has been graded. Once graded, both reveal so the post-grading view
+    // can render per-criterion breakdown (essays) or marking guideline (maths).
+    const hideEssayRubric = !!t.hide_criteria_from_students && !isGraded;
+    const hideMathsGuideline = t.subject_type === 'maths' && !isGraded;
+    const taskOut = (hideEssayRubric || hideMathsGuideline)
+      ? {
+          ...t,
+          criteria_text: hideEssayRubric ? null : t.criteria_text,
+          criteria_structured: hideEssayRubric ? null : t.criteria_structured,
+          marking_guideline: hideMathsGuideline ? null : t.marking_guideline,
+        }
       : t;
     tasksByClass[t.class_id].push({
       ...taskOut,

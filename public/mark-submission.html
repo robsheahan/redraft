@@ -263,6 +263,12 @@
         task.class = taskData.class || null;
         document.getElementById('backLink').href = 'task-detail.html?id=' + encodeURIComponent(task.id);
 
+        // Maths submissions go through the per-line marking surface.
+        if (task.subject_type === 'maths') {
+          window.location.href = 'mark-submission-maths.html?task_id=' + encodeURIComponent(taskId) + '&submission_id=' + encodeURIComponent(submissionId);
+          return;
+        }
+
         if (!tsRes.ok) { container.innerHTML = '<div class="error">Could not load submissions for this task.</div>'; return; }
         const tsData = await tsRes.json();
         const row = (tsData.submissions || []).find(s => s.id === submissionId);

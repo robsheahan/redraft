@@ -73,6 +73,42 @@
     }
     .step-gap-icon { flex-shrink: 0; font-weight: 800; }
 
+    /* Teacher-graded hero + teacher annotations */
+    .teacher-hero {
+      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      color: #fff;
+      border: none;
+      box-shadow: 0 4px 16px rgba(29,78,216,0.25);
+    }
+    .teacher-hero .hero-label { font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; opacity: 0.9; margin-bottom: 8px; }
+    .teacher-hero .hero-grade { margin-bottom: 12px; }
+    .teacher-hero .hero-total { font-size: 44px; font-weight: 800; letter-spacing: -1px; }
+    .teacher-hero .hero-max { font-size: 18px; font-weight: 600; opacity: 0.85; margin-left: 4px; }
+    .teacher-hero .hero-comment { font-size: 15px; line-height: 1.6; padding: 14px 16px; background: rgba(255,255,255,0.12); border-radius: 10px; }
+
+    .guideline-section .section-title { color: #6b7280; }
+    .guideline-block { padding: 14px 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 14px; line-height: 1.7; white-space: pre-wrap; color: #374151; }
+
+    .annot.teacher {
+      background: #eff6ff;
+      color: #1e3a8a;
+      border-left: 3px solid #1d4ed8;
+      margin-top: 6px;
+    }
+    .annot-cat {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      padding: 2px 8px;
+      border-radius: 100px;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    .annot-cat--praise { background: #d1fae5; color: #065f46; }
+    .annot-cat--improve { background: #fee2e2; color: #991b1b; }
+    .annot-cat--note { background: #dbeafe; color: #1e3a8a; }
+
     .footer { margin-top: 18px; padding: 16px; text-align: center; font-size: 13px; color: #9ca3af; }
     .empty-state { background: #fff; border-radius: 12px; padding: 40px; text-align: center; color: #6b7280; }
     .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
@@ -113,7 +149,35 @@
       if (fbRaw) {
         const parsed = JSON.parse(fbRaw);
         const task = taskRaw ? JSON.parse(taskRaw) : {};
-        render(parsed.feedback, parsed.working_lines || [], task, parsed.meta);
+        // Submit path → fresh feedback, never graded yet. If the task has
+        // since been graded (e.g. the student opens this from a stored
+        // sessionStorage long after submitting), pull the latest grade via
+        // the task-drafts resource so the marked tab + reveal show up.
+        let grade = null;
+        const tid = task.task_id || parsed.meta?.task_id;
+        if (tid) {
+          try {
+            const dr = await authFetch('/api/me?resource=task-drafts&task_id=' + encodeURIComponent(tid));
+            if (dr.ok) {
+              const dd = await dr.json();
+              const drafts = Array.isArray(dd.drafts) ? dd.drafts : [];
+              const graded = drafts.find(d => d.graded_at);
+              if (graded) grade = graded;
+            }
+          } catch {}
+          // If we have a graded reveal, re-fetch the task to pick up the
+          // newly-revealed marking_guideline.
+          if (grade) {
+            try {
+              const tr = await authFetch('/api/task?id=' + encodeURIComponent(tid));
+              if (tr.ok) {
+                const td = await tr.json();
+                if (td.task) Object.assign(task, td.task, { class: td.class || task.class });
+              }
+            } catch {}
+          }
+        }
+        render(parsed.feedback, parsed.working_lines || [], task, parsed.meta, grade);
         return;
       }
       if (urlTaskId) {
@@ -128,7 +192,9 @@
           const dData = await draftsRes.json().catch(() => ({}));
           if (!tData.task) { container.innerHTML = '<div class="empty-state">Task not found.</div>'; return; }
           const drafts = Array.isArray(dData.drafts) ? dData.drafts : [];
-          const latest = drafts[drafts.length - 1];
+          // Prefer a graded draft if any exist; otherwise show the latest.
+          const graded = drafts.find(d => d.graded_at) || null;
+          const latest = graded || drafts[drafts.length - 1];
           if (!latest || !latest.feedback || latest.feedback.kind !== 'maths') {
             container.innerHTML = '<div class="empty-state">No maths feedback to show for this task yet.</div>';
             return;
@@ -136,7 +202,7 @@
           const task = { ...tData.task, class: tData.class || null };
           render(latest.feedback, latest.working_lines || [], task, {
             question: task.question, course: task.course, title: task.title, task_id: task.id, draftVersion: latest.draft_version,
-          });
+          }, graded);
         } catch (err) {
           container.innerHTML = '<div class="empty-state">Could not load feedback. <br><small>' + e(err.message) + '</small></div>';
         }
@@ -145,12 +211,14 @@
       container.innerHTML = '<div class="empty-state"><h2>No feedback to show</h2><p>Submit a draft first.</p><a href="student.html">Go back</a></div>';
     })();
 
-    function render(fb, lines, task, meta) {
+    function render(fb, lines, task, meta, grade) {
       task = task || {};
       meta = meta || {};
+      grade = grade || null;
       const title = task.title || meta.title || 'Maths feedback';
       const courseName = task.course || meta.course || null;
       const teacherName = task.teacher_name || (task.class && task.class.teacher_name) || null;
+      const totalMax = task.total_marks ?? null;
 
       let html = '<div class="header">';
       html += '<h1>' + e(title) + (teacherName ? ' <span class="task-teacher">— ' + e(teacherName) + '</span>' : '') + '</h1>';
@@ -158,6 +226,27 @@
       const question = task.question || meta.question || '';
       if (question) html += '<div class="task-question" id="taskQuestion">' + e(question) + '</div>';
       html += '</div>';
+
+      // Marked-by-teacher hero — only when there's a grade.
+      if (grade) {
+        const total = grade.total_mark != null ? grade.total_mark : '—';
+        const max = totalMax != null ? totalMax : '—';
+        html += '<div class="section teacher-hero">';
+        html += '<div class="hero-label">Marked by your teacher</div>';
+        html += '<div class="hero-grade"><span class="hero-total">' + e(String(total)) + '</span><span class="hero-max"> / ' + e(String(max)) + ' marks</span></div>';
+        if (grade.teacher_comment && grade.teacher_comment.trim()) {
+          html += '<div class="hero-comment">' + e(grade.teacher_comment) + '</div>';
+        }
+        html += '</div>';
+
+        // Marking guideline now revealed post-grading.
+        if (task.marking_guideline && task.marking_guideline.trim()) {
+          html += '<div class="section guideline-section">';
+          html += '<div class="section-title">Marking guideline</div>';
+          html += '<div class="guideline-block">' + e(task.marking_guideline) + '</div>';
+          html += '</div>';
+        }
+      }
 
       // What you've done well
       const well = Array.isArray(fb.what_youve_done_well) ? fb.what_youve_done_well : [];
@@ -198,6 +287,14 @@
         if (!gapsAfter[g.after_line_index]) gapsAfter[g.after_line_index] = [];
         gapsAfter[g.after_line_index].push(g);
       });
+      // Teacher annotations (when graded) — overlaid by line_index.
+      const teacherByLine = {};
+      const teacherAnnotsRaw = (grade && Array.isArray(grade.teacher_annotations)) ? grade.teacher_annotations : [];
+      teacherAnnotsRaw.forEach(t => {
+        if (!t || typeof t.line_index !== 'number') return;
+        if (!teacherByLine[t.line_index]) teacherByLine[t.line_index] = [];
+        teacherByLine[t.line_index].push(t);
+      });
 
       // Step gap before line 0
       (gapsAfter[-1] || []).forEach(g => {
@@ -206,13 +303,17 @@
 
       lines.forEach((line, i) => {
         const a = annotByLine[i];
+        const tAnns = teacherByLine[i] || [];
         html += '<div class="line-row">';
         html += '<div class="line-left">';
         html += '<div class="line-label">Line ' + (i + 1) + '</div>';
         html += '<div class="line-math" data-math="' + e(line.math || '') + '">' + renderLatex(line.math || '') + '</div>';
         if (line.reason) html += '<div class="line-reason">' + e(line.reason) + '</div>';
         html += '</div>';
-        html += '<div class="line-right">' + renderAnnotation(a) + '</div>';
+        html += '<div class="line-right">';
+        html += renderAnnotation(a);
+        tAnns.forEach(t => { html += renderTeacherAnnot(t); });
+        html += '</div>';
         html += '</div>';
         (gapsAfter[i] || []).forEach(g => {
           html += '<div class="step-gap"><span class="step-gap-icon">⚠</span><span>' + e(g.comment) + '</span></div>';
@@ -256,6 +357,12 @@
         }
       }, 0);
       return '<span id="' + id + '">' + e(src) + '</span>';
+    }
+
+    function renderTeacherAnnot(t) {
+      const cat = t.category || 'note';
+      const catLabel = cat.toUpperCase();
+      return '<div class="annot teacher"><span class="annot-icon">✎</span><span class="annot-text"><span class="annot-cat annot-cat--' + e(cat) + '">' + e(catLabel) + ' — Teacher</span>' + e(t.comment || '') + '</span></div>';
     }
 
     function renderAnnotation(a) {

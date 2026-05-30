@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/proofready/favicon.svg" />
+  <link rel="shortcut icon" href="/proofready/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/proofready/apple-touch-icon.png" />
+  <link rel="manifest" href="/proofready/site.webmanifest" />
+  <title>Mark maths submission — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #faf7f2; color: #111827; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .nav { background: #fdf6ee; border-bottom: 1px solid #f0e6d6; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand img { height: 40px; }
+    .back-link { font-size: 13px; font-weight: 500; color: #4b5563; text-decoration: none; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 6px 14px; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 28px 20px 80px; }
+    h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 4px; }
+    .task-meta { font-size: 13px; color: #6b7280; margin-bottom: 14px; }
+    .student-strip { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; background: #fff; border-radius: 10px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .student-name { font-weight: 700; font-size: 15px; }
+    .draft-info { font-size: 13px; color: #6b7280; }
+    .badge { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 100px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .badge-on-time { background: #d1fae5; color: #065f46; }
+    .badge-late { background: #fee2e2; color: #991b1b; }
+    .badge-marked { background: #d1fae5; color: #065f46; }
+
+    .layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+    @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } }
+
+    .card { background: #fff; border-radius: 14px; padding: 22px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); margin-bottom: 16px; }
+    .card h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #111827; }
+    .task-question { padding: 14px 16px; background: #fdf6ee; border: 1px solid #e8e0d4; border-radius: 8px; font-size: 14px; line-height: 1.65; color: #374151; margin-bottom: 14px; }
+
+    /* Per-line working render */
+    .line-row { padding: 14px 0; border-bottom: 1px solid #f0e6d6; }
+    .line-row:last-child { border-bottom: none; }
+    .line-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .line-label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.4px; }
+    .line-math { padding: 10px 12px; border: 1px solid #f0e6d6; border-radius: 8px; background: #fdf6ee; font-size: 16px; color: #111827; overflow-x: auto; }
+    .line-reason { margin-top: 6px; font-size: 13px; color: #6b7280; font-style: italic; }
+
+    /* AI annotation tile */
+    .annot { display: flex; align-items: flex-start; gap: 8px; margin-top: 8px; padding: 8px 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; }
+    .annot.ok { background: #f0fdf4; color: #14532d; }
+    .annot.warn { background: #fef3c7; color: #78350f; }
+    .annot.error { background: #fef2f2; color: #7f1d1d; }
+    .annot.ok-ft { background: #eff6ff; color: #1e3a8a; }
+    .annot.reason { background: #faf5ff; color: #581c87; }
+    .annot-pref { font-weight: 700; }
+
+    /* Teacher annotation form + saved */
+    .teacher-annot { margin-top: 8px; padding: 8px 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 13px; color: #1e3a8a; line-height: 1.5; display: flex; align-items: flex-start; gap: 8px; }
+    .teacher-annot-cat { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin-right: 6px; padding: 2px 7px; border-radius: 100px; background: #dbeafe; }
+    .teacher-annot-cat--praise { background: #d1fae5; color: #065f46; }
+    .teacher-annot-cat--improve { background: #fee2e2; color: #991b1b; }
+    .teacher-annot-cat--note { background: #dbeafe; color: #1e3a8a; }
+    .teacher-annot-text { flex: 1; }
+    .teacher-annot-remove { background: transparent; border: none; color: #6b7280; cursor: pointer; font-size: 16px; line-height: 1; }
+    .teacher-annot-remove:hover { color: #dc2626; }
+    .add-note-btn { margin-top: 8px; padding: 6px 12px; background: transparent; border: 1px dashed #d1d5db; border-radius: 6px; color: #6b7280; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .add-note-btn:hover { border-color: #ed7615; color: #ed7615; background: #fef3e6; }
+    .note-form { margin-top: 8px; padding: 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; }
+    .note-form textarea { width: 100%; padding: 8px 10px; border: 1px solid #bfdbfe; border-radius: 6px; font-family: inherit; font-size: 13px; min-height: 56px; outline: none; background: #fff; }
+    .note-form textarea:focus { border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.1); }
+    .note-form-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+    .note-form-row select { flex: 0 0 120px; padding: 6px 8px; border: 1px solid #bfdbfe; border-radius: 6px; font-family: inherit; font-size: 13px; background: #fff; }
+    .note-form-row .btn-save { padding: 6px 14px; background: #1d4ed8; color: #fff; border: none; border-radius: 6px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .note-form-row .btn-cancel { padding: 6px 14px; background: transparent; color: #6b7280; border: 1px solid transparent; border-radius: 6px; font-family: inherit; font-size: 13px; cursor: pointer; }
+
+    /* Right column */
+    .guideline-block { padding: 12px 14px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; color: #374151; }
+    .guideline-empty { padding: 12px; background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; font-size: 13px; color: #78350f; }
+    .mark-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .mark-input { flex: 1; padding: 12px 14px; border: 1px solid #e8e0d4; border-radius: 8px; font-size: 22px; font-weight: 800; font-family: inherit; outline: none; color: #111827; text-align: center; }
+    .mark-input:focus { border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.1); }
+    .mark-of { font-size: 18px; font-weight: 700; color: #6b7280; }
+    .comment-input { width: 100%; padding: 12px 14px; border: 1px solid #e8e0d4; border-radius: 8px; font-family: inherit; font-size: 14px; line-height: 1.6; min-height: 100px; outline: none; resize: vertical; background: #fff; color: #111827; }
+    .comment-input:focus { border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.1); }
+
+    .save-btn { width: 100%; padding: 14px; background: #ed7615; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 2px 6px rgba(237,118,21,0.3); }
+    .save-btn:hover { background: #d4690f; }
+    .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .save-next-btn { width: 100%; margin-top: 8px; padding: 12px; background: #fff; color: #374151; border: 1px solid #d1d5db; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .save-next-btn:hover { border-color: #6b7280; }
+
+    .empty, .error { background: #fff; border-radius: 12px; padding: 40px; text-align: center; color: #6b7280; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .error { color: #991b1b; }
+    .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
+    .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+    <a href="teacher.html" class="back-link" id="backLink">Back</a>
+  </nav>
+  <div class="container" id="content"><div class="empty">Loading submission…</div></div>
+  <div class="site-footer">
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms &amp; Conditions</a>
+    <a href="/compliance.html">Compliance</a>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    let task = null;
+    let submission = null;
+    let teacherAnnotations = []; // [{line_index, comment, category}]
+    let activeNoteForm = null; // line_index currently editing
+
+    (async () => {
+      const container = document.getElementById('content');
+      try {
+        const user = await requireAuth('teacher');
+        if (!user) return;
+        const params = new URLSearchParams(window.location.search);
+        const submissionId = params.get('submission_id');
+        const taskId = params.get('task_id');
+        if (!submissionId || !taskId) {
+          container.innerHTML = '<div class="error">Missing submission_id or task_id in URL.</div>';
+          return;
+        }
+
+        const [taskRes, tsRes] = await Promise.all([
+          authFetch('/api/task?id=' + encodeURIComponent(taskId)),
+          authFetch('/api/task-submissions?task_id=' + encodeURIComponent(taskId)),
+        ]);
+        const taskData = await taskRes.json();
+        if (!taskRes.ok || !taskData.task) { container.innerHTML = '<div class="error">Could not load task.</div>'; return; }
+        task = taskData.task;
+        task.class = taskData.class || null;
+        document.getElementById('backLink').href = 'task-detail.html?id=' + encodeURIComponent(task.id);
+
+        // Wrong subject — bounce back to the essay marking page.
+        if (task.subject_type !== 'maths') {
+          window.location.href = 'mark-submission.html?task_id=' + encodeURIComponent(taskId) + '&submission_id=' + encodeURIComponent(submissionId);
+          return;
+        }
+
+        if (!tsRes.ok) { container.innerHTML = '<div class="error">Could not load submissions for this task.</div>'; return; }
+        const tsData = await tsRes.json();
+        const row = (tsData.submissions || []).find(s => s.id === submissionId);
+        if (!row) { container.innerHTML = '<div class="error">Submission not found in this task.</div>'; return; }
+        submission = row;
+        window.__allSubmissions = tsData.submissions || [];
+
+        // Hydrate state from existing grade (re-editing).
+        if (Array.isArray(submission.teacher_annotations)) {
+          teacherAnnotations = submission.teacher_annotations.slice();
+        }
+
+        render(row.student_name || 'Student');
+      } catch (err) {
+        console.error('[mark-submission-maths] load failed:', err);
+        container.innerHTML = '<div class="error">' + e(err.message || String(err)) + '</div>';
+      }
+    })();
+
+    function lateBadge(sub, task) {
+      if (!task.due_date) return '';
+      const due = new Date(task.due_date + 'T23:59:59');
+      const subAt = new Date(sub.created_at);
+      if (subAt <= due) return '<span class="badge badge-on-time">On time</span>';
+      const days = Math.ceil((subAt - due) / (1000 * 60 * 60 * 24));
+      return '<span class="badge badge-late">' + days + ' day' + (days === 1 ? '' : 's') + ' late</span>';
+    }
+
+    function render(studentName) {
+      const container = document.getElementById('content');
+      const total = task.total_marks ?? '';
+      const existingTotal = submission.total_mark != null ? submission.total_mark : '';
+
+      let html = '';
+      html += '<h1>Mark maths submission</h1>';
+      const meta = [];
+      if (task.title) meta.push(e(task.title));
+      if (task.class && task.class.name) meta.push(e(task.class.name));
+      html += '<div class="task-meta">' + meta.join(' · ') + '</div>';
+
+      html += '<div class="student-strip">';
+      html += '<span class="student-name">' + e(studentName) + '</span>';
+      html += '<span class="draft-info">Draft ' + e(String(submission.draft_version || 1)) + '</span>';
+      html += lateBadge(submission, task);
+      if (submission.graded_at) html += '<span class="badge badge-marked">Already marked — editing</span>';
+      html += '</div>';
+
+      html += '<div class="layout">';
+
+      // LEFT — question + working
+      html += '<div>';
+      html += '<div class="card">';
+      html += '<h3>Task</h3>';
+      html += '<div class="task-question" id="taskQuestion">' + e(task.question || '') + '</div>';
+      html += '</div>';
+
+      html += '<div class="card">';
+      html += '<h3>Student working</h3>';
+      html += '<div id="workingBlock">' + renderWorking() + '</div>';
+      html += '</div>';
+      html += '</div>';
+
+      // RIGHT — guideline + mark + comment
+      html += '<div>';
+      if (task.marking_guideline && task.marking_guideline.trim()) {
+        html += '<div class="card">';
+        html += '<h3>Marking guideline</h3>';
+        html += '<div class="guideline-block">' + e(task.marking_guideline) + '</div>';
+        html += '</div>';
+      } else {
+        html += '<div class="card">';
+        html += '<h3>Marking guideline</h3>';
+        html += '<div class="guideline-empty">No guideline set for this task. Mark holistically against the question.</div>';
+        html += '</div>';
+      }
+
+      html += '<div class="card">';
+      html += '<h3>Mark</h3>';
+      html += '<div class="mark-row">';
+      html += '<input type="number" class="mark-input" id="totalMarkInput" value="' + e(String(existingTotal)) + '" placeholder="–" step="0.5" min="0" max="' + e(String(total)) + '">';
+      html += '<span class="mark-of">/ ' + e(String(total)) + '</span>';
+      html += '</div>';
+      html += '<h3 style="margin-top:8px">Overall comment</h3>';
+      html += '<textarea class="comment-input" id="teacherComment" placeholder="One paragraph for the student. Direct, marker voice.">' + e(submission.teacher_comment || '') + '</textarea>';
+      html += '<button class="save-btn" id="saveBtn" style="margin-top:14px" onclick="saveGrade(null)">Save and finish</button>';
+      html += '<button class="save-next-btn" id="saveNextBtn" onclick="saveGrade(findNextUnmarked())">Save and go to next unmarked</button>';
+      html += '</div>';
+      html += '</div>';
+
+      html += '</div>';
+      container.innerHTML = html;
+
+      whenKatexReady(() => {
+        renderMathInElement(document.getElementById('taskQuestion'), {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false },
+            { left: '\\[', right: '\\]', display: true },
+          ],
+          throwOnError: false,
+        });
+        renderAllInlineMath();
+      });
+    }
+
+    function renderWorking() {
+      const lines = Array.isArray(submission.working_lines) ? submission.working_lines : [];
+      if (lines.length === 0) {
+        return '<div class="empty" style="padding:20px">This submission has no structured working. Was it submitted via the maths flow?</div>';
+      }
+      const fb = submission.feedback || {};
+      const annotsByLine = {};
+      (Array.isArray(fb.line_annotations) ? fb.line_annotations : []).forEach(a => {
+        if (a && typeof a.line_index === 'number') annotsByLine[a.line_index] = a;
+      });
+      const gapsAfter = {};
+      (Array.isArray(fb.step_gaps) ? fb.step_gaps : []).forEach(g => {
+        if (!g || typeof g.after_line_index !== 'number') return;
+        if (!gapsAfter[g.after_line_index]) gapsAfter[g.after_line_index] = [];
+        gapsAfter[g.after_line_index].push(g);
+      });
+
+      let html = '';
+      (gapsAfter[-1] || []).forEach(g => {
+        html += '<div class="annot warn"><span class="annot-pref">⚠ Before first line:</span> ' + e(g.comment) + '</div>';
+      });
+
+      lines.forEach((line, i) => {
+        html += '<div class="line-row">';
+        html += '<div class="line-head"><span class="line-label">Line ' + (i + 1) + '</span></div>';
+        html += '<div class="line-math" data-tex="' + e(line.math || '') + '">' + (line.math ? '<span class="ml" data-tex="' + e(line.math) + '">' + e(line.math) + '</span>' : '<span style="color:#9ca3af">(empty)</span>') + '</div>';
+        if (line.reason) html += '<div class="line-reason">' + e(line.reason) + '</div>';
+        const a = annotsByLine[i];
+        if (a) html += renderAiAnnot(a);
+        html += renderTeacherAnnotsForLine(i);
+        html += '<button class="add-note-btn" data-line-index="' + i + '" onclick="openNoteForm(' + i + ')">+ Add teacher note</button>';
+        html += '<div id="note-form-' + i + '"></div>';
+        html += '</div>';
+        (gapsAfter[i] || []).forEach(g => {
+          html += '<div class="annot warn"><span class="annot-pref">⚠ Step gap:</span> ' + e(g.comment) + '</div>';
+        });
+      });
+      return html;
+    }
+
+    function renderAiAnnot(a) {
+      const mathStatus = a.math_status || 'ok';
+      const reasonStatus = a.reason_status || 'ok';
+      let cls = 'ok', icon = '✓';
+      if (mathStatus === 'error') { cls = 'error'; icon = '✗'; }
+      else if (mathStatus === 'slip') { cls = 'warn'; icon = '⚠'; }
+      else if (mathStatus === 'ok_following_through') { cls = 'ok-ft'; icon = '↪'; }
+      else if (reasonStatus !== 'ok') { cls = 'reason'; icon = '?'; }
+      return '<div class="annot ' + cls + '"><span class="annot-pref">' + icon + ' AI:</span> ' + e(a.comment || '') + '</div>';
+    }
+
+    function renderTeacherAnnotsForLine(lineIndex) {
+      const mine = teacherAnnotations.filter(t => t.line_index === lineIndex);
+      if (mine.length === 0) return '';
+      return mine.map(t => {
+        const idx = teacherAnnotations.indexOf(t);
+        const cat = t.category || 'note';
+        return '<div class="teacher-annot">' +
+          '<span class="teacher-annot-cat teacher-annot-cat--' + e(cat) + '">' + e(cat) + '</span>' +
+          '<span class="teacher-annot-text">' + e(t.comment) + '</span>' +
+          '<button class="teacher-annot-remove" title="Edit" onclick="editTeacherAnnot(' + idx + ')" style="margin-right:2px;font-size:13px">✎</button>' +
+          '<button class="teacher-annot-remove" title="Remove" onclick="removeTeacherAnnot(' + idx + ')">×</button>' +
+          '</div>';
+      }).join('');
+    }
+
+    // editingIdx === null → add mode. editingIdx === <number> → edit existing
+    // annotation in place. Either way, the form lives under the line it
+    // belongs to.
+    function openNoteForm(lineIndex, editingIdx) {
+      if (editingIdx === undefined) editingIdx = null;
+      if (activeNoteForm !== null) closeNoteForm(activeNoteForm);
+      activeNoteForm = lineIndex;
+      const existing = editingIdx !== null ? teacherAnnotations[editingIdx] : null;
+      const initialText = existing ? existing.comment : '';
+      const initialCat = existing ? (existing.category || 'note') : 'note';
+      const buttonLabel = existing ? 'Update' : 'Add';
+      const slot = document.getElementById('note-form-' + lineIndex);
+      slot.innerHTML =
+        '<div class="note-form">' +
+        '<textarea id="noteText-' + lineIndex + '" placeholder="Your comment for this line">' + e(initialText) + '</textarea>' +
+        '<div class="note-form-row">' +
+        '<select id="noteCat-' + lineIndex + '">' +
+        ['note', 'praise', 'improve'].map(c =>
+          '<option value="' + c + '"' + (c === initialCat ? ' selected' : '') + '>' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>'
+        ).join('') +
+        '</select>' +
+        '<button class="btn-save" onclick="saveNote(' + lineIndex + ', ' + (editingIdx === null ? 'null' : editingIdx) + ')">' + buttonLabel + '</button>' +
+        '<button class="btn-cancel" onclick="closeNoteForm(' + lineIndex + ')">Cancel</button>' +
+        '</div>' +
+        '</div>';
+      document.getElementById('noteText-' + lineIndex).focus();
+    }
+    window.openNoteForm = openNoteForm;
+
+    function editTeacherAnnot(idx) {
+      const t = teacherAnnotations[idx];
+      if (!t) return;
+      openNoteForm(t.line_index, idx);
+    }
+    window.editTeacherAnnot = editTeacherAnnot;
+
+    function closeNoteForm(lineIndex) {
+      const slot = document.getElementById('note-form-' + lineIndex);
+      if (slot) slot.innerHTML = '';
+      if (activeNoteForm === lineIndex) activeNoteForm = null;
+    }
+    window.closeNoteForm = closeNoteForm;
+
+    function saveNote(lineIndex, editingIdx) {
+      const ta = document.getElementById('noteText-' + lineIndex);
+      const cat = document.getElementById('noteCat-' + lineIndex).value;
+      const comment = (ta && ta.value || '').trim();
+      if (!comment) { alert('Add a comment first.'); return; }
+      if (editingIdx === null || editingIdx === undefined) {
+        teacherAnnotations.push({ line_index: lineIndex, comment, category: cat });
+      } else if (teacherAnnotations[editingIdx]) {
+        teacherAnnotations[editingIdx] = { line_index: lineIndex, comment, category: cat };
+      }
+      closeNoteForm(lineIndex);
+      document.getElementById('workingBlock').innerHTML = renderWorking();
+      whenKatexReady(renderAllInlineMath);
+    }
+    window.saveNote = saveNote;
+
+    function removeTeacherAnnot(idx) {
+      teacherAnnotations.splice(idx, 1);
+      document.getElementById('workingBlock').innerHTML = renderWorking();
+      whenKatexReady(renderAllInlineMath);
+    }
+    window.removeTeacherAnnot = removeTeacherAnnot;
+
+    function whenKatexReady(fn) {
+      if (window.katex) return fn();
+      setTimeout(() => whenKatexReady(fn), 50);
+    }
+
+    function renderAllInlineMath() {
+      document.querySelectorAll('.ml[data-tex]').forEach(el => {
+        const tex = el.getAttribute('data-tex');
+        if (!tex) return;
+        try { window.katex.render(tex, el, { throwOnError: false, displayMode: false }); }
+        catch { el.textContent = tex; }
+      });
+    }
+
+    function findNextUnmarked() {
+      const all = window.__allSubmissions || [];
+      const here = submission.id;
+      const idx = all.findIndex(s => s.id === here);
+      for (let i = idx + 1; i < all.length; i++) if (!all[i].graded_at) return all[i].id;
+      for (let i = 0; i < idx; i++) if (!all[i].graded_at) return all[i].id;
+      return null;
+    }
+
+    async function saveGrade(nextSubmissionId) {
+      const totalEl = document.getElementById('totalMarkInput');
+      const commentEl = document.getElementById('teacherComment');
+      const totalRaw = totalEl.value.trim();
+      const totalMark = totalRaw === '' ? null : Number(totalRaw);
+      if (totalMark !== null && (Number.isNaN(totalMark) || totalMark < 0)) {
+        alert('Total mark must be a non-negative number.');
+        return;
+      }
+      const teacherComment = (commentEl.value || '').trim() || null;
+
+      const saveBtn = document.getElementById('saveBtn');
+      const nextBtn = document.getElementById('saveNextBtn');
+      saveBtn.disabled = true; nextBtn.disabled = true;
+      const original = saveBtn.textContent;
+      saveBtn.textContent = 'Saving…';
+
+      try {
+        const res = await authFetch('/api/submission-grade', {
+          method: 'PUT',
+          body: JSON.stringify({
+            submission_id: submission.id,
+            total_mark: totalMark,
+            teacher_comment: teacherComment,
+            teacher_annotations: teacherAnnotations,
+            // Maths doesn't use criterion_marks in v0.
+            criterion_marks: null,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Save failed.');
+
+        if (nextSubmissionId) {
+          window.location.href = 'mark-submission-maths.html?task_id=' + encodeURIComponent(task.id) + '&submission_id=' + encodeURIComponent(nextSubmissionId);
+        } else {
+          window.location.href = 'task-detail.html?id=' + encodeURIComponent(task.id);
+        }
+      } catch (err) {
+        alert(err.message);
+        saveBtn.disabled = false; nextBtn.disabled = false;
+        saveBtn.textContent = original;
+      }
+    }
+    window.saveGrade = saveGrade;
+  </script>
+</body>
+</html>

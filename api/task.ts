@@ -83,10 +83,12 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
   const payload: any = { ...task };
   if (!isOwner) delete payload.notes;
 
-  // hide_criteria_from_students: strip criteria fields from the student view
-  // until the teacher has graded their submission for this task. Once graded,
-  // the rubric reveals alongside the per-criterion mark breakdown.
-  if (!isOwner && task.hide_criteria_from_students) {
+  // Strip criteria / marking guideline from the student view until they
+  // have a graded submission. Two cases:
+  //   (a) Essay tasks with hide_criteria_from_students=true → strip criteria.
+  //   (b) Maths tasks → marking guideline is ALWAYS hidden from students
+  //       pre-grading (it's the teacher's instrument); reveals post-grading.
+  if (!isOwner && (task.hide_criteria_from_students || task.subject_type === 'maths')) {
     const { data: gradedSub } = await supabase
       .from('submissions')
       .select('id')
@@ -96,9 +98,14 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
       .limit(1)
       .maybeSingle();
     if (!gradedSub) {
-      payload.criteria_text = null;
-      payload.criteria_structured = null;
-      payload.criteria = [];
+      if (task.hide_criteria_from_students) {
+        payload.criteria_text = null;
+        payload.criteria_structured = null;
+        payload.criteria = [];
+      }
+      if (task.subject_type === 'maths') {
+        payload.marking_guideline = null;
+      }
     }
   }
 
