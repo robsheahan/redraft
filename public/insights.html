@@ -2141,7 +2141,7 @@
         if (loading) loading.classList.add('visible');
       });
       const allBtns = document.querySelectorAll('[data-generate-all]');
-      allBtns.forEach(b => { b.disabled = true; b.textContent = 'Generating ' + kinds.length + ' card' + (kinds.length === 1 ? '' : 's') + '…'; });
+      allBtns.forEach(b => { b.disabled = true; b.textContent = 'Generating…'; });
 
       const results = await Promise.all(kinds.map(kind => {
         const filterBody = { kind, school_id: SCHOOL_ID_OVERRIDE || undefined };
@@ -2194,9 +2194,7 @@
         : cached < total
         ? cached + ' of ' + total + ' AI cards generated — fill in the rest'
         : 'All ' + total + ' AI cards generated — regenerate to refresh';
-      const btnLabel = cached < total
-        ? (cached === 0 ? 'Generate all ' + total + ' cards' : 'Generate remaining ' + (total - cached))
-        : 'Regenerate all ' + total + ' cards';
+      const btnLabel = 'Generate';
       const sub = cached === 0
         ? 'Each card uses one Anthropic call. Running them in parallel takes ~20s.'
         : '';
