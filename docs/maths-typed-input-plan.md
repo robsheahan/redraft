@@ -266,6 +266,22 @@ The last row is the moat.
 
 ---
 
-## 11. The one-paragraph pitch
+## 11. NESA Maths Notes — calibration path (open)
+
+The existing essay marker-voice pipeline (`data/marker-voice-loader.ts` + `scripts/scrape-nesa-feedback.ts`) scrapes NESA HSC subject pages for inline HTML feedback content. **Investigation 2026-05-30: NESA publishes HSC Mathematics marking feedback as PDFs only** — the subject page (e.g. `/hsc-exam-papers/mathematics-advanced/2024`) links to `2024-hsc-mathematics-adv-marking-feedback.pdf` rather than carrying the "Feedback on written exam" accordion the essay scraper looks for. All four maths courses (Advanced, Standard 2, Ext 1, Ext 2) behave the same way.
+
+**Implication:** The loader wiring is in place but populated with zero data. `buildMarkerVoiceReference()` returns an empty string for maths courses, which means the Stage 6 maths prompts run on inline conventions only (the `+C` / `ln|x|` / "Show that" / "Hence" / inverse-trig / Reference Sheet block in `prompts/maths-system.ts`).
+
+**Decision — skip for v0:** The inline Stage 6 conventions already encode the substantive HSC rules. The marginal benefit of scraped PDF marker phrasing is uncertain; we'll test the current voice during pilot and revisit if the feedback doesn't sound HSC-marker-y enough.
+
+**If we revisit:**
+1. Add `pdf-parse` as a project dependency.
+2. New script `scripts/scrape-nesa-maths-pdfs.ts` — fetches each maths subject page, regex-extracts the PDF URL, downloads, runs `pdf-parse`, feeds text to Haiku to parse into the canonical `{generalFeedback, sections[questions[]]}` shape used by `marker-voice-loader.ts`.
+3. Edge cases to handle: mathematical typesetting in PDF text extraction is messy (subscripts, integrals); some PDFs may be image-only and need OCR (out of scope per the "no OCR" constraint, but Notes PDFs are usually text-based); multi-section PDFs (Section I + Section II separately) need merging.
+4. Same JSON output shape so the existing loader picks them up with zero further wiring.
+
+---
+
+## 12. The one-paragraph pitch
 
 When a Year 12 Advanced student opens ProofReady, they see the question and a stack of empty lines. Each line is two fields: the maths, and a one-sentence reason. They work through the problem the way a confident student does — symbols on the left, justification on the right. They submit. In 30 seconds they get back a per-line diagnostic that scores method and accuracy separately, applies follow-through credit on consequential errors, flags the step they skipped that NESA expects shown, and calls out where their stated reasoning didn't match the move they made. None of it gives away the answer. All of it sounds like a senior HSC marker. **That is the product, and no one else is shipping it.**
