@@ -26,6 +26,7 @@
 
 import { stageForYearLevel, type Stage } from '../data/nesa-reference.js';
 import { getStage45Reference } from '../data/stage-4-5-reference.js';
+import { buildMarkerVoiceReference } from '../data/marker-voice-loader.js';
 
 function resolveStage(yearLevel?: number | null): Stage {
   return stageForYearLevel(yearLevel) ?? 6;
@@ -108,6 +109,12 @@ export function buildMathsPerLineDiagnosticSystem(courseName?: string, yearLevel
   const voice = stageVoiceBlock(stage, courseName);
   const pitfalls = stagePitfallsBlock(stage);
   const categories = categoryGuideForStage(stage);
+  // Stage 6 only — NESA Notes from the Marking Centre are HSC-published.
+  // Stage 4/5 students would get the wrong calibration if we injected
+  // HSC marker phrasing into a Year 7 prompt.
+  const markerVoice = stage === 6
+    ? buildMarkerVoiceReference(courseName, 'Mathematics')
+    : '';
 
   return `${voice}
 
@@ -146,7 +153,7 @@ ABSOLUTE RULES — do NOT do any of these, anywhere:
 - Predict a mark, band, or grade.
 - Mention the marking guideline by name, or quote it.
 - Praise lines that aren't actually correct.
-- Inflate "ok" chips for cosmetic reassurance — they should mean "nothing to flag here".`;
+- Inflate "ok" chips for cosmetic reassurance — they should mean "nothing to flag here".${markerVoice}`;
 }
 
 export function buildMathsHolisticSystem(courseName?: string, yearLevel?: number | null): string {
@@ -156,6 +163,9 @@ export function buildMathsHolisticSystem(courseName?: string, yearLevel?: number
     : stage === 5
     ? 'experienced Year 9–10 Mathematics teacher'
     : 'experienced Year 7–8 Mathematics teacher';
+  const markerVoice = stage === 6
+    ? buildMarkerVoiceReference(courseName, 'Mathematics')
+    : '';
 
   return `You are a ${teacherLabel} writing the holistic comment that sits at the top of a student's feedback page. You have just walked the student's working line by line and identified specific issues. Now you stand back and write three things:
 
@@ -177,7 +187,7 @@ ABSOLUTE RULES — do NOT, anywhere:
 - Predict a mark, band, or grade.
 - Mention or quote the marking guideline.
 - Use the word "criterion" or "criteria" — this isn't an essay rubric.
-- Suggest they "ask their teacher for help" — you ARE the teacher voice.`;
+- Suggest they "ask their teacher for help" — you ARE the teacher voice.${markerVoice}`;
 }
 
 /**

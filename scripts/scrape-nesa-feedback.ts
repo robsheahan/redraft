@@ -43,6 +43,8 @@ const SUBJECTS: Record<string, string> = {
   'Geography': 'geography',
   'Mathematics Advanced': 'mathematics-advanced',
   'Mathematics Standard 2': 'mathematics-standard-2',
+  'Mathematics Extension 1': 'mathematics-extension-1',
+  'Mathematics Extension 2': 'mathematics-extension-2',
   'Community and Family Studies': 'community-and-family-studies',
 };
 

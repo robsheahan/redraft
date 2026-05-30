@@ -49,6 +49,13 @@ const SLUG_MAP: Array<{ match: RegExp; slugs: string[] }> = [
   { match: /legal studies/i, slugs: ['legal-studies'] },
   { match: /economics/i, slugs: ['economics'] },
   { match: /geography/i, slugs: ['geography'] },
+  // Maths — most specific match first.
+  { match: /mathematics\s+extension\s*2/i, slugs: ['mathematics-extension-2', 'mathematics-extension-1', 'mathematics-advanced'] },
+  { match: /mathematics\s+extension\s*1/i, slugs: ['mathematics-extension-1', 'mathematics-advanced'] },
+  { match: /mathematics\s+advanced/i, slugs: ['mathematics-advanced'] },
+  { match: /mathematics\s+standard\s*2/i, slugs: ['mathematics-standard-2'] },
+  { match: /mathematics\s+standard\s*1/i, slugs: ['mathematics-standard-2'] },
+  { match: /^mathematics$|hsc\s+mathematics/i, slugs: ['mathematics-advanced', 'mathematics-standard-2'] },
 ];
 
 // Fallback slugs by discipline category (used when course name doesn't match directly)
@@ -57,7 +64,7 @@ const DISCIPLINE_FALLBACK: Record<string, string[]> = {
   English: ['english-advanced', 'english-standard'],
   Science: ['biology', 'chemistry', 'physics'],
   HSIE: ['modern-history', 'ancient-history', 'business-studies', 'legal-studies', 'economics', 'geography'],
-  Mathematics: [],
+  Mathematics: ['mathematics-advanced', 'mathematics-standard-2', 'mathematics-extension-1', 'mathematics-extension-2'],
   'Creative Arts': [],
   TAS: [],
   Languages: [],
