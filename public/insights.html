@@ -246,6 +246,22 @@
     .btn-synthesise { padding: 9px 18px; background: #ed7615; color: #fff; border: 0; border-radius: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit; box-shadow: 0 2px 6px rgba(237,118,21,0.25); white-space: nowrap; }
     .btn-synthesise:hover { background: #d4690f; }
     .btn-synthesise:disabled { background: #9ca3af; cursor: not-allowed; box-shadow: none; }
+
+    /* "Generate all" banner — sits above the LLM-cards block so a deputy
+       can populate the whole section in one click rather than firing 4
+       individual generates. */
+    .llm-batch-bar {
+      grid-column: span 12;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #fef3e6;
+      border: 1px solid #fcd9b6;
+      border-radius: 10px;
+      margin-top: 4px;
+    }
+    .llm-batch-label { font-size: 13px; font-weight: 600; color: #7c2d12; }
+    .llm-batch-label small { display: block; font-size: 12px; font-weight: 500; color: #b45309; margin-top: 2px; }
     .synthesis-loading { display: none; padding: 30px 12px; text-align: center; color: #9ca3af; }
     .synthesis-loading.visible { display: block; }
     .synthesis-loading .spinner { width: 28px; height: 28px; border: 3px solid #e8e0d4; border-top-color: #ed7615; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
@@ -1538,6 +1554,17 @@
         + renderStudentMarkDistribution(cd.mark_distribution)
         + '</div>';
 
+      // Batch generate banner — only when the student is above the floor
+      // (below floor, each card shows "not enough data yet" instead of a
+      // generate button, so batch would no-op).
+      if (eligible) {
+        html += renderLLMBatchBar(
+          ['student_summary', 'student_top_mistakes', 'student_stretch_goals', 'student_strengths'],
+          llm,
+          { studentView: true }
+        );
+      }
+
       // LLM cards (per-student kinds)
       html += '<div class="card card-span-6">' + renderStudentLLMCard('student_top_mistakes', llm.student_top_mistakes, {
         title: 'Top 3 mistakes',
@@ -1708,6 +1735,9 @@
         + renderMarkDistribution(cd.mark_distribution)
         + '</div>';
 
+      // Batch generate banner — fills all three LLM cards in one click.
+      html += renderLLMBatchBar(['common_gaps', 'top_decile', 'things_done_well'], llm);
+
       // Top 3 mistakes → common_gaps
       html += '<div class="card card-span-6">' + renderLLMCard('common_gaps', llm.common_gaps, {
         title: 'Top 3 mistakes',
@@ -1802,6 +1832,9 @@
 
       // ─── Tier A: LLM-derived cards (each with own Generate button) ───
       const llm = cd.llm || {};
+
+      // Batch generate banner — fills all four LLM cards in one click.
+      html += renderLLMBatchBar(['bottom_decile', 'top_decile', 'common_gaps', 'things_done_well'], llm);
 
       html += '<div class="card card-span-6">' + renderLLMCard('bottom_decile', llm.bottom_decile, {
         title: 'Top 3 mistakes — bottom decile',
@@ -2089,6 +2122,90 @@
         currentStudentProfile = null;
         render();
       }
+    }
+
+    // Batch generator — fires every kind in parallel via Promise.allSettled.
+    // For cohort mode: relies on the server-side cache, so we just reload
+    // once when everything's settled. For student mode: server doesn't cache
+    // student kinds, so we patch in-memory state for each fulfilled call.
+    async function generateAllLLMCards(kinds, opts) {
+      opts = opts || {};
+      const isStudentView = !!opts.studentView;
+      // Disable each card's individual button and show its loading state.
+      kinds.forEach(k => {
+        const btn = document.querySelector('[data-llm-generate="' + k + '"]');
+        const loading = document.getElementById('llmLoading_' + k);
+        const body = document.getElementById('llmBody_' + k);
+        if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+        if (body) body.style.display = 'none';
+        if (loading) loading.classList.add('visible');
+      });
+      const allBtns = document.querySelectorAll('[data-generate-all]');
+      allBtns.forEach(b => { b.disabled = true; b.textContent = 'Generating ' + kinds.length + ' card' + (kinds.length === 1 ? '' : 's') + '…'; });
+
+      const results = await Promise.all(kinds.map(kind => {
+        const filterBody = { kind, school_id: SCHOOL_ID_OVERRIDE || undefined };
+        FILTER_KEYS.forEach(k => { if (activeFilters[k]) filterBody[k] = activeFilters[k]; });
+        return authFetch('/api/insights-card-generate', { method: 'POST', body: JSON.stringify(filterBody) })
+          .then(async (res) => {
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || ('Failed to generate ' + kind));
+            return { kind, data };
+          })
+          .catch(err => ({ kind, error: err && err.message || String(err) }));
+      }));
+
+      const failures = results.filter(r => r.error);
+
+      if (isStudentView && currentStudent) {
+        currentStudent.cards = currentStudent.cards || {};
+        currentStudent.cards.llm = currentStudent.cards.llm || {};
+        results.forEach(r => {
+          if (r.data) {
+            currentStudent.cards.llm[r.kind] = {
+              content: r.data.content,
+              generated_at: r.data.generated_at,
+              source_submission_count: r.data.source_submission_count,
+            };
+          }
+        });
+        render();
+      } else {
+        await reloadData();
+      }
+
+      if (failures.length > 0) {
+        alert(failures.length + ' card' + (failures.length === 1 ? '' : 's') + ' failed:\n\n'
+          + failures.map(f => '• ' + f.kind + ': ' + f.error).join('\n')
+          + '\n\nSuccessful cards have been refreshed.');
+      }
+    }
+    window.generateAllLLMCards = generateAllLLMCards;
+
+    // Build the "Generate all" banner. `cachedMap` is the object of cached
+    // LLM cards keyed by kind (e.g. cd.llm or currentStudent.cards.llm).
+    function renderLLMBatchBar(kinds, cachedMap, opts) {
+      opts = opts || {};
+      const isStudentView = !!opts.studentView;
+      const cached = kinds.filter(k => cachedMap && cachedMap[k] && cachedMap[k].content).length;
+      const total = kinds.length;
+      const label = cached === 0
+        ? 'Generate all ' + total + ' AI cards in one go'
+        : cached < total
+        ? cached + ' of ' + total + ' AI cards generated — fill in the rest'
+        : 'All ' + total + ' AI cards generated — regenerate to refresh';
+      const btnLabel = cached < total
+        ? (cached === 0 ? 'Generate all ' + total + ' cards' : 'Generate remaining ' + (total - cached))
+        : 'Regenerate all ' + total + ' cards';
+      const sub = cached === 0
+        ? 'Each card uses one Anthropic call. Running them in parallel takes ~20s.'
+        : '';
+      const kindsArg = JSON.stringify(kinds).replace(/"/g, '&quot;');
+      const optsArg = isStudentView ? ", { studentView: true }" : '';
+      return '<div class="llm-batch-bar">'
+        + '<div class="llm-batch-label">' + e(label) + (sub ? '<small>' + e(sub) + '</small>' : '') + '</div>'
+        + '<button class="btn-synthesise" data-generate-all onclick="generateAllLLMCards(' + kindsArg + optsArg + ')">' + e(btnLabel) + '</button>'
+        + '</div>';
     }
 
     async function generateLLMCard(kind) {
