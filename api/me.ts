@@ -244,7 +244,7 @@ async function returnTaskDrafts(req: VercelRequest, res: VercelResponse, userId:
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from('submissions')
-    .select('id, draft_text, feedback, draft_version, created_at, question, course, criterion_marks, total_mark, teacher_comment, teacher_annotations, graded_at, graded_by, submitted_for_marking')
+    .select('id, draft_text, feedback, draft_version, created_at, question, course, criterion_marks, total_mark, teacher_comment, teacher_annotations, graded_at, graded_by, submitted_for_marking, working_lines, input_mode')
     .eq('student_id', userId)
     .eq('task_id', taskId)
     .order('draft_version', { ascending: true });

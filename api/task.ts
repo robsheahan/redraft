@@ -118,6 +118,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     class_id, course, title, question, task_type, total_marks, due_date,
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
     hide_criteria_from_students, completion_only,
+    subject_type, marking_guideline,
   } = req.body || {};
 
   if (!class_id) return res.status(400).json({ error: 'class_id is required — tasks must belong to a class.' });
@@ -128,10 +129,18 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
   if (cls.teacher_id !== user.id) return res.status(403).json({ error: 'You can only add tasks to your own classes.' });
 
   const taskMode = resolveTaskMode(req.body);
+  const subjectType = subject_type === 'maths' ? 'maths' : 'essay';
   const hasCriteria = !!(criteria_text && String(criteria_text).trim());
-  if (taskMode === 'feedback_task' && !hasCriteria) {
+  const hasMarkingGuideline = !!(marking_guideline && String(marking_guideline).trim());
+  // Maths assessment tasks need a marking guideline; essay assessment tasks
+  // need marking criteria. Quick tasks of either kind may skip.
+  if (subjectType === 'essay' && taskMode === 'feedback_task' && !hasCriteria) {
     return res.status(400).json({ error: 'Assessment tasks need marking criteria. Either add criteria or switch to a quick task.' });
   }
+  // Maths marking guidelines are OPTIONAL. They sharpen the per-line
+  // diagnostic by enabling step_gap detection, but the system still produces
+  // useful feedback without one — especially at Stage 4/5 where teachers
+  // rarely have a formal HSC-style guideline for in-class work.
 
   // AI-parse the rubric synchronously so the renderer never has to. Returns
   // null on any failure — the renderer falls back to the client-side regex
@@ -165,6 +174,8 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     typed_response_only: typeof typed_response_only === 'boolean' ? typed_response_only : true,
     hide_criteria_from_students: typeof hide_criteria_from_students === 'boolean' ? hide_criteria_from_students : false,
     completion_only: resolvedCompletionOnly,
+    subject_type: subjectType,
+    marking_guideline: subjectType === 'maths' ? (marking_guideline || null) : null,
   }).select('*').single();
 
   if (error) return res.status(500).json({ error: error.message });
@@ -180,6 +191,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
     hide_criteria_from_students,
     task_mode: incomingTaskMode, completion_only,
+    subject_type, marking_guideline,
   } = req.body || {};
   if (!id) return res.status(400).json({ error: 'Task id is required.' });
 
@@ -203,6 +215,8 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     notes: notes ?? undefined,
     typed_response_only: typeof typed_response_only === 'boolean' ? typed_response_only : undefined,
     hide_criteria_from_students: typeof hide_criteria_from_students === 'boolean' ? hide_criteria_from_students : undefined,
+    subject_type: subject_type === 'essay' || subject_type === 'maths' ? subject_type : undefined,
+    marking_guideline: typeof marking_guideline === 'string' ? marking_guideline : undefined,
   };
   Object.keys(patch).forEach(k => patch[k] === undefined && delete patch[k]);
 

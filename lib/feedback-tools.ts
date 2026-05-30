@@ -144,6 +144,131 @@ export const INLINE_SUGGESTIONS_TOOL: Tool = {
   },
 };
 
+// Maths feedback tools — used by /api/generate-maths-feedback.
+//
+// MATHS_PER_LINE_DIAGNOSTIC_TOOL is Pass B: walks each line of the
+// student's structured working ({ math, reason }) and returns a typed
+// chip per line PLUS a list of "step_missing" chips that surface
+// between lines where the marking guideline expects a step the
+// student skipped.
+//
+// MATHS_HOLISTIC_TOOL is Pass C: marker-voice comment in three fields
+// (what_youve_done_well, top_priority, improvements). No verb_check
+// section — verb misreads surface as per-line `verb_mismatch`
+// annotations in Pass B.
+
+export const MATHS_PER_LINE_DIAGNOSTIC_TOOL: Tool = {
+  name: 'provide_maths_diagnostic',
+  description:
+    "Walk the student's structured working line by line. For each line, return a typed status + comment. Additionally, surface step_missing chips for any mark-bearing step the student skipped — these sit BETWEEN lines in the rendered output.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      line_annotations: {
+        type: 'array',
+        description: "One entry per line of the student's working, in order.",
+        items: {
+          type: 'object',
+          properties: {
+            line_index: {
+              type: 'integer',
+              minimum: 0,
+              description: '0-based index of the student line this annotation refers to.',
+            },
+            math_status: {
+              type: 'string',
+              enum: ['ok', 'ok_following_through', 'slip', 'error'],
+              description:
+                "'ok' = line follows correctly from prior lines and notation is sound. 'ok_following_through' = line is internally consistent with a wrong earlier line (apply follow-through credit). 'slip' = small notation/arithmetic issue. 'error' = substantive math error originating on this line.",
+            },
+            reason_status: {
+              type: 'string',
+              enum: ['ok', 'reason_missing', 'reason_imprecise', 'reason_mismatch'],
+              description:
+                "'ok' = reason matches the move. 'reason_missing' = student left it blank. 'reason_imprecise' = vague ('simplify', 'work it out'). 'reason_mismatch' = the stated reason doesn't match what the math actually does.",
+            },
+            category: {
+              type: 'string',
+              enum: [
+                'ok',
+                'notation_equals_abuse',
+                'notation_other',
+                'missing_constant',
+                'algebra_sign',
+                'algebra_distribution',
+                'algebra_index_law',
+                'arithmetic',
+                'method_choice',
+                'justification_missing',
+                'verb_mismatch',
+                'precision_wrong',
+                'premature_rounding',
+                'unit_missing',
+                'context_missing',
+                'variable_confusion',
+                'domain_restriction_missing',
+                'reason_only_issue',
+                'other',
+              ],
+              description: 'Primary error category. Use "ok" only when both math_status and reason_status are ok. Stage 4/5 vs Stage 6 calibration is in the system prompt — pick from the categories the prompt tells you are in-scope for the student\'s stage.',
+            },
+            comment: {
+              type: 'string',
+              description: 'One or two sentences explaining the diagnosis. Address the student directly ("you", "your"). NEVER reveal the correct answer or the next step.',
+            },
+          },
+          required: ['line_index', 'math_status', 'reason_status', 'category', 'comment'],
+        },
+      },
+      step_gaps: {
+        type: 'array',
+        description: "Mark-bearing steps from the marking guideline that the student SKIPPED, expressed as chips inserted BETWEEN lines. Empty array if no step was skipped. Do NOT name the marking guideline or the mark allocation — describe what's missing in plain language.",
+        items: {
+          type: 'object',
+          properties: {
+            after_line_index: {
+              type: 'integer',
+              minimum: -1,
+              description: '0-based line index after which this missing step should have appeared. Use -1 if the step is missing at the very start (before line 0).',
+            },
+            comment: {
+              type: 'string',
+              description: 'One sentence describing the missing step. Do NOT cite the marking guideline by name. Do NOT mention marks lost. Do NOT give the answer.',
+            },
+          },
+          required: ['after_line_index', 'comment'],
+        },
+      },
+    },
+    required: ['line_annotations', 'step_gaps'],
+  },
+};
+
+export const MATHS_HOLISTIC_TOOL: Tool = {
+  name: 'provide_maths_holistic_feedback',
+  description: 'Return holistic marker-voice feedback in three sections: what the student has done well, the single top priority, and a short list of improvements. No verb-check section — verb misreads are caught at the per-line level by the diagnostic tool.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      what_youve_done_well: {
+        type: 'array',
+        description: '2–4 specific, genuine strengths in the student\'s working. Each one a single sentence. Reference specific lines where relevant. NEVER mention marks or grades.',
+        items: { type: 'string' },
+      },
+      top_priority: {
+        type: 'string',
+        description: 'The single most important thing the student should fix first. One paragraph (2–4 sentences). Reference specific line numbers where helpful. NEVER give the answer; NEVER predict marks.',
+      },
+      improvements: {
+        type: 'array',
+        description: '2–4 specific improvements the student should make on this draft. Numbered, actionable. Reference specific line numbers where helpful. Each one a single sentence.',
+        items: { type: 'string' },
+      },
+    },
+    required: ['what_youve_done_well', 'top_priority', 'improvements'],
+  },
+};
+
 export const RUBRIC_PARSE_TOOL: Tool = {
   name: 'parse_rubric',
   description:

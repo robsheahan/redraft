@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/proofready/favicon.svg" />
+  <link rel="shortcut icon" href="/proofready/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/proofready/apple-touch-icon.png" />
+  <link rel="manifest" href="/proofready/site.webmanifest" />
+  <title>Submit (maths) — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- KaTeX for rendering the question + line previews -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <!-- MathLive for the math input fields -->
+  <script type="module" src="https://unpkg.com/mathlive@0.99.0/dist/mathlive.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+      outline: 2px solid #ed7615; outline-offset: 2px; border-radius: 4px;
+    }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #faf7f2; color: #111827; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .nav { background: #fdf6ee; border-bottom: 1px solid #f0e6d6; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand img { height: 40px; }
+    .back-link { font-size: 13px; font-weight: 500; color: #4b5563; text-decoration: none; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 6px 14px; }
+    .container { max-width: 1080px; margin: 0 auto; padding: 32px 20px 80px; }
+    h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 4px; }
+    .task-teacher { font-size: 16px; font-weight: 500; color: #6b7280; }
+    .task-meta { font-size: 13px; color: #6b7280; margin-bottom: 18px; }
+    .card { background: #fff; border-radius: 14px; padding: 26px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .task-question-wrap h4 { font-size: 12px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px; }
+    .task-question { padding: 16px 18px; background: #fdf6ee; border: 1px solid #e8e0d4; border-radius: 8px; font-size: 15px; line-height: 1.65; color: #374151; }
+    .divider { font-size: 12px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 12px; }
+    .inline-hint { font-size: 13px; color: #6b7280; margin-bottom: 14px; padding: 10px 14px; background: #fef3e6; border: 1px solid #fcd9b6; border-radius: 8px; }
+
+    /* Line card */
+    .line-card { border: 1px solid #e8e0d4; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; background: #fff; position: relative; }
+    .line-card .line-label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+    .line-card .line-remove {
+      position: absolute; top: 10px; right: 10px;
+      width: 24px; height: 24px; border-radius: 6px; background: transparent; border: none;
+      color: #9ca3af; cursor: pointer; font-size: 16px; line-height: 1;
+    }
+    .line-card .line-remove:hover { background: #fef2f2; color: #dc2626; }
+    math-field {
+      display: block; width: 100%;
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 1px solid #e8e0d4; border-radius: 8px;
+      background: #fff; color: #111827;
+      font-size: 17px;
+      outline: none;
+    }
+    math-field:focus { border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.1); }
+    .line-card .reason-input {
+      display: block; width: 100%;
+      padding: 8px 12px; margin-top: 8px;
+      border: 1px solid #e8e0d4; border-radius: 8px;
+      font-family: inherit; font-size: 14px;
+      background: #fff; color: #374151;
+      outline: none;
+    }
+    .line-card .reason-input:focus { border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.1); }
+    .line-card .reason-input::placeholder { color: #9ca3af; font-style: italic; }
+
+    .add-line-btn {
+      display: block; width: 100%;
+      padding: 10px;
+      border: 1.5px dashed #d1d5db; border-radius: 10px;
+      background: transparent; color: #6b7280;
+      font-family: inherit; font-size: 14px; font-weight: 600;
+      cursor: pointer; margin-bottom: 14px;
+      transition: all 0.15s;
+    }
+    .add-line-btn:hover { border-color: #ed7615; color: #ed7615; background: #fef3e6; }
+
+    .submit-btn { width: 100%; padding: 14px; background: #ed7615; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 2px 6px rgba(237,118,21,0.3); }
+    .submit-btn:hover { background: #d4690f; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .save-row { display: flex; justify-content: space-between; font-size: 12.5px; color: #9ca3af; margin: 4px 2px 14px; }
+    .save-indicator.saved   { color: #16a34a; }
+    .save-indicator.saving  { color: #6b7280; }
+    .save-indicator.failed  { color: #b91c1c; }
+
+    .loading-overlay { display: none; text-align: center; padding: 48px 20px; }
+    .loading-overlay.visible { display: block; }
+    .spinner { width: 36px; height: 36px; border: 3px solid #e8e0d4; border-top-color: #ed7615; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 4px; }
+    .loading-hint { font-size: 13px; color: #9ca3af; }
+    .empty { background: #fff; border-radius: 12px; padding: 40px; text-align: center; color: #6b7280; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
+    .toast {
+      position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%) translateY(20px);
+      background: #111827; color: #fff; padding: 12px 20px; border-radius: 8px;
+      font-size: 14px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 100;
+    }
+    .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
+    .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+    <a href="student.html" class="back-link">Back</a>
+  </nav>
+  <div class="container" id="content"><div class="empty">Loading task...</div></div>
+  <div class="toast" id="toast"></div>
+  <div class="site-footer">
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms &amp; Conditions</a>
+    <a href="/compliance.html">Compliance</a>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    const MAX_DRAFTS = 3;
+    let currentTask = null;
+    let priorDrafts = [];
+    let lineCounter = 0;
+    // Telemetry, same shape as essay submit (keystrokes per math + reason field).
+    const telemetry = { keystroke_count: 0, paste_attempts_blocked: 0, typing_session_count: 0, total_typing_time_ms: 0, time_to_first_keystroke_ms: null };
+    let lastKeyAt = 0;
+    let sessionStartedAt = 0;
+    let saveTimer = null;
+    let lastSavedState = '';
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('visible');
+      setTimeout(() => t.classList.remove('visible'), 1800);
+    }
+
+    (async () => {
+      const container = document.getElementById('content');
+      try {
+        const user = await requireAuth();
+        if (!user) return;
+        const taskId = new URLSearchParams(window.location.search).get('task');
+        if (!taskId) { container.innerHTML = '<div class="empty">No task selected.</div>'; return; }
+
+        const [taskRes, draftsRes] = await Promise.all([
+          authFetch('/api/task?id=' + encodeURIComponent(taskId)),
+          authFetch('/api/me?resource=task-drafts&task_id=' + encodeURIComponent(taskId)),
+        ]);
+
+        const data = await taskRes.json().catch(() => ({}));
+        if (!taskRes.ok || !data.task) {
+          container.innerHTML = '<div class="empty">' + e(data.error || 'Could not load task.') + '</div>';
+          return;
+        }
+        currentTask = data.task;
+        currentTask.class = data.class || null;
+        if (data.role === 'teacher') {
+          window.location.href = 'task-detail.html?id=' + encodeURIComponent(taskId);
+          return;
+        }
+        // If the task isn't actually maths, bounce back to the essay submit
+        // page so we don't trap a teacher who changed the subject type.
+        if (currentTask.subject_type !== 'maths') {
+          window.location.href = 'submit.html?task=' + encodeURIComponent(taskId);
+          return;
+        }
+        if (draftsRes && draftsRes.ok) {
+          const dd = await draftsRes.json().catch(() => ({}));
+          priorDrafts = Array.isArray(dd.drafts) ? dd.drafts : [];
+        }
+        render();
+      } catch (err) {
+        console.error('[submit-maths.html] load failed:', err);
+        container.innerHTML = '<div class="empty">Something went wrong loading this task. <br><small>' + e(err && err.message || String(err)) + '</small></div>';
+      }
+    })();
+
+    function render() {
+      const t = currentTask;
+      document.title = (t.title || 'Maths task') + ' — ProofReady';
+      const container = document.getElementById('content');
+
+      // Locked states (graded / submitted).
+      const gradedDraft = priorDrafts.find(d => d.graded_at);
+      const submittedFinal = priorDrafts.find(d => d.submitted_for_marking);
+      if (gradedDraft) {
+        container.innerHTML = renderHeader(t) +
+          '<div class="card"><h3 style="font-size:16px;font-weight:700;margin-bottom:8px">Marked by your teacher</h3>' +
+          '<p style="color:#6b7280;font-size:14px">Open your feedback to see the per-line marks and comments.</p>' +
+          '<button class="submit-btn" style="margin-top:14px" onclick="viewLatest()">View feedback</button></div>';
+        return;
+      }
+      if (submittedFinal) {
+        container.innerHTML = renderHeader(t) +
+          '<div class="card"><h3 style="font-size:16px;font-weight:700;margin-bottom:8px">Submitted for marking</h3>' +
+          '<p style="color:#6b7280;font-size:14px">Your teacher will mark this and you\'ll see the result here.</p></div>';
+        return;
+      }
+
+      const used = priorDrafts.length;
+      const remaining = Math.max(0, MAX_DRAFTS - used);
+      if (used >= MAX_DRAFTS) {
+        container.innerHTML = renderHeader(t) +
+          '<div class="card"><h3 style="font-size:16px;font-weight:700;margin-bottom:8px">All drafts used</h3>' +
+          '<p style="color:#6b7280;font-size:14px">You\'ve used all ' + MAX_DRAFTS + ' drafts for this task.</p></div>';
+        return;
+      }
+
+      let html = renderHeader(t);
+      html += '<div class="card">';
+      html += '<div class="task-question-wrap"><h4>Task</h4>';
+      html += '<div class="task-question" id="taskQuestion">' + e(t.question || '') + '</div></div>';
+      html += '</div>';
+
+      html += '<div class="divider">Your working — ' + remaining + ' draft' + (remaining === 1 ? '' : 's') + ' remaining</div>';
+      html += '<div class="card">';
+      html += '<div class="inline-hint">One step per line. Maths in the top field, a short reason underneath — that\'s what earns method marks.</div>';
+      html += '<div id="linesContainer"></div>';
+      html += '<button type="button" class="add-line-btn" onclick="addLine()">+ Add line</button>';
+      html += '<div class="save-row"><span id="saveIndicator" class="save-indicator">&nbsp;</span><span id="lineCount">0 lines</span></div>';
+      html += '<button class="submit-btn" id="submitBtn" onclick="submitForFeedback()">Get AI feedback</button>';
+      html += '</div>';
+
+      html += '<div class="loading-overlay" id="loadingOverlay">';
+      html += '<div class="spinner"></div>';
+      html += '<div class="loading-text" id="loadingText">Reading your working…</div>';
+      html += '<div class="loading-hint" id="loadingHint">An experienced HSC marker would take about a minute on this.</div>';
+      html += '</div>';
+
+      container.innerHTML = html;
+
+      // Wait for KaTeX, then render math in the question.
+      whenKatexReady(() => {
+        renderMathInElement(document.getElementById('taskQuestion'), {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false },
+            { left: '\\[', right: '\\]', display: true },
+          ],
+          throwOnError: false,
+        });
+      });
+
+      // Seed initial state: restore autosaved working OR start with one empty line.
+      restoreAutosaveOrSeed();
+    }
+
+    function renderHeader(t) {
+      const teacher = (t.class && t.class.teacher_name) ? ' — <span class="task-teacher">' + e(t.class.teacher_name) + '</span>' : '';
+      let html = '<h1>' + e(t.title || 'Maths task') + teacher + '</h1>';
+      const parts = [];
+      if (t.class && t.class.name) parts.push(e(t.class.name));
+      if (t.total_marks) parts.push(e(String(t.total_marks)) + ' marks');
+      if (t.due_date) parts.push('Due ' + e(t.due_date));
+      if (parts.length) html += '<div class="task-meta">' + parts.join(' · ') + '</div>';
+      return html;
+    }
+
+    function whenKatexReady(fn) {
+      if (window.renderMathInElement) return fn();
+      setTimeout(() => whenKatexReady(fn), 50);
+    }
+
+    function addLine(initial) {
+      lineCounter += 1;
+      const idx = document.querySelectorAll('#linesContainer .line-card').length;
+      const lineId = 'line-' + lineCounter;
+      const wrap = document.createElement('div');
+      wrap.className = 'line-card';
+      wrap.dataset.lineId = lineId;
+      wrap.innerHTML =
+        '<div class="line-label">Line ' + (idx + 1) + '</div>' +
+        '<button type="button" class="line-remove" title="Remove line" onclick="removeLine(this)">×</button>' +
+        '<math-field class="math-field" data-line-id="' + lineId + '"></math-field>' +
+        '<input type="text" class="reason-input" data-line-id="' + lineId + '" placeholder="Why this step? (e.g. differentiating using the power rule)">';
+      document.getElementById('linesContainer').appendChild(wrap);
+
+      const mf = wrap.querySelector('math-field');
+      const reason = wrap.querySelector('.reason-input');
+      if (initial) {
+        if (typeof initial.math === 'string' && mf) mf.value = initial.math;
+        if (typeof initial.reason === 'string') reason.value = initial.reason;
+      }
+      // Telemetry on both fields.
+      const onInput = () => {
+        telemetry.keystroke_count += 1;
+        if (telemetry.time_to_first_keystroke_ms === null) {
+          telemetry.time_to_first_keystroke_ms = Math.max(0, Date.now() - (window._pageOpenedAt || Date.now()));
+        }
+        if (!sessionStartedAt || (Date.now() - lastKeyAt) > 30000) {
+          telemetry.typing_session_count += 1;
+          sessionStartedAt = Date.now();
+        }
+        lastKeyAt = Date.now();
+        scheduleAutosave();
+        refreshLineCount();
+      };
+      if (mf) mf.addEventListener('input', onInput);
+      reason.addEventListener('input', onInput);
+      // Block paste on the reason field (and surface a toast). MathLive's
+      // own paste is left alone — its content is structured by the editor.
+      reason.addEventListener('paste', ev => {
+        if (currentTask && currentTask.typed_response_only !== false) {
+          ev.preventDefault();
+          telemetry.paste_attempts_blocked += 1;
+          showToast('Paste is disabled on this task — type your reason.');
+        }
+      });
+      refreshLineCount();
+      if (mf && !initial) setTimeout(() => mf.focus(), 30);
+    }
+
+    function removeLine(btn) {
+      const card = btn.closest('.line-card');
+      if (!card) return;
+      const remaining = document.querySelectorAll('#linesContainer .line-card').length;
+      if (remaining <= 1) {
+        showToast('Keep at least one line — clear the fields if you want to start over.');
+        return;
+      }
+      card.remove();
+      renumberLines();
+      scheduleAutosave();
+      refreshLineCount();
+    }
+
+    function renumberLines() {
+      document.querySelectorAll('#linesContainer .line-card').forEach((card, i) => {
+        const label = card.querySelector('.line-label');
+        if (label) label.textContent = 'Line ' + (i + 1);
+      });
+    }
+
+    function refreshLineCount() {
+      const lines = collectLines();
+      const filled = lines.filter(l => l.math.trim() || l.reason.trim()).length;
+      const el = document.getElementById('lineCount');
+      if (el) el.textContent = filled + ' line' + (filled === 1 ? '' : 's');
+    }
+
+    function collectLines() {
+      const out = [];
+      document.querySelectorAll('#linesContainer .line-card').forEach(card => {
+        const mf = card.querySelector('math-field');
+        const reason = card.querySelector('.reason-input');
+        out.push({ math: (mf && mf.value || '').trim(), reason: (reason && reason.value || '').trim() });
+      });
+      return out;
+    }
+
+    async function scheduleAutosave() {
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(doAutosave, 1500);
+    }
+
+    async function doAutosave() {
+      const lines = collectLines().filter(l => l.math || l.reason);
+      const state = JSON.stringify(lines);
+      if (state === lastSavedState) return;
+      const ind = document.getElementById('saveIndicator');
+      if (ind) { ind.className = 'save-indicator saving'; ind.textContent = 'Saving…'; }
+      try {
+        const res = await authFetch('/api/draft-autosave', {
+          method: 'PUT',
+          body: JSON.stringify({
+            task_id: currentTask.id,
+            // draft_text is the flattened representation; working_lines holds truth.
+            draft_text: lines.map((l, i) => `Line ${i + 1}: ${l.math}\n  Reason: ${l.reason}`).join('\n'),
+            telemetry: { ...telemetry, working_lines: lines },
+          }),
+        });
+        if (!res.ok) throw new Error('autosave failed');
+        lastSavedState = state;
+        if (ind) { ind.className = 'save-indicator saved'; ind.textContent = 'Saved'; }
+      } catch (err) {
+        if (ind) { ind.className = 'save-indicator failed'; ind.textContent = 'Save failed'; }
+      }
+    }
+
+    async function restoreAutosaveOrSeed() {
+      try {
+        const res = await authFetch('/api/draft-autosave?task_id=' + encodeURIComponent(currentTask.id));
+        const data = await res.json().catch(() => ({}));
+        const saved = data && data.telemetry && Array.isArray(data.telemetry.working_lines) ? data.telemetry.working_lines : null;
+        if (saved && saved.length > 0) {
+          saved.forEach(line => addLine(line));
+          refreshLineCount();
+          return;
+        }
+      } catch {}
+      addLine();
+    }
+
+    async function submitForFeedback() {
+      const lines = collectLines().filter(l => l.math || l.reason);
+      if (lines.length === 0) {
+        showToast('Add at least one line of working.');
+        return;
+      }
+      // Soft warning if any reason is blank — encourage the habit but don't block.
+      const missingReasons = lines.filter(l => !l.reason).length;
+      if (missingReasons > 0) {
+        const ok = confirm(missingReasons + ' line' + (missingReasons === 1 ? '' : 's') + ' have no reason. Your reasoning is what earns method marks — submit anyway?');
+        if (!ok) return;
+      }
+
+      const btn = document.getElementById('submitBtn');
+      const overlay = document.getElementById('loadingOverlay');
+      btn.disabled = true; btn.style.display = 'none';
+      overlay.classList.add('visible');
+
+      try {
+        const res = await authFetch('/api/generate-maths-feedback', {
+          method: 'POST',
+          body: JSON.stringify({
+            task_id: currentTask.id,
+            working_lines: lines,
+            input_mode: 'structured',
+            keystroke_count: telemetry.keystroke_count,
+            paste_attempts_blocked: telemetry.paste_attempts_blocked,
+            typing_session_count: telemetry.typing_session_count,
+            total_typing_time_ms: lastKeyAt && sessionStartedAt ? (lastKeyAt - sessionStartedAt) : 0,
+            time_to_first_keystroke_ms: telemetry.time_to_first_keystroke_ms,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          let msg = data.error || ('Could not generate feedback (HTTP ' + res.status + ').');
+          throw new Error(msg);
+        }
+        sessionStorage.setItem('proofready_maths_feedback', JSON.stringify(data));
+        sessionStorage.setItem('proofready_maths_task', JSON.stringify({
+          task_id: currentTask.id,
+          title: currentTask.title,
+          question: currentTask.question,
+          course: currentTask.course,
+          total_marks: currentTask.total_marks || null,
+          due_date: currentTask.due_date || null,
+          teacher_name: currentTask.class ? currentTask.class.teacher_name : null,
+          class_name: currentTask.class ? currentTask.class.name : null,
+        }));
+        window.location.href = 'feedback-maths.html';
+      } catch (err) {
+        overlay.classList.remove('visible');
+        btn.disabled = false; btn.style.display = '';
+        alert(err.message);
+      }
+    }
+
+    function viewLatest() {
+      window.location.href = 'feedback-maths.html?task=' + encodeURIComponent(currentTask.id);
+    }
+
+    window._pageOpenedAt = Date.now();
+  </script>
+</body>
+</html>

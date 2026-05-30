@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/proofready/favicon.svg" />
+  <link rel="shortcut icon" href="/proofready/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/proofready/apple-touch-icon.png" />
+  <link rel="manifest" href="/proofready/site.webmanifest" />
+  <title>Feedback (maths) — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #faf7f2; color: #111827; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .nav { background: #fdf6ee; border-bottom: 1px solid #f0e6d6; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .nav-brand img { height: 40px; }
+    .back-link { font-size: 13px; font-weight: 500; color: #4b5563; text-decoration: none; background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; padding: 6px 14px; }
+    .container { max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
+    .header { margin-bottom: 20px; }
+    h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 4px; }
+    .task-teacher { font-size: 16px; font-weight: 500; color: #6b7280; }
+    .task-meta { font-size: 13px; color: #6b7280; margin-bottom: 6px; }
+    .task-question { padding: 14px 16px; background: #fdf6ee; border: 1px solid #e8e0d4; border-radius: 8px; font-size: 14.5px; line-height: 1.65; color: #374151; margin-top: 12px; }
+    .section {
+      background: #fff; border-radius: 14px; padding: 22px 24px; margin-bottom: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    }
+    .section-title { font-size: 13px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .done-well .section-title { color: #15803d; }
+    .top-priority .section-title { color: #b45309; }
+    .improvements .section-title { color: #b45309; }
+    .summary-list { list-style: none; padding: 0; margin: 0; }
+    .summary-list li { padding: 8px 0 8px 22px; position: relative; font-size: 14.5px; line-height: 1.6; color: #1f2937; }
+    .summary-list li::before { content: '•'; position: absolute; left: 4px; color: #ed7615; font-weight: 800; top: 8px; }
+    .summary-text { font-size: 14.5px; line-height: 1.65; color: #1f2937; }
+    .improvement-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #fef3e6; color: #b45309; font-weight: 700; font-size: 12px; margin-right: 10px; flex-shrink: 0; }
+    .improvement-list { list-style: none; padding: 0; margin: 0; }
+    .improvement-list li { padding: 6px 0; display: flex; align-items: flex-start; font-size: 14.5px; line-height: 1.6; color: #1f2937; }
+    .improvement-list li > div { padding-top: 2px; }
+
+    /* Per-line working render */
+    .working-block .section-title { color: #6b7280; }
+    .line-row {
+      display: grid; grid-template-columns: 1fr 1.2fr; gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid #f0e6d6;
+    }
+    .line-row:last-child { border-bottom: none; }
+    .line-left { min-width: 0; }
+    .line-label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+    .line-math { padding: 8px 10px; border: 1px solid #f0e6d6; border-radius: 8px; background: #fdf6ee; font-size: 16px; line-height: 1.4; color: #111827; overflow-x: auto; }
+    .line-reason { margin-top: 6px; font-size: 13px; color: #6b7280; font-style: italic; }
+    .line-right { padding-top: 18px; }
+    .annot { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; font-size: 13.5px; line-height: 1.55; }
+    .annot.ok { background: #f0fdf4; color: #14532d; }
+    .annot.warn { background: #fef3c7; color: #78350f; }
+    .annot.error { background: #fef2f2; color: #7f1d1d; }
+    .annot.ok-ft { background: #eff6ff; color: #1e3a8a; }
+    .annot.reason { background: #faf5ff; color: #581c87; }
+    .annot-icon { flex-shrink: 0; font-weight: 800; font-size: 14px; }
+    .annot-text { flex: 1; }
+    .annot-cat { display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; opacity: 0.85; margin-bottom: 2px; }
+
+    .step-gap {
+      margin: 10px 0; padding: 12px 16px;
+      background: #fffbeb; border: 1px dashed #fcd34d; border-radius: 10px;
+      font-size: 13.5px; color: #78350f; line-height: 1.55;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .step-gap-icon { flex-shrink: 0; font-weight: 800; }
+
+    .footer { margin-top: 18px; padding: 16px; text-align: center; font-size: 13px; color: #9ca3af; }
+    .empty-state { background: #fff; border-radius: 12px; padding: 40px; text-align: center; color: #6b7280; }
+    .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
+    .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+
+    @media (max-width: 720px) {
+      .line-row { grid-template-columns: 1fr; gap: 8px; }
+      .line-right { padding-top: 0; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="nav-brand"><img src="/proofreadybanner.png" alt="ProofReady"></a>
+    <a href="student.html" class="back-link">Back</a>
+  </nav>
+  <div class="container" id="content"><div class="empty-state">Loading feedback…</div></div>
+  <div class="site-footer">
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms &amp; Conditions</a>
+    <a href="/compliance.html">Compliance</a>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    const container = document.getElementById('content');
+
+    // Two entry paths:
+    // 1) From submit-maths.html — sessionStorage proofready_maths_feedback + _task.
+    // 2) Direct URL ?task=<id> — fetch latest submission via /api/me?resource=task-drafts.
+    (async () => {
+      const fbRaw = sessionStorage.getItem('proofready_maths_feedback');
+      const taskRaw = sessionStorage.getItem('proofready_maths_task');
+      const urlTaskId = new URLSearchParams(window.location.search).get('task');
+
+      if (fbRaw) {
+        const parsed = JSON.parse(fbRaw);
+        const task = taskRaw ? JSON.parse(taskRaw) : {};
+        render(parsed.feedback, parsed.working_lines || [], task, parsed.meta);
+        return;
+      }
+      if (urlTaskId) {
+        try {
+          const user = await requireAuth();
+          if (!user) return;
+          const [taskRes, draftsRes] = await Promise.all([
+            authFetch('/api/task?id=' + encodeURIComponent(urlTaskId)),
+            authFetch('/api/me?resource=task-drafts&task_id=' + encodeURIComponent(urlTaskId)),
+          ]);
+          const tData = await taskRes.json().catch(() => ({}));
+          const dData = await draftsRes.json().catch(() => ({}));
+          if (!tData.task) { container.innerHTML = '<div class="empty-state">Task not found.</div>'; return; }
+          const drafts = Array.isArray(dData.drafts) ? dData.drafts : [];
+          const latest = drafts[drafts.length - 1];
+          if (!latest || !latest.feedback || latest.feedback.kind !== 'maths') {
+            container.innerHTML = '<div class="empty-state">No maths feedback to show for this task yet.</div>';
+            return;
+          }
+          const task = { ...tData.task, class: tData.class || null };
+          render(latest.feedback, latest.working_lines || [], task, {
+            question: task.question, course: task.course, title: task.title, task_id: task.id, draftVersion: latest.draft_version,
+          });
+        } catch (err) {
+          container.innerHTML = '<div class="empty-state">Could not load feedback. <br><small>' + e(err.message) + '</small></div>';
+        }
+        return;
+      }
+      container.innerHTML = '<div class="empty-state"><h2>No feedback to show</h2><p>Submit a draft first.</p><a href="student.html">Go back</a></div>';
+    })();
+
+    function render(fb, lines, task, meta) {
+      task = task || {};
+      meta = meta || {};
+      const title = task.title || meta.title || 'Maths feedback';
+      const courseName = task.course || meta.course || null;
+      const teacherName = task.teacher_name || (task.class && task.class.teacher_name) || null;
+
+      let html = '<div class="header">';
+      html += '<h1>' + e(title) + (teacherName ? ' <span class="task-teacher">— ' + e(teacherName) + '</span>' : '') + '</h1>';
+      if (courseName && courseName !== title) html += '<div class="task-meta">' + e(courseName) + '</div>';
+      const question = task.question || meta.question || '';
+      if (question) html += '<div class="task-question" id="taskQuestion">' + e(question) + '</div>';
+      html += '</div>';
+
+      // What you've done well
+      const well = Array.isArray(fb.what_youve_done_well) ? fb.what_youve_done_well : [];
+      if (well.length) {
+        html += '<div class="section done-well"><div class="section-title">What you\'ve done well</div>';
+        html += '<ul class="summary-list">';
+        well.forEach(s => { html += '<li>' + e(s) + '</li>'; });
+        html += '</ul></div>';
+      }
+
+      // Top priority
+      if (fb.top_priority && String(fb.top_priority).trim()) {
+        html += '<div class="section top-priority"><div class="section-title">Top priority — focus on this first</div>';
+        html += '<p class="summary-text">' + e(fb.top_priority) + '</p>';
+        html += '</div>';
+      }
+
+      // Improvements
+      const impr = Array.isArray(fb.improvements) ? fb.improvements : [];
+      if (impr.length) {
+        html += '<div class="section improvements"><div class="section-title">Things to improve</div>';
+        html += '<ol class="improvement-list">';
+        impr.forEach((p, i) => {
+          html += '<li><span class="improvement-num">' + (i + 1) + '</span><div>' + e(p) + '</div></li>';
+        });
+        html += '</ol></div>';
+      }
+
+      // Working with inline per-line annotations + step-gap chips between lines.
+      html += '<div class="section working-block"><div class="section-title">Your working</div>';
+      const annotByLine = {};
+      (Array.isArray(fb.line_annotations) ? fb.line_annotations : []).forEach(a => {
+        if (a && typeof a.line_index === 'number') annotByLine[a.line_index] = a;
+      });
+      const gapsAfter = {};
+      (Array.isArray(fb.step_gaps) ? fb.step_gaps : []).forEach(g => {
+        if (!g || typeof g.after_line_index !== 'number') return;
+        if (!gapsAfter[g.after_line_index]) gapsAfter[g.after_line_index] = [];
+        gapsAfter[g.after_line_index].push(g);
+      });
+
+      // Step gap before line 0
+      (gapsAfter[-1] || []).forEach(g => {
+        html += '<div class="step-gap"><span class="step-gap-icon">⚠</span><span>Before your first line: ' + e(g.comment) + '</span></div>';
+      });
+
+      lines.forEach((line, i) => {
+        const a = annotByLine[i];
+        html += '<div class="line-row">';
+        html += '<div class="line-left">';
+        html += '<div class="line-label">Line ' + (i + 1) + '</div>';
+        html += '<div class="line-math" data-math="' + e(line.math || '') + '">' + renderLatex(line.math || '') + '</div>';
+        if (line.reason) html += '<div class="line-reason">' + e(line.reason) + '</div>';
+        html += '</div>';
+        html += '<div class="line-right">' + renderAnnotation(a) + '</div>';
+        html += '</div>';
+        (gapsAfter[i] || []).forEach(g => {
+          html += '<div class="step-gap"><span class="step-gap-icon">⚠</span><span>' + e(g.comment) + '</span></div>';
+        });
+      });
+      html += '</div>';
+
+      html += '<div class="footer">This is formative feedback on a draft — not a final mark.</div>';
+
+      container.innerHTML = html;
+
+      // KaTeX-render the question (preserves any $...$).
+      whenKatexReady(() => {
+        const q = document.getElementById('taskQuestion');
+        if (q) renderMathInElement(q, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false },
+            { left: '\\(', right: '\\)', display: false },
+            { left: '\\[', right: '\\]', display: true },
+          ],
+          throwOnError: false,
+        });
+      });
+    }
+
+    function whenKatexReady(fn) {
+      if (window.renderMathInElement) return fn();
+      setTimeout(() => whenKatexReady(fn), 50);
+    }
+
+    function renderLatex(src) {
+      if (!src) return '<span style="color:#9ca3af">(empty)</span>';
+      // Render via KaTeX after the DOM is in place. Inline placeholder for now.
+      const id = 'tex-' + Math.random().toString(36).slice(2, 9);
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el && window.katex) {
+          try { window.katex.render(src, el, { throwOnError: false, displayMode: false }); }
+          catch { el.textContent = src; }
+        }
+      }, 0);
+      return '<span id="' + id + '">' + e(src) + '</span>';
+    }
+
+    function renderAnnotation(a) {
+      if (!a) return '<div class="annot ok"><span class="annot-icon">·</span><span class="annot-text">No comment.</span></div>';
+      const mathStatus = a.math_status || 'ok';
+      const reasonStatus = a.reason_status || 'ok';
+      const isOk = mathStatus === 'ok' && reasonStatus === 'ok';
+      const isFollowThrough = mathStatus === 'ok_following_through';
+      const isReasonOnly = mathStatus === 'ok' && reasonStatus !== 'ok';
+      const isError = mathStatus === 'error';
+
+      let cls = 'ok';
+      let icon = '✓';
+      if (isError) { cls = 'error'; icon = '✗'; }
+      else if (mathStatus === 'slip') { cls = 'warn'; icon = '⚠'; }
+      else if (isFollowThrough) { cls = 'ok-ft'; icon = '↪'; }
+      else if (isReasonOnly) { cls = 'reason'; icon = '?'; }
+      else if (isOk) { cls = 'ok'; icon = '✓'; }
+
+      const catLabel = (a.category && a.category !== 'ok') ? '<span class="annot-cat">' + e(prettyCategory(a.category)) + '</span>' : '';
+      return '<div class="annot ' + cls + '"><span class="annot-icon">' + icon + '</span><span class="annot-text">' + catLabel + e(a.comment || '') + '</span></div>';
+    }
+
+    function prettyCategory(c) {
+      switch (c) {
+        case 'notation_equals_abuse': return 'Equals-sign misuse';
+        case 'notation_other': return 'Notation';
+        case 'missing_constant': return 'Missing +C / ln|x|';
+        case 'algebra_sign': return 'Sign error';
+        case 'algebra_distribution': return 'Distribution error';
+        case 'algebra_index_law': return 'Index law';
+        case 'arithmetic': return 'Arithmetic';
+        case 'method_choice': return 'Method choice';
+        case 'justification_missing': return 'Justification missing';
+        case 'verb_mismatch': return 'Verb mismatch';
+        case 'precision_wrong': return 'Precision';
+        case 'unit_missing': return 'Units missing';
+        case 'domain_restriction_missing': return 'Domain missing';
+        case 'reason_only_issue': return 'Reasoning';
+        default: return '';
+      }
+    }
+  </script>
+</body>
+</html>

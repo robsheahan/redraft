@@ -219,6 +219,11 @@
           window.location.href = 'task-detail.html?id=' + encodeURIComponent(taskId);
           return;
         }
+        // Maths tasks use a different writing surface (line + reason).
+        if (currentTask.subject_type === 'maths') {
+          window.location.href = 'submit-maths.html?task=' + encodeURIComponent(taskId);
+          return;
+        }
 
         if (draftsRes && draftsRes.ok) {
           const dd = await draftsRes.json().catch(() => ({}));

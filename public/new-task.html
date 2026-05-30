@@ -412,6 +412,14 @@
           <h2>Task details</h2>
         </div>
         <div class="form-group">
+          <label>Subject type</label>
+          <div class="hint">Maths uses a different writing surface (line + reason per step). Pick "Maths" only for HSC Mathematics tasks.</div>
+          <div class="task-type-picker" id="subjectTypePicker" style="margin-top:6px">
+            <button type="button" class="task-type-btn" data-subject="essay">Essay / written response</button>
+            <button type="button" class="task-type-btn" data-subject="maths">Maths</button>
+          </div>
+        </div>
+        <div class="form-group">
           <label>Class</label>
           <div class="hint" id="classContextHint">Loading class...</div>
         </div>
@@ -627,6 +635,42 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
 
     let currentClassId = null;
     let selectedTaskMode = null;
+    let selectedSubjectType = 'essay';
+
+    // Subject-aware labels. Essay leaves the existing copy in place; Maths
+    // swaps Step 3's heading + hint + placeholder so the teacher's mental
+    // model matches the maths flow (per-step mark allocation, not band/criterion).
+    function applySubjectLabels(subject) {
+      var step3 = document.querySelector('#assessmentSteps .step:nth-child(2) h2');
+      var step3Hint = document.querySelector('#assessmentSteps .step:nth-child(2) .hint');
+      var criteriaTA = document.getElementById('criteriaText');
+      var genBtn = document.getElementById('generateCriteriaBtn');
+      var genHint = document.querySelector('.generate-hint');
+      var typedOnlyHelp = document.querySelector('#typedOnlyCard .toggle-sub');
+
+      var hideCritCard = document.getElementById('hideCriteriaCard');
+      if (subject === 'maths') {
+        if (step3) step3.textContent = 'Marking guideline (optional)';
+        if (step3Hint) step3Hint.textContent = 'Optional per-step mark allocation. Helps the AI flag steps the student has skipped. Skip this for in-class practice or Year 7–10 tasks where you\'d mark the working holistically. Students never see this.';
+        if (criteriaTA) criteriaTA.placeholder = "e.g.\n- Differentiates the function correctly (1 mark)\n- Sets derivative to zero and solves (1 mark)\n- Determines nature of stationary points (1 mark)\n- Calculates y-values (1 mark)\n- Evaluates endpoints on the interval (1 mark)\n- States absolute max and min with coordinates (1 mark)";
+        // Generate-criteria button is essay-specific in v0 (no maths generator yet).
+        if (genBtn) genBtn.style.display = 'none';
+        if (genHint) genHint.style.display = 'none';
+        if (typedOnlyHelp) typedOnlyHelp.textContent = 'Disables paste in the math + reason fields. Teachers see typing telemetry. Recommended for assessment integrity.';
+        // Maths marking guidelines are NEVER surfaced to the student (the
+        // generate-maths-feedback API doesn't include them in any student
+        // payload), so the essay-style hide-criteria toggle is irrelevant.
+        if (hideCritCard) hideCritCard.parentElement.style.display = 'none';
+      } else {
+        if (step3) step3.textContent = 'Marking criteria';
+        if (step3Hint) step3Hint.textContent = 'Enter your marking criteria exactly as they appear on your task notification. The AI will detect the different criteria and marking levels automatically.';
+        if (criteriaTA) criteriaTA.placeholder = "e.g.\nCriteria 1: Knowledge and understanding of key concepts (3-5 marks)\nCriteria 2: Use of relevant examples and evidence (3-5 marks)\nCriteria 3: Analysis and critical thinking (2-4 marks)\nCriteria 4: Structure, clarity and communication (1-3 marks)";
+        if (genBtn) genBtn.style.display = '';
+        if (genHint) genHint.style.display = '';
+        if (typedOnlyHelp) typedOnlyHelp.textContent = 'Disables paste in the draft box. Teachers see typing telemetry (keystrokes, paste attempts, time on task). Recommended for assessment integrity.';
+        if (hideCritCard) hideCritCard.parentElement.style.display = '';
+      }
+    }
 
     async function createTask(publish) {
       const btns = document.querySelectorAll('.btn-create');
@@ -670,13 +714,23 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         return;
       }
       const rawCriteria = document.getElementById('criteriaText').value.trim();
-      // Assessment tasks require criteria. Quick tasks don't.
-      if (task_mode === 'feedback_task' && !rawCriteria) {
+      // Assessment tasks require criteria (or, for maths, a marking guideline).
+      // Quick tasks don't. selectedSubjectType controls which one the same
+      // text field is treated as.
+      var isMaths = selectedSubjectType === 'maths';
+      // Essays: criteria required for assessment. Maths: marking guideline
+      // is optional even on assessment tasks — the feedback engine works
+      // without one and they're rare at Stage 4/5.
+      if (!isMaths && task_mode === 'feedback_task' && !rawCriteria) {
         alert('Assessment tasks need marking criteria. Either enter them now, or switch the task type to "Quick task" if you want to mark without criteria.');
         restoreButtons();
         return;
       }
-      const criteria_text = rawCriteria ? formatCriteria(rawCriteria) : null;
+      // For essays we run the format-criteria reflow (band/criterion table
+      // rescue). For maths the field is already line-per-step so we pass
+      // through verbatim.
+      const criteria_text = (!isMaths && rawCriteria) ? formatCriteria(rawCriteria) : (isMaths ? null : null);
+      const marking_guideline = isMaths ? rawCriteria : null;
       // Quick task with no criteria → completion-only marking by default
       // (a single "Mark as complete" button). Quick task with criteria uses
       // criterion-based marking. Assessment task always uses criterion marking.
@@ -700,6 +754,8 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
             outcomes, criteria_text, notes, publish: !!publish, typed_response_only,
             hide_criteria_from_students,
             task_mode, completion_only,
+            subject_type: selectedSubjectType,
+            marking_guideline,
           }),
         });
         const data = await res.json();
@@ -747,10 +803,22 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         });
       }
 
+      // Subject-type buttons (Essay / Maths) at the top of Step 1. Drives the
+      // labels and placeholders on Step 3 (Marking criteria vs Marking guideline).
+      const subjectBtns = document.querySelectorAll('#subjectTypePicker .task-type-btn');
+      function selectSubjectType(subject) {
+        selectedSubjectType = subject;
+        subjectBtns.forEach(b => b.classList.toggle('is-selected', b.dataset.subject === subject));
+        applySubjectLabels(subject);
+      }
+      subjectBtns.forEach(b => b.addEventListener('click', () => selectSubjectType(b.dataset.subject)));
+      // Default subject to essay so existing teachers' muscle memory works.
+      selectSubjectType('essay');
+
       // Task-type buttons at the bottom of Step 1. Quick Task: nothing
       // appears below (only Step 1 + publish banner). Assessment Task:
       // Steps 2–4 reveal so the teacher can add outcomes, criteria, notes.
-      const typeBtns = document.querySelectorAll('.task-type-btn');
+      const typeBtns = document.querySelectorAll('#taskTypePicker .task-type-btn');
       const assessmentSteps = document.getElementById('assessmentSteps');
       function selectTaskType(mode) {
         selectedTaskMode = mode;

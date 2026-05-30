@@ -502,6 +502,31 @@
   <script src="/js/rubric.js"></script>
   <script>
     const feedbackData = sessionStorage.getItem('proofready_feedback');
+    // Redirect to feedback-maths.html if we landed on the wrong page:
+    //   (a) a maths submission set sessionStorage proofready_maths_feedback
+    //   (b) the URL points to a maths task (?task=<id>)
+    (function mathsRedirectCheck() {
+      try {
+        if (sessionStorage.getItem('proofready_maths_feedback')) {
+          var qs = window.location.search || '';
+          window.location.href = 'feedback-maths.html' + qs;
+          return;
+        }
+        var taskParam = new URLSearchParams(window.location.search).get('task');
+        if (taskParam) {
+          // Cheap probe — read the task and decide.
+          authFetch('/api/task?id=' + encodeURIComponent(taskParam))
+            .then(r => r.ok ? r.json() : null)
+            .then(d => {
+              if (d && d.task && d.task.subject_type === 'maths') {
+                window.location.href = 'feedback-maths.html?task=' + encodeURIComponent(taskParam);
+              }
+            })
+            .catch(() => {});
+        }
+      } catch {}
+    })();
+
     const taskData = sessionStorage.getItem('proofready_task');
     const container = document.getElementById('content');
 
