@@ -288,6 +288,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // -- Card: Keyword struggles (NESA-glossary pattern match) --
   const keywordStruggles = computeKeywordStruggles(submissions);
 
+  // -- Card: Maths error categories (from per-line annotations on
+  // submissions where feedback.kind === 'maths') --
+  const mathsErrorCategories = computeMathsErrorCategories(submissions);
+
   // -- Cached LLM cards (Tier A) --
   // Teacher tier doesn't use the school-keyed cache (it's per-school, not
   // per-teacher or per-class). Teachers regenerate fresh each click; the
@@ -359,6 +363,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       per_criterion_lows: perCriterionLows,
       improvement_velocity: improvementVelocity,
       keyword_struggles: keywordStruggles,
+      maths_error_categories: mathsErrorCategories,
       llm,
     },
     counts,
@@ -716,6 +721,7 @@ function emptyResponse(
       per_criterion_lows: { rows: [], total_analyzed: 0 },
       improvement_velocity: { sample_size: 0, avg_v1: 0, avg_vN: 0, avg_delta_pct: 0, decreased: 0, increased: 0, unchanged: 0, addressed_rate: 0, students_with_any_addressed: 0, top_persistent: [], top_regressions: [] },
       keyword_struggles: { rows: [], total_analyzed: 0 },
+      maths_error_categories: { total_maths_submissions: 0, total_lines: 0, categories: [] },
     },
     counts: {
       teachers: 0,
@@ -724,5 +730,67 @@ function emptyResponse(
       submissions: 0,
       tasks_with_class_feedback: 0,
     },
+  };
+}
+
+// ─────────────── Maths error categories ───────────────
+
+/**
+ * Aggregates per-line annotation categories across maths submissions in
+ * scope. Each line annotation has a `category` (one of the enum values
+ * in MATHS_PER_LINE_DIAGNOSTIC_TOOL); we count non-"ok" categories and
+ * return the top six. Soft floor in the renderer: <3 submissions shows
+ * a "not enough data yet" state; the data is always returned so the
+ * card can render its empty state without a separate request.
+ */
+const MATHS_CATEGORY_LABELS: Record<string, string> = {
+  notation_equals_abuse: 'Equals-sign misuse',
+  notation_other: 'Notation',
+  missing_constant: 'Missing +C / ln|x|',
+  algebra_sign: 'Sign error',
+  algebra_distribution: 'Distribution error',
+  algebra_index_law: 'Index law',
+  arithmetic: 'Arithmetic',
+  method_choice: 'Method choice',
+  justification_missing: 'Justification missing',
+  verb_mismatch: 'Verb mismatch',
+  precision_wrong: 'Precision',
+  premature_rounding: 'Premature rounding',
+  unit_missing: 'Units missing',
+  context_missing: 'Answer not in context',
+  variable_confusion: 'Variables mixed up',
+  domain_restriction_missing: 'Domain missing',
+  reason_only_issue: 'Reasoning',
+  other: 'Other',
+};
+
+function computeMathsErrorCategories(submissions: any[]) {
+  const counts: Record<string, number> = {};
+  let totalLines = 0;
+  let totalMathsSubs = 0;
+  submissions.forEach(s => {
+    const fb = s && s.feedback;
+    if (!fb || fb.kind !== 'maths') return;
+    totalMathsSubs += 1;
+    const annots = Array.isArray(fb.line_annotations) ? fb.line_annotations : [];
+    annots.forEach((a: any) => {
+      totalLines += 1;
+      const cat = a && typeof a.category === 'string' ? a.category : null;
+      if (!cat || cat === 'ok') return;
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+  });
+  const categories = Object.entries(counts)
+    .map(([category, count]) => ({
+      category,
+      count,
+      label: MATHS_CATEGORY_LABELS[category] || category,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
+  return {
+    total_maths_submissions: totalMathsSubs,
+    total_lines: totalLines,
+    categories,
   };
 }

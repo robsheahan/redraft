@@ -1828,6 +1828,14 @@
         + renderKeywordStruggles(cd.keyword_struggles)
         + '</div>';
 
+      // Maths error categories — full width. Only renders if at least one
+      // maths submission has landed; otherwise shows the empty state with
+      // guidance.
+      html += '<div class="card card-span-12">'
+        + cardHeader('Maths errors by category', 'Per-line annotations across maths submissions in scope')
+        + renderMathsErrorCategories(cd.maths_error_categories)
+        + '</div>';
+
       // ─── Tier A: LLM-derived cards (each with own Generate button) ───
       const llm = cd.llm || {};
 
@@ -2268,6 +2276,33 @@
           + '<div class="bar-label" style="text-transform:lowercase">' + e(r.keyword) + '</div>'
           + '<div class="bar-track"><div class="bar-fill" style="width:' + pct.toFixed(1) + '%"></div></div>'
           + '<div class="bar-value">' + r.count + '<span style="color:#9ca3af;font-weight:500;font-size:11px;margin-left:4px">(' + r.pct.toFixed(0) + '%)</span></div>'
+          + '</div>';
+      });
+      html += '</div>';
+      return html;
+    }
+
+    function renderMathsErrorCategories(d) {
+      const subs = (d && d.total_maths_submissions) || 0;
+      const cats = (d && d.categories) || [];
+      if (subs === 0) {
+        return '<div class="card-empty"><strong>No maths submissions yet</strong>Once students submit maths drafts, the most common per-line errors (notation, justification, verb misreads, etc.) appear here.</div>';
+      }
+      if (subs < 3) {
+        return '<div class="card-empty"><strong>Not enough data yet</strong>' + subs + ' maths submission' + (subs === 1 ? '' : 's') + ' so far. The error breakdown will populate once you have a few more.</div>';
+      }
+      if (cats.length === 0) {
+        return '<div class="card-empty"><strong>No errors flagged</strong>Across ' + subs + ' maths submissions, the AI didn\'t flag any non-OK line annotations. Either the cohort is flying, or the rubric is too permissive.</div>';
+      }
+      let html = '<div style="font-size:12.5px;color:#6b7280;margin-bottom:10px">Across <strong>' + subs + '</strong> maths submission' + (subs === 1 ? '' : 's') + ' and <strong>' + (d.total_lines || 0) + '</strong> lines of working. Counts = how many lines fell into each category.</div>';
+      const max = Math.max(1, ...cats.map(r => r.count));
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:8px">';
+      cats.forEach(r => {
+        const pct = (r.count / max) * 100;
+        html += '<div class="bar-row" style="grid-template-columns:160px 1fr auto">'
+          + '<div class="bar-label">' + e(r.label) + '</div>'
+          + '<div class="bar-track"><div class="bar-fill" style="width:' + pct.toFixed(1) + '%"></div></div>'
+          + '<div class="bar-value">' + r.count + '</div>'
           + '</div>';
       });
       html += '</div>';
