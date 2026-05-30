@@ -35,6 +35,30 @@
     .divider { font-size: 12px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 12px; }
     .inline-hint { font-size: 13px; color: #6b7280; margin-bottom: 14px; padding: 10px 14px; background: #fef3e6; border: 1px solid #fcd9b6; border-radius: 8px; }
 
+    /* Mode picker */
+    .mode-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #f0e6d6; }
+    .mode-btn { padding: 8px 14px; background: #fff; border: 1px solid #e8e0d4; border-radius: 8px; color: #6b7280; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .mode-btn:hover { border-color: #d1d5db; color: #111827; }
+    .mode-btn.is-selected { background: #fef3e6; border-color: #ed7615; color: #ed7615; }
+
+    .talkthrough-textarea { width: 100%; min-height: 280px; padding: 14px; border: 1px solid #e8e0d4; border-radius: 8px; font-size: 15px; font-family: inherit; line-height: 1.65; outline: none; resize: vertical; background: #fff; color: #111827; tab-size: 4; }
+    .talkthrough-textarea:focus { border-color: #ed7615; box-shadow: 0 0 0 3px rgba(237,118,21,0.1); }
+
+    /* Confirmation overlay (after Pass A) */
+    .confirm-overlay { display: none; padding: 20px; }
+    .confirm-overlay.visible { display: block; }
+    .confirm-overlay h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+    .confirm-overlay p { font-size: 13px; color: #6b7280; margin-bottom: 14px; }
+    .preview-line { padding: 10px 12px; border: 1px solid #f0e6d6; border-radius: 8px; margin-bottom: 8px; background: #fdf6ee; }
+    .preview-line .preview-label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+    .preview-line .preview-math { font-size: 16px; color: #111827; padding: 6px 0; overflow-x: auto; }
+    .preview-line .preview-reason { font-size: 13px; color: #6b7280; font-style: italic; }
+    .preview-empty { color: #9ca3af; }
+    .confirm-actions { display: flex; gap: 10px; margin-top: 14px; }
+    .confirm-actions .submit-btn { flex: 1; }
+    .confirm-actions .back-btn { padding: 14px; background: transparent; border: 1px solid #d1d5db; border-radius: 10px; color: #374151; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .confirm-actions .back-btn:hover { border-color: #6b7280; }
+
     /* Line card */
     .line-card { border: 1px solid #e8e0d4; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; background: #fff; position: relative; }
     .line-card .line-label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
@@ -124,6 +148,8 @@
     let currentTask = null;
     let priorDrafts = [];
     let lineCounter = 0;
+    let currentMode = 'structured'; // 'structured' | 'freeform' | 'talkthrough'
+    let confirmedLines = null; // After Pass A confirmation, the lines to send.
     // Telemetry, same shape as essay submit (keystrokes per math + reason field).
     const telemetry = { keystroke_count: 0, paste_attempts_blocked: 0, typing_session_count: 0, total_typing_time_ms: 0, time_to_first_keystroke_ms: null };
     let lastKeyAt = 0;
@@ -218,9 +244,24 @@
 
       html += '<div class="divider">Your working — ' + remaining + ' draft' + (remaining === 1 ? '' : 's') + ' remaining</div>';
       html += '<div class="card">';
+      html += '<div class="mode-picker">';
+      html += '<button type="button" class="mode-btn is-selected" data-mode="structured" onclick="switchMode(\'structured\')">Structured (line + reason)</button>';
+      html += '<button type="button" class="mode-btn" data-mode="freeform" onclick="switchMode(\'freeform\')">Freeform</button>';
+      html += '<button type="button" class="mode-btn" data-mode="talkthrough" onclick="switchMode(\'talkthrough\')">Talk-through</button>';
+      html += '</div>';
+      html += '<div id="modeStructured" class="mode-pane">';
       html += '<div class="inline-hint">One step per line. Maths in the top field, a short reason underneath — that\'s what earns method marks.</div>';
       html += '<div id="linesContainer"></div>';
       html += '<button type="button" class="add-line-btn" onclick="addLine()">+ Add line</button>';
+      html += '</div>';
+      html += '<div id="modeFreeform" class="mode-pane" hidden>';
+      html += '<div class="inline-hint">Type your working continuously in this editor. The AI splits it into per-step lines on submit — you\'ll confirm the split before feedback runs.</div>';
+      html += '<math-field id="freeformInput" style="min-height:280px;font-size:17px"></math-field>';
+      html += '</div>';
+      html += '<div id="modeTalkthrough" class="mode-pane" hidden>';
+      html += '<div class="inline-hint">Type your working as prose, with the maths inline like $f(x) = 2x+3$. The AI splits it into per-step lines on submit — you\'ll confirm the split before feedback runs.</div>';
+      html += '<textarea id="talkthroughInput" class="talkthrough-textarea" placeholder="e.g. I want to find the stationary points of $f(x) = 2x^3 - 3x^2 - 12x + 5$. Differentiating gives $f\'(x) = 6x^2 - 6x - 12$. Setting that to zero..."></textarea>';
+      html += '</div>';
       html += '<div class="save-row"><span id="saveIndicator" class="save-indicator">&nbsp;</span><span id="lineCount">0 lines</span></div>';
       html += '<button class="submit-btn" id="submitBtn" onclick="submitForFeedback()">Get AI feedback</button>';
       html += '</div>';
@@ -340,8 +381,53 @@
       const lines = collectLines();
       const filled = lines.filter(l => l.math.trim() || l.reason.trim()).length;
       const el = document.getElementById('lineCount');
-      if (el) el.textContent = filled + ' line' + (filled === 1 ? '' : 's');
+      if (!el) return;
+      if (currentMode === 'structured') {
+        el.textContent = filled + ' line' + (filled === 1 ? '' : 's');
+      } else if (currentMode === 'freeform') {
+        const mf = document.getElementById('freeformInput');
+        const chars = mf ? (mf.value || '').length : 0;
+        el.textContent = chars + ' character' + (chars === 1 ? '' : 's');
+      } else {
+        const ta = document.getElementById('talkthroughInput');
+        const words = ta ? ((ta.value || '').trim() ? (ta.value || '').trim().split(/\s+/).length : 0) : 0;
+        el.textContent = words + ' word' + (words === 1 ? '' : 's');
+      }
     }
+
+    function switchMode(mode) {
+      if (mode === currentMode) return;
+      currentMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('is-selected', b.dataset.mode === mode));
+      document.getElementById('modeStructured').hidden = mode !== 'structured';
+      document.getElementById('modeFreeform').hidden = mode !== 'freeform';
+      document.getElementById('modeTalkthrough').hidden = mode !== 'talkthrough';
+      refreshLineCount();
+      // Wire up telemetry on freeform/talkthrough fields on first switch.
+      if (mode === 'freeform') {
+        const mf = document.getElementById('freeformInput');
+        if (mf && !mf.__wired) {
+          mf.__wired = true;
+          mf.addEventListener('input', () => { telemetry.keystroke_count += 1; refreshLineCount(); });
+          setTimeout(() => mf.focus(), 30);
+        }
+      } else if (mode === 'talkthrough') {
+        const ta = document.getElementById('talkthroughInput');
+        if (ta && !ta.__wired) {
+          ta.__wired = true;
+          ta.addEventListener('input', () => { telemetry.keystroke_count += 1; refreshLineCount(); });
+          ta.addEventListener('paste', ev => {
+            if (currentTask && currentTask.typed_response_only !== false) {
+              ev.preventDefault();
+              telemetry.paste_attempts_blocked += 1;
+              showToast('Paste is disabled — type your working.');
+            }
+          });
+          setTimeout(() => ta.focus(), 30);
+        }
+      }
+    }
+    window.switchMode = switchMode;
 
     function collectLines() {
       const out = [];
@@ -397,21 +483,136 @@
     }
 
     async function submitForFeedback() {
-      const lines = collectLines().filter(l => l.math || l.reason);
-      if (lines.length === 0) {
-        showToast('Add at least one line of working.');
+      // Confirmation path — we already ran Pass A and the student approved
+      // the parsed lines. Send them straight to generate-maths-feedback.
+      if (confirmedLines) {
+        await postFinalFeedback(confirmedLines, currentMode);
         return;
       }
-      // Soft warning if any reason is blank — encourage the habit but don't block.
-      const missingReasons = lines.filter(l => !l.reason).length;
-      if (missingReasons > 0) {
-        const ok = confirm(missingReasons + ' line' + (missingReasons === 1 ? '' : 's') + ' have no reason. Your reasoning is what earns method marks — submit anyway?');
-        if (!ok) return;
+
+      if (currentMode === 'structured') {
+        const lines = collectLines().filter(l => l.math || l.reason);
+        if (lines.length === 0) { showToast('Add at least one line of working.'); return; }
+        const missingReasons = lines.filter(l => !l.reason).length;
+        if (missingReasons > 0) {
+          const ok = confirm(missingReasons + ' line' + (missingReasons === 1 ? '' : 's') + ' have no reason. Your reasoning is what earns method marks — submit anyway?');
+          if (!ok) return;
+        }
+        await postFinalFeedback(lines, 'structured');
+        return;
       }
 
+      // Freeform / talk-through: Pass A first, then confirmation, then
+      // postFinalFeedback on confirm.
+      const raw = currentMode === 'freeform'
+        ? (document.getElementById('freeformInput').value || '').trim()
+        : (document.getElementById('talkthroughInput').value || '').trim();
+      if (!raw) { showToast('Add some working before submitting.'); return; }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      const originalText = btn.textContent;
+      btn.textContent = 'Parsing your working…';
+
+      try {
+        const res = await authFetch('/api/structure-maths-working', {
+          method: 'POST',
+          body: JSON.stringify({ task_id: currentTask.id, raw_text: raw, input_mode: currentMode }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Could not parse your working.');
+        const lines = Array.isArray(data.working_lines) ? data.working_lines : [];
+        if (lines.length === 0) {
+          throw new Error('The parser didn\'t find any lines. Try the structured mode instead.');
+        }
+        showConfirmation(lines);
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+
+    function showConfirmation(lines) {
+      const container = document.getElementById('content');
+      // Build a confirmation card replacing the form.
+      let html = '<div class="card">';
+      html += '<h3 style="font-size:16px;font-weight:700;margin-bottom:6px">Does this look right?</h3>';
+      html += '<p style="font-size:13px;color:#6b7280;margin-bottom:14px">We\'ve split your working into ' + lines.length + ' line' + (lines.length === 1 ? '' : 's') + '. Confirm to get feedback, or go back to edit your input.</p>';
+      lines.forEach((l, i) => {
+        html += '<div class="preview-line">';
+        html += '<div class="preview-label">Line ' + (i + 1) + '</div>';
+        if (l.math) {
+          html += '<div class="preview-math"><span class="ml" data-tex="' + e(l.math) + '">' + e(l.math) + '</span></div>';
+        } else {
+          html += '<div class="preview-math preview-empty">(no math on this line)</div>';
+        }
+        if (l.reason) html += '<div class="preview-reason">' + e(l.reason) + '</div>';
+        html += '</div>';
+      });
+      html += '<div class="confirm-actions">';
+      html += '<button type="button" class="back-btn" onclick="cancelConfirmation()">Go back and edit</button>';
+      html += '<button class="submit-btn" id="confirmBtn" onclick="acceptConfirmation()">Looks right — get feedback</button>';
+      html += '</div>';
+      html += '</div>';
+      // Insert above the working card.
+      const workingCard = document.querySelector('.card:has(#linesContainer)') || document.querySelector('.card');
+      // Just append a fresh card with the confirmation; hide the existing form.
+      const lockId = 'confirmation-card-' + Date.now();
+      const wrap = document.createElement('div');
+      wrap.id = lockId;
+      wrap.innerHTML = html;
+      container.appendChild(wrap);
+      document.querySelectorAll('.mode-picker, .mode-pane, #submitBtn, .save-row').forEach(el => { el.style.display = 'none'; });
+      confirmedLines = lines;
+      // KaTeX-render the previewed math.
+      whenKatexReady(() => {
+        document.querySelectorAll('.preview-line .ml[data-tex]').forEach(el => {
+          const tex = el.getAttribute('data-tex');
+          try { window.katex.render(tex, el, { throwOnError: false, displayMode: false }); }
+          catch { el.textContent = tex; }
+        });
+      });
+      window._confirmationCardId = lockId;
+    }
+
+    function cancelConfirmation() {
+      confirmedLines = null;
+      if (window._confirmationCardId) {
+        const el = document.getElementById(window._confirmationCardId);
+        if (el) el.remove();
+        window._confirmationCardId = null;
+      }
+      document.querySelectorAll('.mode-picker, .save-row').forEach(el => { el.style.display = ''; });
+      document.getElementById('modeStructured').style.display = currentMode === 'structured' ? '' : '';
+      document.getElementById('modeFreeform').style.display = currentMode === 'freeform' ? '' : '';
+      document.getElementById('modeTalkthrough').style.display = currentMode === 'talkthrough' ? '' : '';
+      document.getElementById('modeStructured').hidden = currentMode !== 'structured';
+      document.getElementById('modeFreeform').hidden = currentMode !== 'freeform';
+      document.getElementById('modeTalkthrough').hidden = currentMode !== 'talkthrough';
+      document.getElementById('submitBtn').style.display = '';
+    }
+    window.cancelConfirmation = cancelConfirmation;
+
+    async function acceptConfirmation() {
+      if (!confirmedLines) return;
+      const btn = document.getElementById('confirmBtn');
+      btn.disabled = true;
+      btn.textContent = 'Generating feedback…';
+      await postFinalFeedback(confirmedLines, currentMode);
+    }
+    window.acceptConfirmation = acceptConfirmation;
+
+    function whenKatexReady(fn) {
+      if (window.katex) return fn();
+      setTimeout(() => whenKatexReady(fn), 50);
+    }
+
+    async function postFinalFeedback(lines, inputMode) {
       const btn = document.getElementById('submitBtn');
       const overlay = document.getElementById('loadingOverlay');
-      btn.disabled = true; btn.style.display = 'none';
+      if (btn) { btn.disabled = true; btn.style.display = 'none'; }
       overlay.classList.add('visible');
 
       try {
@@ -420,7 +621,7 @@
           body: JSON.stringify({
             task_id: currentTask.id,
             working_lines: lines,
-            input_mode: 'structured',
+            input_mode: inputMode,
             keystroke_count: telemetry.keystroke_count,
             paste_attempts_blocked: telemetry.paste_attempts_blocked,
             typing_session_count: telemetry.typing_session_count,
@@ -447,7 +648,7 @@
         window.location.href = 'feedback-maths.html';
       } catch (err) {
         overlay.classList.remove('visible');
-        btn.disabled = false; btn.style.display = '';
+        if (btn) { btn.disabled = false; btn.style.display = ''; }
         alert(err.message);
       }
     }

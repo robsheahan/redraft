@@ -244,6 +244,35 @@ export const MATHS_PER_LINE_DIAGNOSTIC_TOOL: Tool = {
   },
 };
 
+export const MATHS_STRUCTURE_WORKING_TOOL: Tool = {
+  name: 'structure_maths_working',
+  description: "Convert a free-form student input (raw LaTeX-y working or prose-with-inline-math) into the canonical { math, reason } per-line shape used by the maths feedback pipeline. Split on logical step boundaries. Do NOT correct or improve the student's work — capture exactly what they wrote.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      lines: {
+        type: 'array',
+        description: "Ordered list of working steps. Each entry is one logical line. Do not skip steps; do not merge unrelated steps.",
+        items: {
+          type: 'object',
+          properties: {
+            math: {
+              type: 'string',
+              description: 'The mathematical content of this line as LaTeX. If the student wrote prose around the math, extract just the math here. Empty string if this line has no math.',
+            },
+            reason: {
+              type: 'string',
+              description: 'The student\'s reasoning for this step, extracted from their input. Prefer their own words when available. Empty string if the student gave no reason.',
+            },
+          },
+          required: ['math', 'reason'],
+        },
+      },
+    },
+    required: ['lines'],
+  },
+};
+
 export const MATHS_HOLISTIC_TOOL: Tool = {
   name: 'provide_maths_holistic_feedback',
   description: 'Return holistic marker-voice feedback in three sections: what the student has done well, the single top priority, and a short list of improvements. No verb-check section — verb misreads are caught at the per-line level by the diagnostic tool.',

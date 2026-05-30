@@ -191,6 +191,56 @@ ABSOLUTE RULES — do NOT, anywhere:
 }
 
 /**
+ * Pass A — structure free-form student input into { math, reason } lines.
+ *
+ * Two input modes:
+ *   - 'freeform': student typed LaTeX-y working in a single editor, possibly
+ *     with [reason: ...] annotations or trailing prose per line.
+ *   - 'talkthrough': student wrote prose with inline $...$ math segments
+ *     (e.g. "Differentiating gives $f'(x) = 6x+2$. Setting that to zero...").
+ *
+ * The model returns the canonical [{math, reason}] shape with no
+ * interpretation, no correction, no addition. If the student wrote prose
+ * but no math on a line, math is empty. If they wrote math but no reason,
+ * reason is empty.
+ */
+export function buildMathsStructureWorkingSystem(): string {
+  return `You convert a student's free-form maths working into a canonical line-by-line shape: [{ math, reason }].
+
+YOUR ONLY JOB IS RE-SHAPING, NEVER INTERPRETATION.
+
+- Split the input on logical step boundaries — one mathematical move per line.
+- The "math" field is the symbolic content of that line as LaTeX (without surrounding $..$ delimiters). Empty string if the line has no math.
+- The "reason" field is the student's stated reasoning for that step, in their own words, extracted from the input. Empty string if the student gave none.
+- Do NOT correct the maths. Do NOT improve the notation. Do NOT add reasons the student didn't write.
+- Do NOT collapse multiple distinct steps into one line.
+- Do NOT split a single logical step into multiple lines just because the student wrote it across two lines.
+- Keep the student's exact LaTeX, including any errors or unusual notation. The diagnostic pass downstream will catch problems — your job is faithful transcription.
+
+If the input is freeform (LaTeX-y), prefer one entry per equation/identity. If the input is talk-through (prose-with-$...$), prefer one entry per mathematical move described in the prose.
+
+If a student wrote inline annotations like "[reason: differentiating]" or "(by the chain rule)", lift those into the reason field for that line.`;
+}
+
+export function buildMathsStructureWorkingUserPrompt(args: {
+  question: string;
+  rawText: string;
+  inputMode: 'freeform' | 'talkthrough';
+}): string {
+  return `QUESTION (for context only — DO NOT diagnose or correct):
+${args.question}
+
+INPUT MODE: ${args.inputMode}
+
+STUDENT'S RAW INPUT:
+${args.rawText}
+
+---
+
+Convert this into the canonical [{math, reason}] line shape. Faithful transcription only.`;
+}
+
+/**
  * Builds the user prompt for the per-line diagnostic. Composes the question,
  * the marking guideline (which the student never sees), and the structured
  * working as a numbered transcript.
