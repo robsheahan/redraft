@@ -17,7 +17,6 @@ import { callTool } from '../lib/anthropic-tool-call.js';
 import {
   BOTTOM_DECILE_TOOL,
   TOP_DECILE_TOOL,
-  VERB_DEPTH_TOOL,
   COMMON_GAPS_TOOL,
   THINGS_DONE_WELL_TOOL,
   STUDENT_TOP_MISTAKES_TOOL,
@@ -33,7 +32,7 @@ import {
  *   POST /api/insights-card-generate
  *     body: { kind, school_id?, faculty?, course?, class_id?, year_level? }
  *
- * Kinds: bottom_decile | top_decile | verb_depth | common_gaps | things_done_well
+ * Kinds: bottom_decile | top_decile | common_gaps | things_done_well
  *
  * Each kind:
  *   - filters submissions per the request + caller's faculty scope
@@ -92,24 +91,6 @@ const KIND_CONFIG: Record<string, {
     ].join('\n'),
     buildUserPrompt: (rows) => buildImprovementsPrompt(rows, 'top-decile student'),
   },
-  verb_depth: {
-    tool: VERB_DEPTH_TOOL,
-    endpointName: 'insights-card-verb-depth',
-    buildSystemPrompt: (schoolName, sample) => [
-      `You are a senior NSW NESA-trained marker analysing how a school's students handle NESA directive verbs (analyse, evaluate, justify, assess, explain, discuss, etc.).`,
-      `School: ${schoolName}`,
-      `Sample size: ${sample} submissions across the school.`,
-      ``,
-      `You'll receive each submission's task verb check (the AI's per-submission verdict on how the student executed the task verb), tagged with faculty and the task's question. Identify the cross-school patterns by verb.`,
-      ``,
-      `RULES:`,
-      `- One entry per verb, only for verbs with clear signal.`,
-      `- Tag each verb's severity: 'strength' (executed well), 'mixed' (varies), 'concern' (consistently fall short).`,
-      `- List which faculties (KLAs) the pattern appears in.`,
-      `- This is the most actionable HSC diagnostic — be sharp and specific.`,
-    ].join('\n'),
-    buildUserPrompt: (rows) => buildVerbDepthPrompt(rows),
-  },
   common_gaps: {
     tool: COMMON_GAPS_TOOL,
     endpointName: 'insights-card-common-gaps',
@@ -153,23 +134,6 @@ function buildImprovementsPrompt(rows: any[], label: string): string {
     ].filter(Boolean).join('\n');
   }).join('\n\n');
   return `Below are ${rows.length} samples. Synthesise the dominant patterns now.\n\n${lines}`;
-}
-
-function buildVerbDepthPrompt(rows: any[]): string {
-  const lines = rows.map((r, i) => {
-    const fb = r.feedback || {};
-    const verbCheck = fb.task_verb_check;
-    const verbSummary = (verbCheck && (verbCheck.summary || verbCheck)) || '';
-    const verbDetail = (verbCheck && verbCheck.detail) || '';
-    return [
-      `--- submission #${i + 1} ---`,
-      `Faculty: ${r.faculty || 'Other'}  Course: ${r.course || '(unknown)'}`,
-      `Task question (verb cue lives here): ${(r.task_question || '').slice(0, 300)}`,
-      `Verb check summary: ${verbSummary}`,
-      verbDetail ? `Verb check detail: ${String(verbDetail).slice(0, 800)}` : '',
-    ].filter(Boolean).join('\n');
-  }).join('\n\n');
-  return `Below are ${rows.length} per-submission verb checks. Surface the cross-school patterns now.\n\n${lines}`;
 }
 
 function buildStrengthsPrompt(rows: any[]): string {
@@ -560,7 +524,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const requiredKeys: Record<string, string[]> = {
     bottom_decile:     ['patterns', 'scope_note'],
     top_decile:        ['next_steps', 'scope_note'],
-    verb_depth:        ['verbs', 'overall_pattern'],
     common_gaps:       ['gaps', 'scope_note'],
     things_done_well:  ['strengths', 'scope_note'],
   };

@@ -1533,13 +1533,9 @@
       html += renderStudentSummaryHero(llm.student_summary, eligible, floor, stu);
 
       // SQL cards
-      html += '<div class="card card-span-6">'
+      html += '<div class="card card-span-12">'
         + cardHeader('Mark distribution', 'This student\'s graded submissions')
         + renderStudentMarkDistribution(cd.mark_distribution)
-        + '</div>';
-      html += '<div class="card card-span-6">'
-        + cardHeader('Improvement velocity', 'Priority shifts across their drafts')
-        + renderImprovementVelocity(cd.improvement_velocity)
         + '</div>';
 
       // LLM cards (per-student kinds)
@@ -1707,26 +1703,12 @@
       html += renderClassBaselinePanel();
 
       // 1. Mark distribution
-      html += '<div class="card card-span-6">'
+      html += '<div class="card card-span-12">'
         + cardHeader('Mark distribution', 'NESA Common Grade Scale')
         + renderMarkDistribution(cd.mark_distribution)
         + '</div>';
 
-      // 2. Improvement velocity — feedback priority shifts across drafts
-      html += '<div class="card card-span-6">'
-        + cardHeader('Improvement velocity', 'Which priorities students addressed between drafts')
-        + renderImprovementVelocity(cd.improvement_velocity)
-        + '</div>';
-
-      // 3. Keyword struggles (NESA directive verbs) → verb_depth LLM card
-      html += '<div class="card card-span-12">' + renderLLMCard('verb_depth', llm.verb_depth, {
-        title: 'Keyword struggles',
-        sub: 'How students handle each NESA directive verb (analyse, evaluate, justify, …)',
-        emptyTeaser: 'Generate to map how students in this class handle each NESA directive verb. Highlights which verbs they execute well and where they fall short.',
-        render: renderVerbDepth,
-      }) + '</div>';
-
-      // 4. Top 3 mistakes → common_gaps
+      // Top 3 mistakes → common_gaps
       html += '<div class="card card-span-6">' + renderLLMCard('common_gaps', llm.common_gaps, {
         title: 'Top 3 mistakes',
         sub: 'Recurring improvement themes across the class',
@@ -1810,24 +1792,6 @@
         + renderTeacherActivity(cd.teacher_activity)
         + '</div>';
 
-      // Per-criterion lows — 6 cols
-      html += '<div class="card card-span-6">'
-        + cardHeader('Lowest-scoring criteria', 'Where the cohort drops marks')
-        + renderPerCriterion(cd.per_criterion_lows)
-        + '</div>';
-
-      // Improvement velocity — 6 cols
-      html += '<div class="card card-span-6">'
-        + cardHeader('Improvement velocity', 'Multi-draft students v1 → final')
-        + renderImprovementVelocity(cd.improvement_velocity)
-        + '</div>';
-
-      // Keyword struggles — full width
-      html += '<div class="card card-span-12">'
-        + cardHeader('Keyword struggles', 'NESA terms most often flagged for improvement')
-        + renderKeywordStruggles(cd.keyword_struggles)
-        + '</div>';
-
       // Maths error categories — full width. Only renders if at least one
       // maths submission has landed; otherwise shows the empty state with
       // guidance.
@@ -1851,13 +1815,6 @@
         sub: '3 highest-impact next steps for top 10% students',
         emptyTeaser: 'Generate this card to identify the 3 most useful next steps for the top 10% of students — moving "high" responses to "exceptional".',
         render: renderTopDecile,
-      }) + '</div>';
-
-      html += '<div class="card card-span-12">' + renderLLMCard('verb_depth', llm.verb_depth, {
-        title: 'NESA verb-depth handling',
-        sub: 'How students execute each directive verb across faculties',
-        emptyTeaser: 'Generate to map how students across the school are handling each NESA directive verb (analyse, evaluate, justify, etc.). Most actionable HSC diagnostic — drives whole-faculty PD priorities.',
-        render: renderVerbDepth,
       }) + '</div>';
 
       html += '<div class="card card-span-6">' + renderLLMCard('common_gaps', llm.common_gaps, {
@@ -1979,28 +1936,6 @@
           + '</li>';
       });
       html += '</ol>';
-      return html;
-    }
-
-    function renderVerbDepth(c) {
-      let html = '';
-      if (c.overall_pattern) html += '<div style="font-size:13px;color:#374151;background:#fdf6ee;padding:10px 12px;border-radius:8px;margin-bottom:14px;line-height:1.55"><strong style="color:#b45309">Overall: </strong>' + e(c.overall_pattern) + '</div>';
-      html += '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:10px">';
-      (c.verbs || []).forEach(v => {
-        const sevColour = v.severity === 'concern' ? '#991b1b' : v.severity === 'strength' ? '#15803d' : '#d97706';
-        const sevBg     = v.severity === 'concern' ? '#fef2f2' : v.severity === 'strength' ? '#f0fdf4' : '#fffbeb';
-        html += '<div style="background:' + sevBg + ';padding:11px 13px;border-radius:8px;border-left:3px solid ' + sevColour + '">'
-          + '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">'
-          +   '<span style="font-weight:800;font-size:15px;color:' + sevColour + '">' + e(v.verb) + '</span>'
-          +   '<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:' + sevColour + '">' + e(v.severity || '') + '</span>'
-          + '</div>'
-          + '<div style="font-size:12.5px;color:#374151;margin-bottom:6px">' + e(v.handling_note) + '</div>'
-          + (v.faculties_involved && v.faculties_involved.length
-              ? '<div style="font-size:11px;color:#9ca3af">' + e(v.faculties_involved.join(' · ')) + '</div>'
-              : '')
-          + '</div>';
-      });
-      html += '</div>';
       return html;
     }
 
@@ -2191,95 +2126,6 @@
         if (btn) { btn.disabled = false; btn.textContent = 'Generate'; }
         alert(err.message);
       }
-    }
-
-    function renderPerCriterion(d) {
-      const rows = (d && d.rows) || [];
-      if (rows.length === 0) {
-        return '<div class="card-empty"><strong>No graded criteria yet</strong>Once teachers mark submissions with criterion-level rubrics, the criteria where the cohort scores lowest appear here.</div>';
-      }
-      let html = '<div style="font-size:12.5px;color:#6b7280;margin-bottom:10px">Across <strong>' + (d.total_analyzed || 0) + '</strong> graded submission' + (d.total_analyzed === 1 ? '' : 's') + ', sorted lowest first.</div>';
-      const max = 100;
-      html += '<div class="bar-list">';
-      rows.forEach(r => {
-        const pct = Math.max(0, Math.min(100, r.avg_pct));
-        const colour = pct < 50 ? '#991b1b' : pct < 65 ? '#b45309' : pct < 75 ? '#d97706' : '#15803d';
-        html += '<div class="bar-row">'
-          + '<div class="bar-label" title="' + e(r.name) + '">' + e(r.name) + '<div class="bar-meta">' + r.sample_size + ' sample' + (r.sample_size === 1 ? '' : 's') + '</div></div>'
-          + '<div class="bar-track"><div class="bar-fill" style="width:' + pct.toFixed(1) + '%;background:linear-gradient(90deg, ' + colour + ', ' + colour + ')"></div></div>'
-          + '<div class="bar-value">' + pct.toFixed(0) + '%</div>'
-          + '</div>';
-      });
-      html += '</div>';
-      return html;
-    }
-
-    function renderImprovementVelocity(d) {
-      const sample = (d && d.sample_size) || 0;
-      if (sample === 0) {
-        return '<div class="card-empty"><strong>No multi-draft data yet</strong>Once students submit more than one draft on the same task, this card shows which AI priorities they addressed, which stuck around, and which new gaps emerged.</div>';
-      }
-      const addressed = d.addressed_rate || 0;
-      const colour = addressed >= 60 ? '#15803d' : addressed >= 30 ? '#d97706' : '#991b1b';
-      let html = '<div style="display:flex;flex-direction:column;gap:10px">';
-      html += '<div><span style="font-size:30px;font-weight:800;color:' + colour + ';letter-spacing:-0.5px">'
-        + addressed.toFixed(0) + '%'
-        + '</span><span style="font-size:13px;color:#6b7280;margin-left:8px">of students addressed at least one priority in their next draft</span></div>';
-      html += '<div style="font-size:12.5px;color:#374151;line-height:1.55">'
-        + 'Sample: <strong>' + sample + '</strong> student–task pair' + (sample === 1 ? '' : 's') + ' with 2+ drafts. '
-        + 'Avg priorities listed: <strong>' + (d.avg_v1 || 0).toFixed(1) + '</strong> in v1 → <strong>' + (d.avg_vN || 0).toFixed(1) + '</strong> in the final draft.'
-        + '</div>';
-      const total = sample;
-      const pct = n => total > 0 ? (n / total) * 100 : 0;
-      html += '<div class="marking-stack" style="height:18px">';
-      if (d.decreased > 0) html += '<div class="marking-seg marked" style="flex:' + pct(d.decreased) + '" title="' + d.decreased + ' improved">' + (pct(d.decreased) >= 14 ? d.decreased : '') + '</div>';
-      if (d.unchanged > 0) html += '<div class="marking-seg" style="flex:' + pct(d.unchanged) + ';background:#9ca3af" title="' + d.unchanged + ' unchanged">' + (pct(d.unchanged) >= 14 ? d.unchanged : '') + '</div>';
-      if (d.increased > 0) html += '<div class="marking-seg" style="flex:' + pct(d.increased) + ';background:#991b1b" title="' + d.increased + ' regressed">' + (pct(d.increased) >= 14 ? d.increased : '') + '</div>';
-      html += '</div>';
-      html += '<div style="display:flex;gap:14px;font-size:11.5px;color:#6b7280">'
-        + '<span><span class="marking-legend-dot marked" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#15803d;margin-right:4px"></span><strong style="color:#111827">' + (d.decreased || 0) + '</strong> fewer priorities</span>'
-        + '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9ca3af;margin-right:4px"></span><strong style="color:#111827">' + (d.unchanged || 0) + '</strong> same count</span>'
-        + '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#991b1b;margin-right:4px"></span><strong style="color:#111827">' + (d.increased || 0) + '</strong> more</span>'
-        + '</div>';
-      const tp = (d.top_persistent || []).slice(0, 3);
-      const tr = (d.top_regressions || []).slice(0, 3);
-      if (tp.length > 0 || tr.length > 0) {
-        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px">';
-        if (tp.length > 0) {
-          html += '<div><div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">Sticky priorities</div>';
-          tp.forEach(t => { html += '<div style="font-size:12.5px;color:#374151;line-height:1.5">· ' + e(t.title) + ' <span style="color:#9ca3af">(' + t.count + ')</span></div>'; });
-          html += '</div>';
-        } else { html += '<div></div>'; }
-        if (tr.length > 0) {
-          html += '<div><div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px">Newly emerged</div>';
-          tr.forEach(t => { html += '<div style="font-size:12.5px;color:#374151;line-height:1.5">· ' + e(t.title) + ' <span style="color:#9ca3af">(' + t.count + ')</span></div>'; });
-          html += '</div>';
-        } else { html += '<div></div>'; }
-        html += '</div>';
-      }
-      html += '</div>';
-      return html;
-    }
-
-    function renderKeywordStruggles(d) {
-      const rows = (d && d.rows) || [];
-      if (rows.length === 0) {
-        return '<div class="card-empty"><strong>No keyword data yet</strong>Once students receive AI feedback, the NESA terms most often flagged for improvement appear here ranked by frequency.</div>';
-      }
-      let html = '<div style="font-size:12.5px;color:#6b7280;margin-bottom:10px">Across <strong>' + (d.total_analyzed || 0) + '</strong> submission' + (d.total_analyzed === 1 ? '' : 's') + ' with AI feedback. % = share of submissions where the term was flagged.</div>';
-      const max = Math.max(1, ...rows.map(r => r.count));
-      // Lay out as a two-column grid of bars so we fit ~10 keywords cleanly.
-      html += '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:8px">';
-      rows.forEach(r => {
-        const pct = (r.count / max) * 100;
-        html += '<div class="bar-row" style="grid-template-columns:120px 1fr auto">'
-          + '<div class="bar-label" style="text-transform:lowercase">' + e(r.keyword) + '</div>'
-          + '<div class="bar-track"><div class="bar-fill" style="width:' + pct.toFixed(1) + '%"></div></div>'
-          + '<div class="bar-value">' + r.count + '<span style="color:#9ca3af;font-weight:500;font-size:11px;margin-left:4px">(' + r.pct.toFixed(0) + '%)</span></div>'
-          + '</div>';
-      });
-      html += '</div>';
-      return html;
     }
 
     function renderMathsErrorCategories(d) {

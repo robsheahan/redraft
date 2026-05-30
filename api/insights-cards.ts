@@ -279,15 +279,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return b.last_active.localeCompare(a.last_active);
   });
 
-  // -- Card: Per-criterion lows --
-  const perCriterionLows = computePerCriterionLows(submissions, taskMap);
-
-  // -- Card: Improvement velocity --
-  const improvementVelocity = computeImprovementVelocity(submissions);
-
-  // -- Card: Keyword struggles (NESA-glossary pattern match) --
-  const keywordStruggles = computeKeywordStruggles(submissions);
-
   // -- Card: Maths error categories (from per-line annotations on
   // submissions where feedback.kind === 'maths') --
   const mathsErrorCategories = computeMathsErrorCategories(submissions);
@@ -360,227 +351,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       mark_by_faculty: markByFaculty,
       marking,
       teacher_activity: teacherActivity,
-      per_criterion_lows: perCriterionLows,
-      improvement_velocity: improvementVelocity,
-      keyword_struggles: keywordStruggles,
       maths_error_categories: mathsErrorCategories,
       llm,
     },
     counts,
   });
-}
-
-// ─────────────── New SQL-derived performance cards ───────────────
-
-/**
- * Per-criterion average performance, sorted lowest first. Pulls from
- * submissions.criterion_marks (jsonb array of {name, mark, max}) and
- * groups by exact criterion name.
- */
-function computePerCriterionLows(submissions: any[], taskMap: any) {
-  const map: Record<string, { sum_pct: number; count: number }> = {};
-  let analysed = 0;
-  for (const s of submissions) {
-    if (!s.graded_at) continue;
-    const t = taskMap[s.task_id];
-    // quick_task has no criteria by definition — skip even if some stale
-    // criterion_marks rows exist.
-    if (t && t.task_mode === 'quick_task') continue;
-    const cm = s.criterion_marks;
-    if (!Array.isArray(cm)) continue;
-    let counted = false;
-    for (const c of cm) {
-      if (!c || typeof c.name !== 'string') continue;
-      const mark = Number(c.mark);
-      const max = Number(c.max);
-      if (!Number.isFinite(mark) || !Number.isFinite(max) || max <= 0) continue;
-      const name = c.name.trim();
-      if (!name) continue;
-      map[name] ||= { sum_pct: 0, count: 0 };
-      map[name].sum_pct += (mark / max) * 100;
-      map[name].count++;
-      counted = true;
-    }
-    if (counted) analysed++;
-  }
-  const rows = Object.entries(map)
-    .map(([name, v]) => ({ name, avg_pct: v.sum_pct / v.count, sample_size: v.count }))
-    .filter(r => r.sample_size >= 2)  // need at least 2 samples to be meaningful
-    .sort((a, b) => a.avg_pct - b.avg_pct)
-    .slice(0, 8);
-  return { rows, total_analyzed: analysed };
-}
-
-/**
- * Improvement velocity = how students' AI feedback priorities shift
- * between drafts. For each (student, task) pair with ≥2 drafts, we diff
- * the improvement-summary titles between draft 1 and draft N:
- *
- *   - addressed:  a priority listed in draft 1 is no longer listed in N
- *   - persistent: still listed in N (the student didn't shift it)
- *   - regressed:  newly listed in N (a new gap the model surfaced)
- *
- * Aggregate at class level:
- *   - addressed_rate: % of students who addressed at least one priority
- *   - top_persistent: themes that stuck around across multiple students
- *   - regressions:   themes newly raised in later drafts across students
- *
- * Fallback aggregate (legacy fields kept for the school dashboard's UI):
- * avg bullet counts + decreased/increased/unchanged tally.
- */
-function computeImprovementVelocity(submissions: any[]) {
-  const byPair: Record<string, any[]> = {};
-  for (const s of submissions) {
-    if (!s.student_id || !s.task_id) continue;
-    const key = s.student_id + '|' + s.task_id;
-    (byPair[key] ||= []).push(s);
-  }
-
-  let sampleSize = 0;
-  let studentsWithAnyAddressed = 0;
-  let v1ImprSum = 0;
-  let vNImprSum = 0;
-  let increased = 0;
-  let decreased = 0;
-  let unchanged = 0;
-  const persistentCounts: Record<string, number> = {};
-  const regressionCounts: Record<string, number> = {};
-
-  for (const subs of Object.values(byPair)) {
-    if (subs.length < 2) continue;
-    subs.sort((a, b) => (a.draft_version || 0) - (b.draft_version || 0));
-    const first = subs[0];
-    const last = subs[subs.length - 1];
-    const v1Titles = extractImprovementTitles(first?.feedback);
-    const vNTitles = extractImprovementTitles(last?.feedback);
-    if (v1Titles == null || vNTitles == null) continue;
-    sampleSize++;
-
-    const c1 = v1Titles.length;
-    const cN = vNTitles.length;
-    v1ImprSum += c1;
-    vNImprSum += cN;
-    if (cN < c1) decreased++;
-    else if (cN > c1) increased++;
-    else unchanged++;
-
-    const v1Set = new Set(v1Titles.map(normaliseTitle));
-    const vNSet = new Set(vNTitles.map(normaliseTitle));
-    let addressedOne = false;
-    for (const t of v1Set) {
-      if (!vNSet.has(t)) addressedOne = true;
-      else persistentCounts[t] = (persistentCounts[t] || 0) + 1;
-    }
-    for (const t of vNSet) {
-      if (!v1Set.has(t)) regressionCounts[t] = (regressionCounts[t] || 0) + 1;
-    }
-    if (addressedOne) studentsWithAnyAddressed++;
-  }
-
-  const topPersistent = Object.entries(persistentCounts)
-    .map(([title, count]) => ({ title, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-  const topRegressions = Object.entries(regressionCounts)
-    .map(([title, count]) => ({ title, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-
-  const avgV1 = sampleSize > 0 ? v1ImprSum / sampleSize : 0;
-  const avgVN = sampleSize > 0 ? vNImprSum / sampleSize : 0;
-  const deltaPct = avgV1 > 0 ? ((avgV1 - avgVN) / avgV1) * 100 : 0;
-  const addressedRate = sampleSize > 0 ? (studentsWithAnyAddressed / sampleSize) * 100 : 0;
-
-  return {
-    sample_size: sampleSize,
-    avg_v1: avgV1,
-    avg_vN: avgVN,
-    avg_delta_pct: deltaPct,
-    decreased,
-    increased,
-    unchanged,
-    addressed_rate: addressedRate,
-    students_with_any_addressed: studentsWithAnyAddressed,
-    top_persistent: topPersistent,
-    top_regressions: topRegressions,
-  };
-}
-
-function extractImprovementTitles(feedback: any): string[] | null {
-  if (!feedback || typeof feedback !== 'object') return null;
-  const imp = feedback.improvements;
-  if (!imp || typeof imp !== 'object') return null;
-  const arr = Array.isArray(imp.summary) ? imp.summary : (Array.isArray(imp) ? imp : null);
-  if (!arr) return null;
-  // Each summary item is either a string ("verb depth") or an object with
-  // a title-ish field. Be liberal in what we accept.
-  return arr.map((item: any): string => {
-    if (typeof item === 'string') return item;
-    if (item && typeof item === 'object') return item.title || item.heading || item.label || item.priority || '';
-    return '';
-  }).filter((t: string) => t.trim().length > 0);
-}
-
-function normaliseTitle(t: string): string {
-  return t.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-/**
- * NESA-glossary keyword struggle map. Scans every submission's AI
- * improvement feedback text for occurrences of high-signal NESA terms
- * and surfaces the most-mentioned ones. Pure SQL/JS — no LLM needed.
- *
- * The list is deliberately curated: directive verbs at the top
- * (analyse / evaluate / justify) plus the writing-craft terms that
- * appear most often in HSC marking centre commentary (evidence,
- * structure, thesis, etc.).
- */
-const STRUGGLE_KEYWORDS = [
-  // NESA directive verbs
-  'analyse', 'evaluate', 'justify', 'assess', 'explain', 'discuss', 'compare',
-  'contrast', 'examine', 'describe', 'identify', 'outline', 'synthesise',
-  'apply', 'demonstrate', 'critique',
-  // Writing-craft terms
-  'evidence', 'examples', 'structure', 'thesis', 'argument', 'conclusion',
-  'introduction', 'paragraph', 'topic sentence', 'transitions', 'cohesion',
-  'terminology', 'vocabulary', 'concept', 'context', 'audience', 'purpose',
-  // Analysis-quality terms
-  'depth', 'detail', 'specificity', 'critical thinking', 'reasoning',
-  'integration', 'connection', 'relevance', 'sustained',
-];
-
-function computeKeywordStruggles(submissions: any[]) {
-  const counts: Record<string, number> = {};
-  for (const k of STRUGGLE_KEYWORDS) counts[k] = 0;
-  let analysed = 0;
-  const wordRe = (kw: string) => new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
-  const compiled = STRUGGLE_KEYWORDS.map(k => ({ kw: k, re: wordRe(k) }));
-  for (const s of submissions) {
-    const fb = s.feedback;
-    if (!fb || typeof fb !== 'object') continue;
-    // Concatenate the improvement-related text fields.
-    const parts: string[] = [];
-    const collect = (v: any) => {
-      if (!v) return;
-      if (typeof v === 'string') parts.push(v);
-      else if (Array.isArray(v)) v.forEach(collect);
-      else if (typeof v === 'object') { if (typeof v.summary !== 'undefined') collect(v.summary); if (typeof v.detail !== 'undefined') collect(v.detail); }
-    };
-    collect(fb.improvements);
-    collect(fb.top_priority);
-    if (parts.length === 0) continue;
-    const text = parts.join(' ');
-    analysed++;
-    for (const { kw, re } of compiled) {
-      if (re.test(text)) counts[kw]++;
-    }
-  }
-  const rows = Object.entries(counts)
-    .filter(([_, c]) => c > 0)
-    .map(([keyword, count]) => ({ keyword, count, pct: analysed > 0 ? (count / analysed) * 100 : 0 }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
-  return { rows, total_analyzed: analysed };
 }
 
 function computeActivity(submissions: any[]) {
@@ -718,9 +493,6 @@ function emptyResponse(
       mark_by_faculty: restrictedFaculties && restrictedFaculties.length <= 1 ? null : { rows: [], bands: NESA_BANDS },
       marking: { total: 0, marked: 0, awaiting_marking: 0, unmarked: 0 },
       teacher_activity: [],
-      per_criterion_lows: { rows: [], total_analyzed: 0 },
-      improvement_velocity: { sample_size: 0, avg_v1: 0, avg_vN: 0, avg_delta_pct: 0, decreased: 0, increased: 0, unchanged: 0, addressed_rate: 0, students_with_any_addressed: 0, top_persistent: [], top_regressions: [] },
-      keyword_struggles: { rows: [], total_analyzed: 0 },
       maths_error_categories: { total_maths_submissions: 0, total_lines: 0, categories: [] },
     },
     counts: {
