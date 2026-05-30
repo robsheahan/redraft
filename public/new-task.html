@@ -555,6 +555,8 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
     async function generateCriteria() {
       const btn = document.getElementById('generateCriteriaBtn');
       const label = btn.querySelector('.btn-label');
+      const isMaths = selectedSubjectType === 'maths';
+      const noun = isMaths ? 'marking guideline' : 'marking criteria';
 
       const title = document.getElementById('titleInput').value.trim();
       const question = document.querySelector('.step:nth-child(1) textarea').value.trim();
@@ -565,12 +567,12 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       const outcomes = window.normaliseOutcomesInput(outcomesRaw);
 
       if (!title) { alert('Add a task title first.'); return; }
-      if (!question) { alert('Enter the task question first — it tells the AI what to write criteria for.'); return; }
+      if (!question) { alert('Enter the task question first — it tells the AI what to write ' + noun + ' for.'); return; }
       if (!totalMarks || totalMarks < 1) { alert('Enter the total marks for this task first.'); return; }
 
       const existing = document.getElementById('criteriaText').value.trim();
       if (existing) {
-        const ok = confirm('There\'s already text in the marking criteria field. Replace it with a generated one?');
+        const ok = confirm('There\'s already text in the ' + noun + ' field. Replace it with a generated one?');
         if (!ok) return;
       }
 
@@ -580,14 +582,16 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       btn.insertAdjacentHTML('afterbegin', '<span class="inline-spinner"></span>');
 
       try {
-        const res = await authFetch('/api/generate-criteria', {
+        const endpoint = isMaths ? '/api/generate-marking-guideline' : '/api/generate-criteria';
+        const res = await authFetch(endpoint, {
           method: 'POST',
           body: JSON.stringify({ title, question, course, total_marks: totalMarks, outcomes }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to generate criteria.');
-        if (!data.criteria_text) throw new Error('No criteria returned.');
-        document.getElementById('criteriaText').value = data.criteria_text;
+        if (!res.ok) throw new Error(data.error || ('Failed to generate ' + noun + '.'));
+        const text = isMaths ? data.marking_guideline : data.criteria_text;
+        if (!text) throw new Error('No ' + noun + ' returned.');
+        document.getElementById('criteriaText').value = text;
         document.getElementById('criteriaText').focus();
       } catch (err) {
         alert(err.message);
@@ -654,8 +658,17 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         if (step3Hint) step3Hint.textContent = 'Optional per-step mark allocation. Helps the AI flag steps the student has skipped. Skip this for in-class practice or Year 7–10 tasks where you\'d mark the working holistically. Students never see this.';
         if (criteriaTA) criteriaTA.placeholder = "e.g.\n- Differentiates the function correctly (1 mark)\n- Sets derivative to zero and solves (1 mark)\n- Determines nature of stationary points (1 mark)\n- Calculates y-values (1 mark)\n- Evaluates endpoints on the interval (1 mark)\n- States absolute max and min with coordinates (1 mark)";
         // Generate-criteria button is essay-specific in v0 (no maths generator yet).
-        if (genBtn) genBtn.style.display = 'none';
-        if (genHint) genHint.style.display = 'none';
+        // Reveal the generate button for maths and relabel it; the maths
+        // handler calls /api/generate-marking-guideline instead.
+        if (genBtn) {
+          genBtn.style.display = '';
+          var lbl = genBtn.querySelector('.btn-label');
+          if (lbl) lbl.textContent = 'Generate marking guideline';
+        }
+        if (genHint) {
+          genHint.style.display = '';
+          genHint.textContent = 'Enter the task title, question, total marks, and outcomes (if any). We\'ll draft a per-step marking guideline calibrated to the stage.';
+        }
         if (typedOnlyHelp) typedOnlyHelp.textContent = 'Disables paste in the math + reason fields. Teachers see typing telemetry. Recommended for assessment integrity.';
         // Maths marking guidelines are NEVER surfaced to the student (the
         // generate-maths-feedback API doesn't include them in any student
@@ -665,8 +678,15 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         if (step3) step3.textContent = 'Marking criteria';
         if (step3Hint) step3Hint.textContent = 'Enter your marking criteria exactly as they appear on your task notification. The AI will detect the different criteria and marking levels automatically.';
         if (criteriaTA) criteriaTA.placeholder = "e.g.\nCriteria 1: Knowledge and understanding of key concepts (3-5 marks)\nCriteria 2: Use of relevant examples and evidence (3-5 marks)\nCriteria 3: Analysis and critical thinking (2-4 marks)\nCriteria 4: Structure, clarity and communication (1-3 marks)";
-        if (genBtn) genBtn.style.display = '';
-        if (genHint) genHint.style.display = '';
+        if (genBtn) {
+          genBtn.style.display = '';
+          var lblE = genBtn.querySelector('.btn-label');
+          if (lblE) lblE.textContent = 'Generate marking criteria';
+        }
+        if (genHint) {
+          genHint.style.display = '';
+          genHint.textContent = "For in-class tasks: enter the task title, question and total marks, and we'll draft a NESA-aligned rubric you can edit.";
+        }
         if (typedOnlyHelp) typedOnlyHelp.textContent = 'Disables paste in the draft box. Teachers see typing telemetry (keystrokes, paste attempts, time on task). Recommended for assessment integrity.';
         if (hideCritCard) hideCritCard.parentElement.style.display = '';
       }
