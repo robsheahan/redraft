@@ -83,6 +83,8 @@ export async function generateInlineSuggestions(
       system,
       user,
       tool: INLINE_SUGGESTIONS_TOOL,
+      cacheSystem: true,
+      label: 'feedback:inline',
     });
     console.log('[inline-suggestions] Anthropic OK in', (Date.now() - t0) + 'ms', 'attempts=', toolResult.attempts, 'stop_reason=', toolResult.stop_reason);
   } catch (err: any) {

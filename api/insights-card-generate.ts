@@ -10,6 +10,8 @@ import {
   applyFacultyScope,
   userIdsForYearLevel,
   getTimeWindowCutoff,
+  scopeKeyForFilters,
+  cohortFingerprint,
 } from '../lib/insights-filters.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
@@ -48,6 +50,11 @@ import {
 
 const MODEL = 'claude-sonnet-4-6';
 const MAX_SUBMISSIONS_TO_FEED = 60;
+
+// Cohort cards are cached per (owner, kind, scope) with corpus-fingerprint
+// freshness. The TTL is only a defensive backstop against a fingerprint blind
+// spot — real changes invalidate via the fingerprint.
+const CARD_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 const KIND_CONFIG: Record<string, {
   tool: any;
@@ -359,20 +366,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   delete (filters as any)._denied;
 
-  // Rate-limit per school (or per-user when no school is resolved for a
-  // teacher) — each card kind has its own endpoint name so the bucket is
-  // naturally scoped per (subject, kind) without needing to smuggle the
-  // kind into the user_id.
+  // Rate-limiting and the cache read both happen after the in-scope corpus is
+  // loaded (below): a teacher-tier cache hit returns for free without
+  // consuming the rate-limit budget, and we need the corpus to fingerprint it.
   const rateSubject = schoolId || user.id;
-  const rateLimit = await checkAndLogRateLimit(supabase, rateSubject, {
-    endpoint: cfg.endpointName,
-    perUserPerHour: 5,
-    globalPerDay: 200,
-  });
-  if (!rateLimit.ok) {
-    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
-    return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded. Please try again later.' });
-  }
 
   // Pull submissions in scope. Teacher tier sees only their own classes.
   const allUsers = await listAllAuthUsers(supabase);
@@ -499,6 +496,65 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     rows = enriched.slice(0, MAX_SUBMISSIONS_TO_FEED);
   }
 
+  const filtersToStore = { ...filters };
+  delete (filtersToStore as any)._denied;
+
+  // -- Cache read --
+  // Both tiers cache per (owner, kind, scope) with fingerprint freshness.
+  //   - teacher  → teacher_insights_cards keyed by their own user id, so two
+  //     teachers never share (different class ownership).
+  //   - leader/admin → school_insights_cards keyed by (school, kind, scope), so
+  //     an English HOD, an HSIE HOD and an executive each keep their own scoped
+  //     card instead of overwriting one shared slot, while two leaders viewing
+  //     the *same* scope reuse it.
+  // A cache hit returns for free and skips the rate-limit.
+  const scopeKey = scopeKeyForFilters(filters);
+  const fingerprint = cohortFingerprint(submissions);
+  const cacheHitResponse = (hit: any) => res.status(200).json({
+    kind,
+    content: hit.content,
+    filters: filtersToStore,
+    source_submission_count: hit.source_submission_count,
+    source_task_count: hit.source_task_count,
+    generated_at: hit.generated_at,
+    source: 'cache',
+  });
+  const isFresh = (hit: any) =>
+    hit && hit.fingerprint === fingerprint &&
+    (Date.now() - new Date(hit.generated_at).getTime()) < CARD_CACHE_TTL_MS;
+
+  if (callerRole === 'teacher') {
+    const { data: hit } = await supabase
+      .from('teacher_insights_cards')
+      .select('content, fingerprint, source_submission_count, source_task_count, generated_at')
+      .eq('teacher_id', user.id)
+      .eq('card_kind', kind)
+      .eq('scope_key', scopeKey)
+      .maybeSingle();
+    if (isFresh(hit)) return cacheHitResponse(hit);
+  } else if (schoolId) {
+    const { data: hit } = await supabase
+      .from('school_insights_cards')
+      .select('content, fingerprint, source_submission_count, source_task_count, generated_at')
+      .eq('school_id', schoolId)
+      .eq('card_kind', kind)
+      .eq('scope_key', scopeKey)
+      .maybeSingle();
+    if (isFresh(hit)) return cacheHitResponse(hit);
+  }
+
+  // Rate-limit only actual generations (cache hits returned above). Each card
+  // kind has its own endpoint name so the bucket is scoped per (subject, kind).
+  const rateLimit = await checkAndLogRateLimit(supabase, rateSubject, {
+    endpoint: cfg.endpointName,
+    perUserPerHour: 5,
+    globalPerDay: 200,
+  });
+  if (!rateLimit.ok) {
+    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded. Please try again later.' });
+  }
+
   // -- Anthropic call --
   let value: any;
   try {
@@ -511,6 +567,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       system: cfg.buildSystemPrompt(schoolName, rows.length),
       user: cfg.buildUserPrompt(rows, { schoolName }),
       tool: cfg.tool,
+      cacheSystem: true,
+      label: `insights:${kind}`,
     });
     value = result.value;
   } catch (err: any) {
@@ -533,23 +591,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(502).json({ error: 'Generation finished but the response was incomplete. Try again — usually clears on retry.' });
   }
 
-  // -- Cache --
-  // Teacher tier doesn't write to the school-keyed cache (it'd collide
-  // with the school view's cached card for the same kind). Teachers
-  // regenerate fresh each click; the rate-limiter caps spend.
-  const filtersToStore = { ...filters };
-  delete (filtersToStore as any)._denied;
-  if (callerRole !== 'teacher' && schoolId) {
+  // -- Cache write --
+  const sourceTaskCount = new Set(rows.map(r => r.task_title)).size;
+  const generatedAt = new Date().toISOString();
+  if (callerRole === 'teacher') {
+    // Teacher tier: cache per (teacher, kind, scope) so re-clicks with no new
+    // submissions/marks return the cached card instead of regenerating.
+    await supabase
+      .from('teacher_insights_cards')
+      .upsert({
+        teacher_id: user.id,
+        card_kind: kind,
+        scope_key: scopeKey,
+        content: value,
+        fingerprint,
+        source_submission_count: rows.length,
+        source_task_count: sourceTaskCount,
+        generated_at: generatedAt,
+      });
+  } else if (schoolId) {
+    // Leader/admin tier: cache per (school, kind, scope) so different scopes
+    // coexist and same-scope leaders share. fingerprint drives freshness.
     await supabase
       .from('school_insights_cards')
       .upsert({
         school_id: schoolId,
         card_kind: kind,
+        scope_key: scopeKey,
+        fingerprint,
         content: value,
         filters: filtersToStore,
         source_submission_count: rows.length,
-        source_task_count: new Set(rows.map(r => r.task_title)).size,
-        generated_at: new Date().toISOString(),
+        source_task_count: sourceTaskCount,
+        generated_at: generatedAt,
         generated_by: user.id,
       });
   }
@@ -559,8 +633,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     content: value,
     filters: filtersToStore,
     source_submission_count: rows.length,
-    source_task_count: new Set(rows.map(r => r.task_title)).size,
-    generated_at: new Date().toISOString(),
+    source_task_count: sourceTaskCount,
+    generated_at: generatedAt,
   });
 }
 

@@ -65,11 +65,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .eq('student_id', submission.student_id)
     .eq('task_id', submission.task_id);
 
-  // Invalidate the longitudinal profile cache — new marking data means the
-  // next profile read should regenerate.
+  // Mark the longitudinal profile stale (kept, not deleted) — new marking data
+  // means the read path should refresh it on next individual view, while the
+  // class summary keeps the last-known-good row in the meantime.
   const { error: profileCacheErr } = await supabase
     .from('student_profile_synthesis')
-    .delete()
+    .update({ stale: true })
     .eq('student_id', submission.student_id);
   if (profileCacheErr) {
     captureError(new Error(profileCacheErr.message), { stage: 'profile-cache-invalidate', submission_id });

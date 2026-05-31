@@ -27,7 +27,7 @@ import {
 } from '../lib/schools.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
-import { readCachedProfile, regenerateProfile } from '../lib/student-profile.js';
+import { readCachedProfile, regenerateProfile, countStudentSubmissions, profileNeedsRegen } from '../lib/student-profile.js';
 import { captureError } from '../lib/sentry.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -62,13 +62,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (!allowed) return res.status(403).json({ error: 'Not authorised' });
 
-  // Try cache first.
+  // Try cache first. A cached profile is served unless there are new
+  // submissions since it was generated, or it's stale (a mark/feedback event
+  // landed) and past the short refresh window. This stops bulk-marking from
+  // forcing a regeneration on every profile open.
   const cached = await readCachedProfile(supabase, studentId);
   if (cached) {
-    return res.status(200).json({ profile: cached, source: 'cache' });
+    const currentCount = await countStudentSubmissions(supabase, studentId);
+    if (!profileNeedsRegen(cached, currentCount)) {
+      return res.status(200).json({ profile: cached, source: 'cache' });
+    }
   }
 
-  // Cache miss → regenerate. Rate-limit only the regeneration path.
+  // Cache miss or needs refresh → regenerate. Rate-limit only this path.
   const rl = await checkAndLogRateLimit(supabase, user.id, {
     endpoint: 'student-profile-generate',
     perUserPerHour: 30,
