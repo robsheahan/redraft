@@ -49,7 +49,25 @@ export async function provisionClass(opts: {
     canvas_course_id: opts.canvasCourseId,
     class_id: created.id,
   });
-  if (mapErr) throw new Error(`course mapping insert failed: ${mapErr.message}`);
+  if (mapErr) {
+    // Concurrent teacher launches for the same course race past the lookup
+    // above; the unique constraint on (platform_id, canvas_course_id) lets one
+    // win. The loser gets 23505 — and has already created a throwaway class.
+    // Re-read the winning mapping, drop our orphan class, and converge.
+    if ((mapErr as { code?: string }).code === '23505') {
+      const { data: raced } = await supabase
+        .from('lti_course_mappings')
+        .select('class_id')
+        .eq('platform_id', opts.platformId)
+        .eq('canvas_course_id', opts.canvasCourseId)
+        .maybeSingle();
+      if (raced?.class_id) {
+        await supabase.from('classes').delete().eq('id', created.id);
+        return { classId: raced.class_id as string, isNew: false };
+      }
+    }
+    throw new Error(`course mapping insert failed: ${mapErr.message}`);
+  }
 
   return { classId: created.id as string, isNew: true };
 }
