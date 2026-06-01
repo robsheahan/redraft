@@ -154,7 +154,10 @@ export function cohortFingerprint(
     }
     if (typeof s.total_mark === 'number') markSum += s.total_mark;
   }
-  return `${subs.length}|${latestCreated}|${gradedCount}|${markSum}|${latestGraded}`;
+  // The leading version tag invalidates existing cohort-card caches whenever card
+  // generation logic changes (prompts, schemas, gap/strength counts) — so the next
+  // regenerate actually re-runs the new logic instead of serving a stale card.
+  return `v2|${subs.length}|${latestCreated}|${gradedCount}|${markSum}|${latestGraded}`;
 }
 
 /**

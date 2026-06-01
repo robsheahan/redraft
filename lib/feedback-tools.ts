@@ -477,6 +477,51 @@ export const COMMON_GAPS_TOOL: Tool = {
   },
 };
 
+// Generates the cohort gaps AND strengths together in one call so the two cards
+// can never contradict each other (e.g. "uses concrete evidence" as a strength
+// while "claims lack evidence" appears as a gap). The handler fans the result
+// out into the common_gaps + things_done_well caches.
+export const COHORT_PATTERNS_TOOL: Tool = {
+  name: 'provide_cohort_patterns',
+  description: 'The top 3 gaps AND top 3 strengths across the whole cohort, produced together and kept internally consistent — a skill is never listed as both a strength and a gap.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      gaps: {
+        type: 'array',
+        maxItems: 3,
+        description: 'Exactly 3 cohort-wide gaps, ranked by prevalence.',
+        items: {
+          type: 'object',
+          properties: {
+            rank: { type: 'integer', minimum: 1, maximum: 3 },
+            headline: { type: 'string' },
+            detail: { type: 'string' },
+            faculties_involved: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['rank', 'headline', 'detail', 'faculties_involved'],
+        },
+      },
+      strengths: {
+        type: 'array',
+        maxItems: 3,
+        description: 'Exactly 3 cohort-wide strengths students show consistently. Must NOT contradict the gaps — do not praise a skill whose absence is listed as a gap.',
+        items: {
+          type: 'object',
+          properties: {
+            rank: { type: 'integer', minimum: 1, maximum: 3 },
+            headline: { type: 'string' },
+            detail: { type: 'string' },
+            faculties_involved: { type: 'array', items: { type: 'string' } },
+          },
+          required: ['rank', 'headline', 'detail', 'faculties_involved'],
+        },
+      },
+    },
+    required: ['gaps', 'strengths'],
+  },
+};
+
 export const THINGS_DONE_WELL_TOOL: Tool = {
   name: 'provide_things_done_well',
   description: 'Top 3 things students across the school are consistently doing well, drawn from AI strength feedback. Useful for sharing best practice between faculties and for celebrating wins in faculty meetings.',

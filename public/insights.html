@@ -1510,9 +1510,11 @@
         ['student_summary', 'student_top_mistakes', 'student_stretch_goals', 'student_strengths']
           .forEach(kind => tasks.push({ type: 'card', kind, id: kind }));
       } else {
+        // common_gaps now generates the gaps AND the strengths (things_done_well)
+        // in one consistent call, so it isn't requested as a separate kind.
         const kinds = role === 'teacher'
-          ? ['common_gaps', 'top_decile', 'things_done_well']
-          : ['bottom_decile', 'top_decile', 'common_gaps', 'things_done_well'];
+          ? ['common_gaps', 'top_decile']
+          : ['bottom_decile', 'top_decile', 'common_gaps'];
         kinds.forEach(kind => tasks.push({ type: 'card', kind, id: kind }));
         if (activeFilters.class_id) tasks.push({ type: 'baseline', kind: 'class_profile_summary', id: 'class_profile_summary' });
         if (role !== 'teacher') {
@@ -1524,6 +1526,8 @@
 
       generatingInsights = true;
       generatingKinds = new Set(tasks.map(t => t.id));
+      // common_gaps fills the strengths card from the same call — spin both.
+      if (generatingKinds.has('common_gaps')) generatingKinds.add('things_done_well');
       render();
 
       const results = await Promise.all(tasks.map(runOneInsight));
@@ -1579,12 +1583,24 @@
               source_submission_count: data.source_submission_count,
               filters: data.filters,
             };
+            // common_gaps returns the strengths too — populate the
+            // things_done_well card from the same consistent call.
+            if (task.kind === 'common_gaps' && data.content && Array.isArray(data.content.strengths)) {
+              currentCards.cards.llm['things_done_well'] = {
+                content: { strengths: data.content.strengths },
+                generated_at: data.generated_at,
+                source_submission_count: data.source_submission_count,
+                filters: data.filters,
+              };
+              finishInsightKind('things_done_well');
+            }
           }
         }
         finishInsightKind(task.id);
         return { id: task.id, error: null };
       } catch (err) {
         finishInsightKind(task.id);
+        if (task.kind === 'common_gaps') finishInsightKind('things_done_well');
         return { id: task.id, error: (err && err.message) || String(err) };
       }
     }
@@ -1937,8 +1953,8 @@
       }) + '</div>';
 
       html += '<div class="card card-span-6">' + renderLLMCard('common_gaps', llm.common_gaps, {
-        title: 'Top 3 cohort-wide gaps',
-        sub: 'Recurring improvement themes across all students',
+        title: 'Top 3 most common gaps',
+        sub: 'Recurring improvement themes across all students in view',
         emptyTeaser: 'Generate to surface the 3 gaps appearing most often in feedback across the cohort. Drives whole-staff PD planning.',
         render: renderListedItems,
       }) + '</div>';

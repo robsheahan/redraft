@@ -19,7 +19,7 @@ import { callTool } from '../lib/anthropic-tool-call.js';
 import {
   BOTTOM_DECILE_TOOL,
   TOP_DECILE_TOOL,
-  COMMON_GAPS_TOOL,
+  COHORT_PATTERNS_TOOL,
   THINGS_DONE_WELL_TOOL,
   STUDENT_TOP_MISTAKES_TOOL,
   STUDENT_STRETCH_GOALS_TOOL,
@@ -98,17 +98,25 @@ const KIND_CONFIG: Record<string, {
     ].join('\n'),
     buildUserPrompt: (rows) => buildImprovementsPrompt(rows, 'top-decile student'),
   },
+  // common_gaps now produces the cohort gaps AND strengths in one consistent
+  // call (COHORT_PATTERNS_TOOL); the handler fans the strengths out into the
+  // things_done_well cache so the two cards can never contradict each other.
   common_gaps: {
-    tool: COMMON_GAPS_TOOL,
+    tool: COHORT_PATTERNS_TOOL,
     endpointName: 'insights-card-common-gaps',
     buildSystemPrompt: (schoolName, sample) => [
       `You are a senior NSW NESA-trained educator analysing whole-cohort writing performance.`,
       `School: ${schoolName}`,
       `Sample size: ${sample} submissions across the school.`,
       ``,
-      `Identify the top 3 gaps appearing in improvement feedback. Unlike the bottom-decile card, this is the FULL cohort — surfaces patterns that need whole-staff PD, not just intervention.`,
+      `In a single consistent read, identify the top 3 GAPS (patterns that need whole-staff PD, not just intervention) and the top 3 STRENGTHS students show consistently.`,
+      ``,
+      `INTERNAL CONSISTENCY (critical):`,
+      `- The gaps and strengths must NOT contradict each other. Never list a skill as a strength if its absence appears in the gaps, or vice versa (e.g. do NOT praise "use of concrete, real-world evidence" while also listing "claims made without evidence" as a gap).`,
+      `- If a skill is genuinely uneven across the cohort, put it in ONE list only and describe it as inconsistent, rather than claiming it is both a strength and a weakness.`,
+      `- No mark or band predictions.`,
     ].join('\n'),
-    buildUserPrompt: (rows) => buildImprovementsPrompt(rows, 'student'),
+    buildUserPrompt: (rows) => buildCohortPatternsPrompt(rows),
   },
   things_done_well: {
     tool: THINGS_DONE_WELL_TOOL,
@@ -155,6 +163,27 @@ function buildStrengthsPrompt(rows: any[]): string {
     ].join('\n');
   }).join('\n\n');
   return `Below are ${rows.length} per-submission strength notes. Surface the top 3 cross-cohort strengths.\n\n${lines}`;
+}
+
+// Feeds BOTH the improvement and strength signals from each submission so the
+// model can produce gaps and strengths that are mutually consistent.
+function buildCohortPatternsPrompt(rows: any[]): string {
+  const lines = rows.map((r, i) => {
+    const fb = r.feedback || {};
+    const imp = fb.improvements;
+    const impSummary = imp && Array.isArray(imp.summary) ? imp.summary : (Array.isArray(imp) ? imp : []);
+    const w = fb.what_youve_done_well;
+    const strSummary = w && Array.isArray(w.summary) ? w.summary : (Array.isArray(w) ? w : []);
+    const top = (fb.top_priority && fb.top_priority.summary) || fb.top_priority || '';
+    return [
+      `--- submission #${i + 1} ---`,
+      `Faculty: ${r.faculty || 'Other'}  Course: ${r.course || '(unknown)'}  Task: ${r.task_title}`,
+      top ? `Top priority: ${top}` : '',
+      `Improvements: ${JSON.stringify(impSummary)}`,
+      `Strengths: ${JSON.stringify(strSummary)}`,
+    ].filter(Boolean).join('\n');
+  }).join('\n\n');
+  return `Below are ${rows.length} per-submission feedback notes — each lists both what the student did well and what they need to improve. Identify the top 3 cohort-wide GAPS and the top 3 cohort-wide STRENGTHS, and make sure the two lists do not contradict each other.\n\n${lines}`;
 }
 
 // ─────────────── Single-student kinds ───────────────
@@ -582,7 +611,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const requiredKeys: Record<string, string[]> = {
     bottom_decile:     ['patterns'],
     top_decile:        ['next_steps'],
-    common_gaps:       ['gaps'],
+    common_gaps:       ['gaps', 'strengths'],
     things_done_well:  ['strengths'],
   };
   const missing = (requiredKeys[kind] || []).filter(k => !(k in (value || {})));
@@ -626,6 +655,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         generated_at: generatedAt,
         generated_by: user.id,
       });
+  }
+
+  // Fan the cohort STRENGTHS out into the things_done_well cache so that card
+  // and the gaps card always come from this one consistent call.
+  if (kind === 'common_gaps' && Array.isArray(value.strengths)) {
+    const strengthsContent = { strengths: value.strengths };
+    if (callerRole === 'teacher') {
+      await supabase.from('teacher_insights_cards').upsert({
+        teacher_id: user.id,
+        card_kind: 'things_done_well',
+        scope_key: scopeKey,
+        content: strengthsContent,
+        fingerprint,
+        source_submission_count: rows.length,
+        source_task_count: sourceTaskCount,
+        generated_at: generatedAt,
+      });
+    } else if (schoolId) {
+      await supabase.from('school_insights_cards').upsert({
+        school_id: schoolId,
+        card_kind: 'things_done_well',
+        scope_key: scopeKey,
+        fingerprint,
+        content: strengthsContent,
+        filters: filtersToStore,
+        source_submission_count: rows.length,
+        source_task_count: sourceTaskCount,
+        generated_at: generatedAt,
+        generated_by: user.id,
+      });
+    }
   }
 
   return res.status(200).json({
