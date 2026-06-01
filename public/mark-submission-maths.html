@@ -93,6 +93,12 @@
     .error { color: #991b1b; }
     .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
     .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+    .lb-support { background: #fff7ef; border: 1px solid #f6d9bb; border-left: 3px solid #ed7615; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; }
+    .lb-support-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #c2570a; margin-bottom: 6px; }
+    .lb-support p { font-size: 13.5px; color: #374151; line-height: 1.55; margin: 0; }
+    .lb-support ul { margin: 6px 0 0; padding-left: 18px; }
+    .lb-support li { font-size: 13px; color: #374151; line-height: 1.5; margin-bottom: 3px; }
+    .lb-support .lb-ext { margin-top: 6px; font-size: 13px; color: #374151; }
   </style>
 </head>
 <body>
@@ -113,6 +119,7 @@
     const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     let task = null;
     let submission = null;
+    let studentActivity = null;    // Lesson Builder: the support this student was given (if any)
     let teacherAnnotations = []; // [{line_index, comment, category}]
     let activeNoteForm = null; // line_index currently editing
 
@@ -151,6 +158,8 @@
         if (!row) { container.innerHTML = '<div class="error">Submission not found in this task.</div>'; return; }
         submission = row;
         window.__allSubmissions = tsData.submissions || [];
+        // Lesson Builder: the support this student was given (context for marking).
+        studentActivity = (tsData.activities || []).find(a => a.student_id === row.student_id) || null;
 
         // Hydrate state from existing grade (re-editing).
         if (Array.isArray(submission.teacher_annotations)) {
@@ -191,6 +200,18 @@
       html += lateBadge(submission, task);
       if (submission.graded_at) html += '<span class="badge badge-marked">Already marked — editing</span>';
       html += '</div>';
+
+      // Lesson Builder: the support this student was given — context while marking.
+      if (studentActivity && studentActivity.status === 'differentiated' && studentActivity.activity) {
+        const act = studentActivity.activity;
+        html += '<div class="lb-support"><div class="lb-support-label">Lesson Builder — support this student was given</div>';
+        if (act.student_focus) html += '<p>' + e(act.student_focus) + '</p>';
+        if (Array.isArray(act.scaffolding) && act.scaffolding.length) {
+          html += '<ul>' + act.scaffolding.map(s => '<li>' + e(s) + '</li>').join('') + '</ul>';
+        }
+        if (act.extension) html += '<div class="lb-ext"><strong>Stretch:</strong> ' + e(act.extension) + '</div>';
+        html += '</div>';
+      }
 
       html += '<div class="layout">';
 
