@@ -580,10 +580,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // caching. Tool-use returns are usually well-formed but a max_tokens
   // cutoff can leave required arrays missing. Don't cache garbage.
   const requiredKeys: Record<string, string[]> = {
-    bottom_decile:     ['patterns', 'scope_note'],
-    top_decile:        ['next_steps', 'scope_note'],
-    common_gaps:       ['gaps', 'scope_note'],
-    things_done_well:  ['strengths', 'scope_note'],
+    bottom_decile:     ['patterns'],
+    top_decile:        ['next_steps'],
+    common_gaps:       ['gaps'],
+    things_done_well:  ['strengths'],
   };
   const missing = (requiredKeys[kind] || []).filter(k => !(k in (value || {})));
   if (missing.length > 0) {
@@ -766,9 +766,9 @@ async function handleStudentKind(
 
   // Validate required keys.
   const requiredKeys: Record<string, string[]> = {
-    student_top_mistakes:  ['mistakes', 'scope_note'],
-    student_stretch_goals: ['next_steps', 'scope_note'],
-    student_strengths:     ['strengths', 'scope_note'],
+    student_top_mistakes:  ['mistakes'],
+    student_stretch_goals: ['next_steps'],
+    student_strengths:     ['strengths'],
     student_summary:       ['summary_paragraph', 'headline_strength', 'headline_priority', 'tone_note'],
   };
   const missing = (requiredKeys[kind] || []).filter(k => !(k in (value || {})));

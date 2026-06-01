@@ -389,14 +389,13 @@ export const BOTTOM_DECILE_TOOL: Tool = {
             rank: { type: 'integer', minimum: 1, maximum: 3 },
             headline: { type: 'string', description: 'One short, specific sentence naming the mistake (e.g. "Treating analyse as describe — listing features without explaining significance").' },
             detail: { type: 'string', description: '1-2 sentences expanding what the pattern looks like and why it matters for these students.' },
-            prevalence_note: { type: 'string', description: "Plain-language indicator of how widespread (e.g. 'shows in most of the bottom-decile submissions reviewed', 'half of the cohort'). No numeric claims beyond the scope_note." },
+            prevalence_note: { type: 'string', description: "Plain-language indicator of how widespread (e.g. 'shows in most of the bottom-decile submissions reviewed', 'half of the cohort'). No numeric claims." },
           },
           required: ['rank', 'headline', 'detail', 'prevalence_note'],
         },
       },
-      scope_note: { type: 'string', description: '1 sentence indicating the sample (how many submissions were analysed). No band predictions.' },
     },
-    required: ['patterns', 'scope_note'],
+    required: ['patterns'],
   },
 };
 
@@ -420,9 +419,8 @@ export const TOP_DECILE_TOOL: Tool = {
           required: ['rank', 'headline', 'detail'],
         },
       },
-      scope_note: { type: 'string', description: '1 sentence on the sample.' },
     },
-    required: ['next_steps', 'scope_note'],
+    required: ['next_steps'],
   },
 };
 
@@ -474,9 +472,8 @@ export const COMMON_GAPS_TOOL: Tool = {
           required: ['rank', 'headline', 'detail', 'faculties_involved'],
         },
       },
-      scope_note: { type: 'string' },
     },
-    required: ['gaps', 'scope_note'],
+    required: ['gaps'],
   },
 };
 
@@ -500,9 +497,8 @@ export const THINGS_DONE_WELL_TOOL: Tool = {
           required: ['rank', 'headline', 'detail', 'faculties_involved'],
         },
       },
-      scope_note: { type: 'string' },
     },
-    required: ['strengths', 'scope_note'],
+    required: ['strengths'],
   },
 };
 
@@ -520,15 +516,17 @@ export const SCHOOL_INSIGHTS_TOOL: Tool = {
       },
       school_strengths: {
         type: 'array',
+        maxItems: 3,
         items: { type: 'string' },
         description:
-          'Up to 5 strengths that appear across multiple tasks / faculties. Each entry one specific point — name the skill, concept, or approach. Avoid generic praise.',
+          'Up to 3 strengths that appear across multiple tasks / faculties. Each entry one specific point — name the skill, concept, or approach. Avoid generic praise.',
       },
       school_weaknesses: {
         type: 'array',
+        maxItems: 3,
         items: { type: 'string' },
         description:
-          'Up to 5 gaps or misconceptions that appear across multiple tasks / faculties. Be specific about what is going wrong and how widespread it is.',
+          'Up to 3 gaps or misconceptions that appear across multiple tasks / faculties. Be specific about what is going wrong and how widespread it is.',
       },
       verb_depth_patterns: {
         type: 'string',
@@ -602,9 +600,8 @@ export const STUDENT_TOP_MISTAKES_TOOL: Tool = {
           required: ['rank', 'headline', 'detail'],
         },
       },
-      scope_note: { type: 'string', description: '1 sentence on the sample (how many of this student\'s submissions were analysed).' },
     },
-    required: ['mistakes', 'scope_note'],
+    required: ['mistakes'],
   },
 };
 
@@ -628,9 +625,8 @@ export const STUDENT_STRETCH_GOALS_TOOL: Tool = {
           required: ['rank', 'headline', 'detail'],
         },
       },
-      scope_note: { type: 'string', description: '1 sentence on the sample.' },
     },
-    required: ['next_steps', 'scope_note'],
+    required: ['next_steps'],
   },
 };
 
@@ -653,9 +649,8 @@ export const STUDENT_STRENGTHS_TOOL: Tool = {
           required: ['rank', 'headline', 'detail'],
         },
       },
-      scope_note: { type: 'string' },
     },
-    required: ['strengths', 'scope_note'],
+    required: ['strengths'],
   },
 };
 
