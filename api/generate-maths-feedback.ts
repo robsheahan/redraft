@@ -141,7 +141,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const draftVersion = priorCount + 1;
 
-  const question = String(task.question || '').trim();
+  // Lesson Builder (maths): a no-guideline maths task may carry a re-skinned
+  // question per student — evaluate against the version they actually answered.
+  let question = String(task.question || '').trim();
+  if (task.lesson_builder) {
+    const { data: act } = await supabase
+      .from('task_activities').select('activity')
+      .eq('task_id', task_id).eq('student_id', user.id).maybeSingle();
+    const vq = act && act.activity && typeof act.activity.question === 'string' ? act.activity.question.trim() : '';
+    if (vq) question = vq;
+  }
   const markingGuideline = typeof task.marking_guideline === 'string' ? task.marking_guideline : null;
   const courseName = task.course || undefined;
   const teacherNotes = task.notes || null;

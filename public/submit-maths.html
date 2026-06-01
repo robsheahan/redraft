@@ -205,11 +205,9 @@
           const dd = await draftsRes.json().catch(() => ({}));
           priorDrafts = Array.isArray(dd.drafts) ? dd.drafts : [];
         }
-        render();
-
-        // Lesson Builder: fetch this student's differentiated support (lazy +
-        // locked server-side). After render() so the task shows immediately;
-        // silent fallback to the main activity on any failure.
+        // Lesson Builder: fetch this student's variant BEFORE render — maths may
+        // re-skin the question itself, so it must be right from the first paint.
+        // Locked server-side; silent fallback to the main activity on any failure.
         if (currentTask.lesson_builder) {
           try {
             const actRes = await authFetch('/api/generate-activity', {
@@ -217,13 +215,13 @@
             });
             if (actRes && actRes.ok) {
               const ad = await actRes.json().catch(() => null);
-              if (ad && ad.is_differentiated && ad.activity) {
-                currentActivity = ad.activity;
-                applyActivityBanner();
-              }
+              if (ad && ad.is_differentiated && ad.activity) currentActivity = ad.activity;
             }
           } catch (_) { /* main activity stands */ }
         }
+
+        render();
+        applyActivityBanner();
       } catch (err) {
         console.error('[submit-maths.html] load failed:', err);
         container.innerHTML = '<div class="empty">Something went wrong loading this task. <br><small>' + e(err && err.message || String(err)) + '</small></div>';
@@ -278,7 +276,7 @@
       let html = renderHeader(t);
       html += '<div class="card">';
       html += '<div class="task-question-wrap"><h4>Task</h4>';
-      html += '<div class="task-question" id="taskQuestion">' + e(t.question || '') + '</div></div>';
+      html += '<div class="task-question" id="taskQuestion">' + e((currentActivity && currentActivity.question) ? currentActivity.question : (t.question || '')) + '</div></div>';
       html += '</div>';
       html += '<div id="lbBanner"></div>';
 

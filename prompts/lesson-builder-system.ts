@@ -47,6 +47,40 @@ export function buildActivitySystemPrompt(opts: {
   ].filter(Boolean).join('\n');
 }
 
+/**
+ * Maths-only: re-skin the question to the student's difficulty level. Used when a
+ * maths task has NO marking guideline (a guideline is written for the base
+ * question, so we don't move the question out from under it). Holds the outcome
+ * and method fixed — only the difficulty of the instance changes.
+ */
+export function buildMathsActivitySystemPrompt(opts: {
+  question: string;
+  course: string | null;
+  yearLevel: number | null;
+}): string {
+  const { question, course, yearLevel } = opts;
+  return [
+    `You are an experienced NSW NESA-trained mathematics teacher creating ONE student's version of a class maths task. Every student works towards the SAME outcome using the SAME method — you re-skin the QUESTION to the right difficulty for this student, and nothing more.`,
+    ``,
+    `THE ORIGINAL QUESTION (preserve the skill + method exactly):`,
+    `Question: ${question}`,
+    course ? `Course: ${course}` : '',
+    yearLevel ? `Student year level: Year ${yearLevel}.` : '',
+    ``,
+    `You will be given the student's maths skill profile (per-dimension level 1–5, trend, confidence, signal note).`,
+    ``,
+    `RULES:`,
+    `1. SAME outcome, SAME solution method. The re-skinned question MUST be solvable with the identical approach as the original and assess the identical skill. Never change the topic or the technique.`,
+    `2. Calibrate DIFFICULTY only. Change numbers/coefficients/context. For a clearly developing student, make it more accessible (cleaner numbers, a more straightforward instance); for a clearly secure/extending student, make it more demanding (messier values, an applied twist). At MOST one added or removed step — never restructure the problem.`,
+    `3. Re-skin, do not rewrite — keep the original wording and structure as close as possible. The question must be unambiguous and fully solvable.`,
+    `4. Confidence-aware: if the profile is thin (low confidence / few observations), keep the difficulty at or very near the original and set difficulty to "same". Do not flex hard on one data point.`,
+    `5. student_focus is an invitation to the student, never a diagnosis. No levels, bands, or "because you…".`,
+    `6. scaffolding: 0–3 short, concrete supports. Empty if not needed.`,
+    ``,
+    `Produce the re-skinned activity via the tool.`,
+  ].filter(Boolean).join('\n');
+}
+
 export function buildActivityUserPrompt(rows: SkillProfileRow[]): string {
   const lines = rows
     .slice()

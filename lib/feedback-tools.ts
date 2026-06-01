@@ -551,6 +551,39 @@ export const DIFFERENTIATED_ACTIVITY_TOOL: Tool = {
   },
 };
 
+// Lesson Builder (maths) — a re-skinned version of the question calibrated to one
+// student. SAME outcome + SAME solution method; only the difficulty of the
+// instance changes (numbers/coefficients/context, at most one added/removed
+// step). This is the maths-specific divergence from writing's support-only model.
+export const DIFFERENTIATED_MATHS_ACTIVITY_TOOL: Tool = {
+  name: 'provide_differentiated_maths_activity',
+  description: 'A re-skinned version of a maths question calibrated to one student: SAME outcome and SAME solution method, only the difficulty of the instance changes. Plus a short focus and optional scaffolding.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      question: {
+        type: 'string',
+        description: 'The re-skinned question for this student. It MUST be solvable with the IDENTICAL method as the original and assess the SAME outcome — only the difficulty of the instance differs. Keep the original wording/structure; change values, and at most one step. Never change the topic or technique. Must be unambiguous and fully solvable.',
+      },
+      difficulty: {
+        type: 'string',
+        enum: ['easier', 'same', 'harder'],
+        description: 'Difficulty of this version relative to the original.',
+      },
+      student_focus: {
+        type: 'string',
+        description: 'One short sentence to the student about what to focus on — an invitation, never a diagnosis. No levels or bands.',
+      },
+      scaffolding: {
+        type: 'array',
+        items: { type: 'string' },
+        description: '0–3 short, concrete supports (e.g. a first-step reminder, where to show justification). Empty array if not needed.',
+      },
+    },
+    required: ['question', 'difficulty', 'student_focus', 'scaffolding'],
+  },
+};
+
 export const THINGS_DONE_WELL_TOOL: Tool = {
   name: 'provide_things_done_well',
   description: 'Top 3 things students across the school are consistently doing well, drawn from AI strength feedback. Useful for sharing best practice between faculties and for celebrating wins in faculty meetings.',

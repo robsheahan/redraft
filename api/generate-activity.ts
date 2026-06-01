@@ -20,11 +20,11 @@ import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
 import { callTool } from '../lib/anthropic-tool-call.js';
 import { readSkillProfile } from '../lib/skill-profile.js';
-import { DIFFERENTIATED_ACTIVITY_TOOL } from '../lib/feedback-tools.js';
+import { DIFFERENTIATED_ACTIVITY_TOOL, DIFFERENTIATED_MATHS_ACTIVITY_TOOL } from '../lib/feedback-tools.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { currentYearLevelFromGraduationYear } from '../data/nesa-reference.js';
 import { familyForSubjectType, dimensionsForFamily, TAXONOMY_VERSION } from '../data/skill-taxonomy.js';
-import { buildActivitySystemPrompt, buildActivityUserPrompt } from '../prompts/lesson-builder-system.js';
+import { buildActivitySystemPrompt, buildMathsActivitySystemPrompt, buildActivityUserPrompt } from '../prompts/lesson-builder-system.js';
 
 const MODEL = 'claude-sonnet-4-6';
 
@@ -97,6 +97,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const gradYear = (user.user_metadata && (user.user_metadata as any).graduation_year) || null;
   const yearLevel = currentYearLevelFromGraduationYear(gradYear);
 
+  const hasGuideline = !!(task.marking_guideline && String(task.marking_guideline).trim());
+  // Maths with NO marking guideline → re-skin the question to the student's level
+  // (same outcome + method). With a guideline (written for the base question) or
+  // for writing → support-layer only, question unchanged.
+  const isMathsReskin = family === 'maths' && !hasGuideline;
+
   let value: any;
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -105,17 +111,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       model: MODEL,
       max_tokens: 1024,
       temperature: 0.3,
-      system: buildActivitySystemPrompt({
-        question: task.question,
-        criteriaText: task.criteria_text || null,
-        course: task.course || null,
-        family,
-        yearLevel,
-      }),
+      system: isMathsReskin
+        ? buildMathsActivitySystemPrompt({ question: task.question, course: task.course || null, yearLevel })
+        : buildActivitySystemPrompt({
+            question: task.question,
+            criteriaText: task.criteria_text || null,
+            course: task.course || null,
+            family,
+            yearLevel,
+          }),
       user: buildActivityUserPrompt(rows),
-      tool: DIFFERENTIATED_ACTIVITY_TOOL,
+      tool: isMathsReskin ? DIFFERENTIATED_MATHS_ACTIVITY_TOOL : DIFFERENTIATED_ACTIVITY_TOOL,
       cacheSystem: true,
-      label: 'lesson-builder:activity',
+      label: isMathsReskin ? 'lesson-builder:maths-activity' : 'lesson-builder:activity',
     });
     value = result.value;
   } catch (err: any) {
@@ -123,11 +131,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(MAIN_ACTIVITY); // silent fallback
   }
 
-  const activity = {
-    student_focus: typeof value?.student_focus === 'string' ? value.student_focus : '',
-    scaffolding: Array.isArray(value?.scaffolding) ? value.scaffolding.filter((s: any) => typeof s === 'string' && s.trim()) : [],
-    extension: typeof value?.extension === 'string' ? value.extension : '',
-  };
+  const scaffolding = Array.isArray(value?.scaffolding) ? value.scaffolding.filter((s: any) => typeof s === 'string' && s.trim()) : [];
+  const studentFocus = typeof value?.student_focus === 'string' ? value.student_focus : '';
+
+  let activity: any;
+  if (isMathsReskin) {
+    const reskinned = typeof value?.question === 'string' ? value.question.trim() : '';
+    // No usable re-skin → fall back to the main activity (never lock a broken one).
+    if (!reskinned) {
+      await supabase.from('task_activities').upsert({
+        task_id, student_id: user.id,
+        activity: { student_focus: '', scaffolding: [], extension: '' },
+        is_differentiated: false, source_submission_count: 0, taxonomy_version: TAXONOMY_VERSION,
+      });
+      return res.status(200).json(MAIN_ACTIVITY);
+    }
+    activity = {
+      question: reskinned,
+      difficulty: ['easier', 'same', 'harder'].includes(value?.difficulty) ? value.difficulty : 'same',
+      student_focus: studentFocus,
+      scaffolding,
+    };
+  } else {
+    activity = {
+      student_focus: studentFocus,
+      scaffolding,
+      extension: typeof value?.extension === 'string' ? value.extension : '',
+    };
+  }
 
   const sourceCount = rows.reduce((m, r) => Math.max(m, r.observation_count), 0);
   await supabase.from('task_activities').upsert({
