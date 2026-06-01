@@ -184,6 +184,7 @@ interface RawSubmission {
   id: string;
   student_id: string;
   task_id: string | null;
+  own_task_title: string | null;
   course: string | null;
   draft_version: number | null;
   feedback: any;
@@ -209,7 +210,7 @@ export async function regenerateProfile(
   const { data: rawSubs, error } = await supabase
     .from('submissions')
     .select(
-      'id, student_id, task_id, course, draft_version, feedback, total_mark, criterion_marks, teacher_comment, teacher_annotations, graded_at, created_at, tasks(title, total_marks)',
+      'id, student_id, task_id, own_task_title, course, draft_version, feedback, total_mark, criterion_marks, teacher_comment, teacher_annotations, graded_at, created_at, tasks(title, total_marks)',
     )
     .eq('student_id', studentId)
     .order('created_at', { ascending: true });
@@ -316,12 +317,17 @@ HARD RULES:
 4. If submission_count ≤ 2, set profile_status="new" and acknowledge the thin data honestly. Do not infer trends from a single point.
 5. If submission_count is 3–5, set profile_status="developing".
 6. If submission_count ≥ 6, set profile_status="established".
-7. The narrative should read like a careful half-year report comment from an experienced teacher: specific, generous, honest about priorities.`;
+7. The narrative should read like a careful half-year report comment from an experienced teacher: specific, generous, honest about priorities.
+8. Entries labelled "(own task)" are self-directed practice the student set themselves (their own question and criteria) — count them as genuine effort and signal, but treat them as practice rather than set assessment.`;
 
   const lines: string[] = [];
   subs.forEach((s, i) => {
     const date = (s.graded_at || s.created_at || '').slice(0, 10);
-    const taskTitle = s.tasks?.title || '(untitled task)';
+    // Own tasks (no task_id) are student-created practice — label them so the
+    // profile narrative can treat them as self-directed work, not set assessment.
+    const taskTitle = s.task_id
+      ? (s.tasks?.title || '(untitled task)')
+      : `${s.own_task_title || 'student-created task'} (own task)`;
     const course = s.course || '';
     const max = s.tasks?.total_marks ?? null;
     const markStr = typeof s.total_mark === 'number'
