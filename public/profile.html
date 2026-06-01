@@ -74,12 +74,13 @@
       background: #fff; cursor: pointer; position: relative;
       vertical-align: middle; margin: 0;
     }
-    input[type="checkbox"]:checked { background: #ed7615; border-color: #ed7615; }
-    input[type="checkbox"]:checked::after {
-      content: ''; position: absolute; left: 50%; top: 47%;
-      width: 5px; height: 10px;
-      border: solid #fff; border-width: 0 2px 2px 0;
-      transform: translate(-50%, -50%) rotate(45deg);
+    input[type="checkbox"]:checked {
+      border-color: #ed7615;
+      background-color: #ed7615;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 70%;
     }
   </style>
 </head>
