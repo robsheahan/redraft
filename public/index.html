@@ -122,6 +122,41 @@
       margin: 0 auto 80px; opacity: 0.3;
     }
 
+    .features {
+      max-width: 980px; margin: 0 auto; padding: 0 24px 90px;
+    }
+    .features h2 {
+      font-size: 15px; font-weight: 700; letter-spacing: 0.5px;
+      text-transform: uppercase; color: #ed7615; text-align: center;
+      margin-bottom: 12px;
+    }
+    .features-sub {
+      text-align: center; font-size: 15px; color: #6b7280;
+      max-width: 540px; margin: 0 auto 40px; line-height: 1.6;
+    }
+    .feature-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    }
+    .feature-card {
+      background: #fff; border: 1px solid rgba(0,0,0,0.06);
+      border-top: 3px solid #ed7615; border-radius: 14px;
+      padding: 26px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .feature-eyebrow {
+      display: inline-block; font-size: 12px; font-weight: 700;
+      letter-spacing: 0.4px; text-transform: uppercase; color: #ed7615;
+      margin-bottom: 10px;
+    }
+    .feature-card h3 {
+      font-size: 18px; font-weight: 700; color: #1f2937; margin-bottom: 8px;
+    }
+    .feature-card p {
+      font-size: 14px; line-height: 1.65; color: #6b7280;
+    }
+    @media (max-width: 760px) {
+      .feature-grid { grid-template-columns: 1fr; gap: 16px; }
+    }
+
     .footer {
       text-align: center; padding: 24px; font-size: 13px; color: #9ca3af;
       border-top: 1px solid rgba(0,0,0,0.06);
@@ -165,6 +200,30 @@
         <div class="step-number">3</div>
         <h3>Receive targeted feedback</h3>
         <p>Get specific, actionable suggestions aligned to NESA standards — not a mark, but a clear path to improve.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="features">
+    <h2>Feedback. Insight. Action.</h2>
+    <p class="features-sub">Every draft your students write powers all three — one record of how they're tracking, put to work three ways.</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <span class="feature-eyebrow">For students</span>
+        <h3>Feedback</h3>
+        <p>Marker-voice feedback on every draft — per-line and anchored to your criteria and NESA standards. It shows students what to fix and why, without rewriting their work or predicting a mark.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-eyebrow">For teachers</span>
+        <h3>Insights</h3>
+        <p>Every submission builds a picture of how the class and each student is tracking. Spot cohort-wide gaps and watch individual growth over time — the data that tells you what to teach next.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-eyebrow">For your classroom</span>
+        <h3>Lesson building</h3>
+        <p>Turn those insights into ready-to-teach lessons. ProofReady targets exactly the gaps your students' work reveals, so your next lesson lands where it's needed most.</p>
       </div>
     </div>
   </div>
