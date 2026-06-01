@@ -1,6 +1,6 @@
 # ProofReady — Project Overview
 
-A NESA-aligned formative-feedback tool for NSW student drafts, covering both written-response subjects and Mathematics across Years 7–12. Teachers create classes and tasks, students submit drafts, and AI returns criteria-anchored feedback in the voice of an experienced marker. Every submission is also scored against the **ProofReady skill taxonomy** and folded into a per-student skill database — the asset the longitudinal profile, insights, and the planned Lesson Builder all read from. Built by Rob Sheahan (a NSW PDHPE teacher) and shipped as a Canvas LTI 1.3 pilot starting with Penrith Christian School. Repo: `robsheahan/redraft`. Domain: `proofready.app`.
+A NESA-aligned formative-feedback tool for NSW student drafts, covering both written-response subjects and Mathematics across Years 7–12. Teachers create classes and tasks, students submit drafts, and ProofReady returns criteria-anchored feedback in the voice of an experienced marker. Every submission is also scored against the **ProofReady skill taxonomy** and folded into a per-student skill database — the asset the longitudinal profile, insights, and the **Lesson Builder** all read from. (Public copy never calls this "AI feedback" — the branding leans on the NESA-calibrated quality, not the mechanism; legal/compliance pages still disclose AI use.) Built by Rob Sheahan (a NSW PDHPE teacher) and shipped as a Canvas LTI 1.3 pilot starting with Penrith Christian School. Repo: `robsheahan/redraft`. Domain: `proofready.app`.
 
 ## Central design question
 
@@ -46,8 +46,8 @@ There are two independent role systems:
 - `auth.users` — Supabase auth, with `user_metadata.role` ∈ {teacher, student}, `display_name`, optional `graduation_year` (used for student year-level filter).
 - `classes` — `id`, `code` (6-char join code), `teacher_id`, `name`, `course`, `created_at`, `archived_at`.
 - `class_members` — `class_id`, `student_id`, `joined_at`. Composite PK.
-- `tasks` — `id`, `class_id`, `title`, `question`, `course`, `task_type`, `subject_type` (text, `essay` default or `maths` — drives the maths flow + UI), `task_mode` (text, default `feedback_task`; CHECK ∈ {`feedback_task`, `marked_task`, `quick_task`}), `completion_only` (boolean, default false — quick_task only), `total_marks`, `due_date`, `outcomes` (jsonb), `criteria` (jsonb), `criteria_text`, `marking_guideline` (text — optional maths marking guide), `hide_criteria_from_students` (boolean — exam-style: criteria hidden until graded), `notes`, `published_at`, `created_at`, `class_feedback` + `class_feedback_count` + `class_feedback_generated_at` (cached class-level synthesis), `typed_response_only` (boolean, default true). LTI columns: `lti_platform_id`, `lti_resource_link_id`, `lti_line_item_url`, `lti_ags_lineitems_url`.
-- `submissions` — `id`, `student_id`, `task_id`, `question`, `course`, `draft_text`, `feedback` (jsonb), `working_lines` (jsonb — maths: ordered `{math, reason}` lines), `input_mode` (maths: structured/freeform/talkthrough), `skill_assessment` (jsonb — per-dimension developmental read captured at feedback time; system/teacher data, never in the student payload), `draft_version`, `created_at`. Capped at 3 drafts per student per task on `feedback_task`; single submission on `marked_task` / `quick_task`. Typing telemetry: `keystroke_count`, `paste_attempts_blocked`, `typing_session_count`, `total_typing_time_ms`, `time_to_first_keystroke_ms`. Teacher grading: `criterion_marks` (jsonb), `total_mark`, `teacher_comment`, `teacher_annotations` (jsonb — array of `{quote, comment, category, start, end}` with categories `praise`/`improve`/`note`), `completion_status` (text, only `'completed'` or null — set when a quick_task is marked "complete" without a numeric mark), `graded_at`, `graded_by`. Final-submission flag: `submitted_for_marking` (boolean).
+- `tasks` — `id`, `class_id`, `title`, `question`, `course`, `task_type`, `subject_type` (text, `essay` default or `maths` — drives the maths flow + UI), `task_mode` (text, default `feedback_task`; CHECK ∈ {`feedback_task`, `marked_task`, `quick_task`}), `completion_only` (boolean, default false — quick_task only), `total_marks`, `due_date`, `outcomes` (jsonb), `criteria` (jsonb), `criteria_text`, `marking_guideline` (text — optional maths marking guide), `hide_criteria_from_students` (boolean — exam-style: criteria hidden until graded), `notes`, `published_at`, `created_at`, `class_feedback` + `class_feedback_count` + `class_feedback_generated_at` (cached class-level synthesis), `typed_response_only` (boolean, default true), `lesson_builder` (boolean, default false — task published via the **Lesson Builder** differentiation flow). LTI columns: `lti_platform_id`, `lti_resource_link_id`, `lti_line_item_url`, `lti_ags_lineitems_url`.
+- `submissions` — `id`, `student_id`, `task_id`, `question`, `course`, `draft_text`, `feedback` (jsonb), `working_lines` (jsonb — maths: ordered `{math, reason}` lines), `input_mode` (maths: structured/freeform/talkthrough), `skill_assessment` (jsonb — per-dimension developmental read captured at feedback time; system/teacher data, never in the student payload), `draft_version`, `created_at`. **Own-task** (student self-created) columns: `own_task_id` (stable id grouping a student's drafts of one self-made task), `own_task_title`, `own_task_class_id` (optional, private to the student — for their own sorting only), `own_task_criteria_text`. Capped at 3 drafts per student per task on `feedback_task` **and per `own_task_id`**; single submission on `marked_task` / `quick_task`. Typing telemetry: `keystroke_count`, `paste_attempts_blocked`, `typing_session_count`, `total_typing_time_ms`, `time_to_first_keystroke_ms`. Teacher grading: `criterion_marks` (jsonb), `total_mark`, `teacher_comment`, `teacher_annotations` (jsonb — array of `{quote, comment, category, start, end}` with categories `praise`/`improve`/`note`), `completion_status` (text, only `'completed'` or null — set when a quick_task is marked "complete" without a numeric mark), `graded_at`, `graded_by`. Final-submission flag: `submitted_for_marking` (boolean).
 - `draft_autosaves` — `student_id`, `task_id`, `draft_text`, `telemetry` (jsonb), `updated_at`. Composite PK. Persistent in-progress drafts. Cleared on successful submission.
 - `api_call_log` — rate-limit + spend tracking. `user_id`, `endpoint`, `created_at`.
 - `schools` — `id`, `name`, `primary_domain`, `secondary_domains` (text[]), `insights_cache` (jsonb), `insights_cache_task_count`, `insights_cache_generated_at`.
@@ -56,6 +56,7 @@ There are two independent role systems:
 - `teacher_insights_cards` — teacher-tier cohort-card cache, PK `(teacher_id, card_kind, scope_key)` + `fingerprint`. Teacher cards are class-scoped so they get their own per-teacher cache rather than the school-keyed one.
 - `student_profile_synthesis` — one row per student. Cached longitudinal academic profile (LLM-synthesised narrative + headline strength/priority + metrics jsonb including improvement_themes, strength_themes, mark_trend, profile_status ∈ {`established`, `developing`, `new`}), `submission_count_at_generation`, `stale` (boolean). Marked **stale** (not deleted) on any grading / feedback / marked-quick submission; the read path regenerates when there are new submissions or a stale row is past the refresh window, else serves last-known-good (so the class summary keeps usable data). Contains no draft quotes — safe to surface to any current teacher.
 - `student_skill_profile` — the skill database rollup. PK `(student_id, discipline, dimension)`; recency/confidence-weighted `level` (1–5) + `level_label`, `confidence` (0–1, grows with `observation_count`), `trend`, `signal` (latest actionable note), `taxonomy_version`. Written from every submission's `skill_assessment` via `lib/skill-profile.ts`. See **Skill taxonomy** below.
+- `task_activities` — **Lesson Builder** per-student differentiated activity. PK `(task_id, student_id)`; `activity` (jsonb — `{student_focus, scaffolding[], extension}` for writing; `{question, difficulty, student_focus, scaffolding[]}` for a maths re-skin), `is_differentiated` (boolean — false = student got the main activity unchanged, no LLM call), `source_submission_count`, `taxonomy_version`, `generated_at`. Generated lazily on first open and locked thereafter.
 - `lti_platforms` — one row per Canvas instance (issuer, client_id, deployment_id, hostname, JWKS + auth URLs, school_name, school_id).
 - `lti_nonces` — short-lived OIDC handshake nonces.
 - `lti_user_mappings` — Canvas user_id ↔ auth.users.id, per platform.
@@ -90,9 +91,12 @@ The silent Haiku pass lives in `lib/insights-signals-feedback.ts`. It writes a s
 2. Opens `submit.html` for a task.
 3. Writes draft in the textarea. When `typed_response_only`: paste/drop blocked with a toast, mobile screens show "open on laptop" guard, autosaves every ~1.5s to `draft_autosaves`, typing telemetry captured.
 4. Submit paths depend on task mode:
-   - **`feedback_task`** — "Get AI feedback" runs `/api/generate-feedback` (three Sonnet passes; counts toward 3-draft cap), or "Submit for marking" runs `/api/submit-for-marking` (no AI call, locks the task).
+   - **`feedback_task`** — "Get feedback" runs `/api/generate-feedback` (three Sonnet passes; counts toward 3-draft cap), or "Submit for marking" runs `/api/submit-for-marking` (no AI call, locks the task).
    - **`marked_task` / `quick_task`** — only "Submit for marking" is offered. `/api/submit-for-marking` runs the silent Haiku insights pass (`generateInsightsSignals`) and writes the structured output to `submissions.feedback` for downstream insights — but the UI never surfaces it to the student.
 5. Locked state shows once any submission has `graded_at` OR `submitted_for_marking = true`.
+
+### Own tasks (student self-created)
+Students can also create their own practice task from `student.html` ("Enter my own task"): a required **title**, an optional **class** tag (private to them — sorting only), course, question, criteria, then a draft. These run the same `/api/generate-feedback` path with no `task_id` (a client-generated `own_task_id` instead), so they get the full three-pass feedback. Re-openable **3-draft model** grouped by `own_task_id`; "Your own tasks" cards show class/course + X/3 drafts and re-open prefilled. **Daily caps are by distinct tasks *started*** (draft-1 rows in the last 24h): **3 own tasks + 5 class tasks per student per day** (drafts 2–3 of an already-started task don't count), plus 10/hr per user + 5000/day global. Own-task submissions feed the skill database + longitudinal profile like any other, labelled "(own task)" in the synthesis.
 
 ### Three-pass AI feedback — feedback_task only (`api/generate-feedback.ts`)
 Three parallel Anthropic calls via `Promise.allSettled`. Wall-clock = max(pass1, pass2, pass3), not sum.
@@ -121,7 +125,7 @@ The "databasing" spine — every submission is scored against a small, durable s
 - **Jurisdiction-neutral.** Anchored on SOLO / Bloom / academic literacy, not NESA labels, so it survives a move to VCE/QCE etc.; only the *calibration* (marker-voice exemplars) is NSW-specific.
 - **Developmental scale, never a mark/band.** Levels: emerging → developing → consolidating → secure → extending (1–5). Diagnostic only — preserves the no-band-prediction rule.
 - **Captured at feedback time, no extra call.** `skill_assessment` is an output field on the holistic / maths-holistic / insights-signals tools (built from the taxonomy via `buildSkillAssessmentSchema` so they can't drift). Pulled out server-side, stored on `submissions.skill_assessment`, and folded into `student_skill_profile` by `recordSkillSignals` (`lib/skill-profile.ts`) using an EWMA (recency-weighted level) + growing confidence + trend. Fire-and-forget — never affects the student's feedback.
-- **Readers** (profile narrative, insights, the planned **Lesson Builder**) query `student_skill_profile`. As of now the store is *filling* but nothing reads it yet — the Lesson Builder is teased on `new-task.html` ("Publish with Lesson Builder", coming-soon, reveals an access message) but not built.
+- **Readers** — the profile narrative, insights, and the **Lesson Builder** (now built — see its section) query `student_skill_profile` via `readSkillProfile()` in `lib/skill-profile.ts`.
 
 ### Teacher marking (`mark-submission.html` → `submission-grade.ts`)
 - Two-column layout. Student draft on the left with text-selection annotation tool (select text → "+ Annotate" → category + comment). Rubric mark entry on the right.
@@ -131,7 +135,24 @@ The "databasing" spine — every submission is scored against a small, durable s
 
 ### Student results view
 - `my-results.html` — student "markbook". Summary strip (classes, tasks, marked, overall average), one card per class with class average, then per-task rows with status (not submitted / due soon / overdue / submitted / submitted late / marked) and mark.
-- `feedback.html` — single submission's feedback. Adds a "Marked by your teacher" tab when `graded_at` is set, with per-criterion rubric breakdown in graded mode, teacher comment, and teacher annotations in blue/purple (differentiated from AI annotations).
+- `feedback.html` — single submission's feedback. Adds a "Marked by your teacher" tab when `graded_at` is set, with per-criterion rubric breakdown in graded mode, teacher comment, and teacher annotations in blue/purple (differentiated from ProofReady's annotations).
+
+## Lesson Builder
+
+The first **reader** of the skill database turned into action — the feedback → profile → differentiated activity → more feedback flywheel. Built 2026-06; open to every school (per-domain gating is post-pilot).
+
+**Flow.** A teacher publishes a task with the "Publish with Lesson Builder" button on `new-task.html` (`createTask(true, true)` → `tasks.lesson_builder = true`); authoring is otherwise unchanged. Each student gets a version of the activity attuned to their skill profile, generated **lazily the first time they open the task** (`POST /api/generate-activity`) and locked in `task_activities` (stable across their 3 drafts). **No skill data → main activity unchanged, no LLM call.** Any failure → silent fallback to the main activity; students never see an error.
+
+**Differentiation differs by subject:**
+- **Writing → support-layer only.** Question / criteria / outcomes identical for everyone; only `student_focus` + `scaffolding[]` + `extension` differ. Deliberate, for assessment validity (no per-student essay-question rewrites). Tool `DIFFERENTIATED_ACTIVITY_TOOL`.
+- **Maths *without* a marking guideline → re-skin the question.** Same outcome + same solution method; only the instance difficulty changes (numbers/coefficients/context, at most ±1 added/removed step), confidence-aware. The variant carries a `question`; `submit-maths.html` renders it (fetched before render), `generate-maths-feedback.ts` evaluates against it (and stores it on the submission), `mark-submission-maths.html` shows `submission.question`. Tool `DIFFERENTIATED_MATHS_ACTIVITY_TOOL`.
+- **Maths *with* a marking guideline → support-layer** (the guideline is written for the base question, so the question stays put).
+
+**Prompt:** `prompts/lesson-builder-system.ts` (`buildActivitySystemPrompt` + `buildMathsActivitySystemPrompt` + `buildActivityUserPrompt`). Rules: target 1–2 dimensions, scaffold developing / extend secure, **student-facing text is an invitation, never a diagnosis** (no levels/bands), confidence- and stage-aware. Skill profile read via `readSkillProfile()`.
+
+**Student view** (`submit.html` / `submit-maths.html`): a "Your focus for this task" banner (focus + scaffolding/extension); for maths re-skins the differentiated question replaces the main one.
+
+**Teacher view** is deliberately low-touch — the task page shows nothing extra. Per-student support appears only on the individual marking screen (`mark-submission.html` / `mark-submission-maths.html`) as a "support this student was given" block (context, ignorable for bulk "mark all complete"). `task-submissions` returns an `activities` array (per-student variants, incl. enrolled students who haven't opened yet) consumed by the marking screen.
 
 ## LTI 1.3 (Canvas)
 
@@ -195,6 +216,13 @@ Rate limit: 5/hr per user per card kind for cohort; 8/hr per student per kind on
 - Teacher-tier cohort LLM cards: ≥10 submissions with feedback.
 - Student LLM cards: ≥3 submissions with feedback (below that, the card shows "Not enough data yet" with the current count).
 
+### Card presentation (current)
+
+- Cohort LLM cards (gaps, strengths, deciles) and the student cards render as **clean orange-bulleted lists** (`.pts`); the old coloured tiles and the LLM `scope_note` disclaimer are gone (scope_note removed from the tool schemas entirely).
+- The single **Generate Insights** button shows an inline spinner while running (not a wait-cursor); each card keeps prior content under a spinner overlay until its own result lands.
+- Card titles are uniform (one `cardHeader` style). The cohort grid orders **gaps + things-done-well above the maths-errors and decile cards**. "Top 3 cohort-wide gaps" → "Top 3 most common gaps".
+- The **Leadership synthesis** card (formerly "Cross-faculty synthesis") renders as one flat card — sub-sections are plain subheadings, not nested boxes.
+
 ### Student search
 
 `/api/insights-students-search?q=…` — substring match on `display_name` + `email`, case-insensitive, scope-restricted to `getInScopeStudentIds`. Returns up to 10 results, surname-prefix matches ranked first. Used by an autocomplete input on the insights page (120ms debounce, 1-char minimum, "Searching…" placeholder shown immediately).
@@ -206,6 +234,7 @@ Rate limit: 5/hr per user per card kind for cohort; 8/hr per student per kind on
 - `POST /api/generate-maths-feedback` — Maths two-pass feedback (subject_type `maths`). Rate-limited.
 - `POST /api/structure-maths-working` — Haiku pass that splits freeform/talk-through maths input into `{math, reason}` lines.
 - `POST /api/generate-marking-guideline` — AI-generate a maths marking guideline (teacher, at task time).
+- `POST /api/generate-activity` — **Lesson Builder**: generate (or return the locked) per-student differentiated activity for a `lesson_builder` task. Student-triggered, lazy, auth-required; silent fallback to the main activity.
 - `POST /api/generate-criteria` — AI-generate marking criteria for a task (teacher).
 - `POST /api/generate-class-feedback` — Teacher-only synthesis across a class's submissions for one task. Persists to `tasks.class_feedback`.
 - `GET /api/task` / `POST` / `PUT` / `DELETE` — Task CRUD. Class teacher only.
@@ -230,9 +259,9 @@ Rate limit: 5/hr per user per card kind for cohort; 8/hr per student per kind on
 - `GET /api/insights-student?student_id=…` — Single-student card data. Verifies caller scope.
 - `GET /api/insights-students-search?q=…` — Typeahead student search.
 - `GET /api/insights-detail?kind=teachers|classes|tasks|submissions&…` — KPI drill-downs.
-- `GET /api/insights-synthesis` / `POST` — School-wide LLM synthesis (leader/admin only). Cached on `schools.insights_cache`.
+- `GET /api/insights-synthesis` / `POST` — School-wide LLM synthesis (leader/admin only), rendered as the **Leadership synthesis** card. `school_strengths` + `school_weaknesses` capped at 3 with an internal-consistency rule (no strength contradicting a gap; small-sample caveat stated once, not repeated). POST always regenerates. Cached on `schools.insights_cache`.
 - `POST /api/insights-card-generate` — Generate one Tier-A LLM card. Body: `{ kind, school_id?, faculty?, course?, class_id?, year_level?, student_id? }`. Kinds:
-  - Cohort: `bottom_decile`, `top_decile`, `verb_depth`, `common_gaps`, `things_done_well`
+  - Cohort: `bottom_decile`, `top_decile`, `verb_depth`, `common_gaps`, `things_done_well`. **`common_gaps` generates the top 3 gaps AND top 3 strengths in ONE consistent call** (tool `COHORT_PATTERNS_TOOL`, internal-consistency rule so a skill is never both a strength and a gap), then fans the strengths into the `things_done_well` cache — the frontend requests `common_gaps` only and both cards come from that one call. A generation-version tag in `cohortFingerprint` busts stale caches on logic changes.
   - Student: `student_top_mistakes`, `student_stretch_goals`, `student_strengths`, `student_summary`
   - Class: `class_profile_summary` (requires `class_id`, aggregates cached student profiles)
 - `GET /api/student-profile?student_id=…` — Longitudinal student profile. Returns cache hit if present, otherwise regenerates via Sonnet and persists. Access: the student themselves OR a teacher/leader/admin whose insights scope includes the student.
@@ -250,6 +279,7 @@ Rate limit: 5/hr per user per card kind for cohort; 8/hr per student per kind on
 Feedback (essay): `generate-feedback.ts`, `generate-class-feedback.ts`
 Feedback (maths): `generate-maths-feedback.ts`, `structure-maths-working.ts`, `generate-marking-guideline.ts`
 Task authoring: `generate-criteria.ts`
+Lesson Builder: `generate-activity.ts` (per-student differentiated activity)
 Submissions: `submit-for-marking.ts` (also runs the silent Haiku pass + skill capture for marked/quick tasks), `submission-grade.ts`, `task-submissions.ts`, `task-csv.ts`, `task.ts` (validates task_mode + subject_type + criteria + completion_only), `draft-autosave.ts`
 Auth: `signup.ts`, `request-password-reset.ts`, `set-role.ts`
 Classes + user: `class.ts`, `me.ts`
@@ -264,7 +294,7 @@ LTI: `api/lti/*` — `jwks.ts`, `login.ts`, `launch.ts`, `deep-link.ts`
 - `extract-json.ts` — `extractFirstJsonObject(text)` — robustly pulls balanced JSON from a model response
 - `generate-inline-suggestions.ts` — Pass 3 implementation
 - `insights-signals-feedback.ts` — silent Haiku pass for marked/quick task submissions
-- `skill-profile.ts` — `recordSkillSignals()`: validate `skill_assessment` against the taxonomy + EWMA rollup into `student_skill_profile`
+- `skill-profile.ts` — `recordSkillSignals()` (validate `skill_assessment` against the taxonomy + EWMA rollup into `student_skill_profile`) and `readSkillProfile()` (read side, used by Lesson Builder)
 - `parse-rubric-with-ai.ts` — Sonnet rubric → structured criteria at task create/edit
 - `rubric-detect.ts` — `looksLikeBandRubric()` / `stripBandLabels()` heuristics
 - `student-profile.ts` — `readCachedProfile()` + `regenerateProfile()` + `profileNeedsRegen()` for the longitudinal profile (stale-flag model)
@@ -272,7 +302,7 @@ LTI: `api/lti/*` — `jwks.ts`, `login.ts`, `launch.ts`, `deep-link.ts`
 - `sentry.ts` — Sentry init + `captureError`
 - `task-verbs.ts` — NESA directive verb extraction from a question string
 - `user-names.ts` — `getUserInfoBatch()` with 30s cache
-- `feedback-tools.ts` — Tool schemas for all Claude tool-call endpoints (holistic, criteria, inline, rubric parse, class feedback, school insights, the five Tier-A cohort cards, the four student-scope cards, the insights-signals Haiku tool, and the class_profile_summary tool)
+- `feedback-tools.ts` — Tool schemas for all Claude tool-call endpoints (holistic, criteria, inline, rubric parse, class feedback, school insights, the Tier-A cohort cards incl. the combined `COHORT_PATTERNS_TOOL`, the student-scope cards, the insights-signals Haiku tool, the class_profile_summary tool, and the Lesson Builder `DIFFERENTIATED_ACTIVITY_TOOL` + `DIFFERENTIATED_MATHS_ACTIVITY_TOOL`)
 - `anthropic-tool-call.ts` — `callTool<T>()` wrapper
 - `insights-filters.ts` — Filter parsing, faculty-scope clamping, year-level helpers, `getTimeWindowCutoff()`
 - `schools.ts` — School resolution, scope helpers (`resolveInsightsAccess`, `getOwnedClassIds`, `getInScopeClassIds`, `getInScopeStudentIds`, `getSchoolTeacherIds`, `getSchoolStudentIds`, `canViewInsights`, `listAllAuthUsers`)
@@ -284,6 +314,7 @@ LTI: `api/lti/*` — `jwks.ts`, `login.ts`, `launch.ts`, `deep-link.ts`
 - `inline-suggestions-system.ts` / `inline-suggestions-user.ts` — Pass 3
 - `insights-signals-system.ts` — Haiku silent-pass system + user prompt
 - `maths-system.ts` — maths per-line diagnostic + holistic system/user prompts (stage-aware)
+- `lesson-builder-system.ts` — Lesson Builder differentiation prompts (writing support-layer + maths question re-skin)
 
 ### `data/`
 - `skill-taxonomy.ts` — **the ProofReady skill taxonomy** (spine + writing/maths dimensions, scale, `buildSkillAssessmentSchema`, `TAXONOMY_VERSION`)
@@ -298,7 +329,7 @@ LTI: `api/lti/*` — `jwks.ts`, `login.ts`, `launch.ts`, `deep-link.ts`
 ### `public/`
 Auth + onboarding: `index.html`, `auth.html`, `choose-role.html`, `forgot-password.html`, `reset.html`
 Student: `student.html`, `class-view.html`, `submit.html`, `submit-maths.html`, `feedback.html`, `feedback-maths.html`, `my-results.html`
-Teacher: `teacher.html`, `new-class.html`, `class-detail.html`, `new-task.html` (incl. the coming-soon "Publish with Lesson Builder" teaser), `task-detail.html`, `mark-submission.html`, `mark-submission-maths.html`, `teacher-markbook.html`
+Teacher: `teacher.html`, `new-class.html`, `class-detail.html`, `new-task.html` (incl. the live "Publish with Lesson Builder" publish action), `task-detail.html`, `mark-submission.html`, `mark-submission-maths.html`, `teacher-markbook.html`
 Insights: `insights.html` (single page — handles cohort + student modes, all three tiers; single Generate-Insights button)
 Admin: `admin.html`
 LTI: `lti-not-ready.html` (shown when an LTI launch lands before provisioning is done), `lti-deep-link.html` (deep-linking picker)
@@ -309,7 +340,7 @@ Account: `profile.html`
 Shared JS: `js/app.js` (Supabase client, `authFetch`, `requireAuth`, `apiUrl`, Sentry init), `js/rubric.js` (rubric parser/renderer — pipe-table, band-style, criterion-list, letter-band, multi-part HSC, flattened-table; modes `display` / `mark-entry` / `graded`), `js/nesa-courses.js` (course autocomplete), `js/contact-modal.js`
 
 ### `scripts/`
-- SQL migrations: `classes-migration.sql`, `class-feedback-migration.sql`, `rls-policies.sql`, `scale-indexes.sql`, `lti-migration.sql`, `typed-response-only-migration.sql`, `teacher-marking-migration.sql`, `submit-for-marking-migration.sql`, `insights-cards-cache.sql`, `task-modes-migration.sql`, `student-profile-migration.sql`, `schools-migration.sql`, `schools-faculties.sql`, `maths-feedback-migration.sql`, `hide-criteria-from-students-migration.sql`, `teacher-insights-cards.sql`, `school-insights-cards-scope.sql` (adds scope_key + fingerprint), `student-profile-stale-migration.sql` (adds the `stale` flag), `skill-profile-migration.sql` (adds `submissions.skill_assessment` + `student_skill_profile`)
+- SQL migrations: `classes-migration.sql`, `class-feedback-migration.sql`, `rls-policies.sql`, `scale-indexes.sql`, `lti-migration.sql`, `typed-response-only-migration.sql`, `teacher-marking-migration.sql`, `submit-for-marking-migration.sql`, `insights-cards-cache.sql`, `task-modes-migration.sql`, `student-profile-migration.sql`, `schools-migration.sql`, `schools-faculties.sql`, `maths-feedback-migration.sql`, `hide-criteria-from-students-migration.sql`, `teacher-insights-cards.sql`, `school-insights-cards-scope.sql` (adds scope_key + fingerprint), `student-profile-stale-migration.sql` (adds the `stale` flag), `skill-profile-migration.sql` (adds `submissions.skill_assessment` + `student_skill_profile`), `own-task-fields-migration.sql` (`submissions.own_task_*`), `lesson-builder-migration.sql` (`tasks.lesson_builder` + `task_activities`)
 - One-offs: `backfill-inline-suggestions.ts`, `scrape-nesa-feedback.ts`, `generate-lti-keypair.ts`, `diagnose-pcs-search.ts`
 - Smoke tests: `lti-smoke-test.ts`, `insights-teacher-smoke-test.ts`, `insights-student-smoke-test.ts`
 
@@ -334,7 +365,7 @@ Shared JS: `js/app.js` (Supabase client, `authFetch`, `requireAuth`, `apiUrl`, S
 
 - **No mark/band predictions, ever.** Hard-coded prompt rules. The tool refuses to estimate marks even when asked.
 - **No content rewriting.** Feedback says what to fix and why, not how. Hard-coded.
-- **3-draft cap per task** to prevent dependence on AI feedback and limit cost.
+- **3-draft cap per task** to prevent over-reliance on the feedback and limit cost.
 - **Three parallel passes** so wall-clock = max(pass1, pass2, pass3) not sum. Pass 1 is load-bearing; Passes 2 + 3 are best-effort.
 - **Subject-specific calibration.** NESA Notes from the Marking Centre 2021–2024 indexed in `data/nesa-marking-feedback/*.json` + subject glossaries in `data/subject-glossaries.ts` injected into Pass 1.
 - **Typed-response-only as default** (`typed_response_only` = true). Paste/drop blocked, mobile warned off, autosave + telemetry. Designed so a draft submitted to ProofReady is actually the student's own typing.
@@ -342,8 +373,11 @@ Shared JS: `js/app.js` (Supabase client, `authFetch`, `requireAuth`, `apiUrl`, S
 - **Insights student-name policy.** School-wide and cohort prompts forbid naming students ("aggregate only"). Student-scope prompts (`student_*` kinds) explicitly allow naming — the teacher is already authorised to see this student. The no-mark/no-band rule still applies.
 - **Student profile privacy contract.** The longitudinal profile synthesis never sees raw draft text, never sees verbatim annotation quotes, and is forbidden from quoting or paraphrasing student writing. This is what makes the profile safe to surface to any current teacher of the student — including one inheriting students mid-year who never saw the previous class's drafts. The privacy policy explicitly covers this for `marked_task` / `quick_task` paths: silent AI pass, never shown to the student, used only for aggregate cohort signals + the profile, no model training, no cross-school sharing.
 - **Quick task is "not a graded task" by design.** Even when a teacher gives a quick_task a numeric mark, it stays out of mark distribution / decile cards. It feeds LLM cohort cards and the student profile only. Mark-card logic in `insights-card-generate.ts` zeroes `mark_pct` for `task_mode = 'quick_task'`.
-- **Prompt caching is plumbing, not a one-off.** `callTool({ cacheSystem: true })` caches the large static system prompts; structure calls so the invariant prefix is shared (e.g. across a class submitting the same task) for ~10× cheaper input. The same shared-prefix pattern is how the future Lesson Builder should batch a class.
+- **Prompt caching is plumbing, not a one-off.** `callTool({ cacheSystem: true })` caches the large static system prompts; structure calls so the invariant prefix is shared (e.g. across a class submitting the same task) for ~10× cheaper input. The same shared-prefix pattern keeps Lesson Builder cheap across a class.
 - **Databasing is the strategy.** Every submission scores against the skill taxonomy at feedback time and accumulates into `student_skill_profile`. Insights, the profile, and the Lesson Builder are *readers* of one compounding store — the moat is the accumulated, consistently-rated data, not the taxonomy list.
+- **Lesson Builder = support-layer for writing, question re-skin for maths.** Writing differentiates only the support (assessment validity); maths (no guideline) re-skins the question's difficulty holding outcome + method fixed. Student-facing differentiation is always an invitation, never a deficit diagnosis.
+- **Own tasks are capped by *distinct tasks started per day*** (3 own + 5 class), not raw call count — so the 3-draft model stays usable while still bounding cost/abuse.
+- **No "AI feedback" branding in user copy.** App/marketing copy leans on NESA-calibrated quality, not the mechanism; legal/compliance pages keep the AI disclosures. Homepage line: "Smarter feedback, better insights".
 - **Scope-keyed, fingerprinted insight caches.** Cohort cards cache per (owner, kind, scope) with a corpus fingerprint; different scopes coexist, same-scope viewers share, and a generate is free when nothing changed. Teacher tier has its own per-teacher cache.
 - **LTI provisioning is idempotent.** `provisionUser`/`provisionClass` converge on a `23505` unique-violation (Canvas can double-fire a launch) instead of failing; `provisionClass` also cleans up the orphan class the losing request created.
 
@@ -356,6 +390,8 @@ Shared JS: `js/app.js` (Supabase client, `authFetch`, `requireAuth`, `apiUrl`, S
 - **Surname parsing is naive** — last whitespace-separated token. Doesn't handle compound surnames ("Van Der Berg") gracefully in the ranking heuristic. The search still works (substring match catches it); only the ranking boost might miss.
 - **Faculty-restricted leaders cannot widen scope by passing a foreign faculty in the URL.** `applyFacultyScope` clamps the filter to allowed faculties; a request for a faculty outside the grant returns no data (not a 403, because empty is a useful UI signal).
 - **Teachers without a school context** (no LTI, no email-domain match, no `school_members` row) still get insights. Their `schoolId` resolves empty; class-scope works, but they don't share a cohort with anyone.
+- **Lesson Builder maths re-skins are auto-generated** — the highest-risk surface. Sanity-check difficulty + solvability before trusting them; the lever is `buildMathsActivitySystemPrompt` in `prompts/lesson-builder-system.ts`, and the conservative dial is numbers-only (drop the ±1-step allowance). Maths tasks *with* a marking guideline fall back to support-layer so the guideline still matches.
+- **Vercel git auto-deploy has been intermittently missing pushes.** If a change doesn't appear after `git push`, run `vercel --prod` (the reliable fallback) and re-verify.
 
 ## Sister projects (different Supabase, different repos)
 
