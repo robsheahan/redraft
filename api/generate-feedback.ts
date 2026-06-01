@@ -99,6 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const user = await verifyAuth(req);
   const { question, course, criteria, criteria_text, outcomes, draft, notes, task_id, task_title, task_type,
+    own_task_id, own_task_title, own_task_class_id,
     keystroke_count, paste_attempts_blocked, typing_session_count, total_typing_time_ms, time_to_first_keystroke_ms } = req.body;
 
   if (!draft) return res.status(400).json({ error: 'A draft is required.' });
@@ -141,19 +142,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // cap and count toward the global daily cap; anon users only count toward
   // the global cap (no identity to cap them individually).
   //
-  // Own-task submissions (no task_id) get an additional per-user daily cap
-  // and a separate endpoint key — without it, a student could bypass the
-  // per-task 3-draft cap by spinning up a new "own task" for each new
-  // attempt at the same draft. Teacher-task drafts have no daily user cap
-  // because the per-task draft cap already protects against abuse.
+  // Own-task submissions use a separate endpoint key for the per-hour and global
+  // call limits. The per-DAY limit is enforced as "distinct tasks started today"
+  // further down (3 own tasks / 5 class tasks per student per day) — a count the
+  // blunt call-count limiter can't express now that own tasks are a 3-draft model.
   const isOwnTaskSubmission = !task_id;
   const rateLimit = await checkAndLogRateLimit(getSupabase(), user?.id || null, {
     endpoint: isOwnTaskSubmission ? 'generate-feedback-own' : 'generate-feedback',
     perUserPerHour: 10,
-    perUserPerDay: isOwnTaskSubmission ? 5 : undefined,
-    perUserPerDayMessage: isOwnTaskSubmission
-      ? "You've reached your daily limit of 5 own-task submissions. To get more feedback today, submit through a class task your teacher has posted, or try again tomorrow."
-      : undefined,
     globalPerDay: 5000,
   });
   if (!rateLimit.ok) {
@@ -176,6 +172,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let resolvedCriteria = criteria || [];
   let resolvedOutcomes = outcomes || [];
   let resolvedTitle = task_title || null;
+
+  // Daily "distinct tasks started today" count for the per-day caps. Counts the
+  // distinct tasks (teacher task_id or own_task_id) this student STARTED — i.e.
+  // submitted draft 1 of — in the last 24h. Drafts 2-3 of an already-started
+  // task carry draft_version > 1 and so don't inflate the count. Returns -1 on a
+  // read error (fail-open — the per-hour + global caps still protect spend).
+  async function distinctTasksStartedToday(column: 'task_id' | 'own_task_id'): Promise<number> {
+    const sb = getSupabase();
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await sb
+      .from('submissions')
+      .select(column)
+      .eq('student_id', user!.id)
+      .eq('draft_version', 1)
+      .gte('created_at', oneDayAgo)
+      .not(column, 'is', null);
+    if (error) {
+      console.warn('[daily-cap] distinct-task count failed, allowing:', error.message);
+      return -1;
+    }
+    return new Set((data || []).map((r: any) => r[column])).size;
+  }
 
   if (user && task_id) {
     const supabase = getSupabase();
@@ -212,6 +230,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
       draftVersion = priorSubs.length + 1;
+
+      // Daily cap: a student can START up to 5 distinct class tasks per day.
+      // Adding drafts 2-3 to an already-started task does not count.
+      if (priorSubs.length === 0 && (await distinctTasksStartedToday('task_id')) >= 5) {
+        return res.status(429).json({
+          error: "You've started 5 different class tasks today — that's the daily limit. You can still add more drafts to a task you've already started, or come back tomorrow.",
+        });
+      }
+    }
+  } else if (user && isOwnTaskSubmission) {
+    const supabase = getSupabase();
+    if (!own_task_id || !own_task_title) {
+      return res.status(400).json({ error: 'Give your own task a title before getting feedback.' });
+    }
+    resolvedTitle = own_task_title;
+
+    // Drafts of this own task share a stable own_task_id, so the same 3-draft
+    // iterative model as teacher tasks applies.
+    const { data: priorSubs } = await supabase
+      .from('submissions')
+      .select('draft_text, feedback, draft_version')
+      .eq('student_id', user.id)
+      .eq('own_task_id', own_task_id)
+      .order('draft_version', { ascending: true });
+    if (priorSubs) {
+      priorDrafts = priorSubs;
+      if (priorSubs.length >= MAX_DRAFTS) {
+        return res.status(400).json({
+          error: `You've reached the maximum of ${MAX_DRAFTS} drafts for this task.`,
+        });
+      }
+      draftVersion = priorSubs.length + 1;
+
+      // Daily cap: a student can START up to 3 of their own tasks per day.
+      if (priorSubs.length === 0 && (await distinctTasksStartedToday('own_task_id')) >= 3) {
+        return res.status(429).json({
+          error: "You've started 3 of your own tasks today — that's the daily limit. You can still add more drafts to a task you've already started, or come back tomorrow.",
+        });
+      }
     }
   }
 
@@ -402,6 +459,15 @@ Assess this draft against each marking criterion above. Address every criterion 
       await supabase.from('submissions').insert({
         student_id: user.id,
         task_id: task_id || null,
+        // Own-task columns are only written for own tasks — so a teacher-task
+        // submission never references them, and teacher feedback keeps saving
+        // even if the own-task migration hasn't been applied yet.
+        ...(isOwnTaskSubmission ? {
+          own_task_id: own_task_id || null,
+          own_task_title: own_task_title || null,
+          own_task_class_id: own_task_class_id || null,
+          own_task_criteria_text: resolvedCriteriaText || null,
+        } : {}),
         question: resolvedQuestion,
         course: resolvedCourse || null,
         draft_text: draft,
