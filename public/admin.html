@@ -148,7 +148,7 @@
         html += '<table><thead><tr><th>Name</th><th>Domain(s)</th><th style="text-align:right">Staff</th><th style="text-align:right">Students</th><th style="text-align:right">Admins</th><th style="text-align:right">Leaders</th><th style="text-align:right">Classes</th><th style="text-align:right">Tasks</th><th style="text-align:right">Subs</th><th>Insights</th><th></th></tr></thead><tbody>';
         schools.forEach(s => {
           var insightsCell = s.insights_generated_at
-            ? '<span style="color:#15803d">✓ ' + s.insights_task_count + '</span>'
+            ? '<span style="color:#15803d"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M20 6 9 17l-5-5"/></svg> ' + s.insights_task_count + '</span>'
             : '<span style="color:#d1d5db">—</span>';
           var domainParts = [];
           if (s.primary_domain) domainParts.push('<span class="mono">' + e(s.primary_domain) + '</span>');
