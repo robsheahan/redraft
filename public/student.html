@@ -606,7 +606,7 @@
       <p class="lede">Before you start, a quick heads-up on how this tool works.</p>
       <ul>
         <li><strong>Your writing stays yours.</strong> We store your drafts and your teacher's marking. Your work is never used to train AI models.</li>
-        <li><strong>Some tasks give you AI feedback. Some don't.</strong> When your teacher sets a task with AI feedback on, you'll see written feedback after each draft. When they turn it off, you submit once and your teacher marks it directly — no AI feedback shown to you.</li>
+        <li><strong>Some tasks give you feedback. Some don't.</strong> When your teacher sets a task with feedback on, you'll see written feedback after each draft. When they turn it off, you submit once and your teacher marks it directly — no feedback shown to you.</li>
         <li><strong>Either way, ProofReady reads your writing.</strong> Even when feedback isn't shown to you, an AI pass extracts anonymous patterns (e.g. "students often forget to define key terms") that help your school improve teaching across the cohort. Your name never appears in those patterns.</li>
         <li><strong>Your data is hosted in Australia</strong> and only accessible to your teachers, your school's leadership team, and you.</li>
       </ul>
@@ -672,7 +672,7 @@
           </div>
           <div class="form-group">
             <label>Marking criteria</label>
-            <div class="hint">Enter the marking criteria from your task notification. The AI will detect the different criteria automatically.</div>
+            <div class="hint">Enter the marking criteria from your task notification. ProofReady will detect the different criteria automatically.</div>
             <textarea class="criteria-textarea" id="ownCriteriaText" placeholder="e.g.
 Criteria 1: Knowledge and understanding (3-5 marks)
 Criteria 2: Use of examples and evidence (3-5 marks)
@@ -749,7 +749,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
 
       // One-time disclosure for students. Surfaces how ProofReady analyses
       // their writing — including the silent insights pass on marked tasks
-      // where they never see any AI feedback themselves. Acknowledgement is
+      // where they never see any feedback themselves. Acknowledgement is
       // stored on user_metadata so we never ask twice.
       if (!meta.disclosure_acknowledged) {
         showStudentDisclosureModal();
@@ -846,7 +846,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           html += '<div class="task-row-meta">' + metaParts.join(' · ') + '</div></div>';
           if (statusPill) html += statusPill;
           // Draft dots + feedback button only make sense for assessment
-          // tasks (multi-draft, AI feedback shown). Quick tasks: just the
+          // tasks (multi-draft, feedback shown). Quick tasks: just the
           // status pill + the row-click navigation.
           if (!isQuickTask) {
             html += renderDraftProgress(t.my_submission_count || 0);

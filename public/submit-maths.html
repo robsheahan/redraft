@@ -255,15 +255,15 @@
       html += '<button type="button" class="add-line-btn" onclick="addLine()">+ Add line</button>';
       html += '</div>';
       html += '<div id="modeFreeform" class="mode-pane" hidden>';
-      html += '<div class="inline-hint">Type your working continuously in this editor. The AI splits it into per-step lines on submit — you\'ll confirm the split before feedback runs.</div>';
+      html += '<div class="inline-hint">Type your working continuously in this editor. ProofReady splits it into per-step lines on submit — you\'ll confirm the split before feedback runs.</div>';
       html += '<math-field id="freeformInput" style="min-height:280px;font-size:17px"></math-field>';
       html += '</div>';
       html += '<div id="modeTalkthrough" class="mode-pane" hidden>';
-      html += '<div class="inline-hint">Type your working as prose, with the maths inline like $f(x) = 2x+3$. The AI splits it into per-step lines on submit — you\'ll confirm the split before feedback runs.</div>';
+      html += '<div class="inline-hint">Type your working as prose, with the maths inline like $f(x) = 2x+3$. ProofReady splits it into per-step lines on submit — you\'ll confirm the split before feedback runs.</div>';
       html += '<textarea id="talkthroughInput" class="talkthrough-textarea" placeholder="e.g. I want to find the stationary points of $f(x) = 2x^3 - 3x^2 - 12x + 5$. Differentiating gives $f\'(x) = 6x^2 - 6x - 12$. Setting that to zero..."></textarea>';
       html += '</div>';
       html += '<div class="save-row"><span id="saveIndicator" class="save-indicator">&nbsp;</span><span id="lineCount">0 lines</span></div>';
-      html += '<button class="submit-btn" id="submitBtn" onclick="submitForFeedback()">Get AI feedback</button>';
+      html += '<button class="submit-btn" id="submitBtn" onclick="submitForFeedback()">Get feedback</button>';
       html += '</div>';
 
       html += '<div class="loading-overlay" id="loadingOverlay">';

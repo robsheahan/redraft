@@ -45,7 +45,7 @@
     .line-math { padding: 10px 12px; border: 1px solid #f0e6d6; border-radius: 8px; background: #fdf6ee; font-size: 16px; color: #111827; overflow-x: auto; }
     .line-reason { margin-top: 6px; font-size: 13px; color: #6b7280; font-style: italic; }
 
-    /* AI annotation tile */
+    /* Per-line annotation tile */
     .annot { display: flex; align-items: flex-start; gap: 8px; margin-top: 8px; padding: 8px 12px; border-radius: 8px; font-size: 13px; line-height: 1.5; }
     .annot.ok { background: #f0fdf4; color: #14532d; }
     .annot.warn { background: #fef3c7; color: #78350f; }
@@ -313,7 +313,7 @@
       else if (mathStatus === 'slip') { cls = 'warn'; icon = statusSvg('warn'); }
       else if (mathStatus === 'ok_following_through') { cls = 'ok-ft'; icon = statusSvg('ft'); }
       else if (reasonStatus !== 'ok') { cls = 'reason'; icon = statusSvg('help'); }
-      return '<div class="annot ' + cls + '"><span class="annot-pref">' + icon + ' AI:</span> ' + e(a.comment || '') + '</div>';
+      return '<div class="annot ' + cls + '"><span class="annot-pref">' + icon + ' ProofReady:</span> ' + e(a.comment || '') + '</div>';
     }
 
     function renderTeacherAnnotsForLine(lineIndex) {

@@ -155,7 +155,7 @@
       if (sub.submitted_for_marking) {
         return { label: 'Submitted for marking', cls: 'ts-submitted' };
       }
-      // AI-feedback draft, not yet final
+      // feedback draft, not yet final
       if (t.due_date) {
         const due = new Date(t.due_date + 'T23:59:59');
         const subDate = new Date(sub.created_at);

@@ -358,7 +358,7 @@
     // New signature: renderRubric(rawText, escapeFn, structuredRubric, opts).
     // If a server-parsed structured rubric is supplied, use it directly —
     // skip the regex parser entirely. Falls back to the regex parser when
-    // no structured rubric is available (legacy tasks, AI parse failed).
+    // no structured rubric is available (legacy tasks, parse failed).
     var parsed = (structured && (structured.format === 'band' || structured.format === 'criterion'))
       ? structured
       : null;

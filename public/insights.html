@@ -1671,7 +1671,7 @@
       html += '<div class="card card-span-6">' + renderStudentLLMCard('student_top_mistakes', llm.student_top_mistakes, {
         title: 'Top 3 mistakes',
         sub: 'Recurring patterns across ' + (stu.display_name ? stu.display_name.split(' ')[0] : 'this student') + '\'s feedback',
-        emptyTeaser: 'Generate to surface the 3 mistakes appearing most often in this student\'s AI feedback. Useful for personalised follow-up.',
+        emptyTeaser: 'Generate to surface the 3 mistakes appearing most often in this student\'s feedback. Useful for personalised follow-up.',
         render: renderStudentMistakes,
         eligible, floor,
       }) + '</div>';
@@ -1703,7 +1703,7 @@
           + '<div class="hero-label">Student summary</div>'
           + '<div class="hero-paragraph" style="color:#92400e;font-size:14px;font-style:italic">Not enough data yet — this student has '
           + (stu.submissions_with_feedback || 0) + ' submission' + ((stu.submissions_with_feedback || 0) === 1 ? '' : 's')
-          + ' with AI feedback. At least ' + floor + ' are needed before a meaningful summary can be generated.</div>'
+          + ' with feedback. At least ' + floor + ' are needed before a meaningful summary can be generated.</div>'
           + '</div>';
       }
       if (!content) {
@@ -1739,7 +1739,7 @@
           + '<div><h3 style="font-size:14.5px">' + e(opts.title) + '</h3>'
           + '<div class="meta" style="font-size:11.5px;color:#9ca3af;margin-top:2px">' + e(opts.sub) + '</div>'
           + '</div></div>'
-          + '<div class="card-empty"><strong>Not enough data yet</strong>This card needs at least ' + opts.floor + ' submissions with AI feedback before it can run.</div>';
+          + '<div class="card-empty"><strong>Not enough data yet</strong>This card needs at least ' + opts.floor + ' submissions with feedback before it can run.</div>';
       }
       let html = genOverlay(kind);
       html += '<div class="synthesis-head">';
@@ -1840,7 +1840,7 @@
       html += '<div class="card card-span-6">' + renderLLMCard('common_gaps', llm.common_gaps, {
         title: 'Top 3 mistakes',
         sub: 'Recurring improvement themes across the class',
-        emptyTeaser: 'Generate to surface the 3 mistakes appearing most often in this class\'s AI feedback. Useful for planning targeted lessons.',
+        emptyTeaser: 'Generate to surface the 3 mistakes appearing most often in this class\'s feedback. Useful for planning targeted lessons.',
         render: renderListedItems,
       }) + '</div>';
 
@@ -1933,7 +1933,7 @@
 
       html += '<div class="card card-span-6">' + renderLLMCard('bottom_decile', llm.bottom_decile, {
         title: 'Top 3 mistakes — bottom decile',
-        sub: 'AI synthesis of patterns in the bottom 10% of students',
+        sub: 'Synthesis of patterns in the bottom 10% of students',
         emptyTeaser: 'Generate this card to surface the 3 dominant mistakes appearing across the bottom 10% of marked submissions. Drives intervention priorities.',
         render: renderBottomDecile,
       }) + '</div>';
@@ -1948,7 +1948,7 @@
       html += '<div class="card card-span-6">' + renderLLMCard('common_gaps', llm.common_gaps, {
         title: 'Top 5 cohort-wide gaps',
         sub: 'Recurring improvement themes across all students',
-        emptyTeaser: 'Generate to surface the 5 gaps appearing most often in AI feedback across the cohort. Drives whole-staff PD planning.',
+        emptyTeaser: 'Generate to surface the 5 gaps appearing most often in feedback across the cohort. Drives whole-staff PD planning.',
         render: renderListedItems,
       }) + '</div>';
 
@@ -2180,7 +2180,7 @@
         return '<div class="card-empty"><strong>Not enough data yet</strong>' + subs + ' maths submission' + (subs === 1 ? '' : 's') + ' so far. The error breakdown will populate once you have a few more.</div>';
       }
       if (cats.length === 0) {
-        return '<div class="card-empty"><strong>No errors flagged</strong>Across ' + subs + ' maths submissions, the AI didn\'t flag any non-OK line annotations. Either the cohort is flying, or the rubric is too permissive.</div>';
+        return '<div class="card-empty"><strong>No errors flagged</strong>Across ' + subs + ' maths submissions, ProofReady didn\'t flag any non-OK line annotations. Either the cohort is flying, or the rubric is too permissive.</div>';
       }
       let html = '<div style="font-size:12.5px;color:#6b7280;margin-bottom:10px">Across <strong>' + subs + '</strong> maths submission' + (subs === 1 ? '' : 's') + ' and <strong>' + (d.total_lines || 0) + '</strong> lines of working. Counts = how many lines fell into each category.</div>';
       const max = Math.max(1, ...cats.map(r => r.count));

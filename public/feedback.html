@@ -697,8 +697,8 @@
       // Feedback view wrapper
       html += '<div id="view-feedback"' + (activeView !== 'feedback' ? ' hidden' : '') + '>';
 
-      // If this submission has no AI feedback (e.g. submitted directly for
-      // marking), show a brief explanation in the AI tab and skip the
+      // If this submission has no feedback (e.g. submitted directly for
+      // marking), show a brief explanation in the feedback tab and skip the
       // section rendering rather than crashing on fb.foo accesses.
       if (!fb || typeof fb !== 'object') {
         html += '<div class="section"><p class="section-text" style="color:#6b7280">No feedback for this submission — it was submitted directly for marking. Open the &quot;Marked by your teacher&quot; tab to see your mark and comments.</p></div>';
@@ -859,7 +859,7 @@
       }
 
       const footerText = hasTeacher
-        ? 'This is your teacher\'s final mark and feedback. Your AI-feedback drafts are kept here for reference.'
+        ? 'This is your teacher\'s final mark and feedback. Your feedback drafts are kept here for reference.'
         : 'This is formative feedback on a draft — not a final mark.';
       html += '<div class="footer">' + footerText + '</div>';
 

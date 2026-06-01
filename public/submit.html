@@ -303,8 +303,8 @@
       }
 
       // Task mode determines the UI: feedback_task = current behaviour with
-      // drafts + AI feedback. marked_task / quick_task = single submission,
-      // no AI feedback shown to the student.
+      // drafts + feedback. marked_task / quick_task = single submission,
+      // no feedback shown to the student.
       const taskMode = t.task_mode || 'feedback_task';
       const isFeedbackTask = taskMode === 'feedback_task';
 

@@ -566,7 +566,7 @@
       html += '</div>';
 
       // Generate class feedback button. Label flips to "class summary" on
-      // quick tasks since students never received student-facing AI feedback
+      // quick tasks since students never received student-facing feedback
       // there — the teacher's synthesis is more of a teaching summary than
       // a feedback round-up.
       const hasSavedClassFeedback = !!(task.class_feedback && Object.keys(task.class_feedback).length);
@@ -836,7 +836,7 @@
       html += '<input type="checkbox" id="editHideCriteriaToggle"' + (hideCritOn ? ' checked' : '') + '>';
       html += '<div class="toggle-body">';
       html += '<label for="editHideCriteriaToggle">Hide criteria from students (exam-style)</label>';
-      html += '<div class="toggle-sub">Students won\'t see the rubric while writing, and the AI won\'t return criterion-by-criterion feedback. The rubric and your per-criterion marks reveal once you\'ve graded their submission.</div>';
+      html += '<div class="toggle-sub">Students won\'t see the rubric while writing, and ProofReady won\'t return criterion-by-criterion feedback. The rubric and your per-criterion marks reveal once you\'ve graded their submission.</div>';
       html += '</div></div></div>';
 
       html += '<div class="edit-actions">';
