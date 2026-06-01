@@ -125,6 +125,12 @@
     .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
     .site-footer { text-align: center; padding: 24px; font-size: 13px; color: #9ca3af; border-top: 1px solid #e8e0d4; }
     .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
+    .lb-focus { background: #fff7ef; border: 1px solid #f6d9bb; border-left: 3px solid #ed7615; border-radius: 10px; padding: 14px 16px; margin: 0 0 18px; }
+    .lb-focus-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #c2570a; margin-bottom: 6px; }
+    .lb-focus p { font-size: 14px; color: #374151; line-height: 1.55; margin: 0; }
+    .lb-focus ul { margin: 8px 0 0; padding-left: 18px; }
+    .lb-focus li { font-size: 13.5px; color: #374151; line-height: 1.5; margin-bottom: 4px; }
+    .lb-extension { margin-top: 8px; font-size: 13.5px; color: #374151; }
   </style>
 </head>
 <body>
@@ -147,6 +153,7 @@
     const MAX_DRAFTS = 3;
     let currentTask = null;
     let priorDrafts = [];
+    let currentActivity = null; // Lesson Builder: this student's differentiated support, if any
     let lineCounter = 0;
     let currentMode = 'structured'; // 'structured' | 'freeform' | 'talkthrough'
     let confirmedLines = null; // After Pass A confirmation, the lines to send.
@@ -199,11 +206,43 @@
           priorDrafts = Array.isArray(dd.drafts) ? dd.drafts : [];
         }
         render();
+
+        // Lesson Builder: fetch this student's differentiated support (lazy +
+        // locked server-side). After render() so the task shows immediately;
+        // silent fallback to the main activity on any failure.
+        if (currentTask.lesson_builder) {
+          try {
+            const actRes = await authFetch('/api/generate-activity', {
+              method: 'POST', body: JSON.stringify({ task_id: taskId }),
+            });
+            if (actRes && actRes.ok) {
+              const ad = await actRes.json().catch(() => null);
+              if (ad && ad.is_differentiated && ad.activity) {
+                currentActivity = ad.activity;
+                applyActivityBanner();
+              }
+            }
+          } catch (_) { /* main activity stands */ }
+        }
       } catch (err) {
         console.error('[submit-maths.html] load failed:', err);
         container.innerHTML = '<div class="empty">Something went wrong loading this task. <br><small>' + e(err && err.message || String(err)) + '</small></div>';
       }
     })();
+
+    function applyActivityBanner() {
+      const el = document.getElementById('lbBanner');
+      if (!el || !currentActivity) return;
+      const a = currentActivity;
+      let h = '<div class="lb-focus"><div class="lb-focus-label">Your focus for this task</div>';
+      if (a.student_focus) h += '<p>' + e(a.student_focus) + '</p>';
+      if (Array.isArray(a.scaffolding) && a.scaffolding.length) {
+        h += '<ul>' + a.scaffolding.map(s => '<li>' + e(s) + '</li>').join('') + '</ul>';
+      }
+      if (a.extension) h += '<div class="lb-extension"><strong>Stretch:</strong> ' + e(a.extension) + '</div>';
+      h += '</div>';
+      el.innerHTML = h;
+    }
 
     function render() {
       const t = currentTask;
@@ -241,6 +280,7 @@
       html += '<div class="task-question-wrap"><h4>Task</h4>';
       html += '<div class="task-question" id="taskQuestion">' + e(t.question || '') + '</div></div>';
       html += '</div>';
+      html += '<div id="lbBanner"></div>';
 
       html += '<div class="divider">Your working — ' + remaining + ' draft' + (remaining === 1 ? '' : 's') + ' remaining</div>';
       html += '<div class="card">';
