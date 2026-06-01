@@ -522,6 +522,35 @@ export const COHORT_PATTERNS_TOOL: Tool = {
   },
 };
 
+// Lesson Builder — a differentiated SUPPORT layer for one student on a shared
+// task. The question, criteria and outcomes stay identical for everyone; only
+// scaffolding / extension / focus differ. No teacher-facing or dimension fields:
+// the model reasons about the skill profile internally and emits student-facing
+// support only.
+export const DIFFERENTIATED_ACTIVITY_TOOL: Tool = {
+  name: 'provide_differentiated_activity',
+  description: 'A differentiated support layer for one student on a shared task. The question, criteria and outcomes are fixed — only scaffolding, an optional extension, and a short student-facing focus differ.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      student_focus: {
+        type: 'string',
+        description: 'One or two sentences addressed directly TO the student: what to focus on this time. Encouraging, forward-looking, framed as an invitation or goal — NEVER a diagnosis. Do not mention skill levels, bands, weaknesses, or "because you…". If the student is strong across the board, make this about the extension.',
+      },
+      scaffolding: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Concrete, specific supports for the 1–2 developing skills being targeted (e.g. a structure to follow, sentence stems, a "claim → evidence → explanation" reminder, where a step needs justification). 0–4 short items. Empty array if the student is secure and needs none.',
+      },
+      extension: {
+        type: 'string',
+        description: 'An optional stretch that deepens THIS SAME task for a secure/extending student (e.g. "also weigh this against one alternative approach"). Empty string if not applicable. Never a different task.',
+      },
+    },
+    required: ['student_focus', 'scaffolding', 'extension'],
+  },
+};
+
 export const THINGS_DONE_WELL_TOOL: Tool = {
   name: 'provide_things_done_well',
   description: 'Top 3 things students across the school are consistently doing well, drawn from AI strength feedback. Useful for sharing best practice between faculties and for celebrating wins in faculty meetings.',

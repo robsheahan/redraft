@@ -1,0 +1,142 @@
+/**
+ * Lesson Builder — generate (or fetch) one student's differentiated activity.
+ *
+ * Lazy-on-open: the student's submit page calls this when they open a
+ * lesson_builder task. If a variant is already locked, return it. Otherwise read
+ * their skill profile and either:
+ *   - no skill data → store is_differentiated:false (NO model call) → they get
+ *     the main activity unchanged; or
+ *   - some data → one Sonnet call producing a support layer, stored + locked so
+ *     it's stable across their drafts.
+ *
+ * Failures degrade silently to the main activity — students never see an error.
+ */
+
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { applyCors } from '../lib/cors.js';
+import Anthropic from '@anthropic-ai/sdk';
+import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { checkAndLogRateLimit } from '../lib/rate-limit.js';
+import { captureError } from '../lib/sentry.js';
+import { callTool } from '../lib/anthropic-tool-call.js';
+import { readSkillProfile } from '../lib/skill-profile.js';
+import { DIFFERENTIATED_ACTIVITY_TOOL } from '../lib/feedback-tools.js';
+import { getDisciplineForCourse } from '../data/nesa-courses.js';
+import { currentYearLevelFromGraduationYear } from '../data/nesa-reference.js';
+import { familyForSubjectType, dimensionsForFamily, TAXONOMY_VERSION } from '../data/skill-taxonomy.js';
+import { buildActivitySystemPrompt, buildActivityUserPrompt } from '../prompts/lesson-builder-system.js';
+
+const MODEL = 'claude-sonnet-4-6';
+
+// Shape returned to the student (teacher-facing fields intentionally absent).
+const MAIN_ACTIVITY = { is_differentiated: false, activity: null };
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (applyCors(req, res)) return;
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const user = await verifyAuth(req);
+  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+
+  const { task_id } = (req.body || {}) as { task_id?: string };
+  if (!task_id) return res.status(400).json({ error: 'task_id is required' });
+
+  const supabase = getSupabase();
+
+  // Load task + gate on lesson_builder + class membership.
+  const { data: task } = await supabase.from('tasks').select('*').eq('id', task_id).maybeSingle();
+  if (!task) return res.status(404).json({ error: 'Task not found.' });
+  if (!task.lesson_builder) return res.status(200).json(MAIN_ACTIVITY);
+
+  const { data: membership } = await supabase
+    .from('class_members').select('student_id')
+    .eq('class_id', task.class_id).eq('student_id', user.id).maybeSingle();
+  if (!membership) return res.status(403).json({ error: "You are not a member of this task's class." });
+
+  // Already locked? Return it as-is (stable across the student's drafts).
+  const { data: existing } = await supabase
+    .from('task_activities').select('activity, is_differentiated')
+    .eq('task_id', task_id).eq('student_id', user.id).maybeSingle();
+  if (existing) {
+    return res.status(200).json({
+      is_differentiated: !!existing.is_differentiated,
+      activity: existing.is_differentiated ? existing.activity : null,
+    });
+  }
+
+  // Read the student's skill profile for this task's discipline + family.
+  const discipline = (task.course ? getDisciplineForCourse(task.course) : null) || 'General';
+  const family = familyForSubjectType(task.subject_type);
+  const familyKeys = new Set(dimensionsForFamily(family).map((d) => d.key));
+  const allRows = await readSkillProfile(supabase, user.id, discipline);
+  const rows = allRows.filter((r) => r.observation_count > 0 && familyKeys.has(r.dimension));
+
+  // No usable skill data → main activity, locked, no model call.
+  if (rows.length === 0) {
+    await supabase.from('task_activities').upsert({
+      task_id, student_id: user.id,
+      activity: { student_focus: '', scaffolding: [], extension: '' },
+      is_differentiated: false,
+      source_submission_count: 0,
+      taxonomy_version: TAXONOMY_VERSION,
+    });
+    return res.status(200).json(MAIN_ACTIVITY);
+  }
+
+  // Rate-limit (generous — normally one generation per student per task).
+  const rl = await checkAndLogRateLimit(supabase, user.id, {
+    endpoint: 'generate-activity',
+    perUserPerHour: 30,
+    globalPerDay: 5000,
+  });
+  if (!rl.ok) {
+    // Don't block the student — fall back to the main activity.
+    return res.status(200).json(MAIN_ACTIVITY);
+  }
+
+  const gradYear = (user.user_metadata && (user.user_metadata as any).graduation_year) || null;
+  const yearLevel = currentYearLevelFromGraduationYear(gradYear);
+
+  let value: any;
+  try {
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const result = await callTool<any>({
+      client,
+      model: MODEL,
+      max_tokens: 1024,
+      temperature: 0.3,
+      system: buildActivitySystemPrompt({
+        question: task.question,
+        criteriaText: task.criteria_text || null,
+        course: task.course || null,
+        family,
+        yearLevel,
+      }),
+      user: buildActivityUserPrompt(rows),
+      tool: DIFFERENTIATED_ACTIVITY_TOOL,
+      cacheSystem: true,
+      label: 'lesson-builder:activity',
+    });
+    value = result.value;
+  } catch (err: any) {
+    captureError(err, { stage: 'generate-activity', task_id, user_id: user.id });
+    return res.status(200).json(MAIN_ACTIVITY); // silent fallback
+  }
+
+  const activity = {
+    student_focus: typeof value?.student_focus === 'string' ? value.student_focus : '',
+    scaffolding: Array.isArray(value?.scaffolding) ? value.scaffolding.filter((s: any) => typeof s === 'string' && s.trim()) : [],
+    extension: typeof value?.extension === 'string' ? value.extension : '',
+  };
+
+  const sourceCount = rows.reduce((m, r) => Math.max(m, r.observation_count), 0);
+  await supabase.from('task_activities').upsert({
+    task_id, student_id: user.id,
+    activity,
+    is_differentiated: true,
+    source_submission_count: sourceCount,
+    taxonomy_version: TAXONOMY_VERSION,
+  });
+
+  return res.status(200).json({ is_differentiated: true, activity });
+}
