@@ -287,12 +287,13 @@ function buildSystemPrompt(schoolName: string, taskCount: number): string {
     `- Never identify a specific class by code or join code.`,
     `- Aggregate patterns only. The granularity is the FACULTY level, not the class level.`,
     `- "Faculty" means the NSW KLA grouping (English, Mathematics, Science, HSIE, PDHPE, TAS, Creative Arts, Languages, VET, Other).`,
-    `- If only one or two tasks exist for a faculty, note the small sample size in the by_faculty entry rather than over-generalising.`,
+    `- If the dataset is small (only one or two tasks overall, or for a faculty), state that caveat ONCE — in school_snapshot only. Do NOT repeat "small sample / indicative not conclusive" hedging in verb_depth_patterns, by_faculty, or anywhere else; note it once, then write normally.`,
     ``,
     `INTERNAL CONSISTENCY (critical):`,
     `- school_strengths and school_weaknesses must NOT contradict each other. Never list a skill as a strength if its absence appears in the gaps, or vice versa — e.g. do NOT praise "use of concrete, real-world evidence to support claims" while also listing "claims made without evidence or examples" as a gap.`,
     `- If a skill is genuinely uneven across the cohort, name it in ONE list only and describe it as inconsistent (e.g. "evidence use is emerging but not yet consistent"), rather than asserting it is both a strength and a weakness.`,
     `- Before finalising, re-read school_strengths against school_weaknesses and remove or reframe any point that conflicts with the other list.`,
+    `- The same no-contradiction rule applies WITHIN each by_faculty entry (its strengths vs its gaps) and between by_faculty and the school-level lists — re-read the whole output, not just the two school lists.`,
   ].join('\n');
 }
 

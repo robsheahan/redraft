@@ -1761,7 +1761,7 @@
       if (hasContent && cache.generated_at) {
         const when = new Date(cache.generated_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
         const ctx = [];
-        if (cache.source_submission_count) ctx.push(cache.source_submission_count + ' submissions');
+        if (cache.source_submission_count) ctx.push(cache.source_submission_count + ' submission' + (cache.source_submission_count === 1 ? '' : 's'));
         ctx.push('updated ' + when);
         html += '<div class="meta" style="margin-top:4px">' + e(ctx.join(' · ')) + '</div>';
       }
@@ -1993,7 +1993,7 @@
       html += '<div class="meta" style="font-size:11.5px;color:#9ca3af;margin-top:2px">' + e(opts.sub) + '</div>';
       if (hasContent) {
         const ctx = [];
-        if (cache.source_submission_count) ctx.push(cache.source_submission_count + ' submissions');
+        if (cache.source_submission_count) ctx.push(cache.source_submission_count + ' submission' + (cache.source_submission_count === 1 ? '' : 's'));
         if (lastGen) ctx.push('updated ' + lastGen);
         const filtersStr = formatFilterContext(cache.filters);
         if (filtersStr) ctx.push('scope: ' + filtersStr);
