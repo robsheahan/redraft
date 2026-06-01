@@ -14,6 +14,7 @@ import { callTool } from '../lib/anthropic-tool-call.js';
 import { HOLISTIC_FEEDBACK_TOOL, CRITERIA_CHECK_TOOL } from '../lib/feedback-tools.js';
 import { looksLikeBandRubric, stripBandLabels } from '../lib/rubric-detect.js';
 import { postCompletionIfLinked } from '../lib/lti/ags.js';
+import { recordSkillSignals } from '../lib/skill-profile.js';
 
 function buildCriteriaCheckPrompt(courseName?: string, isBandRubric?: boolean): string {
   const subjectLabel = courseName || "this HSC subject";
@@ -380,8 +381,12 @@ Assess this draft against each marking criterion above. Address every criterion 
       console.warn('[generate-feedback] Pass 3 rejected:', inlineSettled.reason?.message || inlineSettled.reason);
     }
 
+    // Pull the skill read out of the holistic output — it's captured for the
+    // skill database, never shown to the student.
+    const { skill_assessment: skillAssessment, ...holisticFields } = initialFeedback;
+
     const feedback = {
-      ...initialFeedback,
+      ...holisticFields,
       criteria_feedback: criteriaFeedback,
       inline_suggestions: inlineSuggestions,
       // Lets the renderer label the criteria_feedback section appropriately
@@ -401,6 +406,7 @@ Assess this draft against each marking criterion above. Address every criterion 
         course: resolvedCourse || null,
         draft_text: draft,
         feedback,
+        skill_assessment: Array.isArray(skillAssessment) ? skillAssessment : null,
         draft_version: draftVersion,
         keystroke_count: typeof keystroke_count === 'number' ? keystroke_count : null,
         paste_attempts_blocked: typeof paste_attempts_blocked === 'number' ? paste_attempts_blocked : null,
@@ -408,6 +414,19 @@ Assess this draft against each marking criterion above. Address every criterion 
         total_typing_time_ms: typeof total_typing_time_ms === 'number' ? total_typing_time_ms : null,
         time_to_first_keystroke_ms: typeof time_to_first_keystroke_ms === 'number' ? time_to_first_keystroke_ms : null,
       });
+
+      // Fold the skill read into the student's rollup (the skill database).
+      // Fire-and-forget — a failure here must never affect the feedback the
+      // student just received.
+      if (Array.isArray(skillAssessment) && skillAssessment.length > 0) {
+        recordSkillSignals({
+          supabase,
+          studentId: user.id,
+          discipline: (resolvedCourse ? getDisciplineForCourse(resolvedCourse as string) : null) || 'General',
+          family: 'writing',
+          assessment: skillAssessment,
+        }).catch(err => captureError(err, { stage: 'skill-rollup', user_id: user.id, task_id }));
+      }
 
       // Mark the longitudinal profile stale — AI feedback is treated as a
       // quality signal alongside teacher marks. The row is kept (not deleted)

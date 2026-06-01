@@ -38,7 +38,9 @@ import {
   buildMathsHolisticUserPrompt,
 } from '../prompts/maths-system.js';
 import { currentYearLevelFromGraduationYear } from '../data/nesa-reference.js';
+import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { postCompletionIfLinked } from '../lib/lti/ags.js';
+import { recordSkillSignals } from '../lib/skill-profile.js';
 
 const MAX_DRAFTS = 3;
 
@@ -184,10 +186,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         what_youve_done_well: string[];
         top_priority: string;
         improvements: string[];
+        skill_assessment?: any[];
       }>({
         client,
         model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
+        max_tokens: 2200,
         temperature: 0.3,
         system: buildMathsHolisticSystem(courseName, yearLevel),
         user: buildMathsHolisticUserPrompt({
@@ -237,6 +240,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       working_lines: lines,
       input_mode: input_mode === 'freeform' || input_mode === 'talkthrough' ? input_mode : 'structured',
       feedback,
+      skill_assessment: Array.isArray(holistic?.skill_assessment) ? holistic.skill_assessment : null,
       draft_version: draftVersion,
       keystroke_count: typeof keystroke_count === 'number' ? keystroke_count : null,
       paste_attempts_blocked: typeof paste_attempts_blocked === 'number' ? paste_attempts_blocked : null,
@@ -249,6 +253,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (insertErr) {
       captureError(insertErr, { stage: 'submission-insert-maths', task_id, user_id: user.id });
       return res.status(500).json({ error: 'Could not save your submission. ' + insertErr.message });
+    }
+
+    // Fold the skill read into the student's rollup (the skill database).
+    // Fire-and-forget — must never affect the feedback just produced.
+    if (Array.isArray(holistic?.skill_assessment) && holistic.skill_assessment.length > 0) {
+      recordSkillSignals({
+        supabase,
+        studentId: user.id,
+        discipline: (task.course ? getDisciplineForCourse(task.course) : null) || 'Mathematics',
+        family: 'maths',
+        assessment: holistic.skill_assessment,
+      }).catch(err => captureError(err, { stage: 'skill-rollup-maths', user_id: user.id, task_id }));
     }
 
     // Mark longitudinal profile stale (kept, not deleted).

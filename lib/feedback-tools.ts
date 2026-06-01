@@ -10,6 +10,7 @@
  */
 
 import type Anthropic from '@anthropic-ai/sdk';
+import { buildSkillAssessmentSchema } from '../data/skill-taxonomy.js';
 
 type Tool = Anthropic.Messages.Tool;
 
@@ -68,6 +69,10 @@ export const HOLISTIC_FEEDBACK_TOOL: Tool = {
         required: ['summary'],
       },
       self_check: { type: 'string' },
+      // Captured for the ProofReady skill database — pulled out server-side and
+      // never shown to the student. Listed last so a max_tokens truncation
+      // drops it before any student-facing field.
+      skill_assessment: buildSkillAssessmentSchema('writing'),
     },
     required: [
       'what_youve_done_well',
@@ -77,6 +82,7 @@ export const HOLISTIC_FEEDBACK_TOOL: Tool = {
       'top_priority',
       'what_a_strong_response_includes',
       'self_check',
+      'skill_assessment',
     ],
   },
 };
@@ -293,8 +299,11 @@ export const MATHS_HOLISTIC_TOOL: Tool = {
         description: '2–4 specific improvements the student should make on this draft. Numbered, actionable. Reference specific line numbers where helpful. Each one a single sentence.',
         items: { type: 'string' },
       },
+      // Captured for the ProofReady skill database — pulled out server-side and
+      // never shown to the student. Listed last so a truncation drops it first.
+      skill_assessment: buildSkillAssessmentSchema('maths'),
     },
-    required: ['what_youve_done_well', 'top_priority', 'improvements'],
+    required: ['what_youve_done_well', 'top_priority', 'improvements', 'skill_assessment'],
   },
 };
 
