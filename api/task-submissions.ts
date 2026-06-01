@@ -30,13 +30,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .from('submissions').select('*').eq('task_id', taskId).order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
 
-  const studentIds = [...new Set((submissions || []).map(s => s.student_id).filter(Boolean))] as string[];
-  const userInfo = await getUserInfoBatch(supabase, studentIds);
+  // Lesson Builder: gather per-student differentiated activities + the full
+  // enrolled list (so the teacher also sees students who haven't opened yet).
+  let memberIds: string[] = [];
+  const actByStudent: Record<string, any> = {};
+  if (task.lesson_builder) {
+    const { data: members } = await supabase
+      .from('class_members').select('student_id').eq('class_id', task.class_id);
+    memberIds = (members || []).map((m: any) => m.student_id).filter(Boolean);
+    const { data: actRows } = await supabase
+      .from('task_activities').select('student_id, is_differentiated, activity').eq('task_id', taskId);
+    (actRows || []).forEach((a: any) => { actByStudent[a.student_id] = a; });
+  }
+
+  const subStudentIds = (submissions || []).map(s => s.student_id).filter(Boolean) as string[];
+  const allIds = [...new Set([...subStudentIds, ...memberIds])];
+  const userInfo = await getUserInfoBatch(supabase, allIds);
 
   const enriched = (submissions || []).map(s => ({
     ...s,
     student_name: userInfo[s.student_id]?.name || 'Unknown student',
   }));
 
-  return res.status(200).json({ task, submissions: enriched });
+  const activities = task.lesson_builder
+    ? memberIds.map((sid) => {
+        const a = actByStudent[sid];
+        return {
+          student_id: sid,
+          student_name: userInfo[sid]?.name || 'Unknown student',
+          status: !a ? 'not_started' : (a.is_differentiated ? 'differentiated' : 'main'),
+          activity: a && a.is_differentiated ? a.activity : null,
+        };
+      }).sort((x, y) => x.student_name.localeCompare(y.student_name))
+    : null;
+
+  return res.status(200).json({ task, submissions: enriched, activities });
 }

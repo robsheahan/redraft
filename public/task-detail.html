@@ -467,6 +467,20 @@
       background-position: center;
       background-size: 70%;
     }
+    .lb-section { margin-top: 32px; }
+    .lb-badge { font-size: 12px; font-weight: 700; color: #c2570a; background: #fff1e3; border-radius: 100px; padding: 2px 10px; margin-left: 8px; vertical-align: middle; }
+    .lb-sub { font-size: 13px; color: #6b7280; margin-bottom: 14px; }
+    .lb-card { background: #fff; border: 1px solid #eee5d8; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+    .lb-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 14px; color: #1f2937; }
+    .lb-stat { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 2px 8px; border-radius: 4px; }
+    .lb-stat.diff { color: #c2570a; background: #fff1e3; }
+    .lb-stat.main { color: #6b7280; background: #f3f4f6; }
+    .lb-stat.none { color: #9ca3af; background: #f3f4f6; }
+    .lb-focus-text { font-size: 13.5px; color: #374151; line-height: 1.55; margin: 0 0 6px; }
+    .lb-scaff { margin: 6px 0 0; padding-left: 18px; }
+    .lb-scaff li { font-size: 13px; color: #374151; line-height: 1.5; margin-bottom: 3px; }
+    .lb-ext { margin-top: 6px; font-size: 13px; color: #374151; }
+    .lb-note { font-size: 13px; color: #9ca3af; font-style: italic; }
   </style>
 </head>
 <body>
@@ -507,7 +521,7 @@
         return;
       }
 
-      const { task, submissions } = await res.json();
+      const { task, submissions, activities } = await res.json();
       currentTask = task;
       document.title = (task.title || 'Task') + ' — ProofReady';
 
@@ -585,6 +599,37 @@
 
       // Placeholder for class feedback
       html += '<div id="classFeedback"></div>';
+
+      // Lesson Builder — per-student differentiated activities.
+      if (task.lesson_builder && Array.isArray(activities)) {
+        const diffCount = activities.filter(a => a.status === 'differentiated').length;
+        html += '<div class="lb-section">';
+        html += '<h2 style="font-size:18px;font-weight:700;margin:0 0 4px">Lesson Builder <span class="lb-badge">' + diffCount + ' of ' + activities.length + ' differentiated</span></h2>';
+        html += '<div class="lb-sub">Each student gets a version of this task tuned to their profile, generated the first time they open it.</div>';
+        if (activities.length === 0) {
+          html += '<div class="lb-note">No students enrolled in this class yet.</div>';
+        }
+        activities.forEach(a => {
+          const badge = a.status === 'differentiated'
+            ? '<span class="lb-stat diff">Differentiated</span>'
+            : (a.status === 'main' ? '<span class="lb-stat main">Main activity</span>' : '<span class="lb-stat none">Not opened</span>');
+          html += '<div class="lb-card"><div class="lb-card-head"><strong>' + e(a.student_name) + '</strong>' + badge + '</div>';
+          if (a.status === 'differentiated' && a.activity) {
+            const act = a.activity;
+            if (act.student_focus) html += '<p class="lb-focus-text">' + e(act.student_focus) + '</p>';
+            if (Array.isArray(act.scaffolding) && act.scaffolding.length) {
+              html += '<ul class="lb-scaff">' + act.scaffolding.map(s => '<li>' + e(s) + '</li>').join('') + '</ul>';
+            }
+            if (act.extension) html += '<div class="lb-ext"><strong>Stretch:</strong> ' + e(act.extension) + '</div>';
+          } else if (a.status === 'main') {
+            html += '<div class="lb-note">No profile data yet — this student gets the main activity unchanged.</div>';
+          } else {
+            html += '<div class="lb-note">Not opened yet — differentiates when the student opens the task.</div>';
+          }
+          html += '</div>';
+        });
+        html += '</div>';
+      }
 
       // Submissions list
       html += '<div class="submissions-section">';
