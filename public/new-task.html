@@ -554,11 +554,10 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       <!-- Submit -->
       <div class="submit-section">
         <div class="lesson-builder-teaser">
-          <button type="button" class="btn-lesson-builder" onclick="lessonBuilderTeaser()">
+          <button type="button" class="btn-lesson-builder" onclick="createTask(true, true)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></svg>
             Publish with Lesson Builder
           </button>
-          <div class="lb-locked" id="lbLocked" style="display:none">Lesson Builder isn't enabled for your school — ask your school's ProofReady admin to turn it on.</div>
         </div>
         <div style="display:flex; gap:8px">
           <button class="btn-create" style="background:transparent;color:#6b7280;border:1px solid transparent;box-shadow:none" onclick="cancelTask()">Cancel</button>
@@ -721,20 +720,19 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
 
     // Lesson Builder is access-gated per school — reveal the access message
     // when the caller's school doesn't have it enabled.
-    function lessonBuilderTeaser() {
-      const el = document.getElementById('lbLocked');
-      if (el) el.style.display = 'block';
-    }
-
-    async function createTask(publish) {
-      const btns = document.querySelectorAll('.btn-create');
-      // Identify which button was clicked by inspecting its onclick attribute
+    async function createTask(publish, lessonBuilder) {
+      const btns = document.querySelectorAll('.btn-create, .btn-lesson-builder');
+      // Identify which button was clicked so we can show its spinner.
       let clickedBtn = null;
-      btns.forEach(b => {
-        const oc = b.getAttribute('onclick') || '';
-        if (publish && oc.includes('createTask(true)')) clickedBtn = b;
-        if (!publish && oc.includes('createTask(false)')) clickedBtn = b;
-      });
+      if (lessonBuilder) {
+        clickedBtn = document.querySelector('.btn-lesson-builder');
+      } else {
+        document.querySelectorAll('.btn-create').forEach(b => {
+          const oc = b.getAttribute('onclick') || '';
+          if (publish && oc.includes('createTask(true)')) clickedBtn = b;
+          if (!publish && oc.includes('createTask(false)')) clickedBtn = b;
+        });
+      }
       const originalText = clickedBtn ? clickedBtn.innerHTML : '';
       if (clickedBtn) clickedBtn.innerHTML = '<span class="inline-spinner"></span>Saving...';
       btns.forEach(b => { b.disabled = true; });
@@ -810,6 +808,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
             task_mode, completion_only,
             subject_type: selectedSubjectType,
             marking_guideline,
+            lesson_builder: !!lessonBuilder,
           }),
         });
         const data = await res.json();
