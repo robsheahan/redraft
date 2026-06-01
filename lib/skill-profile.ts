@@ -118,3 +118,40 @@ export async function recordSkillSignals(opts: {
 
   return rows.length;
 }
+
+export interface SkillProfileRow {
+  discipline: string;
+  dimension: string;
+  level: number;
+  level_label: string | null;
+  confidence: number;
+  trend: string | null;
+  signal: string | null;
+  observation_count: number;
+}
+
+/**
+ * Read side of the skill database — the per-(discipline, dimension) rollup for
+ * one student. Lesson Builder reads this to differentiate an activity.
+ *
+ * Returns [] when the student has no skill data yet — the caller treats an empty
+ * read as "deliver the main activity unchanged". Optionally filter to one
+ * discipline (the task's KLA), which is what the differentiation uses.
+ */
+export async function readSkillProfile(
+  supabase: SupabaseClient,
+  studentId: string,
+  discipline?: string,
+): Promise<SkillProfileRow[]> {
+  let query = supabase
+    .from('student_skill_profile')
+    .select('discipline, dimension, level, level_label, confidence, trend, signal, observation_count')
+    .eq('student_id', studentId);
+  if (discipline) query = query.eq('discipline', discipline);
+  const { data, error } = await query;
+  if (error) {
+    console.warn('[skill-profile] read failed:', error.message);
+    return [];
+  }
+  return (data as SkillProfileRow[]) || [];
+}
