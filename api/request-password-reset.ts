@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createHash } from 'node:crypto';
 import { applyCors } from '../lib/cors.js';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabase } from '../lib/auth.js';
@@ -25,6 +26,15 @@ import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
 const FROM_ADDRESS = 'help@proofready.app';
 
+// The rate-limit log keys on a uuid `user_id`, but this endpoint is
+// unauthenticated and rate-limits per email address. Derive a stable uuid-shaped
+// key from the email so the per-address limit works without a real user id.
+// (api_call_log.user_id is a plain uuid with no FK, so a synthetic value is fine.)
+function emailRateKey(email: string): string {
+  const h = createHash('sha256').update('pwreset:' + email).digest('hex');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (applyCors(req, res)) return;
   if (req.method !== 'POST') {
@@ -40,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Rate-limit per address (stops reset-email bombing of one inbox) plus a
   // global daily cap. Returned identically for existent/non-existent emails,
   // so it doesn't leak account existence.
-  const rate = await checkAndLogRateLimit(getSupabase(), normalisedEmail, {
+  const rate = await checkAndLogRateLimit(getSupabase(), emailRateKey(normalisedEmail), {
     endpoint: 'request-password-reset',
     perUserPerHour: 3,
     globalPerDay: 200,
