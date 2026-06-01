@@ -455,17 +455,18 @@ export const VERB_DEPTH_TOOL: Tool = {
 
 export const COMMON_GAPS_TOOL: Tool = {
   name: 'provide_common_gaps',
-  description: 'Top 5 gaps appearing in AI improvement feedback across the whole cohort (not just the bottom decile). These drive whole-staff PD priorities.',
+  description: 'Top 3 gaps appearing in improvement feedback across the whole cohort (not just the bottom decile). These drive whole-staff PD priorities.',
   input_schema: {
     type: 'object',
     properties: {
       gaps: {
         type: 'array',
-        description: 'Exactly 5 cohort-wide gaps, ranked by prevalence.',
+        maxItems: 3,
+        description: 'Exactly 3 cohort-wide gaps, ranked by prevalence.',
         items: {
           type: 'object',
           properties: {
-            rank: { type: 'integer', minimum: 1, maximum: 5 },
+            rank: { type: 'integer', minimum: 1, maximum: 3 },
             headline: { type: 'string' },
             detail: { type: 'string' },
             faculties_involved: { type: 'array', items: { type: 'string' } },

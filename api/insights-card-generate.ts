@@ -106,7 +106,7 @@ const KIND_CONFIG: Record<string, {
       `School: ${schoolName}`,
       `Sample size: ${sample} submissions across the school.`,
       ``,
-      `Identify the top 5 gaps appearing in AI improvement feedback. Unlike the bottom-decile card, this is the FULL cohort — surfaces patterns that need whole-staff PD, not just intervention.`,
+      `Identify the top 3 gaps appearing in improvement feedback. Unlike the bottom-decile card, this is the FULL cohort — surfaces patterns that need whole-staff PD, not just intervention.`,
     ].join('\n'),
     buildUserPrompt: (rows) => buildImprovementsPrompt(rows, 'student'),
   },
