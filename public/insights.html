@@ -160,8 +160,9 @@
     @media (max-width: 920px) {
       .card-span-7, .card-span-6, .card-span-5, .card-span-8, .card-span-4 { grid-column: span 12; }
     }
-    .card-h { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #9ca3af; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .card-h .card-h-sub { font-size: 11px; font-weight: 600; color: #d1d5db; text-transform: none; letter-spacing: 0; }
+    .card-h { margin-bottom: 14px; }
+    .card-h h3 { font-size: 14.5px; font-weight: 700; letter-spacing: -0.1px; color: #111827; margin: 0; }
+    .card-h .card-h-sub { display: block; font-size: 11.5px; font-weight: 500; color: #9ca3af; margin-top: 2px; }
     .card-empty { padding: 22px 12px; text-align: center; color: #9ca3af; font-size: 13px; line-height: 1.5; flex: 1; display: flex; flex-direction: column; justify-content: center; }
     .card-empty strong { color: #6b7280; font-weight: 600; display: block; margin-bottom: 4px; }
 
@@ -242,7 +243,7 @@
     /* Synthesis card — includes its own Generate button at the right */
     .synthesis-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
     .synthesis-head .meta { font-size: 12px; color: #9ca3af; margin-top: 4px; }
-    .synthesis-head h3 { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+    .synthesis-head h3 { font-size: 14.5px; font-weight: 700; letter-spacing: -0.1px; margin-bottom: 2px; }
     .btn-synthesise { padding: 9px 18px; background: #ed7615; color: #fff; border: 0; border-radius: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit; box-shadow: 0 2px 6px rgba(237,118,21,0.25); white-space: nowrap; }
     .btn-synthesise:hover { background: #d4690f; }
     .btn-synthesise:disabled { background: #9ca3af; cursor: not-allowed; box-shadow: none; }
@@ -295,7 +296,7 @@
     .pts > li { display: flex; gap: 10px; align-items: flex-start; }
     .pts > li::before { content: "•"; color: #ed7615; font-weight: 700; font-size: 16px; line-height: 1.4; flex-shrink: 0; }
     .pt-head { font-weight: 700; color: #1f2937; margin-bottom: 2px; }
-    .pt-detail { font-size: 12.5px; color: #374151; line-height: 1.55; }
+    .pt-detail { font-size: 13px; color: #374151; line-height: 1.55; }
     .pt-meta { font-size: 11px; color: #9ca3af; margin-top: 3px; font-style: italic; }
     .gen-status { font-size: 12.5px; color: #9ca3af; }
     /* Cards need a positioning context so the overlay can cover them. */
@@ -306,10 +307,10 @@
 
     .section { background: #fff; border-radius: 12px; padding: 22px 26px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
     .section-title { font-size: 13px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; letter-spacing: -0.1px; text-transform: uppercase; }
-    .section-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .section-dot { display: none; }
     .section-text { font-size: 14.5px; line-height: 1.7; color: #374151; }
     .feedback-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 13px; }
-    .feedback-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.55; color: #374151; }
+    .feedback-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.55; color: #374151; }
     .feedback-list li::before { content: "•"; color: #ed7615; font-weight: 700; font-size: 16px; line-height: 1.4; flex-shrink: 0; }
     .strengths .section-dot, .weaknesses .section-dot, .snapshot .section-dot, .verb-adherence .section-dot { background: #f08a2e; }
     .strengths .section-title, .weaknesses .section-title, .snapshot .section-title, .verb-adherence .section-title { color: #d4690f; letter-spacing: 0.5px; }
@@ -1930,27 +1931,8 @@
       // Maths error categories — full width. Only renders if at least one
       // maths submission has landed; otherwise shows the empty state with
       // guidance.
-      html += '<div class="card card-span-12">'
-        + cardHeader('Maths errors by category', 'Per-line annotations across maths submissions in scope')
-        + renderMathsErrorCategories(cd.maths_error_categories)
-        + '</div>';
-
-      // ─── Tier A: LLM-derived cards (each with own Generate button) ───
+      // Cohort gaps + strengths first (above the maths + decile cards).
       const llm = cd.llm || {};
-
-      html += '<div class="card card-span-6">' + renderLLMCard('bottom_decile', llm.bottom_decile, {
-        title: 'Top 3 mistakes — bottom decile',
-        sub: 'Synthesis of patterns in the bottom 10% of students',
-        emptyTeaser: 'Generate this card to surface the 3 dominant mistakes appearing across the bottom 10% of marked submissions. Drives intervention priorities.',
-        render: renderBottomDecile,
-      }) + '</div>';
-
-      html += '<div class="card card-span-6">' + renderLLMCard('top_decile', llm.top_decile, {
-        title: 'Stretch goals — top decile',
-        sub: '3 highest-impact next steps for top 10% students',
-        emptyTeaser: 'Generate this card to identify the 3 most useful next steps for the top 10% of students — moving "high" responses to "exceptional".',
-        render: renderTopDecile,
-      }) + '</div>';
 
       html += '<div class="card card-span-6">' + renderLLMCard('common_gaps', llm.common_gaps, {
         title: 'Top 3 most common gaps',
@@ -1966,7 +1948,27 @@
         render: renderListedItems,
       }) + '</div>';
 
-      // Cross-faculty synthesis (LLM) — full width
+      html += '<div class="card card-span-12">'
+        + cardHeader('Maths errors by category', 'Per-line annotations across maths submissions in scope')
+        + renderMathsErrorCategories(cd.maths_error_categories)
+        + '</div>';
+
+      // ─── Tier A: LLM-derived cards (each with own Generate button) ───
+      html += '<div class="card card-span-6">' + renderLLMCard('bottom_decile', llm.bottom_decile, {
+        title: 'Top 3 mistakes — bottom decile',
+        sub: 'Synthesis of patterns in the bottom 10% of students',
+        emptyTeaser: 'Generate this card to surface the 3 dominant mistakes appearing across the bottom 10% of marked submissions. Drives intervention priorities.',
+        render: renderBottomDecile,
+      }) + '</div>';
+
+      html += '<div class="card card-span-6">' + renderLLMCard('top_decile', llm.top_decile, {
+        title: 'Stretch goals — top decile',
+        sub: '3 highest-impact next steps for top 10% students',
+        emptyTeaser: 'Generate this card to identify the 3 most useful next steps for the top 10% of students — moving "high" responses to "exceptional".',
+        render: renderTopDecile,
+      }) + '</div>';
+
+      // Leadership synthesis (LLM) — full width
       html += '<div class="card card-span-12">'
         + renderSynthesisCard(cards, synth)
         + '</div>';
@@ -2191,7 +2193,7 @@
     }
 
     function cardHeader(title, sub) {
-      let h = '<div class="card-h"><span>' + e(title) + '</span>';
+      let h = '<div class="card-h"><h3>' + e(title) + '</h3>';
       if (sub) h += '<span class="card-h-sub">' + e(sub) + '</span>';
       h += '</div>';
       return h;
@@ -2563,7 +2565,7 @@
 
       let html = genOverlay('synthesis');
       html += '<div class="synthesis-head">';
-      html += '<div><h3>Cross-faculty synthesis</h3>';
+      html += '<div><h3>Leadership synthesis</h3>';
       if (hasInsights) {
         html += '<div class="meta">Based on ' + (synth.task_count || 0) + ' task' + (synth.task_count === 1 ? '' : 's') + ' with class-level feedback' + (lastGen ? ' · Last generated ' + e(lastGen) : '') + '</div>';
       } else if (canGenerate) {
@@ -2580,7 +2582,7 @@
       } else if (!canGenerate) {
         html += '<div class="card-empty" style="padding:24px"><strong>No synthesis yet</strong>Ask teachers to open a task and click "Generate class feedback" — once any task has feedback, this card is included when you press "Generate Insights".</div>';
       } else {
-        html += '<div class="card-empty" style="padding:24px"><strong>Ready to synthesise</strong>Use <strong>Generate Insights</strong> above to produce the cross-faculty rollup.</div>';
+        html += '<div class="card-empty" style="padding:24px"><strong>Ready to synthesise</strong>Use <strong>Generate Insights</strong> above to produce the synthesis.</div>';
       }
       html += '</div>';
 
