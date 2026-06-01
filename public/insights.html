@@ -282,6 +282,19 @@
     .loading-text { font-size: 15px; font-weight: 600; color: #111827; margin-bottom: 4px; }
     .loading-hint { font-size: 13px; color: #9ca3af; }
 
+    /* Single page-level "Generate Insights" control + per-card spinner overlay.
+       Replaces the per-card Generate buttons and the "Generate all" banner. */
+    .insights-action-bar { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
+    .btn-generate-insights { padding: 11px 24px; background: #ed7615; color: #fff; border: none; border-radius: 8px; font-size: 14.5px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 2px 6px rgba(237,118,21,0.25); transition: background 0.15s; }
+    .btn-generate-insights:hover:not(:disabled) { background: #d4690f; }
+    .btn-generate-insights:disabled { background: #9ca3af; cursor: wait; box-shadow: none; }
+    .gen-status { font-size: 12.5px; color: #9ca3af; }
+    /* Cards need a positioning context so the overlay can cover them. */
+    .card, .baseline-panel, .student-summary-hero { position: relative; }
+    .gen-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.82); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border-radius: inherit; z-index: 6; }
+    .gen-overlay .spinner { width: 26px; height: 26px; border: 3px solid #e8e0d4; border-top-color: #ed7615; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0; }
+    .gen-overlay .gen-msg { font-size: 12.5px; font-weight: 600; color: #6b7280; }
+
     .section { background: #fff; border-radius: 12px; padding: 22px 26px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
     .section-title { font-size: 13px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; letter-spacing: -0.1px; text-transform: uppercase; }
     .section-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
@@ -536,6 +549,12 @@
     // the active class_id filter. Cleared whenever filters change so the user
     // sees a fresh "Generate" button when they switch classes.
     let currentClassBaseline = null;
+    // Single "Generate Insights" orchestration. generatingKinds holds the ids
+    // currently mid-generation; each card renders a spinner overlay while its
+    // id is present and keeps showing prior content underneath until the new
+    // result lands.
+    let generatingInsights = false;
+    let generatingKinds = new Set();
     // currentStudentProfile holds the cross-teacher longitudinal profile for
     // the currently-selected student. Auto-loaded after a student is selected;
     // the endpoint is cache-first so this is usually instant.
@@ -663,7 +682,7 @@
         if (cardsRes.status === 404 || cardsRes.status === 403) {
           container.innerHTML =
             '<div class="empty-state">' +
-              '<div class="empty-icon">🔒</div>' +
+              '<div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>' +
               '<h3>You don\'t have permission to view this page</h3>' +
               '<p>The insights dashboard is for school leadership. If you should have access, please speak to your school\'s ProofReady administrator and ask them to add you as a leader.</p>' +
               '<a href="/teacher.html" class="back-cta">Back to your dashboard</a>' +
@@ -708,11 +727,8 @@
           teacherPicker.addEventListener('change', (ev) => setFilter('class_id', ev.target.value || null));
         }
         wireStudentSearch();
-        document.querySelectorAll('[data-llm-generate]').forEach(b => {
-          b.addEventListener('click', () => generateLLMCard(b.dataset.llmGenerate));
-        });
-        const baselineBtn = document.querySelector('[data-baseline-generate]');
-        if (baselineBtn) baselineBtn.addEventListener('click', generateClassBaseline);
+        const giBtn = document.getElementById('generateInsightsBtn');
+        if (giBtn) giBtn.addEventListener('click', generateAllInsights);
         return;
       }
 
@@ -766,6 +782,9 @@
           + '</div>';
       }
 
+      // Single page-level Generate/Regenerate Insights control.
+      html += renderInsightsActionBar();
+
       // Populated card grid
       html += renderCardsGrid(currentCards, d);
 
@@ -787,8 +806,8 @@
 
       c.innerHTML = html;
 
-      const btn = document.getElementById('generateBtn');
-      if (btn) btn.addEventListener('click', generate);
+      const giBtn = document.getElementById('generateInsightsBtn');
+      if (giBtn) giBtn.addEventListener('click', generateAllInsights);
 
       // Wire KPI click handlers
       document.querySelectorAll('.kpi').forEach(el => {
@@ -811,15 +830,6 @@
 
       // Wire card drill-down handlers
       wireCardDrilldowns();
-
-      // Wire LLM card Generate buttons
-      document.querySelectorAll('[data-llm-generate]').forEach(b => {
-        b.addEventListener('click', () => generateLLMCard(b.dataset.llmGenerate));
-      });
-
-      // Wire longitudinal class baseline button (only present when class_id filter active).
-      const baselineBtn = document.querySelector('[data-baseline-generate]');
-      if (baselineBtn) baselineBtn.addEventListener('click', generateClassBaseline);
 
       // Wire Manage access controls + load staff list
       if (d.caller_role === 'admin') {
@@ -1168,7 +1178,9 @@
       } else if (kind === 'tasks') {
         html += '<table class="detail-table"><thead><tr><th>Task</th><th>Course</th><th>Class</th><th>Teacher</th><th style="text-align:right">Submissions</th><th>Feedback</th></tr></thead><tbody>';
         rows.forEach(r => {
-          const fbPill = r.has_class_feedback ? '✓' : '—';
+          const fbPill = r.has_class_feedback
+            ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px"><path d="M20 6 9 17l-5-5"/></svg>'
+            : '—';
           html += '<tr><td>' + e(r.title) + (r.published ? '' : ' <span style="font-size:10px;color:#9ca3af;text-transform:uppercase">(draft)</span>') + '</td><td>' + e(r.course || '—') + '</td><td>' + e(r.class_name) + '</td><td>' + e(r.teacher_name) + '</td><td style="text-align:right">' + e(String(r.submission_count)) + '</td><td style="text-align:center;color:' + (r.has_class_feedback ? '#16a34a' : '#d1d5db') + '">' + fbPill + '</td></tr>';
         });
         html += '</tbody></table>';
@@ -1441,47 +1453,144 @@
       return html;
     }
 
-    async function generate() {
-      const btn = document.getElementById('generateBtn');
-      if (btn) btn.disabled = true;
-      const overlay = document.getElementById('synthesisLoading');
-      const body = document.getElementById('synthesisBody');
-      if (body) body.style.display = 'none';
-      if (overlay) overlay.classList.add('visible');
+    // ─────────────── Single "Generate Insights" orchestration ───────────────
 
-      var msgs = [
-        'Reading class-level feedback across the school...',
-        'Grouping tasks by faculty...',
-        'Looking for cross-faculty patterns...',
-        'Checking NESA verb-depth handling...',
-        'Identifying common strengths...',
-        'Identifying recurring gaps...',
-        'Surfacing teachable moments for leadership...',
-        'Drafting the school snapshot...',
-        'Tightening wording so it\'s leadership-actionable...',
-        'Almost there...'
-      ];
-      let mi = 0;
-      const loadingInterval = setInterval(() => {
-        mi = (mi + 1) % msgs.length;
-        const el = document.getElementById('loadingText');
-        if (el) el.textContent = msgs[mi];
-      }, 5000);
+    // Spinner overlay for a card whose id is mid-generation. Sits on top of the
+    // card's existing content (which stays visible underneath) until the new
+    // result replaces it.
+    function genOverlay(id) {
+      if (!generatingKinds.has(id)) return '';
+      return '<div class="gen-overlay"><div class="spinner"></div><div class="gen-msg">Generating insights…</div></div>';
+    }
 
+    // True when any insight on the current view has already been generated —
+    // drives the button label (Generate vs Regenerate).
+    function hasAnyInsights() {
+      const isStudentMode = !!(activeFilters.student_id && currentStudent);
+      if (isStudentMode) {
+        const llm = (currentStudent.cards && currentStudent.cards.llm) || {};
+        return ['student_summary', 'student_top_mistakes', 'student_stretch_goals', 'student_strengths']
+          .some(k => llm[k] && llm[k].content);
+      }
+      const llm = (currentCards && currentCards.cards && currentCards.cards.llm) || {};
+      const anyCard = ['bottom_decile', 'top_decile', 'common_gaps', 'things_done_well']
+        .some(k => llm[k] && llm[k].content);
+      return anyCard || !!(currentData && currentData.insights) || !!currentClassBaseline;
+    }
+
+    // The page-level button. Hidden in the student view when the student is
+    // below the LLM floor (nothing can be generated there).
+    function renderInsightsActionBar() {
+      const isStudentMode = !!(activeFilters.student_id && currentStudent);
+      if (isStudentMode) {
+        const eligible = currentStudent.cards && currentStudent.cards.llm_eligible !== false;
+        if (!eligible) return '';
+      }
+      const label = generatingInsights
+        ? 'Generating insights…'
+        : (hasAnyInsights() ? 'Regenerate Insights' : 'Generate Insights');
+      return '<div class="insights-action-bar">'
+        + '<button class="btn-generate-insights" id="generateInsightsBtn"' + (generatingInsights ? ' disabled' : '') + '>'
+        + e(label) + '</button>'
+        + '</div>';
+    }
+
+    function finishInsightKind(id) {
+      generatingKinds.delete(id);
+      render();
+    }
+
+    // Generate every applicable insight for the current view in parallel. Each
+    // card shows a spinner while it runs and swaps to fresh content the moment
+    // its own call returns; prior content stays put until then.
+    async function generateAllInsights() {
+      if (generatingInsights) return;
+      const isStudentMode = !!(activeFilters.student_id && currentStudent);
+      const role = (currentCards && currentCards.caller_role) || (currentStudent && currentStudent.caller_role) || 'teacher';
+
+      const tasks = [];
+      if (isStudentMode) {
+        const eligible = currentStudent.cards && currentStudent.cards.llm_eligible !== false;
+        if (!eligible) return;
+        ['student_summary', 'student_top_mistakes', 'student_stretch_goals', 'student_strengths']
+          .forEach(kind => tasks.push({ type: 'card', kind, id: kind }));
+      } else {
+        const kinds = role === 'teacher'
+          ? ['common_gaps', 'top_decile', 'things_done_well']
+          : ['bottom_decile', 'top_decile', 'common_gaps', 'things_done_well'];
+        kinds.forEach(kind => tasks.push({ type: 'card', kind, id: kind }));
+        if (activeFilters.class_id) tasks.push({ type: 'baseline', kind: 'class_profile_summary', id: 'class_profile_summary' });
+        if (role !== 'teacher') {
+          const tasksWithFb = (currentCards && currentCards.counts && currentCards.counts.tasks_with_class_feedback) || 0;
+          if (tasksWithFb > 0) tasks.push({ type: 'synthesis', id: 'synthesis' });
+        }
+      }
+      if (tasks.length === 0) return;
+
+      generatingInsights = true;
+      generatingKinds = new Set(tasks.map(t => t.id));
+      render();
+
+      const results = await Promise.all(tasks.map(runOneInsight));
+
+      generatingInsights = false;
+      generatingKinds = new Set();
+      render();
+
+      // Floor/empty-data responses (e.g. "needs at least 10 submissions") are
+      // expected states, not errors — those cards just stay empty. Only alert
+      // on genuine failures.
+      const hard = results.filter(r => r.error && !/enough|at least|needs|submission/i.test(r.error));
+      if (hard.length) {
+        alert(hard.length + ' insight' + (hard.length === 1 ? '' : 's') + ' could not be generated:\n\n'
+          + hard.map(h => '• ' + h.id + ': ' + h.error).join('\n'));
+      }
+    }
+
+    async function runOneInsight(task) {
+      const isStudentMode = !!(activeFilters.student_id && currentStudent);
       try {
-        const body = SCHOOL_ID_OVERRIDE ? { school_id: SCHOOL_ID_OVERRIDE } : {};
-        const res = await authFetch('/api/insights-synthesis', { method: 'POST', body: JSON.stringify(body) });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to generate insights.');
-        currentData = data;
-        clearInterval(loadingInterval);
-        render();
+        if (task.type === 'synthesis') {
+          const body = SCHOOL_ID_OVERRIDE ? { school_id: SCHOOL_ID_OVERRIDE } : {};
+          const res = await authFetch('/api/insights-synthesis', { method: 'POST', body: JSON.stringify(body) });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Failed to generate synthesis');
+          currentData = data;
+        } else {
+          const filterBody = { kind: task.kind, school_id: SCHOOL_ID_OVERRIDE || undefined };
+          if (task.type === 'baseline') {
+            filterBody.class_id = activeFilters.class_id;
+          } else {
+            FILTER_KEYS.forEach(k => { if (activeFilters[k]) filterBody[k] = activeFilters[k]; });
+          }
+          const res = await authFetch('/api/insights-card-generate', { method: 'POST', body: JSON.stringify(filterBody) });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || ('Failed to generate ' + task.kind));
+          if (task.type === 'baseline') {
+            currentClassBaseline = data;
+          } else if (isStudentMode && currentStudent) {
+            currentStudent.cards = currentStudent.cards || {};
+            currentStudent.cards.llm = currentStudent.cards.llm || {};
+            currentStudent.cards.llm[task.kind] = {
+              content: data.content,
+              generated_at: data.generated_at,
+              source_submission_count: data.source_submission_count,
+            };
+          } else if (currentCards && currentCards.cards) {
+            currentCards.cards.llm = currentCards.cards.llm || {};
+            currentCards.cards.llm[task.kind] = {
+              content: data.content,
+              generated_at: data.generated_at,
+              source_submission_count: data.source_submission_count,
+              filters: data.filters,
+            };
+          }
+        }
+        finishInsightKind(task.id);
+        return { id: task.id, error: null };
       } catch (err) {
-        clearInterval(loadingInterval);
-        if (overlay) overlay.classList.remove('visible');
-        if (body) body.style.display = '';
-        if (btn) btn.disabled = false;
-        alert(err.message);
+        finishInsightKind(task.id);
+        return { id: task.id, error: (err && err.message) || String(err) };
       }
     }
 
@@ -1540,6 +1649,9 @@
       // cards below.
       html += renderStudentProfilePanel();
 
+      // Single page-level Generate/Regenerate Insights control.
+      html += renderInsightsActionBar();
+
       // Cards grid. If below the LLM floor, the four LLM cards show a
       // "Not enough data yet" state. The three SQL cards always render
       // whatever data exists.
@@ -1553,17 +1665,6 @@
         + cardHeader('Mark distribution', 'This student\'s graded submissions')
         + renderStudentMarkDistribution(cd.mark_distribution)
         + '</div>';
-
-      // Batch generate banner — only when the student is above the floor
-      // (below floor, each card shows "not enough data yet" instead of a
-      // generate button, so batch would no-op).
-      if (eligible) {
-        html += renderLLMBatchBar(
-          ['student_summary', 'student_top_mistakes', 'student_stretch_goals', 'student_strengths'],
-          llm,
-          { studentView: true }
-        );
-      }
 
       // LLM cards (per-student kinds)
       html += '<div class="card card-span-6">' + renderStudentLLMCard('student_top_mistakes', llm.student_top_mistakes, {
@@ -1606,12 +1707,13 @@
       }
       if (!content) {
         return '<div class="student-summary-hero">'
+          + genOverlay('student_summary')
           + '<div class="hero-label">Student summary</div>'
-          + '<div class="hero-paragraph" style="font-style:italic;color:#6b7280">A short report-style narrative on this student\'s progress, ready to drop into a report comment or parent-meeting note.</div>'
-          + '<div style="margin-top:14px"><button class="btn-synthesise" data-llm-generate="student_summary">Generate</button></div>'
+          + '<div class="hero-paragraph" style="font-style:italic;color:#6b7280">A short report-style narrative on this student\'s progress, ready to drop into a report comment or parent-meeting note. Use <strong>Generate Insights</strong> above to create it.</div>'
           + '</div>';
       }
       let html = '<div class="student-summary-hero">';
+      html += genOverlay('student_summary');
       html += '<div class="hero-label">Student summary</div>';
       html += '<div class="hero-paragraph">' + e(content.summary_paragraph || '') + '</div>';
       if (content.tone_note) {
@@ -1621,12 +1723,10 @@
       html += '<div><div class="label">Key strength</div><div class="value">' + e(content.headline_strength || '') + '</div></div>';
       html += '<div><div class="label">Top priority</div><div class="value">' + e(content.headline_priority || '') + '</div></div>';
       html += '</div>';
-      html += '<div style="margin-top:14px;display:flex;align-items:center;gap:10px"><button class="btn-synthesise" style="padding:6px 12px;font-size:12px" data-llm-generate="student_summary">Regenerate</button>';
       if (cache.generated_at) {
         const when = new Date(cache.generated_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-        html += '<span style="font-size:11.5px;color:#9ca3af">updated ' + e(when) + '</span>';
+        html += '<div style="margin-top:12px;font-size:11.5px;color:#9ca3af">updated ' + e(when) + '</div>';
       }
-      html += '</div>';
       html += '</div>';
       return html;
     }
@@ -1640,7 +1740,8 @@
           + '</div></div>'
           + '<div class="card-empty"><strong>Not enough data yet</strong>This card needs at least ' + opts.floor + ' submissions with AI feedback before it can run.</div>';
       }
-      let html = '<div class="synthesis-head">';
+      let html = genOverlay(kind);
+      html += '<div class="synthesis-head">';
       html += '<div><h3 style="font-size:14.5px">' + e(opts.title) + '</h3>';
       html += '<div class="meta" style="font-size:11.5px;color:#9ca3af;margin-top:2px">' + e(opts.sub) + '</div>';
       if (hasContent && cache.generated_at) {
@@ -1651,8 +1752,6 @@
         html += '<div class="meta" style="margin-top:4px">' + e(ctx.join(' · ')) + '</div>';
       }
       html += '</div>';
-      html += '<button class="btn-synthesise" style="padding:6px 12px;font-size:12px" data-llm-generate="' + e(kind) + '">'
-        + (hasContent ? 'Regenerate' : 'Generate') + '</button>';
       html += '</div>';
       if (!hasContent) {
         html += '<div class="card-empty" style="margin-top:8px;font-size:13px;color:#6b7280">' + e(opts.emptyTeaser) + '</div>';
@@ -1735,8 +1834,6 @@
         + renderMarkDistribution(cd.mark_distribution)
         + '</div>';
 
-      // Batch generate banner — fills all three LLM cards in one click.
-      html += renderLLMBatchBar(['common_gaps', 'top_decile', 'things_done_well'], llm);
 
       // Top 3 mistakes → common_gaps
       html += '<div class="card card-span-6">' + renderLLMCard('common_gaps', llm.common_gaps, {
@@ -1833,9 +1930,6 @@
       // ─── Tier A: LLM-derived cards (each with own Generate button) ───
       const llm = cd.llm || {};
 
-      // Batch generate banner — fills all four LLM cards in one click.
-      html += renderLLMBatchBar(['bottom_decile', 'top_decile', 'common_gaps', 'things_done_well'], llm);
-
       html += '<div class="card card-span-6">' + renderLLMCard('bottom_decile', llm.bottom_decile, {
         title: 'Top 3 mistakes — bottom decile',
         sub: 'AI synthesis of patterns in the bottom 10% of students',
@@ -1875,28 +1969,14 @@
 
     // ─────────────── LLM card renderers ───────────────
 
-    function filtersMatch(a, b) {
-      const keys = ['faculty', 'course', 'class_id', 'year_level'];
-      for (const k of keys) {
-        const av = (a && a[k]) ? String(a[k]) : '';
-        const bv = (b && b[k]) ? String(b[k]) : '';
-        if (av !== bv) return false;
-      }
-      // Time window — both sides default to '12_months' when unset.
-      const atw = (a && a.time_window) || DEFAULT_TIME_WINDOW;
-      const btw = (b && b.time_window) || DEFAULT_TIME_WINDOW;
-      if (atw !== btw) return false;
-      return true;
-    }
-
     function renderLLMCard(kind, cache, opts) {
       const hasContent = !!(cache && cache.content);
       const lastGen = cache && cache.generated_at
         ? new Date(cache.generated_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
         : null;
-      const mismatch = hasContent && !filtersMatch(cache.filters || {}, activeFilters);
 
-      let html = '<div class="synthesis-head">';
+      let html = genOverlay(kind);
+      html += '<div class="synthesis-head">';
       html += '<div><h3 style="font-size:14.5px">' + e(opts.title) + '</h3>';
       html += '<div class="meta" style="font-size:11.5px;color:#9ca3af;margin-top:2px">' + e(opts.sub) + '</div>';
       if (hasContent) {
@@ -1908,17 +1988,7 @@
         html += '<div class="meta" style="margin-top:4px">' + e(ctx.join(' · ')) + '</div>';
       }
       html += '</div>';
-      html += '<button class="btn-synthesise" style="padding:6px 12px;font-size:12px" data-llm-generate="' + e(kind) + '">'
-        + (hasContent ? 'Regenerate' : 'Generate') + '</button>';
       html += '</div>';
-
-      if (mismatch) {
-        html += '<div style="margin-bottom:10px;padding:8px 12px;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;font-size:12px;color:#78350f;line-height:1.45">'
-          + '<strong>Stale scope.</strong> This card was generated with different filters than the ones currently selected. Click <strong>Regenerate</strong> to refresh under your current filters.'
-          + '</div>';
-      }
-
-      html += '<div class="synthesis-loading" id="llmLoading_' + e(kind) + '"><div class="spinner"></div><div style="font-size:13px;color:#6b7280">Analysing feedback across submissions...</div></div>';
 
       html += '<div id="llmBody_' + e(kind) + '" style="font-size:13.5px;color:#374151;line-height:1.55">';
       if (hasContent) {
@@ -2002,14 +2072,12 @@
     function renderClassBaselinePanel() {
       if (!activeFilters.class_id) return '';
       let html = '<div class="baseline-panel">';
+      html += genOverlay('class_profile_summary');
       html += '<div class="head">';
       html += '<div>';
       html += '<h3>Class overview</h3>';
-      html += '<div class="sub">Generate information about class strengths and weaknesses, drawn from each enrolled student\'s ProofReady history.</div>';
+      html += '<div class="sub">Class strengths and weaknesses, drawn from each enrolled student\'s ProofReady history.</div>';
       html += '</div>';
-      html += '<button class="baseline-btn" data-baseline-generate type="button">'
-        + (currentClassBaseline ? 'Regenerate' : 'Generate')
-        + '</button>';
       html += '</div>';
 
       if (currentClassBaseline) {
@@ -2039,33 +2107,10 @@
           html += '</div>';
         }
       } else {
-        html += '<div class="baseline-empty">Click <strong>Generate</strong> to synthesise an overview of this class from each student\'s ProofReady history. Useful at the start of a term, or as a comparison against the current-term picture below.</div>';
+        html += '<div class="baseline-empty">Use <strong>Generate Insights</strong> above to synthesise an overview of this class from each student\'s ProofReady history. Useful at the start of a term, or as a comparison against the current-term picture below.</div>';
       }
       html += '</div>';
       return html;
-    }
-
-    async function generateClassBaseline() {
-      const btn = document.querySelector('[data-baseline-generate]');
-      if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
-      try {
-        const body = {
-          kind: 'class_profile_summary',
-          class_id: activeFilters.class_id,
-        };
-        if (SCHOOL_ID_OVERRIDE) body.school_id = SCHOOL_ID_OVERRIDE;
-        const res = await authFetch('/api/insights-card-generate', {
-          method: 'POST',
-          body: JSON.stringify(body),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to generate baseline');
-        currentClassBaseline = data;
-        render();
-      } catch (err) {
-        if (btn) { btn.disabled = false; btn.textContent = currentClassBaseline ? 'Regenerate' : 'Generate'; }
-        alert(err.message);
-      }
     }
 
     // ── Longitudinal student profile (stage C panel) ────────────────────
@@ -2121,125 +2166,6 @@
         studentProfileLoading = false;
         currentStudentProfile = null;
         render();
-      }
-    }
-
-    // Batch generator — fires every kind in parallel via Promise.allSettled.
-    // For cohort mode: relies on the server-side cache, so we just reload
-    // once when everything's settled. For student mode: server doesn't cache
-    // student kinds, so we patch in-memory state for each fulfilled call.
-    async function generateAllLLMCards(kinds, opts) {
-      opts = opts || {};
-      const isStudentView = !!opts.studentView;
-      // Disable each card's individual button and show its loading state.
-      kinds.forEach(k => {
-        const btn = document.querySelector('[data-llm-generate="' + k + '"]');
-        const loading = document.getElementById('llmLoading_' + k);
-        const body = document.getElementById('llmBody_' + k);
-        if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
-        if (body) body.style.display = 'none';
-        if (loading) loading.classList.add('visible');
-      });
-      const allBtns = document.querySelectorAll('[data-generate-all]');
-      allBtns.forEach(b => { b.disabled = true; b.textContent = 'Generating…'; });
-
-      const results = await Promise.all(kinds.map(kind => {
-        const filterBody = { kind, school_id: SCHOOL_ID_OVERRIDE || undefined };
-        FILTER_KEYS.forEach(k => { if (activeFilters[k]) filterBody[k] = activeFilters[k]; });
-        return authFetch('/api/insights-card-generate', { method: 'POST', body: JSON.stringify(filterBody) })
-          .then(async (res) => {
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.error || ('Failed to generate ' + kind));
-            return { kind, data };
-          })
-          .catch(err => ({ kind, error: err && err.message || String(err) }));
-      }));
-
-      const failures = results.filter(r => r.error);
-
-      if (isStudentView && currentStudent) {
-        currentStudent.cards = currentStudent.cards || {};
-        currentStudent.cards.llm = currentStudent.cards.llm || {};
-        results.forEach(r => {
-          if (r.data) {
-            currentStudent.cards.llm[r.kind] = {
-              content: r.data.content,
-              generated_at: r.data.generated_at,
-              source_submission_count: r.data.source_submission_count,
-            };
-          }
-        });
-        render();
-      } else {
-        await reloadData();
-      }
-
-      if (failures.length > 0) {
-        alert(failures.length + ' card' + (failures.length === 1 ? '' : 's') + ' failed:\n\n'
-          + failures.map(f => '• ' + f.kind + ': ' + f.error).join('\n')
-          + '\n\nSuccessful cards have been refreshed.');
-      }
-    }
-    window.generateAllLLMCards = generateAllLLMCards;
-
-    // Build the "Generate all" banner. `cachedMap` is the object of cached
-    // LLM cards keyed by kind (e.g. cd.llm or currentStudent.cards.llm).
-    function renderLLMBatchBar(kinds, cachedMap, opts) {
-      opts = opts || {};
-      const isStudentView = !!opts.studentView;
-      const cached = kinds.filter(k => cachedMap && cachedMap[k] && cachedMap[k].content).length;
-      const total = kinds.length;
-      const label = cached === 0
-        ? 'Generate all ' + total + ' AI cards in one go'
-        : cached < total
-        ? cached + ' of ' + total + ' AI cards generated — fill in the rest'
-        : 'All ' + total + ' AI cards generated — regenerate to refresh';
-      const btnLabel = 'Generate';
-      const sub = cached === 0
-        ? 'Each card uses one Anthropic call. Running them in parallel takes ~20s.'
-        : '';
-      const kindsArg = JSON.stringify(kinds).replace(/"/g, '&quot;');
-      const optsArg = isStudentView ? ", { studentView: true }" : '';
-      return '<div class="llm-batch-bar">'
-        + '<div class="llm-batch-label">' + e(label) + (sub ? '<small>' + e(sub) + '</small>' : '') + '</div>'
-        + '<button class="btn-synthesise" data-generate-all onclick="generateAllLLMCards(' + kindsArg + optsArg + ')">' + e(btnLabel) + '</button>'
-        + '</div>';
-    }
-
-    async function generateLLMCard(kind) {
-      const btn = document.querySelector('[data-llm-generate="' + kind + '"]');
-      const loading = document.getElementById('llmLoading_' + kind);
-      const body = document.getElementById('llmBody_' + kind);
-      if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
-      if (body) body.style.display = 'none';
-      if (loading) loading.classList.add('visible');
-      try {
-        const filterBody = { kind, school_id: SCHOOL_ID_OVERRIDE || undefined };
-        FILTER_KEYS.forEach(k => { if (activeFilters[k]) filterBody[k] = activeFilters[k]; });
-        const res = await authFetch('/api/insights-card-generate', { method: 'POST', body: JSON.stringify(filterBody) });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Failed to generate');
-        // Student-mode cards aren't cached on the server, so patch in-memory
-        // state and re-render rather than calling reloadData (which would
-        // discard the fresh content).
-        if (activeFilters.student_id && currentStudent) {
-          currentStudent.cards = currentStudent.cards || {};
-          currentStudent.cards.llm = currentStudent.cards.llm || {};
-          currentStudent.cards.llm[kind] = {
-            content: data.content,
-            generated_at: data.generated_at,
-            source_submission_count: data.source_submission_count,
-          };
-          render();
-          return;
-        }
-        // Cohort mode: reload all cards (the new content lives in the cache).
-        await reloadData();
-      } catch (err) {
-        if (loading) loading.classList.remove('visible');
-        if (body) body.style.display = '';
-        if (btn) { btn.disabled = false; btn.textContent = 'Generate'; }
-        alert(err.message);
       }
     }
 
@@ -2641,30 +2567,26 @@
         ? new Date(synth.generated_at).toLocaleString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
         : null;
 
-      let html = '<div class="synthesis-head">';
+      let html = genOverlay('synthesis');
+      html += '<div class="synthesis-head">';
       html += '<div><h3>Cross-faculty synthesis</h3>';
       if (hasInsights) {
         html += '<div class="meta">Based on ' + (synth.task_count || 0) + ' task' + (synth.task_count === 1 ? '' : 's') + ' with class-level feedback' + (lastGen ? ' · Last generated ' + e(lastGen) : '') + '</div>';
       } else if (canGenerate) {
-        html += '<div class="meta">Roll up class-level feedback from ' + tasksWithFb + ' task' + (tasksWithFb === 1 ? '' : 's') + ' into a school-level overview. Takes 30 to 60 seconds.</div>';
+        html += '<div class="meta">Rolls up class-level feedback from ' + tasksWithFb + ' task' + (tasksWithFb === 1 ? '' : 's') + ' into a school-level overview.</div>';
       } else {
         html += '<div class="meta">Available once teachers generate class-level feedback on at least one task.</div>';
       }
       html += '</div>';
-      if (canGenerate) {
-        html += '<button class="btn-synthesise" id="generateBtn">' + (hasInsights ? 'Regenerate' : 'Generate insights') + '</button>';
-      }
       html += '</div>';
-
-      html += '<div class="synthesis-loading" id="synthesisLoading"><div class="spinner"></div><div class="loading-text" id="loadingText">Reading class-level feedback...</div></div>';
 
       html += '<div id="synthesisBody">';
       if (hasInsights) {
         html += renderInsights(synth.insights);
       } else if (!canGenerate) {
-        html += '<div class="card-empty" style="padding:24px"><strong>No synthesis yet</strong>Ask teachers to open a task and click "Generate class feedback" — once any task has feedback, this card lets you roll it up across the school.</div>';
+        html += '<div class="card-empty" style="padding:24px"><strong>No synthesis yet</strong>Ask teachers to open a task and click "Generate class feedback" — once any task has feedback, this card is included when you press "Generate Insights".</div>';
       } else {
-        html += '<div class="card-empty" style="padding:24px"><strong>Ready to synthesise</strong>Click "Generate insights" to produce the cross-faculty rollup.</div>';
+        html += '<div class="card-empty" style="padding:24px"><strong>Ready to synthesise</strong>Use <strong>Generate Insights</strong> above to produce the cross-faculty rollup.</div>';
       }
       html += '</div>';
 

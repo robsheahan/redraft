@@ -14,6 +14,7 @@ import {
   getTimeWindowCutoff,
   userIdsForYearLevel,
   isFilterActive,
+  scopeKeyForFilters,
 } from '../lib/insights-filters.js';
 
 /**
@@ -284,19 +285,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const mathsErrorCategories = computeMathsErrorCategories(submissions);
 
   // -- Cached LLM cards (Tier A) --
-  // Teacher tier doesn't use the school-keyed cache (it's per-school, not
-  // per-teacher or per-class). Teachers regenerate fresh each click; the
-  // rate-limiter caps spend. Leaders/admins continue to read from cache.
+  // Cards are cached per scope so a generated card persists across reloads and
+  // is reused by anyone viewing the same scope. Teacher tier reads its own
+  // per-teacher cache; leader/admin read the per-school cache.
   const llm: Record<string, any> = {};
+  const scopeKey = scopeKeyForFilters(filters);
   if (callerRole !== 'teacher' && schoolId) {
+    // Per (school, kind, scope) — so an English HOD never sees the HSIE HOD's
+    // card (and vice versa); each scope has its own row.
     const { data: llmRows } = await supabase
       .from('school_insights_cards')
       .select('card_kind, content, filters, source_submission_count, source_task_count, generated_at')
-      .eq('school_id', schoolId);
+      .eq('school_id', schoolId)
+      .eq('scope_key', scopeKey);
     (llmRows || []).forEach(r => {
       llm[r.card_kind] = {
         content: r.content,
         filters: r.filters || {},
+        source_submission_count: r.source_submission_count,
+        source_task_count: r.source_task_count,
+        generated_at: r.generated_at,
+      };
+    });
+  } else if (callerRole === 'teacher' && user) {
+    // Per (teacher, kind, scope) — so a teacher's generated cohort cards
+    // persist on reload and across sessions.
+    const { data: llmRows } = await supabase
+      .from('teacher_insights_cards')
+      .select('card_kind, content, source_submission_count, source_task_count, generated_at')
+      .eq('teacher_id', user.id)
+      .eq('scope_key', scopeKey);
+    (llmRows || []).forEach(r => {
+      llm[r.card_kind] = {
+        content: r.content,
         source_submission_count: r.source_submission_count,
         source_task_count: r.source_task_count,
         generated_at: r.generated_at,

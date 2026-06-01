@@ -26,18 +26,45 @@ interface CallToolOptions {
   tool: Anthropic.Messages.Tool;
   /** Number of additional attempts after the first (default 3 → 4 attempts total). */
   retries?: number;
+  /**
+   * When true, the `system` string is sent as a cache_control:ephemeral block
+   * so Anthropic caches the tools+system prefix (5-min TTL). The system prompt
+   * for a given (course, stage) is byte-identical across every student, so a
+   * classroom burst on the same task pays one cache write then cheap reads
+   * (~10× cheaper input) for the rest. No effect on output quality — same
+   * tokens, just cached. Caching only kicks in above Anthropic's minimum
+   * cacheable prefix (~1024 tok for Sonnet); smaller prompts are a silent
+   * no-op, so enabling it is always safe.
+   */
+  cacheSystem?: boolean;
+  /** Short label for the usage log line (e.g. "feedback:holistic"). */
+  label?: string;
+}
+
+export interface TokenUsage {
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_input_tokens: number;
+  cache_creation_input_tokens: number;
 }
 
 export interface ToolCallResult<T> {
   value: T;
   attempts: number;
   stop_reason: string | null;
+  usage: TokenUsage | null;
 }
 
 export async function callTool<T = unknown>(opts: CallToolOptions): Promise<ToolCallResult<T>> {
-  const { client, model, max_tokens, temperature, system, user, tool, retries = 3 } = opts;
+  const { client, model, max_tokens, temperature, system, user, tool, retries = 3, cacheSystem, label } = opts;
   const totalAttempts = retries + 1;
   let lastErr: unknown;
+
+  // A cached system is sent as a single ephemeral text block; the cache key
+  // covers everything before it in the prompt (tools + system).
+  const systemParam: string | Anthropic.Messages.TextBlockParam[] = cacheSystem
+    ? [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }]
+    : system;
 
   for (let attempt = 1; attempt <= totalAttempts; attempt++) {
     try {
@@ -45,11 +72,14 @@ export async function callTool<T = unknown>(opts: CallToolOptions): Promise<Tool
         model,
         max_tokens,
         temperature,
-        system,
+        system: systemParam,
         tools: [tool],
         tool_choice: { type: 'tool', name: tool.name },
         messages: [{ role: 'user', content: user }],
       });
+
+      const usage = extractUsage(resp);
+      logUsage(label || tool.name, model, usage);
 
       const block = resp.content.find((b) => b.type === 'tool_use');
       if (!block || block.type !== 'tool_use') {
@@ -60,6 +90,7 @@ export async function callTool<T = unknown>(opts: CallToolOptions): Promise<Tool
         value: block.input as T,
         attempts: attempt,
         stop_reason: (resp as any).stop_reason || null,
+        usage,
       };
     } catch (err: any) {
       lastErr = err;
@@ -72,6 +103,31 @@ export async function callTool<T = unknown>(opts: CallToolOptions): Promise<Tool
   }
 
   throw lastErr;
+}
+
+function extractUsage(resp: any): TokenUsage {
+  const u = resp?.usage || {};
+  return {
+    input_tokens: u.input_tokens ?? 0,
+    output_tokens: u.output_tokens ?? 0,
+    cache_read_input_tokens: u.cache_read_input_tokens ?? 0,
+    cache_creation_input_tokens: u.cache_creation_input_tokens ?? 0,
+  };
+}
+
+/**
+ * Structured usage line for cost observability (Vercel logs). Cache-hit rate
+ * and per-call token counts are the inputs to the real cost picture; without
+ * this the only signal is the monthly Anthropic bill.
+ */
+function logUsage(label: string, model: string, u: TokenUsage): void {
+  const cached = u.cache_read_input_tokens;
+  const total = u.input_tokens + cached + u.cache_creation_input_tokens;
+  const hitPct = total > 0 ? Math.round((cached / total) * 100) : 0;
+  console.log(
+    `[usage] ${label} model=${model} in=${u.input_tokens} out=${u.output_tokens} ` +
+    `cache_read=${cached} cache_write=${u.cache_creation_input_tokens} cache_hit=${hitPct}%`,
+  );
 }
 
 function isTransient(err: any): boolean {

@@ -116,12 +116,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .from('draft_autosaves').delete()
     .eq('student_id', user.id).eq('task_id', task_id as string);
 
-  // Fresh insights data → invalidate the longitudinal profile cache so the
-  // next read regenerates. Fire-and-forget; matches the pattern in
-  // submission-grade.ts / generate-feedback.ts.
+  // Fresh insights data → mark the longitudinal profile stale (kept, not
+  // deleted). Fire-and-forget; matches the pattern in submission-grade.ts /
+  // generate-feedback.ts.
   if (insightsFeedback) {
     supabase.from('student_profile_synthesis')
-      .delete()
+      .update({ stale: true })
       .eq('student_id', user.id)
       .then(({ error }) => {
         if (error) captureError(error, { stage: 'profile-cache-invalidate-submit', task_id, user_id: user.id });

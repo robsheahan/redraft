@@ -298,7 +298,7 @@
 
       // Step gap before line 0
       (gapsAfter[-1] || []).forEach(g => {
-        html += '<div class="step-gap"><span class="step-gap-icon">⚠</span><span>Before your first line: ' + e(g.comment) + '</span></div>';
+        html += '<div class="step-gap"><span class="step-gap-icon">' + statusSvg('warn') + '</span><span>Before your first line: ' + e(g.comment) + '</span></div>';
       });
 
       lines.forEach((line, i) => {
@@ -316,7 +316,7 @@
         html += '</div>';
         html += '</div>';
         (gapsAfter[i] || []).forEach(g => {
-          html += '<div class="step-gap"><span class="step-gap-icon">⚠</span><span>' + e(g.comment) + '</span></div>';
+          html += '<div class="step-gap"><span class="step-gap-icon">' + statusSvg('warn') + '</span><span>' + e(g.comment) + '</span></div>';
         });
       });
       html += '</div>';
@@ -359,10 +359,23 @@
       return '<span id="' + id + '">' + e(src) + '</span>';
     }
 
+    // Consistent stroke icons (lucide-style) for per-line status chips.
+    function statusSvg(name) {
+      var p = {
+        check:  '<path d="M20 6 9 17l-5-5"/>',
+        x:      '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+        warn:   '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+        ft:     '<path d="m15 10 5 5-5 5"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/>',
+        help:   '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+        pencil: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>'
+      };
+      return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px">' + (p[name] || '') + '</svg>';
+    }
+
     function renderTeacherAnnot(t) {
       const cat = t.category || 'note';
       const catLabel = cat.toUpperCase();
-      return '<div class="annot teacher"><span class="annot-icon">✎</span><span class="annot-text"><span class="annot-cat annot-cat--' + e(cat) + '">' + e(catLabel) + ' — Teacher</span>' + e(t.comment || '') + '</span></div>';
+      return '<div class="annot teacher"><span class="annot-icon">' + statusSvg('pencil') + '</span><span class="annot-text"><span class="annot-cat annot-cat--' + e(cat) + '">' + e(catLabel) + ' — Teacher</span>' + e(t.comment || '') + '</span></div>';
     }
 
     function renderAnnotation(a) {
@@ -375,12 +388,12 @@
       const isError = mathStatus === 'error';
 
       let cls = 'ok';
-      let icon = '✓';
-      if (isError) { cls = 'error'; icon = '✗'; }
-      else if (mathStatus === 'slip') { cls = 'warn'; icon = '⚠'; }
-      else if (isFollowThrough) { cls = 'ok-ft'; icon = '↪'; }
-      else if (isReasonOnly) { cls = 'reason'; icon = '?'; }
-      else if (isOk) { cls = 'ok'; icon = '✓'; }
+      let icon = statusSvg('check');
+      if (isError) { cls = 'error'; icon = statusSvg('x'); }
+      else if (mathStatus === 'slip') { cls = 'warn'; icon = statusSvg('warn'); }
+      else if (isFollowThrough) { cls = 'ok-ft'; icon = statusSvg('ft'); }
+      else if (isReasonOnly) { cls = 'reason'; icon = statusSvg('help'); }
+      else if (isOk) { cls = 'ok'; icon = statusSvg('check'); }
 
       const catLabel = (a.category && a.category !== 'ok') ? '<span class="annot-cat">' + e(prettyCategory(a.category)) + '</span>' : '';
       return '<div class="annot ' + cls + '"><span class="annot-icon">' + icon + '</span><span class="annot-text">' + catLabel + e(a.comment || '') + '</span></div>';

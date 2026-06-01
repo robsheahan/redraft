@@ -326,6 +326,8 @@ Assess this draft against each marking criterion above. Address every criterion 
           system: buildCriteriaCheckPrompt(resolvedCourse as string || undefined, isBandRubric),
           user: criteriaCheckPrompt,
           tool: CRITERIA_CHECK_TOOL,
+          cacheSystem: true,
+          label: 'feedback:criteria',
         })
       : Promise.resolve(null);
     const [pass1Settled, pass2Settled, inlineSettled] = await Promise.allSettled([
@@ -337,6 +339,8 @@ Assess this draft against each marking criterion above. Address every criterion 
         system: systemPrompt,
         user: userPrompt,
         tool: HOLISTIC_FEEDBACK_TOOL,
+        cacheSystem: true,
+        label: 'feedback:holistic',
       }),
       pass2Promise,
       generateInlineSuggestions(client, {
@@ -405,11 +409,12 @@ Assess this draft against each marking criterion above. Address every criterion 
         time_to_first_keystroke_ms: typeof time_to_first_keystroke_ms === 'number' ? time_to_first_keystroke_ms : null,
       });
 
-      // Invalidate the longitudinal profile cache — AI feedback is treated as
-      // a quality signal alongside teacher marks, so each fresh draft should
-      // refresh the profile on next read.
+      // Mark the longitudinal profile stale — AI feedback is treated as a
+      // quality signal alongside teacher marks. The row is kept (not deleted)
+      // so the class summary still has last-known-good data; the read path
+      // regenerates on next individual view.
       supabase.from('student_profile_synthesis')
-        .delete()
+        .update({ stale: true })
         .eq('student_id', user.id)
         .then(({ error }) => {
           if (error) captureError(error, { stage: 'profile-cache-invalidate', user_id: user.id });

@@ -115,6 +115,49 @@ export function isFilterActive(filters: InsightsFilters): boolean {
 }
 
 /**
+ * Stable string of the filters that change a cohort card's content. Used as a
+ * cache key so different scopes (e.g. an English HOD's faculty view vs an
+ * executive's whole-school view) keep their own cached cards instead of
+ * overwriting one shared slot. Same scope → same key → shared/reused card.
+ */
+export function scopeKeyForFilters(filters: InsightsFilters): string {
+  return JSON.stringify({
+    class_id: filters.class_id ?? null,
+    faculty: filters.faculty ?? null,
+    course: filters.course ?? null,
+    year_level: filters.year_level ?? null,
+    time_window: filters.time_window ?? null,
+  });
+}
+
+/**
+ * Signature of the in-scope submission corpus. Changes whenever a new draft
+ * lands (count / latest_created) or a mark is added or edited (graded_count /
+ * mark_sum / latest_graded), so a cached card is served only when the live
+ * corpus still matches the one it was generated from.
+ *
+ * Must be computed over the same submission set in every caller (the deduped,
+ * scope-filtered cohort) so the fingerprints are comparable.
+ */
+export function cohortFingerprint(
+  subs: Array<{ created_at?: string | null; graded_at?: string | null; total_mark?: number | null }>,
+): string {
+  let latestCreated = '';
+  let latestGraded = '';
+  let gradedCount = 0;
+  let markSum = 0;
+  for (const s of subs) {
+    if (s.created_at && s.created_at > latestCreated) latestCreated = s.created_at;
+    if (s.graded_at) {
+      gradedCount++;
+      if (s.graded_at > latestGraded) latestGraded = s.graded_at;
+    }
+    if (typeof s.total_mark === 'number') markSum += s.total_mark;
+  }
+  return `${subs.length}|${latestCreated}|${gradedCount}|${markSum}|${latestGraded}`;
+}
+
+/**
  * Compute a student's current year level from their graduation_year
  * metadata. Returns null if the user has no graduation_year or the
  * computed value is outside the expected range.

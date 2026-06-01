@@ -172,6 +172,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         teacherNotes,
       }),
       tool: MATHS_PER_LINE_DIAGNOSTIC_TOOL,
+      cacheSystem: true,
+      label: 'maths:perline',
     });
     console.log('[generate-maths-feedback] Pass B in', Date.now() - tB0, 'ms');
 
@@ -194,6 +196,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           perLineDiagnostic: passB.value,
         }),
         tool: MATHS_HOLISTIC_TOOL,
+        cacheSystem: true,
+        label: 'maths:holistic',
       }),
     ]);
     console.log('[generate-maths-feedback] Pass C in', Date.now() - tC0, 'ms');
@@ -247,9 +251,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Could not save your submission. ' + insertErr.message });
     }
 
-    // Invalidate longitudinal profile cache.
+    // Mark longitudinal profile stale (kept, not deleted).
     supabase.from('student_profile_synthesis')
-      .delete()
+      .update({ stale: true })
       .eq('student_id', user.id)
       .then(({ error }) => {
         if (error) captureError(error, { stage: 'profile-cache-invalidate-maths', user_id: user.id });

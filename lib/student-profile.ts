@@ -104,7 +104,16 @@ export interface StoredProfile extends ProfileSynthesisResult {
     last_submission_at: string | null;
   };
   generated_at: string;
+  /** Set when a grading/feedback/submission event landed after generation. */
+  stale: boolean;
+  /** subs.length at the moment this profile was synthesised. */
+  submission_count_at_generation: number;
 }
+
+// Re-grades and annotation edits flip `stale` without adding a submission; for
+// those, a profile this fresh is served as-is rather than regenerated. New
+// submissions always regenerate regardless of age (see profileNeedsRegen).
+const STALE_REFRESH_WINDOW_MS = 60 * 1000;
 
 /**
  * Read the cached profile if present.
@@ -137,7 +146,38 @@ export async function readCachedProfile(
       last_submission_at: data.metrics?.last_submission_at ?? null,
     },
     generated_at: data.generated_at,
+    stale: data.stale ?? false,
+    submission_count_at_generation: data.submission_count_at_generation ?? 0,
   };
+}
+
+/**
+ * Count a student's submissions cheaply (no jsonb payload). Used by the read
+ * gate to detect new work since the cached profile was generated.
+ */
+export async function countStudentSubmissions(
+  supabase: SupabaseClient,
+  studentId: string,
+): Promise<number> {
+  const { count } = await supabase
+    .from('submissions')
+    .select('id', { count: 'exact', head: true })
+    .eq('student_id', studentId);
+  return count ?? 0;
+}
+
+/**
+ * Decide whether a cached profile must be regenerated.
+ *   - New submissions since generation  → always regenerate (real new content).
+ *   - Stale only (re-grade / edit)       → regenerate unless it was generated
+ *     within the refresh window, which absorbs bulk-marking storms.
+ *   - Fresh and not stale                → serve cached.
+ */
+export function profileNeedsRegen(cached: StoredProfile, currentSubmissionCount: number): boolean {
+  if (currentSubmissionCount > cached.submission_count_at_generation) return true;
+  if (!cached.stale) return false;
+  const age = Date.now() - new Date(cached.generated_at).getTime();
+  return age >= STALE_REFRESH_WINDOW_MS;
 }
 
 interface RawSubmission {
@@ -199,6 +239,7 @@ export async function regenerateProfile(
       profile_status_note: synthesis.profile_status_note,
     },
     submission_count_at_generation: subs.length,
+    stale: false,
     generated_at: new Date().toISOString(),
   };
 
@@ -211,6 +252,8 @@ export async function regenerateProfile(
     ...synthesis,
     metrics,
     generated_at: row.generated_at,
+    stale: false,
+    submission_count_at_generation: subs.length,
   };
 }
 
