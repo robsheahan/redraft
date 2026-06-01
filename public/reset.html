@@ -71,29 +71,65 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/app.js"></script>
   <script>
-    // Supabase password-reset emails arrive with a recovery token in the URL
-    // hash fragment. The Supabase client picks that up automatically and emits
-    // a PASSWORD_RECOVERY event when it does — from that point the user has a
-    // transient session that lets updateUser() set a new password.
-
+    // A password-reset link lands here carrying a recovery credential. We
+    // accept it in whatever form the provider sends:
+    //   - implicit flow: tokens in the URL hash (#access_token=…&refresh_token=…)
+    //   - already exchanged: detectSessionInUrl processed it before this ran,
+    //     so a session already exists (PASSWORD_RECOVERY fired)
+    //   - expired / already-used: the provider redirects back with an error
+    //     (common when an email security scanner pre-clicks the one-time link)
     var recoverySessionReady = false;
 
-    sb.auth.onAuthStateChange(function(event) {
-      if (event === 'PASSWORD_RECOVERY') {
-        recoverySessionReady = true;
-      }
+    function enableForm() {
+      recoverySessionReady = true;
+      document.getElementById('error').classList.remove('visible');
+      document.getElementById('submitBtn').disabled = false;
+    }
+    function linkError(msg) {
+      showError(msg);
+      document.getElementById('submitBtn').disabled = true;
+    }
+
+    sb.auth.onAuthStateChange(function(event, session) {
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) enableForm();
     });
 
-    // If the user lands here without a recovery token (e.g. typed the URL
-    // directly), tell them.
-    window.addEventListener('load', function() {
-      setTimeout(function() {
-        if (!recoverySessionReady && !window.location.hash.includes('access_token')) {
-          showError('This page only works when you click the link in a password reset email. Go to the sign-in page and use "Forgot your password?" to request a new link.');
-          document.getElementById('submitBtn').disabled = true;
-        }
-      }, 1500);
-    });
+    async function initRecovery() {
+      var hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+      var queryParams = new URLSearchParams(window.location.search || '');
+
+      // Expired or already-used link — the link itself carried an error.
+      var err = hashParams.get('error') || queryParams.get('error');
+      if (err) {
+        var desc = hashParams.get('error_description') || queryParams.get('error_description') || '';
+        desc = decodeURIComponent(desc).replace(/\+/g, ' ');
+        linkError('This reset link has expired or was already used' + (desc ? ' (' + desc + ')' : '') + '. Some email apps open links automatically, which uses them up — request a fresh link from the sign-in page and click it straight away.');
+        return;
+      }
+
+      // Implicit flow — establish the session directly from the hash tokens.
+      var access_token = hashParams.get('access_token');
+      var refresh_token = hashParams.get('refresh_token');
+      if (access_token && refresh_token) {
+        var r1 = await sb.auth.setSession({ access_token: access_token, refresh_token: refresh_token });
+        if (!r1.error) { enableForm(); return; }
+      }
+
+      // Maybe the client already exchanged it on load (detectSessionInUrl).
+      var r2 = await sb.auth.getSession();
+      if (r2.data && r2.data.session) { enableForm(); return; }
+
+      // Give any in-flight auto-detection a brief moment, then give up.
+      setTimeout(async function() {
+        if (recoverySessionReady) return;
+        var r3 = await sb.auth.getSession();
+        if (r3.data && r3.data.session) { enableForm(); return; }
+        linkError('This page only works when opened from a fresh password-reset email link. Go to the sign-in page, choose "Forgot your password?", and click the new link as soon as it arrives.');
+      }, 1200);
+    }
+
+    document.getElementById('submitBtn').disabled = true;
+    window.addEventListener('load', initRecovery);
 
     function showError(msg) {
       var el = document.getElementById('error');
