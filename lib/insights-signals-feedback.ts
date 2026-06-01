@@ -22,6 +22,7 @@ export interface InsightsSignals {
   task_verb_check: { summary: string };
   improvements: { summary: string[]; detail: string[] };
   top_priority: string;
+  skill_assessment?: any[];
 }
 
 export async function generateInsightsSignals(opts: {
@@ -37,7 +38,7 @@ export async function generateInsightsSignals(opts: {
   const result = await callTool<InsightsSignals>({
     client,
     model: MODEL,
-    max_tokens: 800,
+    max_tokens: 1400,
     temperature: 0.2,
     system,
     user,

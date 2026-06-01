@@ -732,8 +732,11 @@ export const INSIGHTS_SIGNALS_TOOL: Tool = {
         type: 'string',
         description: 'One sentence — the single most useful next step.',
       },
+      // Feeds the ProofReady skill database — quick/marked tasks are the bulk of
+      // submissions, so this is where most signal accrues. Never shown to students.
+      skill_assessment: buildSkillAssessmentSchema('writing'),
     },
-    required: ['what_youve_done_well', 'task_verb_check', 'improvements', 'top_priority'],
+    required: ['what_youve_done_well', 'task_verb_check', 'improvements', 'top_priority', 'skill_assessment'],
   },
 };
 

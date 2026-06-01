@@ -3,6 +3,8 @@ import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { captureError } from './../lib/sentry.js';
 import { generateInsightsSignals } from '../lib/insights-signals-feedback.js';
+import { recordSkillSignals } from '../lib/skill-profile.js';
+import { getDisciplineForCourse } from '../data/nesa-courses.js';
 
 const MAX_DRAFT_CHARS = 50_000;
 
@@ -74,15 +76,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // For feedback_task, prior draft rows already carry rich feedback, so this
   // locked row stays feedback:null (existing behaviour).
   let insightsFeedback: any = null;
+  let skillAssessment: any[] | null = null;
   const taskMode = (task as any).task_mode as string | undefined;
   const wantsSilentInsights = taskMode === 'marked_task' || taskMode === 'quick_task';
   if (wantsSilentInsights) {
     try {
-      insightsFeedback = await generateInsightsSignals({
+      const signals = await generateInsightsSignals({
         course: (task as any).course || null,
         question: (task as any).question || '',
         draft: draftText,
       });
+      // Pull the skill read out — it's captured for the skill database, kept
+      // out of the feedback blob.
+      if (signals && Array.isArray(signals.skill_assessment)) {
+        skillAssessment = signals.skill_assessment;
+        const { skill_assessment, ...rest } = signals;
+        insightsFeedback = rest;
+      } else {
+        insightsFeedback = signals;
+      }
     } catch (err) {
       // Don't fail the submission — the student's work is the product, the
       // AI signal is the side-effect. Log it; teacher can still mark.
@@ -98,6 +110,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     course: task.course,
     draft_text: draftText,
     feedback: insightsFeedback,
+    skill_assessment: skillAssessment,
     draft_version: nextVersion,
     submitted_for_marking: true,
     keystroke_count: typeof keystroke_count === 'number' ? keystroke_count : null,
@@ -109,6 +122,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (insertErr) {
     captureError(insertErr, { stage: 'submit-for-marking-insert', task_id, user_id: user.id });
     return res.status(500).json({ error: 'Could not save your submission.' });
+  }
+
+  // Fold the skill read into the student's rollup (the skill database). Quick/
+  // marked tasks are the bulk of submissions, so this is the main inflow.
+  // Fire-and-forget — must never affect the submission.
+  if (Array.isArray(skillAssessment) && skillAssessment.length > 0) {
+    recordSkillSignals({
+      supabase,
+      studentId: user.id,
+      discipline: (task.course ? getDisciplineForCourse(task.course) : null) || 'General',
+      family: 'writing',
+      assessment: skillAssessment,
+    }).catch(err => captureError(err, { stage: 'skill-rollup-submit', user_id: user.id, task_id }));
   }
 
   // Clear the in-progress autosave
