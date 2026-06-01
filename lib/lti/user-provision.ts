@@ -67,7 +67,25 @@ export async function provisionUser(opts: {
     user_id: userId,
     email: opts.email,
   });
-  if (mapErr) throw new Error(`mapping insert failed: ${mapErr.message}`);
+  if (mapErr) {
+    // Canvas can fire the same launch twice (double-click, prefetch, retry),
+    // so two requests race past the lookup above and both try to insert. The
+    // unique constraint on (platform_id, canvas_user_id) lets the first win;
+    // the loser gets 23505. That's not a failure — the mapping exists now, so
+    // re-read it and converge on the winning row instead of failing the launch.
+    if ((mapErr as { code?: string }).code === '23505') {
+      const { data: raced } = await supabase
+        .from('lti_user_mappings')
+        .select('user_id, email')
+        .eq('platform_id', opts.platformId)
+        .eq('canvas_user_id', opts.canvasUserId)
+        .maybeSingle();
+      if (raced?.user_id) {
+        return { userId: raced.user_id, email: raced.email ?? opts.email, isNew: false };
+      }
+    }
+    throw new Error(`mapping insert failed: ${mapErr.message}`);
+  }
 
   return { userId, email: opts.email, isNew };
 }
