@@ -560,12 +560,6 @@ export const SCHOOL_INSIGHTS_TOOL: Tool = {
           required: ['faculty', 'task_count', 'strengths', 'weaknesses', 'notable_pattern'],
         },
       },
-      teachable_moments: {
-        type: 'array',
-        items: { type: 'string' },
-        description:
-          '3 to 5 high-leverage, cross-faculty teaching opportunities leadership could action. Each entry should be a concrete, addressable point (e.g. "Schedule a whole-staff PD on NESA verb depth", "Cross-KLA moderation on use of evidence"). Avoid platitudes.',
-      },
     },
     required: [
       'school_snapshot',
@@ -573,7 +567,6 @@ export const SCHOOL_INSIGHTS_TOOL: Tool = {
       'school_weaknesses',
       'verb_depth_patterns',
       'by_faculty',
-      'teachable_moments',
     ],
   },
 };
