@@ -336,7 +336,10 @@ HARD RULES:
     lines.push(`#${i + 1} · ${date} · ${course} · "${taskTitle}" · draft ${s.draft_version ?? '?'} · mark: ${markStr}`);
 
     const fb = s.feedback || {};
-    if (fb.top_priority) lines.push(`  top_priority: ${trimToWords(fb.top_priority, 40)}`);
+    // top_priority is { summary, detail } in the current tool shape, a plain
+    // string in legacy rows — pull the summary, fall back to the raw value.
+    const topPriority = fb.top_priority?.summary ?? fb.top_priority;
+    if (topPriority) lines.push(`  top_priority: ${trimToWords(topPriority, 40)}`);
     const improvSummary = arrayFromFeedback(fb.improvements, 'summary');
     if (improvSummary.length) lines.push(`  improvements: ${improvSummary.slice(0, 4).join(' | ')}`);
     const wellSummary = arrayFromFeedback(fb.what_youve_done_well, 'summary');
@@ -396,9 +399,12 @@ function arrayFromFeedback(field: any, key: 'summary' | 'detail'): string[] {
   return [];
 }
 
-function trimToWords(s: string | undefined, max: number): string {
-  if (!s) return '';
-  const words = String(s).split(/\s+/);
-  if (words.length <= max) return s.trim();
+function trimToWords(s: unknown, max: number): string {
+  if (s == null) return '';
+  // Feedback fields are model-generated and occasionally arrive as a non-string
+  // (object/array/number) instead of the expected string — coerce before trimming.
+  const str = typeof s === 'string' ? s : String(s);
+  const words = str.split(/\s+/);
+  if (words.length <= max) return str.trim();
   return words.slice(0, max).join(' ') + '…';
 }

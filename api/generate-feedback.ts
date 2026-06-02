@@ -481,45 +481,61 @@ Assess this draft against each marking criterion above. Address every criterion 
         time_to_first_keystroke_ms: typeof time_to_first_keystroke_ms === 'number' ? time_to_first_keystroke_ms : null,
       });
 
+      // Post-submission side effects. These must never affect the feedback the
+      // student just received (each swallows its own error), but they DO need to
+      // finish before we respond: on Vercel the instance is frozen once the
+      // response is sent, which tears down any in-flight socket and surfaces as
+      // `write ETIMEDOUT` / `TypeError: fetch failed`. So collect them and await
+      // in parallel right before returning rather than firing and forgetting.
+      const bgWrites: PromiseLike<unknown>[] = [];
+
       // Fold the skill read into the student's rollup (the skill database).
-      // Fire-and-forget — a failure here must never affect the feedback the
-      // student just received.
       if (Array.isArray(skillAssessment) && skillAssessment.length > 0) {
-        recordSkillSignals({
-          supabase,
-          studentId: user.id,
-          discipline: (resolvedCourse ? getDisciplineForCourse(resolvedCourse as string) : null) || 'General',
-          family: 'writing',
-          assessment: skillAssessment,
-        }).catch(err => captureError(err, { stage: 'skill-rollup', user_id: user.id, task_id }));
+        bgWrites.push(
+          recordSkillSignals({
+            supabase,
+            studentId: user.id,
+            discipline: (resolvedCourse ? getDisciplineForCourse(resolvedCourse as string) : null) || 'General',
+            family: 'writing',
+            assessment: skillAssessment,
+          }).catch(err => captureError(err, { stage: 'skill-rollup', user_id: user.id, task_id }))
+        );
       }
 
       // Mark the longitudinal profile stale — AI feedback is treated as a
       // quality signal alongside teacher marks. The row is kept (not deleted)
       // so the class summary still has last-known-good data; the read path
       // regenerates on next individual view.
-      supabase.from('student_profile_synthesis')
-        .update({ stale: true })
-        .eq('student_id', user.id)
-        .then(({ error }) => {
-          if (error) captureError(error, { stage: 'profile-cache-invalidate', user_id: user.id });
-        });
+      bgWrites.push(
+        supabase.from('student_profile_synthesis')
+          .update({ stale: true })
+          .eq('student_id', user.id)
+          .then(({ error }) => {
+            if (error) captureError(error, { stage: 'profile-cache-invalidate', user_id: user.id });
+          })
+      );
 
       if (task_id) {
-        supabase.from('draft_autosaves')
-          .delete()
-          .eq('student_id', user.id)
-          .eq('task_id', task_id)
-          .then(({ error }) => {
-            if (error) captureError(error, { stage: 'autosave-clear', task_id, user_id: user.id });
-          });
+        bgWrites.push(
+          supabase.from('draft_autosaves')
+            .delete()
+            .eq('student_id', user.id)
+            .eq('task_id', task_id)
+            .then(({ error }) => {
+              if (error) captureError(error, { stage: 'autosave-clear', task_id, user_id: user.id });
+            })
+        );
 
-        postCompletionIfLinked({
-          taskId: task_id,
-          studentId: user.id,
-          comment: `Draft ${draftVersion} submitted via ProofReady`,
-        }).catch(err => captureError(err, { stage: 'ags-passback', task_id, user_id: user.id }));
+        bgWrites.push(
+          postCompletionIfLinked({
+            taskId: task_id,
+            studentId: user.id,
+            comment: `Draft ${draftVersion} submitted via ProofReady`,
+          }).catch(err => captureError(err, { stage: 'ags-passback', task_id, user_id: user.id }))
+        );
       }
+
+      await Promise.allSettled(bgWrites);
     }
 
     return res.status(200).json({

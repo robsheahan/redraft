@@ -124,35 +124,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Could not save your submission.' });
   }
 
+  // Post-submission side effects. Each swallows its own error so it can't affect
+  // the submission, but they must finish before we respond: on Vercel the
+  // instance freezes once the response is sent, tearing down any in-flight socket
+  // (surfaces as `write ETIMEDOUT` / `fetch failed`). Collect and await in
+  // parallel rather than firing and forgetting.
+  const bgWrites: PromiseLike<unknown>[] = [];
+
   // Fold the skill read into the student's rollup (the skill database). Quick/
   // marked tasks are the bulk of submissions, so this is the main inflow.
-  // Fire-and-forget — must never affect the submission.
   if (Array.isArray(skillAssessment) && skillAssessment.length > 0) {
-    recordSkillSignals({
-      supabase,
-      studentId: user.id,
-      discipline: (task.course ? getDisciplineForCourse(task.course) : null) || 'General',
-      family: 'writing',
-      assessment: skillAssessment,
-    }).catch(err => captureError(err, { stage: 'skill-rollup-submit', user_id: user.id, task_id }));
+    bgWrites.push(
+      recordSkillSignals({
+        supabase,
+        studentId: user.id,
+        discipline: (task.course ? getDisciplineForCourse(task.course) : null) || 'General',
+        family: 'writing',
+        assessment: skillAssessment,
+      }).catch(err => captureError(err, { stage: 'skill-rollup-submit', user_id: user.id, task_id }))
+    );
   }
 
   // Clear the in-progress autosave
-  await supabase
-    .from('draft_autosaves').delete()
-    .eq('student_id', user.id).eq('task_id', task_id as string);
+  bgWrites.push(
+    supabase
+      .from('draft_autosaves').delete()
+      .eq('student_id', user.id).eq('task_id', task_id as string)
+      .then(({ error }) => {
+        if (error) captureError(error, { stage: 'autosave-clear-submit', task_id, user_id: user.id });
+      })
+  );
 
   // Fresh insights data → mark the longitudinal profile stale (kept, not
-  // deleted). Fire-and-forget; matches the pattern in submission-grade.ts /
-  // generate-feedback.ts.
+  // deleted). Matches the pattern in submission-grade.ts / generate-feedback.ts.
   if (insightsFeedback) {
-    supabase.from('student_profile_synthesis')
-      .update({ stale: true })
-      .eq('student_id', user.id)
-      .then(({ error }) => {
-        if (error) captureError(error, { stage: 'profile-cache-invalidate-submit', task_id, user_id: user.id });
-      });
+    bgWrites.push(
+      supabase.from('student_profile_synthesis')
+        .update({ stale: true })
+        .eq('student_id', user.id)
+        .then(({ error }) => {
+          if (error) captureError(error, { stage: 'profile-cache-invalidate-submit', task_id, user_id: user.id });
+        })
+    );
   }
+
+  await Promise.allSettled(bgWrites);
 
   return res.status(200).json({ ok: true, draft_version: nextVersion });
 }

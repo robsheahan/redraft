@@ -264,41 +264,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Could not save your submission. ' + insertErr.message });
     }
 
+    // Post-submission side effects. Each swallows its own error so it can't
+    // affect the feedback just produced, but they must finish before we respond:
+    // on Vercel the instance freezes once the response is sent, tearing down any
+    // in-flight socket (surfaces as `write ETIMEDOUT` / `fetch failed`). Collect
+    // and await in parallel rather than firing and forgetting.
+    const bgWrites: PromiseLike<unknown>[] = [];
+
     // Fold the skill read into the student's rollup (the skill database).
-    // Fire-and-forget — must never affect the feedback just produced.
     if (Array.isArray(holistic?.skill_assessment) && holistic.skill_assessment.length > 0) {
-      recordSkillSignals({
-        supabase,
-        studentId: user.id,
-        discipline: (task.course ? getDisciplineForCourse(task.course) : null) || 'Mathematics',
-        family: 'maths',
-        assessment: holistic.skill_assessment,
-      }).catch(err => captureError(err, { stage: 'skill-rollup-maths', user_id: user.id, task_id }));
+      bgWrites.push(
+        recordSkillSignals({
+          supabase,
+          studentId: user.id,
+          discipline: (task.course ? getDisciplineForCourse(task.course) : null) || 'Mathematics',
+          family: 'maths',
+          assessment: holistic.skill_assessment,
+        }).catch(err => captureError(err, { stage: 'skill-rollup-maths', user_id: user.id, task_id }))
+      );
     }
 
     // Mark longitudinal profile stale (kept, not deleted).
-    supabase.from('student_profile_synthesis')
-      .update({ stale: true })
-      .eq('student_id', user.id)
-      .then(({ error }) => {
-        if (error) captureError(error, { stage: 'profile-cache-invalidate-maths', user_id: user.id });
-      });
+    bgWrites.push(
+      supabase.from('student_profile_synthesis')
+        .update({ stale: true })
+        .eq('student_id', user.id)
+        .then(({ error }) => {
+          if (error) captureError(error, { stage: 'profile-cache-invalidate-maths', user_id: user.id });
+        })
+    );
 
     // Clear autosave row.
-    supabase.from('draft_autosaves')
-      .delete()
-      .eq('student_id', user.id)
-      .eq('task_id', task_id)
-      .then(({ error }) => {
-        if (error) captureError(error, { stage: 'autosave-clear-maths', task_id, user_id: user.id });
-      });
+    bgWrites.push(
+      supabase.from('draft_autosaves')
+        .delete()
+        .eq('student_id', user.id)
+        .eq('task_id', task_id)
+        .then(({ error }) => {
+          if (error) captureError(error, { stage: 'autosave-clear-maths', task_id, user_id: user.id });
+        })
+    );
 
     // LTI AGS passback (no-op if task isn't LTI-linked).
-    postCompletionIfLinked({
-      taskId: task_id,
-      studentId: user.id,
-      comment: `Maths draft ${draftVersion} submitted via ProofReady`,
-    }).catch(err => captureError(err, { stage: 'ags-passback-maths', task_id, user_id: user.id }));
+    bgWrites.push(
+      postCompletionIfLinked({
+        taskId: task_id,
+        studentId: user.id,
+        comment: `Maths draft ${draftVersion} submitted via ProofReady`,
+      }).catch(err => captureError(err, { stage: 'ags-passback-maths', task_id, user_id: user.id }))
+    );
+
+    await Promise.allSettled(bgWrites);
 
     return res.status(200).json({
       feedback,

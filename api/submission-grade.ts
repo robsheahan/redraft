@@ -78,7 +78,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const taskTotalMarks = (submission.tasks as any)?.total_marks;
   if (typeof total_mark === 'number' && typeof taskTotalMarks === 'number' && taskTotalMarks > 0) {
-    postCompletionIfLinked({
+    // Await before responding — on Vercel the instance freezes once the response
+    // is sent, which would tear down this in-flight passback socket (surfaces as
+    // `write ETIMEDOUT` / `fetch failed`). The .catch keeps it non-fatal.
+    await postCompletionIfLinked({
       taskId: submission.task_id as string,
       studentId: submission.student_id as string,
       scoreGiven: total_mark,
