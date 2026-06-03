@@ -204,7 +204,8 @@
 
       html += '<div class="student-strip">';
       html += '<span class="student-name">' + e(studentName) + '</span>';
-      html += '<span class="draft-info">Draft ' + e(String(submission.draft_version || 1)) + '</span>';
+      const _nfLabel = task && (task.task_mode === 'quick_task' || task.task_mode === 'marked_task');
+      html += '<span class="draft-info">' + (_nfLabel ? 'Submission' : ('Draft ' + e(String(submission.draft_version || 1)))) + '</span>';
       html += lateBadge(submission, task);
       if (submission.graded_at) html += '<span class="badge badge-marked">Already marked — editing</span>';
       html += '</div>';

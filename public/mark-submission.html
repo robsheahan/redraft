@@ -339,8 +339,8 @@
       // Quick tasks are single-submission, so the "Draft N" label is just
       // noise — show "Response" instead. Assessment tasks keep the draft
       // number since iteration matters there.
-      const isQuickTask = task.task_mode === 'quick_task';
-      const draftLabel = isQuickTask ? 'Response' : ('Draft ' + e(String(submission.draft_version || 1)));
+      const noFeedbackTask = task.task_mode === 'quick_task' || task.task_mode === 'marked_task';
+      const draftLabel = noFeedbackTask ? 'Submission' : ('Draft ' + e(String(submission.draft_version || 1)));
       html += '<span class="draft-info">' + draftLabel + '</span>';
       html += lateBadge(submission, task);
       if (submission.graded_at) {

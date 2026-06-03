@@ -644,7 +644,10 @@
           html += '<div class="submission-draft">';
           stu.drafts.forEach((d, j) => {
             const dDate = new Date(d.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-            const draftLabel = 'Draft ' + (d.draft_version || (count - j)) + (j === 0 ? ' (latest)' : '');
+            const _noFeedback = currentTask.task_mode === 'marked_task' || currentTask.task_mode === 'quick_task';
+            const draftLabel = _noFeedback
+              ? 'Submission'
+              : 'Draft ' + (d.draft_version || (count - j)) + (j === 0 ? ' (latest)' : '');
             html += '<div class="draft-label">' + e(draftLabel) + ' · ' + e(dDate) + renderLateBadge(d, currentTask) + '</div>';
             html += '<div class="draft-content">' + e(d.draft_text || 'No draft text') + '</div>';
             html += renderTypingSummary(d);
