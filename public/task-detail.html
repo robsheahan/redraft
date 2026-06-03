@@ -439,6 +439,8 @@
     .submission-status-pill.marked   { background: #d1fae5; color: #065f46; }
     .submission-status-pill.ready    { background: #dbeafe; color: #1e40af; }
     .submission-status-pill.unmarked { background: #fef3c7; color: #92400e; }
+    .submission-status-pill.overtime { background: #fef2f2; color: #b91c1c; }
+    .submission-status-pill.overtime::before { display: none; }
 
     .loading { text-align: center; padding: 60px; color: #9ca3af; font-size: 14px; }
     .error-msg { text-align: center; padding: 40px; color: #dc2626; font-size: 14px; }
@@ -629,6 +631,13 @@
           } else {
             statusPill = '<span class="submission-status-pill unmarked">Unmarked</span>';
           }
+          // In-class exam: flag at a glance if the student kept working past the
+          // time limit (a valid over_time_cutoff_index within the submission).
+          const _otc = latest.over_time_cutoff_index;
+          const _len = Array.isArray(latest.working_lines) ? latest.working_lines.length : (latest.draft_text || '').length;
+          const overTimePill = (typeof _otc === 'number' && _otc >= 0 && _otc < _len)
+            ? '<span class="submission-status-pill overtime" title="This student kept working after the time limit">⏱ over time</span>'
+            : '';
 
           html += '<div class="submission-card" id="sub-' + i + '">';
           html += '<div class="submission-card-header" onclick="toggleSubmission(' + i + ')">';
@@ -636,6 +645,7 @@
           html += '<span class="submission-label">' + e(stu.name) + '</span>';
           if (count > 1) html += '<span class="draft-badge">' + count + ' drafts</span>';
           html += statusPill;
+          html += overTimePill;
           html += '<span class="submission-date">' + e(date) + '</span>';
           html += '</div>';
           html += '<span class="submission-arrow">›</span>';
