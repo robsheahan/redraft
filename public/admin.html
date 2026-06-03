@@ -71,6 +71,12 @@
     .modal-actions button.danger { color: #dc2626; border-color: #fecaca; }
     .modal-actions button.danger:hover { background: #fef2f2; border-color: #dc2626; }
     .modal-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .admin-footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid #e8e0d4; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: space-between; }
+    .admin-footer .footer-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #6b7280; margin-right: 4px; }
+    .admin-resources, .admin-compliance { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+    .admin-footer a { font-size: 13px; color: #ed7615; text-decoration: none; }
+    .admin-footer a:hover { text-decoration: underline; }
+    .admin-compliance a { color: #9ca3af; }
   </style>
 </head>
 <body>
@@ -263,6 +269,20 @@
         html += '</tbody></table></div>';
       }
       html += '</div>';
+
+      // Resources footer — admin-only (this whole view only renders after the
+      // admin-stats check passes). Presentation assets for pitching/demos; the
+      // walkthrough video lives in the public 'resources' Storage bucket so
+      // re-uploading it updates the site with no code change.
+      var walkthroughUrl = SUPABASE_URL + '/storage/v1/object/public/resources/walkthrough.mp4';
+      html += '<footer class="admin-footer">';
+      html += '<div class="admin-resources"><span class="footer-label">Resources</span>';
+      html += '<a href="' + walkthroughUrl + '" target="_blank" rel="noopener">Narrative walkthrough</a>';
+      html += '<a href="/deck" target="_blank" rel="noopener">Slide deck</a>';
+      html += '<a href="/handout" target="_blank" rel="noopener">Handout</a>';
+      html += '</div>';
+      html += '<div class="admin-compliance"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/compliance.html">Compliance</a></div>';
+      html += '</footer>';
 
       container.innerHTML = html;
 

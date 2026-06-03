@@ -339,18 +339,19 @@ Insights: `insights.html` (single page — handles cohort + student modes, all t
 Admin: `admin.html`
 LTI: `lti-not-ready.html` (shown when an LTI launch lands before provisioning is done), `lti-deep-link.html` (deep-linking picker)
 UI note: all checkboxes use a centered background-SVG checkmark; emoji glyphs replaced with lucide-style stroke SVGs site-wide.
-Marketing: `deck.html` (rewritten from `/deck`; source HTML in `pitch/pitch-deck.html`)
+Marketing: `deck.html` (rewritten from `/deck`; source HTML in `pitch/pitch-deck.html`), `handout.html` (rewritten from `/handout`; served copy of `pitch/handout.html`)
+Admin resources: `admin.html` renders an admin-only **Resources** footer (only appears after the admin-stats gate passes) linking the narrative walkthrough (public `resources` Storage bucket → `…/storage/v1/object/public/resources/walkthrough.mp4`), the slide deck (`/deck`) and the handout (`/handout`). Re-uploading the video under the same name updates it with no code change.
 Policy: `compliance.html`, `privacy.html`, `terms.html`, `contact.html`
 Account: `profile.html`
 Shared JS: `js/app.js` (Supabase client, `authFetch`, `requireAuth`, `apiUrl`, Sentry init), `js/rubric.js` (rubric parser/renderer — pipe-table, band-style, criterion-list, letter-band, multi-part HSC, flattened-table; modes `display` / `mark-entry` / `graded`), `js/nesa-courses.js` (course autocomplete), `js/contact-modal.js`, `js/attachments.js` (`Attachments.createAttachmentUploader` + `renderAttachmentList` — file upload widget + read-only signed-URL list)
 
 ### `scripts/`
-- SQL migrations: `classes-migration.sql`, `class-feedback-migration.sql`, `rls-policies.sql`, `scale-indexes.sql`, `lti-migration.sql`, `typed-response-only-migration.sql`, `teacher-marking-migration.sql`, `submit-for-marking-migration.sql`, `insights-cards-cache.sql`, `task-modes-migration.sql`, `student-profile-migration.sql`, `schools-migration.sql`, `schools-faculties.sql`, `maths-feedback-migration.sql`, `hide-criteria-from-students-migration.sql`, `teacher-insights-cards.sql`, `school-insights-cards-scope.sql` (adds scope_key + fingerprint), `student-profile-stale-migration.sql` (adds the `stale` flag), `skill-profile-migration.sql` (adds `submissions.skill_assessment` + `student_skill_profile`), `own-task-fields-migration.sql` (`submissions.own_task_*`), `lesson-builder-migration.sql` (`tasks.lesson_builder` + `task_activities`), `attachments-migration.sql` (private `attachments` Storage bucket + `tasks.teacher_attachments` + `submissions.student_attachments`), `exam-time-limit-migration.sql` (`tasks.time_limit_minutes`), `exam-over-time-migration.sql` (`submissions.over_time_cutoff_index`)
+- SQL migrations: `classes-migration.sql`, `class-feedback-migration.sql`, `rls-policies.sql`, `scale-indexes.sql`, `lti-migration.sql`, `typed-response-only-migration.sql`, `teacher-marking-migration.sql`, `submit-for-marking-migration.sql`, `insights-cards-cache.sql`, `task-modes-migration.sql`, `student-profile-migration.sql`, `schools-migration.sql`, `schools-faculties.sql`, `maths-feedback-migration.sql`, `hide-criteria-from-students-migration.sql`, `teacher-insights-cards.sql`, `school-insights-cards-scope.sql` (adds scope_key + fingerprint), `student-profile-stale-migration.sql` (adds the `stale` flag), `skill-profile-migration.sql` (adds `submissions.skill_assessment` + `student_skill_profile`), `own-task-fields-migration.sql` (`submissions.own_task_*`), `lesson-builder-migration.sql` (`tasks.lesson_builder` + `task_activities`), `attachments-migration.sql` (private `attachments` Storage bucket + `tasks.teacher_attachments` + `submissions.student_attachments`), `exam-time-limit-migration.sql` (`tasks.time_limit_minutes`), `exam-over-time-migration.sql` (`submissions.over_time_cutoff_index`), `resources-bucket-migration.sql` (public `resources` Storage bucket for admin presentation assets)
 - One-offs: `backfill-inline-suggestions.ts`, `scrape-nesa-feedback.ts`, `generate-lti-keypair.ts`, `diagnose-pcs-search.ts`
 - Smoke tests: `lti-smoke-test.ts`, `insights-teacher-smoke-test.ts`, `insights-student-smoke-test.ts`
 
 ### Config
-- `vercel.json` — `maxDuration: 300` (Pro plan), rewrites `/lti/*` → `/api/lti/*` and `/deck` → `/deck.html`
+- `vercel.json` — `maxDuration: 300` (Pro plan), rewrites `/lti/*` → `/api/lti/*`, `/deck` → `/deck.html`, `/handout` → `/handout.html`
 - `tsconfig.json` — NodeNext modules to match Vercel runtime
 - `package.json` — `@anthropic-ai/sdk`, `@supabase/supabase-js`, `@sentry/node`, `@vercel/node`, `jose`
 
