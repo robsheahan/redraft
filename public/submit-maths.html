@@ -170,6 +170,7 @@
     let examStartedAt = null;
     let lineCountAtDeadline = null;
     let examTimerInterval = null;
+    let lastInTimeLineCount = 0; // line count most recently seen while within the limit
 
     function showToast(msg) {
       const t = document.getElementById('toast');
@@ -412,6 +413,17 @@
           examStartedAt = Date.now();
           telemetry.exam_started_at = examStartedAt;
           startExamTimer();
+        }
+        // Keystroke-driven over-time boundary (robust to background-tab timer
+        // throttling): snapshot the line count while within the limit; the first
+        // keystroke past the deadline locks it.
+        if (examLimitMs() && examStartedAt != null) {
+          if (Date.now() < examStartedAt + examLimitMs()) {
+            lastInTimeLineCount = collectLines().filter(l => l.math || l.reason).length;
+          } else if (lineCountAtDeadline == null) {
+            lineCountAtDeadline = lastInTimeLineCount;
+            telemetry.line_count_at_deadline = lineCountAtDeadline;
+          }
         }
         if (!sessionStartedAt || (Date.now() - lastKeyAt) > 30000) {
           telemetry.typing_session_count += 1;

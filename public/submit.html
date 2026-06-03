@@ -541,6 +541,7 @@
     var examStartedAt = null;
     var textAtDeadline = null;
     var examTimerInterval = null;
+    var lastInTimeText = ''; // most recent draft snapshot taken while still within the limit
     var lastSavedText = '';
     var autosaveTimer = null;
     var saveIndicatorTimer = null;
@@ -718,6 +719,18 @@
           examStartedAt = now;
           telemetry.exam_started_at = examStartedAt;
           startExamTimer();
+        }
+        // Keystroke-driven over-time boundary — robust to background-tab timer
+        // throttling (the 1s tick may not fire on schedule). While within the
+        // limit, keep snapshotting; the first keystroke past the deadline locks
+        // the boundary to the last in-time snapshot.
+        if (examLimitMs() && examStartedAt != null) {
+          if (now < examStartedAt + examLimitMs()) {
+            lastInTimeText = el.value;
+          } else if (textAtDeadline == null) {
+            textAtDeadline = lastInTimeText;
+            telemetry.text_at_deadline = textAtDeadline;
+          }
         }
         telemetry.keystroke_count += 1;
         if (lastInputAt) {

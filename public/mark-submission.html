@@ -47,6 +47,7 @@
     .teacher-annotation--improve { background: #ede9fe; border-bottom-color: #7c3aed; }
     .teacher-annotation--note    { background: #f1f5f9; border-bottom-color: #64748b; }
     .over-time { background: #fef2f2; box-shadow: inset 2px 0 0 #f87171; border-radius: 2px; }
+    .exam-note { font-size: 12px; color: #6b7280; background: #f8f5ef; border: 1px solid #ece4d6; border-radius: 6px; padding: 5px 10px; margin-bottom: 10px; }
     .over-time-divider {
       display: block; margin: 12px 0 6px; padding: 4px 10px;
       font-size: 12px; font-weight: 700; color: #b91c1c;
@@ -365,6 +366,12 @@
       html += '<div>';
       html += '<div class="card">';
       html += '<h3>Student draft</h3>';
+      if (task && task.task_mode === 'marked_task' && task.time_limit_minutes) {
+        const _c = submission.over_time_cutoff_index;
+        const _over = (typeof _c === 'number' && _c >= 0 && _c < (submission.draft_text || '').length);
+        html += '<div class="exam-note">⏱ Timed exam · ' + e(String(task.time_limit_minutes)) + ' min — '
+          + (_over ? 'work added after the limit is highlighted below.' : 'submitted within the time limit.') + '</div>';
+      }
       html += '<div class="draft-text" id="draftText">' + renderDraftWithAnnotations() + '</div>';
       html += '</div>';
       if (Array.isArray(submission.student_attachments) && submission.student_attachments.length) {

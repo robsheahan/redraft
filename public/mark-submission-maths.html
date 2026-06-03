@@ -40,6 +40,7 @@
     /* Per-line working render */
     .line-row { padding: 14px 0; border-bottom: 1px solid #f0e6d6; }
     .line-row.over-time { background: #fef2f2; box-shadow: inset 3px 0 0 #f87171; padding-left: 10px; }
+    .exam-note { font-size: 12px; color: #6b7280; background: #f8f5ef; border: 1px solid #ece4d6; border-radius: 6px; padding: 5px 10px; margin-bottom: 10px; }
     .over-time-divider {
       margin: 12px 0 6px; padding: 4px 10px;
       font-size: 12px; font-weight: 700; color: #b91c1c;
@@ -231,6 +232,13 @@
 
       html += '<div class="card">';
       html += '<h3>Student working</h3>';
+      if (task && task.task_mode === 'marked_task' && task.time_limit_minutes) {
+        const _lines = Array.isArray(submission.working_lines) ? submission.working_lines : [];
+        const _c = submission.over_time_cutoff_index;
+        const _over = (typeof _c === 'number' && _c >= 0 && _c < _lines.length);
+        html += '<div class="exam-note">⏱ Timed exam · ' + e(String(task.time_limit_minutes)) + ' min — '
+          + (_over ? 'lines added after the limit are highlighted below.' : 'submitted within the time limit.') + '</div>';
+      }
       html += '<div id="workingBlock">' + renderWorking() + '</div>';
       html += '</div>';
       if (Array.isArray(submission.student_attachments) && submission.student_attachments.length) {
