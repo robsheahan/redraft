@@ -795,11 +795,14 @@
       if (!ok) return;
 
       submissionInFlight = true;
-      const finalBtn = document.querySelector('.submit-final-btn');
-      const aiBtn = document.querySelector('.submit-btn');
-      const originalLabel = finalBtn ? finalBtn.textContent : '';
-      if (finalBtn) { finalBtn.disabled = true; finalBtn.textContent = 'Submitting...'; }
-      if (aiBtn) aiBtn.disabled = true;
+      // The marking button is "Submit for marking" (.submit-final-btn) in the
+      // take-home view, or the lone orange "Submit" (.submit-btn) in the
+      // exam/quick view. Relabel whichever one was actually clicked.
+      const markBtn = isFeedbackTask ? document.querySelector('.submit-final-btn') : document.querySelector('.submit-btn');
+      const otherBtn = isFeedbackTask ? document.querySelector('.submit-btn') : null;
+      const originalLabel = markBtn ? markBtn.textContent : '';
+      if (markBtn) { markBtn.disabled = true; markBtn.textContent = 'Submitting...'; }
+      if (otherBtn) otherBtn.disabled = true;
 
       try {
         const res = await authFetch('/api/submit-for-marking', {
@@ -822,11 +825,11 @@
         window.location.reload();
       } catch (err) {
         alert(err.message);
-        if (finalBtn) {
-          finalBtn.disabled = false;
-          finalBtn.textContent = originalLabel || (isFeedbackTask ? 'Submit for marking' : 'Submit');
+        if (markBtn) {
+          markBtn.disabled = false;
+          markBtn.textContent = originalLabel || (isFeedbackTask ? 'Submit for marking' : 'Submit');
         }
-        if (aiBtn) aiBtn.disabled = false;
+        if (otherBtn) otherBtn.disabled = false;
         submissionInFlight = false;
       }
     }
