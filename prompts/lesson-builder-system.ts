@@ -57,8 +57,16 @@ export function buildMathsActivitySystemPrompt(opts: {
   question: string;
   course: string | null;
   yearLevel: number | null;
+  // Conservative dial (default). When false, the re-skin may ONLY vary
+  // numbers/coefficients/context and must keep the exact same step structure —
+  // the lowest-variance, hardest-to-break form. Flip to true to re-allow the
+  // old "at most ±1 step" latitude if numbers-only proves too timid.
+  allowStepChange?: boolean;
 }): string {
-  const { question, course, yearLevel } = opts;
+  const { question, course, yearLevel, allowStepChange = false } = opts;
+  const difficultyRule = allowStepChange
+    ? `2. Calibrate DIFFICULTY only. Change numbers/coefficients/context. For a clearly developing student, make it more accessible (cleaner numbers, a more straightforward instance); for a clearly secure/extending student, make it more demanding (messier values, an applied twist). At MOST one added or removed step — never restructure the problem.`
+    : `2. Calibrate DIFFICULTY only by changing numbers/coefficients/context — NOT the structure. For a clearly developing student, make it more accessible (cleaner numbers, a more straightforward instance); for a clearly secure/extending student, make it more demanding (messier values, an applied twist). Keep the SAME number of steps and the SAME structure as the original — never add, remove, or reorder a step. If you cannot re-skin within those bounds, set difficulty to "same" and stay as close to the original as possible.`;
   return [
     `You are an experienced NSW NESA-trained mathematics teacher creating ONE student's version of a class maths task. Every student works towards the SAME outcome using the SAME method — you re-skin the QUESTION to the right difficulty for this student, and nothing more.`,
     ``,
@@ -71,7 +79,7 @@ export function buildMathsActivitySystemPrompt(opts: {
     ``,
     `RULES:`,
     `1. SAME outcome, SAME solution method. The re-skinned question MUST be solvable with the identical approach as the original and assess the identical skill. Never change the topic or the technique.`,
-    `2. Calibrate DIFFICULTY only. Change numbers/coefficients/context. For a clearly developing student, make it more accessible (cleaner numbers, a more straightforward instance); for a clearly secure/extending student, make it more demanding (messier values, an applied twist). At MOST one added or removed step — never restructure the problem.`,
+    difficultyRule,
     `3. Re-skin, do not rewrite — keep the original wording and structure as close as possible. The question must be unambiguous and fully solvable.`,
     `4. Confidence-aware: if the profile is thin (low confidence / few observations), keep the difficulty at or very near the original and set difficulty to "same". Do not flex hard on one data point.`,
     `5. student_focus is an invitation to the student, never a diagnosis. No levels, bands, or "because you…".`,
@@ -79,6 +87,55 @@ export function buildMathsActivitySystemPrompt(opts: {
     ``,
     `Produce the re-skinned activity via the tool.`,
   ].filter(Boolean).join('\n');
+}
+
+/**
+ * Maths re-skin VERIFIER — an independent second pass that vets an auto-generated
+ * re-skinned question BEFORE it is ever shown to the student. This is the gate
+ * that makes the highest-risk Lesson Builder surface rock solid: a maths re-skin
+ * only ships if a fresh model, working the problem from scratch, confirms it is
+ * solvable, uses the same method as the original, and sits at an appropriate
+ * difficulty. The verifier never sees the generator's reasoning — only the two
+ * questions — so it cannot rubber-stamp.
+ */
+export function buildMathsReskinVerifySystemPrompt(opts: {
+  course: string | null;
+  yearLevel: number | null;
+}): string {
+  const { course, yearLevel } = opts;
+  return [
+    `You are an experienced NSW NESA mathematics teacher and exam vetter. A class question has been re-skinned into a per-student version. Before any student sees it, you must check the re-skinned version against the original. Be strict: a flawed question handed to a student is worse than no differentiation at all.`,
+    ``,
+    course ? `Course: ${course}` : '',
+    yearLevel ? `Student year level: Year ${yearLevel}.` : '',
+    ``,
+    `Do this in order:`,
+    `1. Work the RE-SKINNED question fully, from scratch, showing every step to a final answer. Do not assume it is correct — derive it.`,
+    `2. Then judge three things independently:`,
+    `   - solvable: Is the re-skinned question well-posed, unambiguous, and fully solvable with no missing information or internal contradiction, landing on a definite answer? (A messy or ugly answer is fine; an impossible or under-specified one is not.)`,
+    `   - method_matches: Does it assess the SAME outcome and require the SAME solution method/technique as the original? (Topic drift or a different technique = false.)`,
+    `   - difficulty_appropriate: Is it a genuine re-skin — the same kind of task at a sensible difficulty for this student — rather than something materially harder, trivially easier, or restructured? It should take a comparable number of steps to the original.`,
+    `3. If you are UNCERTAIN about any of the three, mark it false. Default to rejecting.`,
+    ``,
+    `Report your verdict via the tool: the worked solution, the three booleans, and a one-line reason (most important when something fails).`,
+  ].filter(Boolean).join('\n');
+}
+
+export function buildMathsReskinVerifyUserPrompt(opts: {
+  originalQuestion: string;
+  reskinnedQuestion: string;
+  claimedDifficulty: string;
+}): string {
+  const { originalQuestion, reskinnedQuestion, claimedDifficulty } = opts;
+  return [
+    `ORIGINAL question (the reference for method + difficulty):`,
+    originalQuestion,
+    ``,
+    `RE-SKINNED question to verify (the generator labelled it "${claimedDifficulty}" relative to the original):`,
+    reskinnedQuestion,
+    ``,
+    `Work the re-skinned question and return your verdict via the tool.`,
+  ].join('\n');
 }
 
 export function buildActivityUserPrompt(rows: SkillProfileRow[]): string {

@@ -20,11 +20,11 @@ import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
 import { callTool } from '../lib/anthropic-tool-call.js';
 import { readSkillProfile } from '../lib/skill-profile.js';
-import { DIFFERENTIATED_ACTIVITY_TOOL, DIFFERENTIATED_MATHS_ACTIVITY_TOOL } from '../lib/feedback-tools.js';
+import { DIFFERENTIATED_ACTIVITY_TOOL, DIFFERENTIATED_MATHS_ACTIVITY_TOOL, MATHS_RESKIN_VERIFY_TOOL } from '../lib/feedback-tools.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { currentYearLevelFromGraduationYear } from '../data/nesa-reference.js';
 import { familyForSubjectType, dimensionsForFamily, TAXONOMY_VERSION } from '../data/skill-taxonomy.js';
-import { buildActivitySystemPrompt, buildMathsActivitySystemPrompt, buildActivityUserPrompt } from '../prompts/lesson-builder-system.js';
+import { buildActivitySystemPrompt, buildMathsActivitySystemPrompt, buildActivityUserPrompt, buildMathsReskinVerifySystemPrompt, buildMathsReskinVerifyUserPrompt } from '../prompts/lesson-builder-system.js';
 
 const MODEL = 'claude-sonnet-4-6';
 
@@ -137,18 +137,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let activity: any;
   if (isMathsReskin) {
     const reskinned = typeof value?.question === 'string' ? value.question.trim() : '';
-    // No usable re-skin → fall back to the main activity (never lock a broken one).
-    if (!reskinned) {
+    const claimedDifficulty = ['easier', 'same', 'harder'].includes(value?.difficulty) ? value.difficulty : 'same';
+
+    // Lock the main activity unchanged. Used whenever we can't produce a
+    // trustworthy re-skin (empty generation OR a failed/errored verification) —
+    // we NEVER lock a re-skin we haven't independently confirmed.
+    const fallBackToMain = async () => {
       await supabase.from('task_activities').upsert({
         task_id, student_id: user.id,
         activity: { student_focus: '', scaffolding: [], extension: '' },
         is_differentiated: false, source_submission_count: 0, taxonomy_version: TAXONOMY_VERSION,
       });
       return res.status(200).json(MAIN_ACTIVITY);
+    };
+
+    // No usable re-skin → fall back to the main activity (never lock a broken one).
+    if (!reskinned) return fallBackToMain();
+
+    // INDEPENDENT VERIFY PASS — the gate that makes the highest-risk Lesson
+    // Builder surface rock solid. A fresh model works the re-skinned question
+    // from scratch and must confirm all three: solvable, same method as the
+    // original, and an appropriate difficulty. The re-skin ships only if all
+    // three pass; any rejection or error degrades silently to the original
+    // question. Overall pass is derived here, never trusted to a single field.
+    try {
+      const verifyClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const verdict = await callTool<any>({
+        client: verifyClient,
+        model: MODEL,
+        max_tokens: 1024,
+        temperature: 0,
+        system: buildMathsReskinVerifySystemPrompt({ course: task.course || null, yearLevel }),
+        user: buildMathsReskinVerifyUserPrompt({
+          originalQuestion: task.question,
+          reskinnedQuestion: reskinned,
+          claimedDifficulty,
+        }),
+        tool: MATHS_RESKIN_VERIFY_TOOL,
+        label: 'lesson-builder:maths-verify',
+      });
+      const v = verdict.value || {};
+      const passed = v.solvable === true && v.method_matches === true && v.difficulty_appropriate === true;
+      if (!passed) {
+        console.warn(`[lesson-builder] maths re-skin rejected by verifier (task ${task_id}, student ${user.id}): ${typeof v.reason === 'string' ? v.reason : 'no reason given'}`);
+        return fallBackToMain();
+      }
+    } catch (err: any) {
+      captureError(err, { stage: 'generate-activity:maths-verify', task_id, user_id: user.id });
+      return fallBackToMain();
     }
+
     activity = {
       question: reskinned,
-      difficulty: ['easier', 'same', 'harder'].includes(value?.difficulty) ? value.difficulty : 'same',
+      difficulty: claimedDifficulty,
       student_focus: studentFocus,
       scaffolding,
     };

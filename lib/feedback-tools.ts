@@ -563,7 +563,7 @@ export const DIFFERENTIATED_MATHS_ACTIVITY_TOOL: Tool = {
     properties: {
       question: {
         type: 'string',
-        description: 'The re-skinned question for this student. It MUST be solvable with the IDENTICAL method as the original and assess the SAME outcome — only the difficulty of the instance differs. Keep the original wording/structure; change values, and at most one step. Never change the topic or technique. Must be unambiguous and fully solvable.',
+        description: 'The re-skinned question for this student. It MUST be solvable with the IDENTICAL method as the original and assess the SAME outcome — only the difficulty of the instance differs. Keep the original wording and structure; change the numbers/coefficients/context only, keeping the same number of steps. Never change the topic or technique. Must be unambiguous and fully solvable.',
       },
       difficulty: {
         type: 'string',
@@ -581,6 +581,43 @@ export const DIFFERENTIATED_MATHS_ACTIVITY_TOOL: Tool = {
       },
     },
     required: ['question', 'difficulty', 'student_focus', 'scaffolding'],
+  },
+};
+
+// Lesson Builder (maths) — the independent VERIFIER for a re-skinned question.
+// A fresh model works the re-skinned question from scratch and reports whether
+// it is solvable, method-matched to the original, and at an appropriate
+// difficulty. The overall pass/fail is derived server-side from the three
+// booleans (we never trust a single self-graded "ok"). Nothing here is shown to
+// the student.
+export const MATHS_RESKIN_VERIFY_TOOL: Tool = {
+  name: 'verify_reskinned_question',
+  description: 'The result of independently working and vetting a re-skinned maths question before it is shown to a student: a full worked solution plus three independent judgements (solvable, method-matched, difficulty-appropriate) and a short reason.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      worked_solution: {
+        type: 'string',
+        description: 'Your full step-by-step solution to the RE-SKINNED question, derived from scratch, ending in a final answer. This is the proof you actually solved it.',
+      },
+      solvable: {
+        type: 'boolean',
+        description: 'True only if the re-skinned question is well-posed, unambiguous, has no missing information or internal contradiction, and lands on a definite answer. A messy/ugly answer is fine; an impossible or under-specified one is not. If uncertain, false.',
+      },
+      method_matches: {
+        type: 'boolean',
+        description: 'True only if the re-skinned question assesses the SAME outcome and requires the SAME solution method/technique as the original. Topic drift or a different technique → false. If uncertain, false.',
+      },
+      difficulty_appropriate: {
+        type: 'boolean',
+        description: 'True only if it is a genuine re-skin at a sensible difficulty — the same kind of task taking a comparable number of steps — not materially harder, trivially easier, or restructured. If uncertain, false.',
+      },
+      reason: {
+        type: 'string',
+        description: 'One short sentence explaining the verdict — especially what failed when any judgement is false.',
+      },
+    },
+    required: ['worked_solution', 'solvable', 'method_matches', 'difficulty_appropriate', 'reason'],
   },
 };
 
