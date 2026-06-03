@@ -72,9 +72,6 @@
     btn.type = 'button';
     btn.className = 'attach-add-btn';
     btn.textContent = '+ Attach file';
-    var hint = document.createElement('div');
-    hint.className = 'attach-hint';
-    hint.textContent = 'Images or PDFs, up to 10MB each (max ' + max + ').';
     var err = document.createElement('div');
     err.className = 'attach-err';
     err.style.display = 'none';
@@ -144,7 +141,7 @@
         return p.then(function () {
           if (items.length >= max) { setErr('You can attach up to ' + max + ' files.'); return; }
           if (ALLOWED.indexOf(file.type) < 0) { setErr('"' + file.name + '" is not an image or PDF.'); return; }
-          if (file.size > MAX_SIZE) { setErr('"' + file.name + '" is larger than 10MB.'); return; }
+          if (file.size > MAX_SIZE) { setErr('"' + file.name + '" is too large.'); return; }
           return uploadOne(file);
         });
       }, Promise.resolve());
@@ -156,7 +153,6 @@
 
     wrap.appendChild(list);
     wrap.appendChild(btn);
-    wrap.appendChild(hint);
     wrap.appendChild(err);
     wrap.appendChild(input);
     renderList();

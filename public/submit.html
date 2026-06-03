@@ -430,13 +430,13 @@
           html += '<div class="word-count" id="wordCount">0 words</div>';
           html += '<div class="save-indicator" id="saveIndicator"></div>';
           html += '</div>';
-          html += '<div class="attach-block"><div class="attach-hint" style="margin-bottom:4px">Attach a photo or PDF (optional) — e.g. a diagram or scanned page to go with your response.</div><div id="studentAttachmentsMount"></div></div>';
+          if (t.allow_student_attachments) html += '<div class="attach-block"><div id="studentAttachmentsMount"></div></div>';
           html += '<div class="submit-row">';
           if (isFeedbackTask) {
             html += '<button class="submit-btn" onclick="submit()">Get feedback</button>';
             html += '<button class="submit-final-btn" onclick="submitForMarking()">Submit for marking</button>';
           } else {
-            html += '<button class="submit-final-btn" onclick="submitForMarking()" style="max-width:340px">Submit</button>';
+            html += '<button class="submit-btn" onclick="submitForMarking()" style="max-width:340px">Submit</button>';
           }
           html += '</div>';
           if (isFeedbackTask) {

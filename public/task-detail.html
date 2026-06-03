@@ -860,6 +860,15 @@
       html += '<div class="toggle-sub">Students won\'t see the rubric while writing, and ProofReady won\'t return criterion-by-criterion feedback. The rubric and your per-criterion marks reveal once you\'ve graded their submission.</div>';
       html += '</div></div></div>';
 
+      var allowAttachOn = !!task.allow_student_attachments;
+      html += '<div class="detail-row">';
+      html += '<div class="toggle-card" id="editAllowAttachCard">';
+      html += '<input type="checkbox" id="editAllowAttachToggle"' + (allowAttachOn ? ' checked' : '') + '>';
+      html += '<div class="toggle-body">';
+      html += '<label for="editAllowAttachToggle">Allow students to attach a document to their submission</label>';
+      html += '<div class="toggle-sub">When on, students get an "Attach file" button on their submission (images or PDFs).</div>';
+      html += '</div></div></div>';
+
       html += '<div class="edit-actions">';
       html += '<button class="btn-save" id="saveBtn" onclick="saveTask()">Save changes</button>';
       html += '<button class="btn-cancel" onclick="cancelEdit()">Cancel</button>';
@@ -1048,6 +1057,8 @@
         hide_criteria_from_students: hideCriteriaToggleEl ? hideCriteriaToggleEl.checked : false,
         attachments: editAttachments,
       };
+      const allowAttachToggleEl = document.getElementById('editAllowAttachToggle');
+      if (allowAttachToggleEl) updated.allow_student_attachments = allowAttachToggleEl.checked;
       // Time limit is editable for in-class exams only; send it (null clears).
       const editTimeLimitEl = document.getElementById('editTimeLimit');
       if (editTimeLimitEl) {

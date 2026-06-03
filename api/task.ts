@@ -126,6 +126,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
     hide_criteria_from_students, completion_only,
     subject_type, marking_guideline, lesson_builder, attachments, time_limit_minutes,
+    allow_student_attachments,
   } = req.body || {};
 
   if (!class_id) return res.status(400).json({ error: 'class_id is required — tasks must belong to a class.' });
@@ -187,6 +188,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     teacher_attachments: Array.isArray(attachments) ? attachments.slice(0, 5) : [],
     time_limit_minutes: (Number.isFinite(Number(time_limit_minutes)) && Number(time_limit_minutes) > 0)
       ? Math.round(Number(time_limit_minutes)) : null,
+    allow_student_attachments: !!allow_student_attachments,
   }).select('*').single();
 
   if (error) return res.status(500).json({ error: error.message });
@@ -203,6 +205,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     hide_criteria_from_students,
     task_mode: incomingTaskMode, completion_only,
     subject_type, marking_guideline, lesson_builder, attachments, time_limit_minutes,
+    allow_student_attachments,
   } = req.body || {};
   if (!id) return res.status(400).json({ error: 'Task id is required.' });
 
@@ -232,6 +235,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     teacher_attachments: Array.isArray(attachments) ? attachments.slice(0, 5) : undefined,
     time_limit_minutes: time_limit_minutes === undefined ? undefined
       : ((Number.isFinite(Number(time_limit_minutes)) && Number(time_limit_minutes) > 0) ? Math.round(Number(time_limit_minutes)) : null),
+    allow_student_attachments: typeof allow_student_attachments === 'boolean' ? allow_student_attachments : undefined,
   };
   Object.keys(patch).forEach(k => patch[k] === undefined && delete patch[k]);
 

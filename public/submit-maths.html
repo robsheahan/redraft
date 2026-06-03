@@ -316,7 +316,7 @@
       html += '<textarea id="talkthroughInput" class="talkthrough-textarea" placeholder="e.g. I want to find the stationary points of $f(x) = 2x^3 - 3x^2 - 12x + 5$. Differentiating gives $f\'(x) = 6x^2 - 6x - 12$. Setting that to zero..."></textarea>';
       html += '</div>';
       html += '<div class="save-row"><span id="saveIndicator" class="save-indicator">&nbsp;</span><span id="lineCount">0 lines</span></div>';
-      html += '<div class="attach-block"><div class="attach-hint" style="margin-bottom:4px">Attach a photo or PDF (optional) — e.g. a diagram or scanned working to go with your answer.</div><div id="studentAttachmentsMount"></div></div>';
+      if (t.allow_student_attachments) html += '<div class="attach-block"><div id="studentAttachmentsMount"></div></div>';
       html += '<button class="submit-btn" id="submitBtn" onclick="submitForFeedback()">' + (isFeedback ? 'Get feedback' : 'Submit for marking') + '</button>';
       html += '</div>';
 
