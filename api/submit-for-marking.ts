@@ -18,22 +18,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const {
     task_id,
     draft,
+    working_lines,
+    input_mode,
     keystroke_count,
     paste_attempts_blocked,
     typing_session_count,
     total_typing_time_ms,
     time_to_first_keystroke_ms,
     student_attachments,
+    over_time_cutoff_index,
   } = (req.body || {}) as Record<string, unknown>;
 
   if (!task_id) return res.status(400).json({ error: 'task_id is required.' });
-  if (typeof draft !== 'string') return res.status(400).json({ error: 'draft must be a string.' });
-  const draftText = draft.trim();
-  if (draftText.length < 50) {
-    return res.status(400).json({ error: 'Your draft is too short. Write at least a paragraph and try again.' });
+
+  // Two submission shapes: an essay draft (text) or maths working (ordered
+  // {math, reason} lines, e.g. an in-class maths exam). Maths serialises its
+  // lines into draft_text so the rest of the pipeline (silent insights pass,
+  // marking screen) stays shape-agnostic.
+  const isMathsSubmission = Array.isArray(working_lines);
+  let draftText: string;
+  let mathLines: Array<{ math: string; reason: string }> | null = null;
+  if (isMathsSubmission) {
+    mathLines = (working_lines as any[])
+      .map((l) => ({ math: String(l?.math || '').trim(), reason: String(l?.reason || '').trim() }))
+      .filter((l) => l.math || l.reason);
+    if (mathLines.length === 0) {
+      return res.status(400).json({ error: 'Add at least one line of working before submitting.' });
+    }
+    draftText = mathLines
+      .map((l, i) => `Line ${i + 1}: ${l.math}\n  Reason: ${l.reason || '(blank)'}`)
+      .join('\n');
+  } else {
+    if (typeof draft !== 'string') return res.status(400).json({ error: 'draft must be a string.' });
+    draftText = draft.trim();
+    if (draftText.length < 50) {
+      return res.status(400).json({ error: 'Your draft is too short. Write at least a paragraph and try again.' });
+    }
   }
   if (draftText.length > MAX_DRAFT_CHARS) {
-    return res.status(400).json({ error: 'Your draft is too long.' });
+    return res.status(400).json({ error: 'Your submission is too long.' });
   }
 
   const supabase = getSupabase();
@@ -120,6 +143,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     total_typing_time_ms: typeof total_typing_time_ms === 'number' ? total_typing_time_ms : null,
     time_to_first_keystroke_ms: typeof time_to_first_keystroke_ms === 'number' ? time_to_first_keystroke_ms : null,
     student_attachments: Array.isArray(student_attachments) ? student_attachments.slice(0, 5) : [],
+    over_time_cutoff_index: (typeof over_time_cutoff_index === 'number' && Number.isInteger(over_time_cutoff_index) && over_time_cutoff_index >= 0)
+      ? over_time_cutoff_index : null,
+    ...(isMathsSubmission ? {
+      working_lines: mathLines,
+      input_mode: (input_mode === 'freeform' || input_mode === 'talkthrough') ? input_mode : 'structured',
+    } : {}),
   });
   if (insertErr) {
     captureError(insertErr, { stage: 'submit-for-marking-insert', task_id, user_id: user.id });

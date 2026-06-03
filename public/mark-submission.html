@@ -46,6 +46,12 @@
     .teacher-annotation--praise  { background: #dbeafe; border-bottom-color: #2563eb; }
     .teacher-annotation--improve { background: #ede9fe; border-bottom-color: #7c3aed; }
     .teacher-annotation--note    { background: #f1f5f9; border-bottom-color: #64748b; }
+    .over-time { background: #fef2f2; box-shadow: inset 2px 0 0 #f87171; border-radius: 2px; }
+    .over-time-divider {
+      display: block; margin: 12px 0 6px; padding: 4px 10px;
+      font-size: 12px; font-weight: 700; color: #b91c1c;
+      background: #fef2f2; border: 1px dashed #fca5a5; border-radius: 6px;
+    }
     .teacher-annotation-sup {
       font-size: 10px; font-weight: 700; color: #fff; background: #4f46e5;
       padding: 1px 5px; border-radius: 100px; margin-left: 3px;
@@ -607,20 +613,39 @@
     }
     window.removeAnnotation = removeAnnotation;
 
-    function renderDraftWithAnnotations() {
-      const text = submission.draft_text || '';
-      if (teacherAnnotations.length === 0) return e(text);
-      const sorted = teacherAnnotations.slice().sort((a, b) => a.start - b.start);
+    // Render a slice of the draft with the teacher annotations that overlap it.
+    // `anns` carry absolute offsets + a display number; `segStart` is the slice's
+    // offset into the full draft.
+    function renderAnnotatedSegment(segText, segStart, anns) {
       let html = '';
       let cursor = 0;
-      sorted.forEach((ann, i) => {
-        if (ann.start < cursor) return;
-        html += e(text.slice(cursor, ann.start));
-        html += '<mark class="teacher-annotation teacher-annotation--' + e(ann.category || 'note') + '">' + e(text.slice(ann.start, ann.end)) + '<span class="teacher-annotation-sup">' + (i + 1) + '</span></mark>';
-        cursor = ann.end;
+      anns.forEach((a) => {
+        let relStart = Math.max(0, a.start - segStart);
+        let relEnd = Math.min(segText.length, a.end - segStart);
+        if (relEnd <= relStart || relStart < cursor) return;
+        html += e(segText.slice(cursor, relStart));
+        html += '<mark class="teacher-annotation teacher-annotation--' + e(a.category || 'note') + '">' + e(segText.slice(relStart, relEnd)) + '<span class="teacher-annotation-sup">' + a.num + '</span></mark>';
+        cursor = relEnd;
       });
-      html += e(text.slice(cursor));
+      html += e(segText.slice(cursor));
       return html;
+    }
+
+    function renderDraftWithAnnotations() {
+      const text = submission.draft_text || '';
+      const sorted = teacherAnnotations.slice().sort((a, b) => a.start - b.start).map((a, i) => ({ ...a, num: i + 1 }));
+      // In-class exam: split the draft where the time limit elapsed so work done
+      // after time is visually distinct. over_time_cutoff_index is a char index.
+      const c = submission.over_time_cutoff_index;
+      const cutoff = (typeof c === 'number' && c >= 0 && c < text.length) ? c : null;
+      if (cutoff == null) {
+        return sorted.length === 0 ? e(text) : renderAnnotatedSegment(text, 0, sorted);
+      }
+      const before = renderAnnotatedSegment(text.slice(0, cutoff), 0, sorted.filter(a => a.start < cutoff));
+      const after = renderAnnotatedSegment(text.slice(cutoff), cutoff, sorted.filter(a => a.start >= cutoff));
+      return before
+        + '<span class="over-time-divider">⏱ Time limit reached — text below was added after the limit</span>'
+        + '<span class="over-time">' + after + '</span>';
     }
 
     function renderAnnotationCards() {

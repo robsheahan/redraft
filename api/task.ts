@@ -125,7 +125,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     class_id, course, title, question, task_type, total_marks, due_date,
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
     hide_criteria_from_students, completion_only,
-    subject_type, marking_guideline, lesson_builder, attachments,
+    subject_type, marking_guideline, lesson_builder, attachments, time_limit_minutes,
   } = req.body || {};
 
   if (!class_id) return res.status(400).json({ error: 'class_id is required — tasks must belong to a class.' });
@@ -185,6 +185,8 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     marking_guideline: subjectType === 'maths' ? (marking_guideline || null) : null,
     lesson_builder: !!lesson_builder,
     teacher_attachments: Array.isArray(attachments) ? attachments.slice(0, 5) : [],
+    time_limit_minutes: (Number.isFinite(Number(time_limit_minutes)) && Number(time_limit_minutes) > 0)
+      ? Math.round(Number(time_limit_minutes)) : null,
   }).select('*').single();
 
   if (error) return res.status(500).json({ error: error.message });
@@ -200,7 +202,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
     hide_criteria_from_students,
     task_mode: incomingTaskMode, completion_only,
-    subject_type, marking_guideline, lesson_builder, attachments,
+    subject_type, marking_guideline, lesson_builder, attachments, time_limit_minutes,
   } = req.body || {};
   if (!id) return res.status(400).json({ error: 'Task id is required.' });
 
@@ -228,6 +230,8 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     marking_guideline: typeof marking_guideline === 'string' ? marking_guideline : undefined,
     lesson_builder: typeof lesson_builder === 'boolean' ? lesson_builder : undefined,
     teacher_attachments: Array.isArray(attachments) ? attachments.slice(0, 5) : undefined,
+    time_limit_minutes: time_limit_minutes === undefined ? undefined
+      : ((Number.isFinite(Number(time_limit_minutes)) && Number(time_limit_minutes) > 0) ? Math.round(Number(time_limit_minutes)) : null),
   };
   Object.keys(patch).forEach(k => patch[k] === undefined && delete patch[k]);
 

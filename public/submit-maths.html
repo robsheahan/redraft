@@ -165,6 +165,11 @@
     let sessionStartedAt = 0;
     let saveTimer = null;
     let lastSavedState = '';
+    // In-class exam timer (marked_task + time_limit_minutes). Starts on first
+    // keystroke; lineCountAtDeadline marks how many lines existed when time ran out.
+    let examStartedAt = null;
+    let lineCountAtDeadline = null;
+    let examTimerInterval = null;
 
     function showToast(msg) {
       const t = document.getElementById('toast');
@@ -279,6 +284,8 @@
         return;
       }
 
+      // In-class exam (and quick task): single submission, no live feedback.
+      const isFeedback = (t.task_mode || 'feedback_task') === 'feedback_task';
       let html = renderHeader(t);
       html += '<div class="card">';
       html += '<div class="task-question-wrap"><h4>Task</h4>';
@@ -287,8 +294,9 @@
       html += '</div>';
       html += '<div id="lbBanner"></div>';
 
-      html += '<div class="divider">Your working — ' + remaining + ' draft' + (remaining === 1 ? '' : 's') + ' remaining</div>';
+      html += '<div class="divider">' + (isFeedback ? ('Your working — ' + remaining + ' draft' + (remaining === 1 ? '' : 's') + ' remaining') : 'Your working') + '</div>';
       html += '<div class="card">';
+      if (!isFeedback && t.time_limit_minutes) html += '<div id="examTimer"></div>';
       html += '<div class="mode-picker">';
       html += '<button type="button" class="mode-btn is-selected" data-mode="structured" onclick="switchMode(\'structured\')">Structured (line + reason)</button>';
       html += '<button type="button" class="mode-btn" data-mode="freeform" onclick="switchMode(\'freeform\')">Freeform</button>';
@@ -309,7 +317,7 @@
       html += '</div>';
       html += '<div class="save-row"><span id="saveIndicator" class="save-indicator">&nbsp;</span><span id="lineCount">0 lines</span></div>';
       html += '<div class="attach-block"><div class="attach-hint" style="margin-bottom:4px">Attach a photo or PDF (optional) — e.g. a diagram or scanned working to go with your answer.</div><div id="studentAttachmentsMount"></div></div>';
-      html += '<button class="submit-btn" id="submitBtn" onclick="submitForFeedback()">Get feedback</button>';
+      html += '<button class="submit-btn" id="submitBtn" onclick="submitForFeedback()">' + (isFeedback ? 'Get feedback' : 'Submit for marking') + '</button>';
       html += '</div>';
 
       html += '<div class="loading-overlay" id="loadingOverlay">';
@@ -364,6 +372,7 @@
       if (t.class && t.class.name) parts.push(e(t.class.name));
       if (t.total_marks) parts.push(e(String(t.total_marks)) + ' marks');
       if (t.due_date) parts.push('Due ' + e(t.due_date));
+      if (t.time_limit_minutes) parts.push('Time limit: ' + e(String(t.time_limit_minutes)) + ' min');
       if (parts.length) html += '<div class="task-meta">' + parts.join(' · ') + '</div>';
       return html;
     }
@@ -398,6 +407,11 @@
         telemetry.keystroke_count += 1;
         if (telemetry.time_to_first_keystroke_ms === null) {
           telemetry.time_to_first_keystroke_ms = Math.max(0, Date.now() - (window._pageOpenedAt || Date.now()));
+        }
+        if (examStartedAt == null && examLimitMs()) {
+          examStartedAt = Date.now();
+          telemetry.exam_started_at = examStartedAt;
+          startExamTimer();
         }
         if (!sessionStartedAt || (Date.now() - lastKeyAt) > 30000) {
           telemetry.typing_session_count += 1;
@@ -534,18 +548,62 @@
       }
     }
 
+    // ---- In-class exam timer ----
+    function examLimitMs() {
+      if (!currentTask || currentTask.task_mode !== 'marked_task') return 0;
+      const m = parseInt(currentTask.time_limit_minutes, 10);
+      return (m && m > 0) ? m * 60000 : 0;
+    }
+    function startExamTimer() {
+      const limitMs = examLimitMs();
+      if (!limitMs || examTimerInterval) return;
+      const el = document.getElementById('examTimer');
+      if (!el) return;
+      function tick() {
+        if (examStartedAt == null) { el.textContent = ''; return; }
+        const remaining = examStartedAt + limitMs - Date.now();
+        if (remaining > 0) {
+          const s = Math.ceil(remaining / 1000), mm = Math.floor(s / 60), ss = s % 60;
+          el.style.cssText = 'font-size:13px;font-weight:600;color:#ed7615;background:#fef3e6;border:1px solid #f6d9bb;border-radius:8px;padding:6px 10px;margin-bottom:10px;display:inline-block';
+          el.textContent = '⏱ ' + mm + ':' + (ss < 10 ? '0' : '') + ss + ' remaining';
+        } else {
+          // Deadline passed — record how many lines existed at the cutoff.
+          if (lineCountAtDeadline == null) {
+            lineCountAtDeadline = collectLines().filter(l => l.math || l.reason).length;
+            telemetry.line_count_at_deadline = lineCountAtDeadline;
+            scheduleAutosave();
+          }
+          el.style.cssText = 'font-size:13px;font-weight:600;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:6px 10px;margin-bottom:10px;display:block';
+          el.textContent = "⏱ Time's up — any lines you add now are recorded as submitted after the time limit.";
+        }
+      }
+      tick();
+      examTimerInterval = setInterval(tick, 1000);
+    }
+    // Line index in the final working where after-time lines begin, or null.
+    function computeMathsCutoff(finalLines) {
+      if (lineCountAtDeadline == null) return null;
+      return Math.min(lineCountAtDeadline, finalLines.length);
+    }
+
     async function restoreAutosaveOrSeed() {
       try {
         const res = await authFetch('/api/draft-autosave?task_id=' + encodeURIComponent(currentTask.id));
         const data = await res.json().catch(() => ({}));
+        if (data && data.telemetry && typeof data.telemetry === 'object') {
+          if (typeof data.telemetry.exam_started_at === 'number') { examStartedAt = data.telemetry.exam_started_at; telemetry.exam_started_at = examStartedAt; }
+          if (typeof data.telemetry.line_count_at_deadline === 'number') { lineCountAtDeadline = data.telemetry.line_count_at_deadline; telemetry.line_count_at_deadline = lineCountAtDeadline; }
+        }
         const saved = data && data.telemetry && Array.isArray(data.telemetry.working_lines) ? data.telemetry.working_lines : null;
         if (saved && saved.length > 0) {
           saved.forEach(line => addLine(line));
           refreshLineCount();
+          if (examStartedAt != null && examLimitMs()) startExamTimer();
           return;
         }
       } catch {}
       addLine();
+      if (examStartedAt != null && examLimitMs()) startExamTimer();
     }
 
     async function submitForFeedback() {
@@ -604,8 +662,9 @@
       const container = document.getElementById('content');
       // Build a confirmation card replacing the form.
       let html = '<div class="card">';
+      const isFeedbackConfirm = (currentTask.task_mode || 'feedback_task') === 'feedback_task';
       html += '<h3 style="font-size:16px;font-weight:700;margin-bottom:6px">Does this look right?</h3>';
-      html += '<p style="font-size:13px;color:#6b7280;margin-bottom:14px">We\'ve split your working into ' + lines.length + ' line' + (lines.length === 1 ? '' : 's') + '. Confirm to get feedback, or go back to edit your input.</p>';
+      html += '<p style="font-size:13px;color:#6b7280;margin-bottom:14px">We\'ve split your working into ' + lines.length + ' line' + (lines.length === 1 ? '' : 's') + '. Confirm to ' + (isFeedbackConfirm ? 'get feedback' : 'submit for marking') + ', or go back to edit your input.</p>';
       lines.forEach((l, i) => {
         html += '<div class="preview-line">';
         html += '<div class="preview-label">Line ' + (i + 1) + '</div>';
@@ -619,7 +678,7 @@
       });
       html += '<div class="confirm-actions">';
       html += '<button type="button" class="back-btn" onclick="cancelConfirmation()">Go back and edit</button>';
-      html += '<button class="submit-btn" id="confirmBtn" onclick="acceptConfirmation()">Looks right — get feedback</button>';
+      html += '<button class="submit-btn" id="confirmBtn" onclick="acceptConfirmation()">' + (isFeedbackConfirm ? 'Looks right — get feedback' : 'Looks right — submit') + '</button>';
       html += '</div>';
       html += '</div>';
       // Insert above the working card.
@@ -665,7 +724,7 @@
       if (!confirmedLines) return;
       const btn = document.getElementById('confirmBtn');
       btn.disabled = true;
-      btn.textContent = 'Generating feedback…';
+      btn.textContent = (currentTask.task_mode || 'feedback_task') === 'feedback_task' ? 'Generating feedback…' : 'Submitting…';
       await postFinalFeedback(confirmedLines, currentMode);
     }
     window.acceptConfirmation = acceptConfirmation;
@@ -681,20 +740,42 @@
       if (btn) { btn.disabled = true; btn.style.display = 'none'; }
       overlay.classList.add('visible');
 
+      const isFeedback = (currentTask.task_mode || 'feedback_task') === 'feedback_task';
+      const bodyCommon = {
+        task_id: currentTask.id,
+        working_lines: lines,
+        input_mode: inputMode,
+        keystroke_count: telemetry.keystroke_count,
+        paste_attempts_blocked: telemetry.paste_attempts_blocked,
+        typing_session_count: telemetry.typing_session_count,
+        total_typing_time_ms: lastKeyAt && sessionStartedAt ? (lastKeyAt - sessionStartedAt) : 0,
+        time_to_first_keystroke_ms: telemetry.time_to_first_keystroke_ms,
+        student_attachments: studentAttachments,
+      };
+
       try {
+        // In-class exam / quick task: submit straight for marking, no feedback.
+        if (!isFeedback) {
+          const res = await authFetch('/api/submit-for-marking', {
+            method: 'POST',
+            body: JSON.stringify({ ...bodyCommon, over_time_cutoff_index: computeMathsCutoff(lines) }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || ('Could not submit (HTTP ' + res.status + ').'));
+          overlay.classList.remove('visible');
+          const container = document.getElementById('content');
+          container.innerHTML = renderHeader(currentTask) +
+            '<div id="teacherMaterials"></div>' +
+            '<div class="card"><h3 style="font-size:16px;font-weight:700;margin-bottom:8px">Submitted for marking</h3>' +
+            '<p style="color:#6b7280;font-size:14px">Your working has been sent to your teacher. You\'ll see your mark and any comments here once it\'s been marked.</p></div>';
+          renderTeacherMaterials();
+          window.scrollTo(0, 0);
+          return;
+        }
+
         const res = await authFetch('/api/generate-maths-feedback', {
           method: 'POST',
-          body: JSON.stringify({
-            task_id: currentTask.id,
-            working_lines: lines,
-            input_mode: inputMode,
-            keystroke_count: telemetry.keystroke_count,
-            paste_attempts_blocked: telemetry.paste_attempts_blocked,
-            typing_session_count: telemetry.typing_session_count,
-            total_typing_time_ms: lastKeyAt && sessionStartedAt ? (lastKeyAt - sessionStartedAt) : 0,
-            time_to_first_keystroke_ms: telemetry.time_to_first_keystroke_ms,
-            student_attachments: studentAttachments,
-          }),
+          body: JSON.stringify(bodyCommon),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {

@@ -302,6 +302,7 @@
       if (t.class && t.class.name) metaParts.push(e(t.class.name));
       if (t.total_marks) metaParts.push(e(String(t.total_marks)) + ' marks');
       if (t.due_date) metaParts.push('Due ' + e(t.due_date));
+      if (t.time_limit_minutes) metaParts.push('Time limit: ' + e(String(t.time_limit_minutes)) + ' min');
       html += '<div class="task-meta">' + metaParts.join(' · ') + '</div>';
 
       html += '<div class="card">';
@@ -534,6 +535,12 @@
     var pageLoadedAt = Date.now();
     var lastInputAt = null;
     var lastBlurAt = null;
+    // In-class exam timer (marked_task + time_limit_minutes). The clock starts on
+    // first keystroke; `textAtDeadline` is the draft snapshot at the moment the
+    // limit elapses, used at submit to mark what was written after time.
+    var examStartedAt = null;
+    var textAtDeadline = null;
+    var examTimerInterval = null;
     var lastSavedText = '';
     var autosaveTimer = null;
     var saveIndicatorTimer = null;
@@ -605,10 +612,69 @@
       autosaveTimer = setTimeout(function() { pushAutosave(currentTask.id); }, 1500);
     }
 
+    // ---- In-class exam timer ----
+    function examLimitMs() {
+      if (!currentTask || currentTask.task_mode !== 'marked_task') return 0;
+      var m = parseInt(currentTask.time_limit_minutes, 10);
+      return (m && m > 0) ? m * 60000 : 0;
+    }
+
+    function startExamTimer() {
+      var limitMs = examLimitMs();
+      if (!limitMs || examTimerInterval) return;
+      var el = document.getElementById('examTimer');
+      if (!el) return;
+      function tick() {
+        if (examStartedAt == null) { el.textContent = ''; return; }
+        var remaining = examStartedAt + limitMs - Date.now();
+        if (remaining > 0) {
+          var s = Math.ceil(remaining / 1000), mm = Math.floor(s / 60), ss = s % 60;
+          el.style.cssText = 'font-size:13px;font-weight:600;color:#ed7615;background:#fef3e6;border:1px solid #f6d9bb;border-radius:8px;padding:6px 10px;margin-bottom:10px;display:inline-block';
+          el.textContent = '⏱ ' + mm + ':' + (ss < 10 ? '0' : '') + ss + ' remaining';
+        } else {
+          // Deadline passed — snapshot the draft once (the before/after boundary).
+          if (textAtDeadline == null) {
+            var ta = document.getElementById('draftTextarea');
+            textAtDeadline = ta ? ta.value : '';
+            telemetry.text_at_deadline = textAtDeadline;
+            pushAutosave(currentTask.id);
+          }
+          el.style.cssText = 'font-size:13px;font-weight:600;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:6px 10px;margin-bottom:10px;display:block';
+          el.textContent = "⏱ Time's up — anything you add now is recorded as submitted after the time limit.";
+        }
+      }
+      tick();
+      examTimerInterval = setInterval(tick, 1000);
+    }
+
+    function commonPrefixLength(a, b) {
+      var n = Math.min(a.length, b.length), i = 0;
+      while (i < n && a[i] === b[i]) i++;
+      return i;
+    }
+    // Char index in the final draft where after-time content begins, or null if
+    // the deadline was never reached.
+    function computeOverTimeCutoff(finalText) {
+      if (textAtDeadline == null) return null;
+      // Final draft is trimmed before sending; strip the snapshot's leading
+      // whitespace so the prefix indices align to the stored draft.
+      return commonPrefixLength(textAtDeadline.replace(/^\s+/, ''), finalText);
+    }
+
     function wireDraftBehaviour() {
       var el = document.getElementById('draftTextarea');
       if (!el) return;
       var typedOnly = currentTask.typed_response_only !== false;
+
+      // In-class exam: inject the countdown above the response box.
+      if (examLimitMs()) {
+        var card = document.getElementById('draftCard');
+        if (card && !document.getElementById('examTimer')) {
+          var timerEl = document.createElement('div');
+          timerEl.id = 'examTimer';
+          card.insertBefore(timerEl, card.firstChild);
+        }
+      }
 
       // Restore autosaved draft + telemetry
       loadAutosave(currentTask.id).then(function(data) {
@@ -626,7 +692,18 @@
             if (typeof data.telemetry[k] === 'number') telemetry[k] = data.telemetry[k];
           });
           if (data.draft_text) telemetry.typing_session_count = (telemetry.typing_session_count || 0) + 1;
+          // Restore the exam clock + any captured deadline snapshot so closing
+          // and reopening the tab doesn't reset the timer.
+          if (typeof data.telemetry.exam_started_at === 'number') {
+            examStartedAt = data.telemetry.exam_started_at;
+            telemetry.exam_started_at = examStartedAt;
+          }
+          if (typeof data.telemetry.text_at_deadline === 'string') {
+            textAtDeadline = data.telemetry.text_at_deadline;
+            telemetry.text_at_deadline = textAtDeadline;
+          }
         }
+        if (examStartedAt != null && examLimitMs()) startExamTimer();
       });
 
       el.addEventListener('input', function() {
@@ -635,6 +712,12 @@
         if (telemetry.time_to_first_keystroke_ms == null) {
           telemetry.time_to_first_keystroke_ms = now - pageLoadedAt;
           telemetry.typing_session_count = Math.max(1, telemetry.typing_session_count);
+        }
+        // First keystroke starts the exam clock.
+        if (examStartedAt == null && examLimitMs()) {
+          examStartedAt = now;
+          telemetry.exam_started_at = examStartedAt;
+          startExamTimer();
         }
         telemetry.keystroke_count += 1;
         if (lastInputAt) {
@@ -717,6 +800,7 @@
             total_typing_time_ms: telemetry.total_typing_time_ms,
             time_to_first_keystroke_ms: telemetry.time_to_first_keystroke_ms,
             student_attachments: studentAttachments,
+            over_time_cutoff_index: computeOverTimeCutoff(draft),
           }),
         });
         const data = await res.json().catch(() => ({}));

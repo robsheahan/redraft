@@ -39,6 +39,12 @@
 
     /* Per-line working render */
     .line-row { padding: 14px 0; border-bottom: 1px solid #f0e6d6; }
+    .line-row.over-time { background: #fef2f2; box-shadow: inset 3px 0 0 #f87171; padding-left: 10px; }
+    .over-time-divider {
+      margin: 12px 0 6px; padding: 4px 10px;
+      font-size: 12px; font-weight: 700; color: #b91c1c;
+      background: #fef2f2; border: 1px dashed #fca5a5; border-radius: 6px;
+    }
     .line-row:last-child { border-bottom: none; }
     .line-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     .line-label { font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.4px; }
@@ -301,13 +307,21 @@
         gapsAfter[g.after_line_index].push(g);
       });
 
+      // In-class exam: lines added after the time limit are marked. The cutoff
+      // is a line index into working_lines.
+      const oc = submission.over_time_cutoff_index;
+      const cutoff = (typeof oc === 'number' && oc >= 0 && oc < lines.length) ? oc : null;
+
       let html = '';
       (gapsAfter[-1] || []).forEach(g => {
         html += '<div class="annot warn"><span class="annot-pref">' + statusSvg('warn') + ' Before first line:</span> ' + e(g.comment) + '</div>';
       });
 
       lines.forEach((line, i) => {
-        html += '<div class="line-row">';
+        if (cutoff != null && i === cutoff) {
+          html += '<div class="over-time-divider">⏱ Time limit reached — lines below were added after the limit</div>';
+        }
+        html += '<div class="line-row' + (cutoff != null && i >= cutoff ? ' over-time' : '') + '">';
         html += '<div class="line-head"><span class="line-label">Line ' + (i + 1) + '</span></div>';
         html += '<div class="line-math" data-tex="' + e(line.math || '') + '">' + (line.math ? '<span class="ml" data-tex="' + e(line.math) + '">' + e(line.math) + '</span>' : '<span style="color:#9ca3af">(empty)</span>') + '</div>';
         if (line.reason) html += '<div class="line-reason">' + e(line.reason) + '</div>';

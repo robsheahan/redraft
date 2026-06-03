@@ -558,6 +558,7 @@
       }
       if (task.total_marks) html += '<span class="stat"><strong>' + e(String(task.total_marks)) + '</strong> marks</span>';
       if (task.due_date) html += '<span class="stat">Due <strong>' + e(task.due_date) + '</strong></span>';
+      if (task.time_limit_minutes) html += '<span class="stat"><strong>' + e(String(task.time_limit_minutes)) + '</strong> min limit</span>';
       html += '<button class="btn-view-details" onclick="toggleDetails()">View details</button>';
       html += '</div>';
 
@@ -824,6 +825,12 @@
       html += '<div class="detail-row"><div class="detail-label">Due date</div>';
       html += '<input class="edit-field" id="editDue" type="date" value="' + e(task.due_date || '') + '"></div>';
 
+      // Time limit applies only to in-class exams (marked_task).
+      if (task.task_mode === 'marked_task') {
+        html += '<div class="detail-row"><div class="detail-label">Time limit (minutes)</div>';
+        html += '<input class="edit-field" id="editTimeLimit" type="number" min="1" placeholder="No limit" value="' + e(String(task.time_limit_minutes || '')) + '"></div>';
+      }
+
       html += '<div class="detail-row"><div class="detail-label">Marking criteria</div>';
       const criteriaVal = task.criteria_text || (task.criteria || []).map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n');
       html += '<textarea class="edit-field" id="editCriteria" style="min-height:120px">' + e(criteriaVal) + '</textarea></div>';
@@ -1041,6 +1048,11 @@
         hide_criteria_from_students: hideCriteriaToggleEl ? hideCriteriaToggleEl.checked : false,
         attachments: editAttachments,
       };
+      // Time limit is editable for in-class exams only; send it (null clears).
+      const editTimeLimitEl = document.getElementById('editTimeLimit');
+      if (editTimeLimitEl) {
+        updated.time_limit_minutes = parseInt(editTimeLimitEl.value, 10) || null;
+      }
 
       try {
         const res = await authFetch('/api/task', {
