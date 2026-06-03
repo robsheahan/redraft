@@ -484,6 +484,7 @@
   <script src="/js/app.js"></script>
   <script src="/js/rubric.js"></script>
   <script src="/js/task-meta.js"></script>
+  <script src="/js/attachments.js"></script>
   <script>
     const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     let currentTask = null;
@@ -543,6 +544,7 @@
       }
       html += '</div></div>';
       if (task.question) html += '<div class="task-question">' + renderTaskDescription(task.question, e) + '</div>';
+      html += '<div id="taskMaterials"></div>';
       // Mark-progress counts: a student counts as "marked" if any of their drafts is graded.
       const markedStudents = students.filter(s => s.drafts.some(d => d.graded_at));
       const unmarkedStudents = students.length - markedStudents.length;
@@ -657,6 +659,15 @@
       html += '</div>';
 
       container.innerHTML = html;
+
+      // Teacher's attached materials (read-only here; edited via the edit panel).
+      if (window.Attachments) {
+        Attachments.renderAttachmentList(document.getElementById('taskMaterials'), {
+          attachments: task.teacher_attachments || [],
+          taskId: task.id,
+          heading: 'Attached materials',
+        });
+      }
 
       // Re-render previously saved class feedback so it survives a refresh.
       if (hasSavedClassFeedback) {
@@ -820,6 +831,9 @@
       html += '<div class="detail-row"><div class="detail-label">Notes for feedback engine</div>';
       html += '<textarea class="edit-field" id="editNotes">' + e(task.notes || '') + '</textarea></div>';
 
+      html += '<div class="detail-row"><div class="detail-label">Attached materials</div>';
+      html += '<div id="editAttachments"></div></div>';
+
       var typedOn = task.typed_response_only !== false;
       html += '<div class="detail-row">';
       html += '<div class="toggle-card' + (typedOn ? '' : ' is-off') + '" id="editTypedOnlyCard">';
@@ -861,6 +875,7 @@
       el.classList.add('selected');
     }
 
+    let editAttachments = [];
     function enterEditMode() {
       const panel = document.getElementById('detailsPanel');
       panel.innerHTML = renderEditView(currentTask);
@@ -870,6 +885,15 @@
         typedToggle.addEventListener('change', () => {
           typedCard.classList.toggle('is-off', !typedToggle.checked);
         });
+      }
+      editAttachments = (currentTask.teacher_attachments || []).slice();
+      const attachMount = document.getElementById('editAttachments');
+      if (attachMount && window.Attachments) {
+        attachMount.appendChild(Attachments.createAttachmentUploader({
+          scope: 'task',
+          initial: editAttachments,
+          onChange: (arr) => { editAttachments = arr; },
+        }));
       }
     }
 
@@ -1015,6 +1039,7 @@
         criteria: [],
         typed_response_only: typedToggleEl ? typedToggleEl.checked : true,
         hide_criteria_from_students: hideCriteriaToggleEl ? hideCriteriaToggleEl.checked : false,
+        attachments: editAttachments,
       };
 
       try {
@@ -1027,6 +1052,12 @@
 
         // Update local state
         Object.assign(currentTask, updated);
+        currentTask.teacher_attachments = editAttachments;
+        if (window.Attachments) {
+          Attachments.renderAttachmentList(document.getElementById('taskMaterials'), {
+            attachments: editAttachments, taskId: currentTask.id, heading: 'Attached materials',
+          });
+        }
 
         // Update header display
         const headerEl = document.getElementById('taskHeader');

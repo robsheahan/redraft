@@ -500,6 +500,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/app.js"></script>
   <script src="/js/rubric.js"></script>
+  <script src="/js/attachments.js"></script>
   <script>
     const feedbackData = sessionStorage.getItem('proofready_feedback');
     // Redirect to feedback-maths.html if we landed on the wrong page:
@@ -648,6 +649,7 @@
         var questionDisplay = meta.question.replace(/^\*\s/gm, '• ').replace(/\n\*\s/g, '\n• ');
         html += '<div class="task-question">' + e(questionDisplay) + '</div>';
       }
+      html += '<div id="myAttachments"></div>';
       html += '</div>';
 
       // Draft navigator — shown if there are multiple drafts
@@ -864,6 +866,14 @@
       html += '<div class="footer">' + footerText + '</div>';
 
       container.innerHTML = html;
+
+      if (window.Attachments && currentDraft && Array.isArray(currentDraft.student_attachments) && currentDraft.student_attachments.length) {
+        Attachments.renderAttachmentList(document.getElementById('myAttachments'), {
+          attachments: currentDraft.student_attachments,
+          submissionId: currentDraft.id,
+          heading: 'Your attachments',
+        });
+      }
     }
 
     function renderTeacherMarkHtml(grade, task, anns, draftText) {

@@ -23,6 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     typing_session_count,
     total_typing_time_ms,
     time_to_first_keystroke_ms,
+    student_attachments,
   } = (req.body || {}) as Record<string, unknown>;
 
   if (!task_id) return res.status(400).json({ error: 'task_id is required.' });
@@ -118,6 +119,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     typing_session_count: typeof typing_session_count === 'number' ? typing_session_count : null,
     total_typing_time_ms: typeof total_typing_time_ms === 'number' ? total_typing_time_ms : null,
     time_to_first_keystroke_ms: typeof time_to_first_keystroke_ms === 'number' ? time_to_first_keystroke_ms : null,
+    student_attachments: Array.isArray(student_attachments) ? student_attachments.slice(0, 5) : [],
   });
   if (insertErr) {
     captureError(insertErr, { stage: 'submit-for-marking-insert', task_id, user_id: user.id });

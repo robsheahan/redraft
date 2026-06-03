@@ -236,6 +236,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/app.js"></script>
   <script src="/js/rubric.js"></script>
+  <script src="/js/attachments.js"></script>
   <script>
     const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     let submission = null;
@@ -360,6 +361,9 @@
       html += '<h3>Student draft</h3>';
       html += '<div class="draft-text" id="draftText">' + renderDraftWithAnnotations() + '</div>';
       html += '</div>';
+      if (Array.isArray(submission.student_attachments) && submission.student_attachments.length) {
+        html += '<div class="card"><div id="studentAttachments"></div></div>';
+      }
       html += '</div>';
 
       // Right: completion-only OR rubric + comment + annotations
@@ -430,6 +434,14 @@
       html += '</div>'; // layout
 
       container.innerHTML = html;
+
+      if (window.Attachments) {
+        Attachments.renderAttachmentList(document.getElementById('studentAttachments'), {
+          attachments: submission.student_attachments || [],
+          submissionId: submission.id,
+          heading: 'Student attachments',
+        });
+      }
 
       // Hydrate inputs
       document.getElementById('teacherComment').value = submission.teacher_comment || '';

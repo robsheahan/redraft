@@ -148,11 +148,13 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/app.js"></script>
+  <script src="/js/attachments.js"></script>
   <script>
     const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     const MAX_DRAFTS = 3;
     let currentTask = null;
     let priorDrafts = [];
+    let studentAttachments = [];
     let currentActivity = null; // Lesson Builder: this student's differentiated support, if any
     let lineCounter = 0;
     let currentMode = 'structured'; // 'structured' | 'freeform' | 'talkthrough'
@@ -252,15 +254,19 @@
       const submittedFinal = priorDrafts.find(d => d.submitted_for_marking);
       if (gradedDraft) {
         container.innerHTML = renderHeader(t) +
+          '<div id="teacherMaterials"></div>' +
           '<div class="card"><h3 style="font-size:16px;font-weight:700;margin-bottom:8px">Marked by your teacher</h3>' +
           '<p style="color:#6b7280;font-size:14px">Open your feedback to see the per-line marks and comments.</p>' +
           '<button class="submit-btn" style="margin-top:14px" onclick="viewLatest()">View feedback</button></div>';
+        renderTeacherMaterials();
         return;
       }
       if (submittedFinal) {
         container.innerHTML = renderHeader(t) +
+          '<div id="teacherMaterials"></div>' +
           '<div class="card"><h3 style="font-size:16px;font-weight:700;margin-bottom:8px">Submitted for marking</h3>' +
           '<p style="color:#6b7280;font-size:14px">Your teacher will mark this and you\'ll see the result here.</p></div>';
+        renderTeacherMaterials();
         return;
       }
 
@@ -277,6 +283,7 @@
       html += '<div class="card">';
       html += '<div class="task-question-wrap"><h4>Task</h4>';
       html += '<div class="task-question" id="taskQuestion">' + e((currentActivity && currentActivity.question) ? currentActivity.question : (t.question || '')) + '</div></div>';
+      if (Array.isArray(t.teacher_attachments) && t.teacher_attachments.length) html += '<div id="teacherMaterials"></div>';
       html += '</div>';
       html += '<div id="lbBanner"></div>';
 
@@ -301,6 +308,7 @@
       html += '<textarea id="talkthroughInput" class="talkthrough-textarea" placeholder="e.g. I want to find the stationary points of $f(x) = 2x^3 - 3x^2 - 12x + 5$. Differentiating gives $f\'(x) = 6x^2 - 6x - 12$. Setting that to zero..."></textarea>';
       html += '</div>';
       html += '<div class="save-row"><span id="saveIndicator" class="save-indicator">&nbsp;</span><span id="lineCount">0 lines</span></div>';
+      html += '<div class="attach-block"><div class="attach-hint" style="margin-bottom:4px">Attach a photo or PDF (optional) — e.g. a diagram or scanned working to go with your answer.</div><div id="studentAttachmentsMount"></div></div>';
       html += '<button class="submit-btn" id="submitBtn" onclick="submitForFeedback()">Get feedback</button>';
       html += '</div>';
 
@@ -327,6 +335,26 @@
 
       // Seed initial state: restore autosaved working OR start with one empty line.
       restoreAutosaveOrSeed();
+
+      renderTeacherMaterials();
+      const attachMount = document.getElementById('studentAttachmentsMount');
+      if (attachMount && window.Attachments) {
+        attachMount.appendChild(Attachments.createAttachmentUploader({
+          scope: 'submission',
+          initial: studentAttachments,
+          onChange: (arr) => { studentAttachments = arr; },
+        }));
+      }
+    }
+
+    // Teacher's accompanying materials, shown to the student on the task.
+    function renderTeacherMaterials() {
+      if (!window.Attachments || !currentTask) return;
+      Attachments.renderAttachmentList(document.getElementById('teacherMaterials'), {
+        attachments: currentTask.teacher_attachments || [],
+        taskId: currentTask.id,
+        heading: 'Materials from your teacher',
+      });
     }
 
     function renderHeader(t) {
@@ -665,6 +693,7 @@
             typing_session_count: telemetry.typing_session_count,
             total_typing_time_ms: lastKeyAt && sessionStartedAt ? (lastKeyAt - sessionStartedAt) : 0,
             time_to_first_keystroke_ms: telemetry.time_to_first_keystroke_ms,
+            student_attachments: studentAttachments,
           }),
         });
         const data = await res.json().catch(() => ({}));

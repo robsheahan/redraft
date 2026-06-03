@@ -188,11 +188,13 @@
   <script src="/js/app.js"></script>
   <script src="/js/rubric.js"></script>
   <script src="/js/task-meta.js"></script>
+  <script src="/js/attachments.js"></script>
   <script>
     const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     const MAX_DRAFTS = 3;
     let currentTask = null;
     let priorDrafts = [];
+    let studentAttachments = [];
     let currentActivity = null; // Lesson Builder: this student's differentiated support, if any
 
     (async () => {
@@ -313,6 +315,9 @@
           : '<pre style="white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.55">' + e(criteriaText) + '</pre>';
         html += '<div class="criteria-display"><h4>Marking criteria</h4>' + rubricHtml + '</div>';
       }
+      if (Array.isArray(t.teacher_attachments) && t.teacher_attachments.length) {
+        html += '<div id="teacherMaterials"></div>';
+      }
       html += '</div>';
 
       // Quick / marked tasks use "response" terminology — students aren't
@@ -333,6 +338,7 @@
         html += '<button type="button" class="submit-btn" style="max-width:280px;margin:0 auto;display:block;background:#10b981" onclick="viewLatestFeedback()">View teacher feedback</button>';
         html += '</div>';
         document.getElementById('content').innerHTML = html;
+        renderTeacherMaterials();
         return;
       }
       if (submittedFinal) {
@@ -341,6 +347,7 @@
         html += '<p>Your teacher has been notified. You will see your mark and feedback here once they have marked it.</p>';
         html += '</div>';
         document.getElementById('content').innerHTML = html;
+        renderTeacherMaterials();
         return;
       }
 
@@ -422,6 +429,7 @@
           html += '<div class="word-count" id="wordCount">0 words</div>';
           html += '<div class="save-indicator" id="saveIndicator"></div>';
           html += '</div>';
+          html += '<div class="attach-block"><div class="attach-hint" style="margin-bottom:4px">Attach a photo or PDF (optional) — e.g. a diagram or scanned page to go with your response.</div><div id="studentAttachmentsMount"></div></div>';
           html += '<div class="submit-row">';
           if (isFeedbackTask) {
             html += '<button class="submit-btn" onclick="submit()">Get feedback</button>';
@@ -440,7 +448,26 @@
       }
 
       document.getElementById('content').innerHTML = html;
+      renderTeacherMaterials();
+      const attachMount = document.getElementById('studentAttachmentsMount');
+      if (attachMount && window.Attachments) {
+        attachMount.appendChild(Attachments.createAttachmentUploader({
+          scope: 'submission',
+          initial: studentAttachments,
+          onChange: (arr) => { studentAttachments = arr; },
+        }));
+      }
       if (used < MAX_DRAFTS) wireDraftBehaviour();
+    }
+
+    // Teacher's accompanying materials, shown to the student on the task.
+    function renderTeacherMaterials() {
+      if (!window.Attachments || !currentTask) return;
+      Attachments.renderAttachmentList(document.getElementById('teacherMaterials'), {
+        attachments: currentTask.teacher_attachments || [],
+        taskId: currentTask.id,
+        heading: 'Materials from your teacher',
+      });
     }
 
     function viewLatestFeedback() {
@@ -689,6 +716,7 @@
             typing_session_count: telemetry.typing_session_count,
             total_typing_time_ms: telemetry.total_typing_time_ms,
             time_to_first_keystroke_ms: telemetry.time_to_first_keystroke_ms,
+            student_attachments: studentAttachments,
           }),
         });
         const data = await res.json().catch(() => ({}));
@@ -814,6 +842,7 @@
             typing_session_count: telemetry.typing_session_count,
             total_typing_time_ms: telemetry.total_typing_time_ms,
             time_to_first_keystroke_ms: telemetry.time_to_first_keystroke_ms,
+            student_attachments: studentAttachments,
           }),
         });
         const text = await res.text();

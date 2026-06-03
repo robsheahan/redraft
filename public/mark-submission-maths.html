@@ -115,6 +115,7 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/js/app.js"></script>
+  <script src="/js/attachments.js"></script>
   <script>
     const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     let task = null;
@@ -226,6 +227,9 @@
       html += '<h3>Student working</h3>';
       html += '<div id="workingBlock">' + renderWorking() + '</div>';
       html += '</div>';
+      if (Array.isArray(submission.student_attachments) && submission.student_attachments.length) {
+        html += '<div class="card"><div id="studentAttachments"></div></div>';
+      }
       html += '</div>';
 
       // RIGHT — guideline + mark + comment
@@ -257,6 +261,14 @@
 
       html += '</div>';
       container.innerHTML = html;
+
+      if (window.Attachments) {
+        Attachments.renderAttachmentList(document.getElementById('studentAttachments'), {
+          attachments: submission.student_attachments || [],
+          submissionId: submission.id,
+          heading: 'Student attachments',
+        });
+      }
 
       whenKatexReady(() => {
         renderMathInElement(document.getElementById('taskQuestion'), {

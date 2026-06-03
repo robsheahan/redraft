@@ -99,7 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const user = await verifyAuth(req);
   const { question, course, criteria, criteria_text, outcomes, draft, notes, task_id, task_title, task_type,
-    own_task_id, own_task_title, own_task_class_id,
+    own_task_id, own_task_title, own_task_class_id, student_attachments,
     keystroke_count, paste_attempts_blocked, typing_session_count, total_typing_time_ms, time_to_first_keystroke_ms } = req.body;
 
   if (!draft) return res.status(400).json({ error: 'A draft is required.' });
@@ -479,6 +479,7 @@ Assess this draft against each marking criterion above. Address every criterion 
         typing_session_count: typeof typing_session_count === 'number' ? typing_session_count : null,
         total_typing_time_ms: typeof total_typing_time_ms === 'number' ? total_typing_time_ms : null,
         time_to_first_keystroke_ms: typeof time_to_first_keystroke_ms === 'number' ? time_to_first_keystroke_ms : null,
+        student_attachments: Array.isArray(student_attachments) ? student_attachments.slice(0, 5) : [],
       });
 
       // Post-submission side effects. These must never affect the feedback the
