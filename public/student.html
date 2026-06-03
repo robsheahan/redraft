@@ -859,6 +859,10 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           if (t.due_date) metaParts.push('Due ' + escapeHtml(t.due_date));
           const hasSubmission = (t.my_submission_count || 0) > 0;
           const isQuickTask = t.task_mode === 'quick_task';
+          // No-feedback modes: quick tasks AND in-class exams (marked_task) are
+          // single-submission with no student feedback — no draft dots / "View
+          // feedback" button (just the status pill + row navigation).
+          const noFeedback = isQuickTask || t.task_mode === 'marked_task';
           let statusPill = '';
           if (t.my_graded_at) {
             if (t.my_total_mark == null) {
@@ -881,7 +885,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           // Draft dots + feedback button only make sense for assessment
           // tasks (multi-draft, feedback shown). Quick tasks: just the
           // status pill + the row-click navigation.
-          if (!isQuickTask) {
+          if (!noFeedback) {
             html += renderDraftProgress(t.my_submission_count || 0);
             if (hasSubmission) {
               html += '<button type="button" class="btn-view-feedback" onclick="openFeedback(event, \'' + encodeURIComponent(t.id) + '\')">' + (t.my_graded_at ? 'View mark' : 'View feedback') + '</button>';
