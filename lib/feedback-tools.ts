@@ -10,7 +10,7 @@
  */
 
 import type Anthropic from '@anthropic-ai/sdk';
-import { buildSkillAssessmentSchema } from '../data/skill-taxonomy.js';
+import { buildSkillAssessmentSchema, type SkillFamily } from '../data/skill-taxonomy.js';
 
 type Tool = Anthropic.Messages.Tool;
 
@@ -817,10 +817,11 @@ export const STUDENT_SUMMARY_TOOL: Tool = {
  * subset of HOLISTIC_FEEDBACK_TOOL so the existing consumers
  * (insights-card-generate, lib/student-profile) work without changes.
  */
-export const INSIGHTS_SIGNALS_TOOL: Tool = {
+export function buildInsightsSignalsTool(family: SkillFamily): Tool {
+  return {
   name: 'provide_insights_signals',
   description:
-    'Extract structured signals from a student draft for school-level analytics. Never shown to the student — these feed cohort LLM cards and the student profile only.',
+    'Extract structured signals from a student submission for school-level analytics. Never shown to the student — these feed cohort LLM cards and the student profile only.',
   input_schema: {
     type: 'object',
     properties: {
@@ -867,11 +868,16 @@ export const INSIGHTS_SIGNALS_TOOL: Tool = {
       },
       // Feeds the ProofReady skill database — quick/marked tasks are the bulk of
       // submissions, so this is where most signal accrues. Never shown to students.
-      skill_assessment: buildSkillAssessmentSchema('writing'),
+      // Family-aware: writing (W1–W7) for essays, maths (M1–M6) for maths working.
+      skill_assessment: buildSkillAssessmentSchema(family),
     },
     required: ['what_youve_done_well', 'task_verb_check', 'improvements', 'top_priority', 'skill_assessment'],
   },
-};
+  };
+}
+
+// Back-compat default (writing). Prefer buildInsightsSignalsTool(family).
+export const INSIGHTS_SIGNALS_TOOL: Tool = buildInsightsSignalsTool('writing');
 
 export const CLASS_PROFILE_SUMMARY_TOOL: Tool = {
   name: 'synthesise_class_profile_summary',

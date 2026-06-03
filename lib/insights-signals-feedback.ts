@@ -12,8 +12,9 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { callTool } from './anthropic-tool-call.js';
-import { INSIGHTS_SIGNALS_TOOL } from './feedback-tools.js';
+import { buildInsightsSignalsTool } from './feedback-tools.js';
 import { buildInsightsSignalsPrompt } from '../prompts/insights-signals-system.js';
+import type { SkillFamily } from '../data/skill-taxonomy.js';
 
 const MODEL = 'claude-haiku-4-5-20251001';
 
@@ -29,12 +30,16 @@ export async function generateInsightsSignals(opts: {
   course: string | null;
   question: string;
   draft: string;
+  // Which skill family to assess against. Maths working → M1–M6; everything
+  // else → writing W1–W7. Defaults to writing for back-compat.
+  family?: SkillFamily;
 }): Promise<InsightsSignals> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set');
   const client = new Anthropic({ apiKey });
 
-  const { system, user } = buildInsightsSignalsPrompt(opts);
+  const family: SkillFamily = opts.family === 'maths' ? 'maths' : 'writing';
+  const { system, user } = buildInsightsSignalsPrompt({ ...opts, family });
   const result = await callTool<InsightsSignals>({
     client,
     model: MODEL,
@@ -42,7 +47,7 @@ export async function generateInsightsSignals(opts: {
     temperature: 0.2,
     system,
     user,
-    tool: INSIGHTS_SIGNALS_TOOL,
+    tool: buildInsightsSignalsTool(family),
   });
   return result.value;
 }

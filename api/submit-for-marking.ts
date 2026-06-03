@@ -5,6 +5,7 @@ import { captureError } from './../lib/sentry.js';
 import { generateInsightsSignals } from '../lib/insights-signals-feedback.js';
 import { recordSkillSignals } from '../lib/skill-profile.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
+import { familyForSubjectType } from '../data/skill-taxonomy.js';
 
 const MAX_DRAFT_CHARS = 50_000;
 
@@ -79,7 +80,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Read task context for the submission row
   const { data: task } = await supabase
-    .from('tasks').select('id, question, course, class_id, task_mode').eq('id', task_id as string).maybeSingle();
+    .from('tasks').select('id, question, course, class_id, task_mode, subject_type').eq('id', task_id as string).maybeSingle();
   if (!task) return res.status(404).json({ error: 'Task not found.' });
 
   // Confirm the student is a member of the class
@@ -102,6 +103,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let insightsFeedback: any = null;
   let skillAssessment: any[] | null = null;
   const taskMode = (task as any).task_mode as string | undefined;
+  // Skill family follows the task's subject so a maths submission is scored on
+  // the maths dimensions (M1–M6), not writing.
+  const family = familyForSubjectType((task as any).subject_type);
   const wantsSilentInsights = taskMode === 'marked_task' || taskMode === 'quick_task';
   if (wantsSilentInsights) {
     try {
@@ -109,6 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         course: (task as any).course || null,
         question: (task as any).question || '',
         draft: draftText,
+        family,
       });
       // Pull the skill read out — it's captured for the skill database, kept
       // out of the feedback blob.
@@ -170,7 +175,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         supabase,
         studentId: user.id,
         discipline: (task.course ? getDisciplineForCourse(task.course) : null) || 'General',
-        family: 'writing',
+        family,
         assessment: skillAssessment,
       }).catch(err => captureError(err, { stage: 'skill-rollup-submit', user_id: user.id, task_id }))
     );
