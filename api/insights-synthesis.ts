@@ -62,6 +62,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     callerRole = ctx.role;
   }
 
+  // schoolId is set in both branches above (each returns early on a miss);
+  // this guard narrows the type from `string | null` to `string` for the rest
+  // of the handler so the scope-stats helpers type-check.
+  if (!schoolId) return res.status(404).json({ error: 'Not found' });
+
   // -------- GET: return cached --------
   if (req.method === 'GET') {
     // Cheap probe: skip the stats roll-up. Used by other pages (teacher
