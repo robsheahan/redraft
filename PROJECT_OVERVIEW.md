@@ -339,7 +339,7 @@ Insights: `insights.html` (single page — handles cohort + student modes, all t
 Admin: `admin.html`
 LTI: `lti-not-ready.html` (shown when an LTI launch lands before provisioning is done), `lti-deep-link.html` (deep-linking picker)
 UI note: all checkboxes use a centered background-SVG checkmark; emoji glyphs replaced with lucide-style stroke SVGs site-wide.
-Marketing: `deck.html` (rewritten from `/deck`; source HTML in `pitch/pitch-deck.html`), `handout.html` (rewritten from `/handout`; served copy of `pitch/handout.html`)
+Marketing: `deck.html` (rewritten from `/deck`; source HTML in `pitch/pitch-deck.html`), `handout.pdf` (rewritten from `/handout`; the pitch handout PDF — replace this file to update it)
 Admin resources: `admin.html` renders an admin-only **Resources** footer (only appears after the admin-stats gate passes) linking the narrative walkthrough (public `resources` Storage bucket → `…/storage/v1/object/public/resources/walkthrough.mp4`), the slide deck (`/deck`) and the handout (`/handout`). Re-uploading the video under the same name updates it with no code change.
 Policy: `compliance.html`, `privacy.html`, `terms.html`, `contact.html`
 Account: `profile.html`

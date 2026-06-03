@@ -7,6 +7,6 @@
   "rewrites": [
     { "source": "/lti/:path*", "destination": "/api/lti/:path*" },
     { "source": "/deck", "destination": "/deck.html" },
-    { "source": "/handout", "destination": "/handout.html" }
+    { "source": "/handout", "destination": "/handout.pdf" }
   ]
 }
