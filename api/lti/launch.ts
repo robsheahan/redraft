@@ -63,12 +63,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const roles = (payload[CLAIM_ROLES] as string[]) || [];
     const role = roleFromLtiRoles(roles);
     const sub = payload.sub as string;
-    const email = (payload.email as string) || ((payload[CLAIM_CUSTOM] as Record<string, string> | undefined)?.canvas_user_email);
+    const rawEmail = (payload.email as string) || ((payload[CLAIM_CUSTOM] as Record<string, string> | undefined)?.canvas_user_email);
+    const email = rawEmail?.trim().toLowerCase();
     const name = (payload.name as string) || (payload.given_name as string) || email || `Canvas user ${sub}`;
 
     if (!email) {
       return res.status(400).send(
         'Launch is missing the user email. Ask the Canvas admin to set the developer key privacy level to "public", or add Person.email.primary to the custom params.',
+      );
+    }
+
+    // Canvas can send a value in the email claim that isn't a deliverable address
+    // (an SIS login id, an internal-only domain with no TLD, etc.). It passes the
+    // presence check above but Supabase's createUser rejects it with "Unable to
+    // validate email address: invalid format" — turning what should be a handled
+    // config issue into a 500. Catch it here and return the same clean 400.
+    if (!isValidEmail(email)) {
+      return res.status(400).send(
+        `Canvas sent "${rawEmail}" as this user's email, which isn't a valid address, so ProofReady can't create their account. Ask the Canvas admin to correct this user's email in Canvas.`,
       );
     }
 
@@ -163,6 +175,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     captureError(err, { endpoint: 'lti/launch' });
     res.status(500).send('LTI launch error');
   }
+}
+
+// Mirrors the cases Supabase/GoTrue rejects: requires a single @, no whitespace,
+// and a dotted domain (so an internal-only "user@school" or "sis-login-id" fails
+// here rather than blowing up in createUser).
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 async function persistDeepLinkContext(opts: {
