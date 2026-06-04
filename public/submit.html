@@ -421,7 +421,7 @@
               ? "Write your draft below. Your work autosaves every few seconds — you can close the tab and come back."
               : "Enter your draft below exactly as you've written it.";
           } else {
-            subtitle = "Write your revised draft below. ProofReady will compare it to your previous draft and acknowledge what's improved.";
+            subtitle = "Your previous draft is loaded below — revise it in response to your feedback rather than starting over. ProofReady will compare it to your previous draft and acknowledge what's improved.";
           }
           html += '<p>' + e(subtitle) + '</p>';
           const placeholder = 'Start writing your response here...';
@@ -666,6 +666,24 @@
       var el = document.getElementById('draftTextarea');
       if (!el) return;
       var typedOnly = currentTask.typed_response_only !== false;
+
+      // Draft 2+ on a feedback task: seed the editor with the student's most
+      // recent submitted draft so they revise in place instead of retyping from
+      // scratch. This is their OWN paste-blocked work being restored — the
+      // typed-only integrity chain holds (draft 1 was typed under paste-block;
+      // draft 2 = that work + further typed edits). Setting .value directly does
+      // not fire `input`, so draft 2's keystroke telemetry measures the revision
+      // effort, not the carried-over base. An in-progress autosave (loadAutosave
+      // below) overrides this base if the student already started revising.
+      if ((currentTask.task_mode || 'feedback_task') === 'feedback_task' && priorDrafts.length > 0) {
+        var prevDraft = priorDrafts[priorDrafts.length - 1];
+        var prefillBase = (prevDraft && prevDraft.draft_text) ? prevDraft.draft_text : '';
+        if (prefillBase) {
+          el.value = prefillBase;
+          lastSavedText = prefillBase;
+          updateWordCount();
+        }
+      }
 
       // In-class exam: inject the countdown above the response box.
       if (examLimitMs()) {

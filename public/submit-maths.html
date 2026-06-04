@@ -304,7 +304,9 @@
       html += '<button type="button" class="mode-btn" data-mode="talkthrough" onclick="switchMode(\'talkthrough\')">Talk-through</button>';
       html += '</div>';
       html += '<div id="modeStructured" class="mode-pane">';
-      html += '<div class="inline-hint">One step per line. Maths in the top field, a short reason underneath — that\'s what earns method marks.</div>';
+      html += '<div class="inline-hint">' + (used > 0
+        ? 'Your previous working is loaded below — revise it in response to your feedback rather than re-entering every line. One step per line; a short reason underneath earns method marks.'
+        : 'One step per line. Maths in the top field, a short reason underneath — that\'s what earns method marks.') + '</div>';
       html += '<div id="linesContainer"></div>';
       html += '<button type="button" class="add-line-btn" onclick="addLine()">+ Add line</button>';
       html += '</div>';
@@ -614,6 +616,23 @@
           return;
         }
       } catch {}
+      // Draft 2+ on a feedback task: seed with the student's most recent
+      // submitted working so they revise in place instead of re-entering every
+      // line. Same typed-only integrity rationale as essays — their own prior
+      // paste-blocked work, restored. addLine() sets the field values
+      // programmatically (no `input` fired), so draft 2's keystroke telemetry
+      // measures the revision effort, not the carried-over base. The autosave
+      // check above takes precedence, so an in-progress draft 2 still wins.
+      if ((currentTask.task_mode || 'feedback_task') === 'feedback_task' && priorDrafts.length > 0) {
+        const prevDraft = priorDrafts[priorDrafts.length - 1];
+        const prevLines = prevDraft && Array.isArray(prevDraft.working_lines) ? prevDraft.working_lines : null;
+        if (prevLines && prevLines.length > 0) {
+          prevLines.forEach(line => addLine(line));
+          refreshLineCount();
+          if (examStartedAt != null && examLimitMs()) startExamTimer();
+          return;
+        }
+      }
       addLine();
       if (examStartedAt != null && examLimitMs()) startExamTimer();
     }
