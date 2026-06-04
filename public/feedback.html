@@ -620,7 +620,33 @@
       // switched away from the default.
       if (teacherGrade && activeView === 'feedback' && !window._userPickedView) activeView = 'teacher';
 
+      // The model very occasionally returns a field that should be a structured
+      // object (or a plain string) as a *JSON-encoded string* — usually on
+      // degenerate inputs (e.g. a "test" question with a nonsense draft). Decode
+      // it so students never see raw JSON braces. Only acts on strings that look
+      // like JSON, so ordinary prose feedback is left untouched. Handles the
+      // well-formed case via JSON.parse and the malformed case (stray brackets)
+      // via a tolerant "key": "value" extraction; returns null when nothing
+      // human-readable can be recovered so the caller hides the section.
+      const decodeJsonish = (val) => {
+        if (typeof val !== 'string') return val;
+        const t = val.trim();
+        if (t[0] !== '{' && t[0] !== '[') return val;
+        try { return JSON.parse(t); } catch (_) {}
+        const out = {};
+        const re = /"(\w+)"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
+        let m, found = false;
+        while ((m = re.exec(t))) {
+          out[m[1]] = m[2].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+          found = true;
+        }
+        return found ? out : null;
+      };
+
       const getObj = (val) => {
+        const decoded = decodeJsonish(val);
+        if (decoded === null) return { summary: null, detail: null };
+        val = decoded;
         if (val && typeof val === 'object' && !Array.isArray(val)) return val;
         if (Array.isArray(val)) return { summary: val, detail: val };
         if (typeof val === 'string') return { summary: val, detail: val };
@@ -834,10 +860,19 @@
         html += '</ul></div>';
       }
 
-      // Self-check
-      if (fb.self_check) {
+      // Self-check. The model sometimes wraps this in an extra object echoing
+      // the field name (e.g. {"self_check": "..."}); decode + unwrap so the
+      // student sees the question, not raw JSON.
+      let selfCheckText = fb.self_check;
+      const scDecoded = decodeJsonish(selfCheckText);
+      if (scDecoded && typeof scDecoded === 'object') {
+        selfCheckText = scDecoded.self_check || scDecoded.summary || scDecoded.detail || '';
+      } else if (typeof scDecoded === 'string') {
+        selfCheckText = scDecoded;
+      }
+      if (selfCheckText && typeof selfCheckText === 'string') {
         html += '<div class="section self-check"><div class="section-title">Self-check before submitting</div>';
-        html += '<p class="section-text">' + e(fb.self_check) + '</p></div>';
+        html += '<p class="section-text">' + e(selfCheckText) + '</p></div>';
       }
 
       html += '</div>'; // close #view-feedback
