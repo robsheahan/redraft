@@ -89,6 +89,24 @@
       .hero-buttons a { text-align: center; }
     }
 
+    .demo {
+      max-width: 860px; margin: 0 auto; padding: 0 24px 90px; text-align: center;
+    }
+    .demo h2 {
+      font-size: 15px; font-weight: 700; letter-spacing: 0.5px;
+      text-transform: uppercase; color: #ed7615; margin-bottom: 12px;
+    }
+    .demo-sub {
+      font-size: 15px; color: #6b7280; max-width: 540px;
+      margin: 0 auto 36px; line-height: 1.6;
+    }
+    .demo-frame {
+      border-radius: 16px; overflow: hidden; background: #000;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 10px 34px rgba(0,0,0,0.12);
+    }
+    .demo-frame video { display: block; width: 100%; height: auto; }
+
     .how-it-works {
       max-width: 720px; margin: 0 auto; padding: 0 24px 80px;
     }
@@ -178,6 +196,18 @@
     <div class="hero-buttons">
       <a href="/auth.html" class="btn-blue" id="ctaPrimary">Get started</a>
       <a href="/auth.html" class="btn-ghost" id="ctaSecondary">Log in</a>
+    </div>
+  </div>
+
+  <div class="demo">
+    <h2>See it in action</h2>
+    <p class="demo-sub">A short walkthrough — from a student's draft to feedback, insight, and the next lesson.</p>
+    <div class="demo-frame">
+      <video controls preload="metadata" playsinline
+        src="https://jcxcbqsxshlwwvxlyyfd.supabase.co/storage/v1/object/public/resources/walkthrough.mp4">
+        Your browser doesn't support embedded video.
+        <a href="https://jcxcbqsxshlwwvxlyyfd.supabase.co/storage/v1/object/public/resources/walkthrough.mp4">Watch the walkthrough</a>.
+      </video>
     </div>
   </div>
 
