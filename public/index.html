@@ -107,6 +107,36 @@
     }
     .demo-frame video { display: block; width: 100%; height: auto; }
 
+    .faq {
+      max-width: 720px; margin: 0 auto; padding: 0 24px 90px;
+    }
+    .faq h2 {
+      font-size: 15px; font-weight: 700; letter-spacing: 0.5px;
+      text-transform: uppercase; color: #ed7615; text-align: center;
+      margin-bottom: 36px;
+    }
+    .faq-item {
+      background: #fff; border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 12px; margin-bottom: 12px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .faq-item summary {
+      list-style: none; cursor: pointer; padding: 18px 22px;
+      font-size: 16px; font-weight: 700; color: #1f2937;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary:hover { color: #ed7615; }
+    .faq-item summary::after {
+      content: '+'; color: #ed7615; font-size: 22px; font-weight: 600;
+      line-height: 1; flex: none;
+    }
+    .faq-item[open] summary::after { content: '\2212'; }
+    .faq-answer { padding: 0 22px 20px; }
+    .faq-answer p { font-size: 14.5px; line-height: 1.7; color: #6b7280; margin: 0; }
+    .faq-answer a { color: #ed7615; text-decoration: none; font-weight: 600; }
+    .faq-answer a:hover { text-decoration: underline; }
+
     .how-it-works {
       max-width: 720px; margin: 0 auto; padding: 0 24px 80px;
     }
@@ -258,6 +288,40 @@
         <a href="https://jcxcbqsxshlwwvxlyyfd.supabase.co/storage/v1/object/public/resources/walkthrough.mp4">Watch the walkthrough</a>.
       </video>
     </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="faq">
+    <h2>Frequently asked questions</h2>
+    <details class="faq-item">
+      <summary>Does ProofReady predict a mark or band?</summary>
+      <div class="faq-answer"><p>No — and it won't, even if asked. ProofReady gives formative feedback on what's working and what to improve next, calibrated to NESA standards. Students get a clear path forward, not a number.</p></div>
+    </details>
+    <details class="faq-item">
+      <summary>Does it rewrite or write students' work for them?</summary>
+      <div class="faq-answer"><p>No. Feedback is anchored to the student's own words and tells them what to fix and why — it never rewrites their writing or drafts it for them. The work stays theirs.</p></div>
+    </details>
+    <details class="faq-item">
+      <summary>How is the feedback aligned to NESA?</summary>
+      <div class="faq-answer"><p>Feedback is written in the voice of an experienced marker and calibrated against NESA Notes from the Marking Centre, the syllabus outcomes for the course, and the marking criteria you set for each task.</p></div>
+    </details>
+    <details class="faq-item">
+      <summary>How do you know the work is the student's own?</summary>
+      <div class="faq-answer"><p>Drafts are typed in the browser — paste and drop are blocked by default and the typing is captured as students write. What reaches ProofReady is genuinely the student's own work, which is exactly what makes the feedback, and the data behind it, worth trusting.</p></div>
+    </details>
+    <details class="faq-item">
+      <summary>Which subjects and year levels does it cover?</summary>
+      <div class="faq-answer"><p>Written-response subjects across the curriculum and Mathematics, for Years 7–12. Feedback is tuned to the student's stage and the specific course they're studying.</p></div>
+    </details>
+    <details class="faq-item">
+      <summary>Is student writing kept private?</summary>
+      <div class="faq-answer"><p>Yes. Student writing is never used to train AI models and is never shared between schools. See our <a href="/privacy.html">Privacy Policy</a> for the full detail.</p></div>
+    </details>
+    <details class="faq-item">
+      <summary>Does it work with Canvas?</summary>
+      <div class="faq-answer"><p>Yes. ProofReady connects to Canvas via LTI 1.3 — students launch straight from an assignment, class rosters sync automatically, and marks pass back to the Canvas gradebook.</p></div>
+    </details>
   </div>
 
   <div class="footer">
