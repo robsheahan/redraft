@@ -14,7 +14,7 @@ import { callTool } from '../lib/anthropic-tool-call.js';
 import { HOLISTIC_FEEDBACK_TOOL, CRITERIA_CHECK_TOOL } from '../lib/feedback-tools.js';
 import { looksLikeBandRubric, stripBandLabels } from '../lib/rubric-detect.js';
 import { postCompletionIfLinked } from '../lib/lti/ags.js';
-import { recordSkillSignals } from '../lib/skill-profile.js';
+import { recordSkillSignals, readSkillProfile } from '../lib/skill-profile.js';
 
 function buildCriteriaCheckPrompt(courseName?: string, isBandRubric?: boolean): string {
   const subjectLabel = courseName || "this HSC subject";
@@ -315,6 +315,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     discipline || undefined,
     yearLevel || undefined,
   );
+
+  // Graduated feedback prompts (Clarke): read the student's skill profile so
+  // Pass 1 can pitch each improvement at the right support level (reminder /
+  // scaffold / example). Best-effort and read-side only — on no data or any
+  // error readSkillProfile returns [], and the prompt falls back to scaffolded
+  // prompts for everyone. Discipline matches the write path's rollup key.
+  const readiness = user
+    ? await readSkillProfile(getSupabase(), user.id, discipline || 'General')
+    : [];
+
   const userPrompt = buildUserPrompt({
     taskDescription,
     taskVerb: taskVerb || undefined,
@@ -327,6 +337,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     taskType: resolvedTaskType || undefined,
     priorDrafts: priorDrafts.length > 0 ? priorDrafts : undefined,
     draftVersion,
+    readiness,
   });
 
   try {

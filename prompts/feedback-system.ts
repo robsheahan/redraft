@@ -30,6 +30,7 @@ import type { Stage } from "../data/nesa-reference.js";
 import { buildMarkerVoiceReference } from "../data/marker-voice-loader.js";
 import { getSubjectGlossary } from "../data/subject-glossaries.js";
 import { getStage45Reference } from "../data/stage-4-5-reference.js";
+import { dimensionByKey } from "../data/skill-taxonomy.js";
 
 export const DISCIPLINE_PERSONAS: Record<string, string> = {
   English: "English teacher with extensive experience in textual analysis, essay writing, and HSC marking",
@@ -106,6 +107,22 @@ interface TaskCriterion {
   maxMarks: number;
 }
 
+/**
+ * Per-skill readiness read passed in by the caller — the student's
+ * `student_skill_profile` rows for this subject. Used ONLY to calibrate how much
+ * support each improvement carries (Clarke's reminder/scaffold/example); never
+ * surfaced to the student. Structurally a subset of lib's `SkillProfileRow`, so
+ * the API can pass those rows straight through.
+ */
+interface ReadinessRow {
+  dimension: string;
+  level: number;
+  level_label: string | null;
+  trend: string | null;
+  confidence: number;
+  signal: string | null;
+}
+
 interface FeedbackPromptInput {
   taskDescription: string;
   taskVerb?: string;
@@ -118,6 +135,8 @@ interface FeedbackPromptInput {
   taskType?: string;
   priorDrafts?: Array<{ draft_text: string; feedback: any; draft_version: number }>;
   draftVersion?: number;
+  /** Skill-profile rows for this subject; calibrates each improvement's support level. */
+  readiness?: ReadinessRow[];
 }
 
 export function buildSystemPrompt(courseName?: string, discipline?: string, yearLevel?: number): string {
@@ -173,6 +192,14 @@ export function buildSystemPrompt(courseName?: string, discipline?: string, year
     .map((l) => `- ${l}`)
     .join("\n");
 
+  const threeFeedbackQuestions = FEEDBACK_PRINCIPLES.threeQuestions
+    .map((q) => `- ${q}`)
+    .join("\n");
+
+  const effectiveFeedbackPrinciples = FEEDBACK_PRINCIPLES.keyPrinciples
+    .map((p) => `- ${p}`)
+    .join("\n");
+
   const hscPersona = (discipline && DISCIPLINE_PERSONAS[discipline])
     || "senior secondary teacher with extensive HSC marking experience";
   const subjectLabel = courseName || "this subject";
@@ -224,6 +251,13 @@ Tailor your feedback to the task format:
 
 FEEDBACK LEVELS (apply all three where appropriate):
 ${feedbackLevels}
+
+THE THREE FEEDBACK QUESTIONS (Hattie & Timperley) — taken together, your feedback must answer all three for the student:
+${threeFeedbackQuestions}
+Concretely: "Where am I going?" is carried by what_a_strong_response_includes and the key-term requirement; "How am I going?" by what_youve_done_well, overall and task_verb_check; "Where to next?" by improvements and top_priority. Don't leave any of the three unanswered.
+
+PRINCIPLES OF EFFECTIVE FEEDBACK (keep these true of everything you write):
+${effectiveFeedbackPrinciples}
 
 CRITICAL RULES:
 1. You are giving feedback on a DRAFT to help them improve. You are NOT assigning a final mark.
@@ -283,6 +317,14 @@ The following are syllabus-defined terms students in this subject commonly misus
 ${lines}`;
   })()}
 
+HOW TO PITCH EACH IMPROVEMENT — GRADUATED PROMPTS (Clarke):
+Match the amount of SUPPORT in each improvement (and in top_priority) to how secure this student already is on the skill that improvement targets. Use the prompt type that fits:
+- REMINDER prompt — least support; for skills the student is already SECURE or EXTENDING on. A nudge that trusts them to act: e.g. "Say more about why this technique matters to the question."
+- SCAFFOLDED prompt — medium support; the DEFAULT for most students and for CONSOLIDATING skills. Give structure — a guiding question, a sentence stem, or the steps to take: e.g. "Explain the effect: name the technique, state how it positions the responder, then link it back to the question."
+- EXAMPLE prompt — most support; for skills that are EMERGING or DEVELOPING. Show a concrete model they can adapt — never write their actual answer for them: e.g. "You might open with something like '<short model phrase>…' — now write your own version."
+The user message tells you this student's readiness per skill. Calibrate per improvement: improvements that touch lower / emerging skills get example or scaffolded prompts; ones that touch secure skills get reminder prompts. When you have no readiness signal for a skill, or the signal is low-confidence (thin data), default to a SCAFFOLDED prompt — don't over-fit one observation.
+This calibration is for YOU only. NEVER tell the student their readiness level, and never justify a prompt with "because you're still developing X". The support level shows up only in how much structure you give — never as a label, level, or band.
+
 OUTPUT FORMAT:
 Respond in the following JSON structure. Each section has a "summary" (short bullet points — the headline takeaway a student sees first) and "detail" (the full explanation). Write in natural, personable language throughout.
 
@@ -324,6 +366,33 @@ Keep every sentence purposeful. Summaries are punchy and scannable. Detail secti
   },
   "self_check": "A self-regulation question the student should ask themselves when revising — e.g. 'For each paragraph, ask: am I just describing what something is, or am I explaining why it matters and how it connects to the question?'"
 }`;
+}
+
+/**
+ * Render the student's per-skill readiness as an INTERNAL calibration block for
+ * the graduated-prompt instruction. Lowest dimensions first (the priorities).
+ * Returns an explicit "no data → default to scaffolded" line when the student
+ * has no profile yet, so the model knows it's a genuinely new student rather
+ * than a dropped section.
+ */
+function buildReadinessBlock(rows?: ReadinessRow[]): string {
+  if (!rows || rows.length === 0) {
+    return `STUDENT READINESS (internal — never reveal to the student):
+No prior skill data for this student yet. Default to SCAFFOLDED prompts throughout.`;
+  }
+  const lines = rows
+    .slice()
+    .sort((a, b) => a.level - b.level)
+    .map((r) => {
+      const dim = dimensionByKey(r.dimension);
+      const name = dim ? dim.label : r.dimension;
+      const conf = Math.round((r.confidence || 0) * 100);
+      return `- ${r.dimension} (${name}): ${r.level_label || '—'} (${r.level.toFixed(1)}/5), trend ${r.trend || 'n/a'}, confidence ${conf}%${r.signal ? ` — "${r.signal}"` : ''}`;
+    });
+  return `STUDENT READINESS — per-skill developmental read from this student's recent work (INTERNAL: use it only to choose how much support each improvement carries; NEVER state a level, trend, or "because you…" to the student):
+${lines.join('\n')}
+
+Pitch improvements that touch the lower / emerging dimensions as EXAMPLE or SCAFFOLDED prompts; pitch ones that touch SECURE or EXTENDING dimensions as REMINDER prompts. Treat low-confidence rows cautiously — default to SCAFFOLDED.`;
 }
 
 export function buildUserPrompt(input: FeedbackPromptInput): string {
@@ -407,7 +476,9 @@ ${input.studentText}${resubmissionBlock}`;
     prompt += `\n\n---\n\nTEACHER NOTES (specific things to look for):\n${input.teacherNotes}`;
   }
 
-  prompt += `\n\n---\n\nProvide your feedback. Remember: write directly to the student, be honest, be thorough, reference their actual text, list every issue you find, diagnose using SOLO taxonomy, and frame improvements as forward-looking revision actions.`;
+  prompt += `\n\n---\n\n${buildReadinessBlock(input.readiness)}`;
+
+  prompt += `\n\n---\n\nProvide your feedback. Remember: write directly to the student, be honest, be thorough, reference their actual text, list every issue you find, diagnose using SOLO taxonomy, frame improvements as forward-looking revision actions, and pitch each improvement at the right support level for this student (reminder / scaffold / example) without ever naming their readiness.`;
 
   return prompt;
 }
