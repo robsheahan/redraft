@@ -16,9 +16,9 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'node:crypto';
-import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth, authoritativeRole } from '../lib/auth.js';
+import { getSupabase, authoritativeRole } from '../lib/auth.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
+import { withHandler } from '../lib/with-handler.js';
 
 const BUCKET = 'attachments';
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
@@ -28,16 +28,11 @@ const ALLOWED_TYPES = new Set([
 ]);
 const DOWNLOAD_TTL = 300; // seconds
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
-
+export default withHandler({ methods: ['POST', 'GET'], label: 'attachment' }, async (req, res, ctx) => {
+  const user = ctx.user!;
   if (req.method === 'POST') return signUpload(req, res, user);
-  if (req.method === 'GET') return signDownload(req, res, user);
-  return res.status(405).json({ error: 'Method not allowed' });
-}
+  return signDownload(req, res, user);
+});
 
 // Strip path separators and exotic characters; keep something human-readable for
 // the stored object name. The real uniqueness comes from the UUID prefix.

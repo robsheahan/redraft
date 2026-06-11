@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { parseRubricWithAI } from '../lib/parse-rubric-with-ai.js';
+import { withHandler } from '../lib/with-handler.js';
 
 /**
  * Task CRUD under the classes redesign.
@@ -16,17 +16,18 @@ import { parseRubricWithAI } from '../lib/parse-rubric-with-ai.js';
  *   DELETE /api/task                → delete task + its submissions (teacher owner only)
  */
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  switch (req.method) {
-    case 'GET':    return handleGet(req, res);
-    case 'POST':   return handleCreate(req, res);
-    case 'PUT':    return handleUpdate(req, res);
-    case 'DELETE': return handleDelete(req, res);
-    default:
-      return res.status(405).json({ error: 'Method not allowed' });
-  }
-}
+// auth:'none' — each sub-handler does its own verifyAuth + ownership checks.
+export default withHandler(
+  { methods: ['GET', 'POST', 'PUT', 'DELETE'], auth: 'none', label: 'task' },
+  async (req, res) => {
+    switch (req.method) {
+      case 'GET':    return handleGet(req, res);
+      case 'POST':   return handleCreate(req, res);
+      case 'PUT':    return handleUpdate(req, res);
+      case 'DELETE': return handleDelete(req, res);
+    }
+  },
+);
 
 type TaskMode = 'feedback_task' | 'marked_task' | 'quick_task';
 

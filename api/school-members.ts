@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
 import { resolveUserSchool, getSchoolTeacherIds } from '../lib/schools.js';
+import { withHandler } from '../lib/with-handler.js';
 import { getUserInfoBatch } from '../lib/user-names.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 
@@ -37,14 +37,8 @@ function normaliseFaculties(input: unknown): string[] {
  *
  * Auth: caller must have role='admin' for the school, OR be a global admin.
  */
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (!['GET', 'POST', 'PUT', 'DELETE'].includes(req.method || '')) {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+export default withHandler({ methods: ['GET', 'POST', 'PUT', 'DELETE'], label: 'school-members' }, async (req, res, ctx) => {
+  const user = ctx.user!;
 
   const supabase = getSupabase();
 
@@ -149,4 +143,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
-}
+});
