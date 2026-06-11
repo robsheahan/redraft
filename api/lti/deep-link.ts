@@ -7,6 +7,9 @@ import { captureError } from '../../lib/sentry.js';
 
 const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://proofready.app';
 
+// Intentionally NOT on lib/with-handler: LTI replies are text/plain + 302
+// redirects, not the wrapper's JSON error body. Wrapping would break the
+// LTI contract.
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (applyCors(req, res)) return;
   if (req.method === 'GET') return getSessionInfo(req, res);
