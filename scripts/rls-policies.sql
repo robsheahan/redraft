@@ -35,10 +35,14 @@ create policy "students insert own submissions"
   on public.submissions for insert
   with check ( auth.uid() = student_id );
 
-create policy "students update own submissions"
-  on public.submissions for update
-  using ( auth.uid() = student_id )
-  with check ( auth.uid() = student_id );
+-- NO student UPDATE policy on submissions (M4 — grade integrity).
+-- A blanket "auth.uid() = student_id" UPDATE let a student forge teacher-owned
+-- grading columns (total_mark, graded_at, feedback, …) via the anon key. No
+-- client flow updates submissions directly — every write goes through a
+-- service-role API route (which bypasses RLS) — so students get no UPDATE path.
+-- Revoke the table privilege too, as a second layer (see
+-- submissions-update-hardening-migration.sql).
+revoke update on public.submissions from anon, authenticated;
 
 create policy "teachers read submissions to own tasks"
   on public.submissions for select

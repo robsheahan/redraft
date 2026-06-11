@@ -2,14 +2,15 @@
 
 **Date:** 2026-06-11 (v1 security pass in the morning; v2 full-stack pass + first fixes in the afternoon)
 **Auditor:** Claude (Opus 4.8). v2 covers: Canvas LTI (deepest), API authz, DB/RLS, frontend, LLM pipeline/cost/reliability, code quality/ops.
-**Status:** 🟢 **Batch A + Batch B committed; Batch C in progress — P1/H3 prompt-injection + P2 skill-gaming damping done** (branch `security/audit-batch-ab-2026-06-11`, PR #5). 🟡 SQL hotfix already run + verified in prod. Remaining Batch C: M4 (grade-integrity migration), P8/P4/P5, withHandler/CI; open questions Q1/Q2.
+**Status:** 🟢 **Batch A + Batch B committed; Batch C in progress — P1/H3 prompt-injection, P2 skill-gaming damping, M4 grade-integrity done** (branch `security/audit-batch-ab-2026-06-11`, PR #5). 🟡 LTI hotfix run + verified; **M4 migration must now be run in Supabase**. Remaining Batch C: P8/P4/P5, withHandler/CI; open questions Q1/Q2.
 
 ---
 
 ## ⚠️ ACTION REQUIRED NOW
 
-1. **Run `scripts/lti-hardening-migration.sql` in the Supabase SQL editor** (revokes public execute on `lti_find_user_by_email`, enables RLS on `lti_dl_sessions`). The RPC exposure was **verified live against prod** with the anon key on 2026-06-11.
-2. **Commit + deploy the working tree** (`api/lti/login.ts`, `api/lti/launch.ts` — reflected-HTML fix). Remember the flaky auto-deploy: verify, or `vercel --prod`.
+1. ~~Run `scripts/lti-hardening-migration.sql`~~ ✅ DONE + verified live (anon RPC now 401s, `lti_dl_sessions` RLS returns `[]`).
+2. **Run `scripts/submissions-update-hardening-migration.sql` in the Supabase SQL editor** (M4 — drops the over-broad student UPDATE policy that let a student forge `total_mark`/`graded_at`/`feedback` via the anon key; revokes the table UPDATE privilege from anon/authenticated). Verification queries are in the file footer.
+3. **Commit + deploy the working tree.** Remember the flaky auto-deploy: verify, or `vercel --prod`.
 
 ---
 
@@ -80,13 +81,13 @@ v2 adds a second systemic theme:
 - **M1 — email-domain school scoping / search leaks class names.** CONFIRMED, open.
 - **M2 — student email into prompts/summaries.** ✅ FIXED (Batch B). Was at (`insights-card-generate.ts:806`; same pattern `insights-student.ts:136`).
 - **M3 — raw `error.message` to clients.** CONFIRMED (~25 sites). Fold into the `withHandler` refactor.
-- **M4 — `submissions` student UPDATE not column-restricted.** CONFIRMED live risk: rls-policies.sql `:38-41` lets a student with the anon key set their own `total_mark`/`graded_at`/`feedback` via PostgREST — forged marks would surface in the teacher markbook and insights. Migration in Batch C (raised from "deferred": it's grade integrity).
+- **M4 — `submissions` student UPDATE not column-restricted.** ✅ FIXED (Batch C): dropped the over-broad student UPDATE policy (no client flow updates submissions directly — all writes go through service-role API routes) and revoked the table UPDATE privilege from anon/authenticated. `scripts/submissions-update-hardening-migration.sql` (must be RUN in Supabase) + patched into `rls-policies.sql` for fresh setups.
 - Low (v1): global rate-limit fails open (intentional, leave); `listUsers` truncation (open); `.env.example` incomplete (open — actual count: documents 3 of ~13 vars); dead code `lib/extract-json.ts` (confirmed unreferenced).
 - **STALE:** v1's "three pre-existing TS errors in insights-synthesis.ts" — **fixed**; `tsc --noEmit` is clean. PROJECT_OVERVIEW.md "Known issues" needs updating.
 
 ### RLS reality check (v2)
 
-`rls-policies.sql` is partially superseded by `classes-migration.sql` §6 — the live policy set is the composition. Verified composition: students can't read `tasks` at all via PostgREST (criteria/guidelines safe at the DB layer); student insert requires published task + membership (own-task rows exempt); class roster scraping blocked (students read only their own membership row); `api_call_log` deny-all. The one DB-layer hole is **M4** above.
+`rls-policies.sql` is partially superseded by `classes-migration.sql` §6 — the live policy set is the composition. Verified composition: students can't read `tasks` at all via PostgREST (criteria/guidelines safe at the DB layer); student insert requires published task + membership (own-task rows exempt); class roster scraping blocked (students read only their own membership row); `api_call_log` deny-all. The one DB-layer hole (M4) is now closed — see the M4 fix above.
 
 ---
 
@@ -155,7 +156,7 @@ Dependency notes: `jose` 5→6 worth scheduling (LTI surface); Sentry 8→10 def
 **Batch C — needs ~an hour each, do before school #2:**
 - ✅ **P1+H3 DONE** (working tree, uncommitted at time of writing → committed on `security/audit-batch-ab-2026-06-11`): `lib/prompt-safety.ts` `wrapUntrusted()` + `UNTRUSTED_CONTENT_RULE` applied end-to-end — essay (Pass 1 + Pass 2, incl. own-task brief/criteria/notes relabel + field caps P10 + course-label sanitise), maths (per-line/holistic/structure-working + replayed diagnostic), inline (draft + replayed improvements), insights-signals (draft), Lesson Builder + readiness `signal` sanitised. Forged-fence attack verified neutralised; stray `%` in maths preserved.
 - ✅ **P2 DONE**: anti-gaming line in the skill_assessment schema; evidence-weighted EWMA (model confidence + note-substance floor scale the step); hard ±1 per-submission level cap. Verified: 5 gamed drafts reach ~3.4 not ~4.8. (lib/skill-profile.ts, data/skill-taxonomy.ts)
-- M4 migration: column-restrict student UPDATE on submissions.
+- ✅ **M4 DONE**: dropped the over-broad student UPDATE policy + revoked table UPDATE from anon/authenticated (no client flow updates submissions directly). SQL must be run in Supabase.
 - P8 idempotency constraint. P4 `requiredKeys` in callTool. P5 insights cap fix.
 - `withHandler` refactor + health endpoint + CI (quality items 1–3).
 
