@@ -118,25 +118,13 @@ create policy "user reads own lti mapping"
   using (auth.uid() = user_id);
 
 -- =========================================================================
--- 6b. RPC: look up auth.users by email (no auth schema exposure needed)
+-- 6b. RPC: look up auth.users by email — REMOVED (audit L1/Q2B)
 -- =========================================================================
-
-create or replace function public.lti_find_user_by_email(p_email text)
-returns table(id uuid, raw_user_meta_data jsonb)
-language sql
-security definer
-set search_path = auth, public
-as $$
-  select id, raw_user_meta_data
-    from auth.users
-   where email ilike p_email
-   limit 1;
-$$;
-
-grant execute on function public.lti_find_user_by_email(text) to service_role;
--- Functions in public default to EXECUTE for PUBLIC, which would let anyone
--- with the anon key call this via PostgREST and enumerate users by email.
-revoke execute on function public.lti_find_user_by_email(text) from public, anon, authenticated;
+-- LTI provisioning no longer links a launch to a pre-existing account by
+-- email; identity is keyed strictly on (platform_id, canvas_user_id). The
+-- email-lookup RPC has no remaining callers, so it is intentionally not
+-- (re)created here. If it still exists in your database from an earlier setup,
+-- drop it: see scripts/drop-lti-find-user-by-email.sql.
 
 -- =========================================================================
 -- 7. Seed: Penrith Christian School (PCS) — Canvas Cloud

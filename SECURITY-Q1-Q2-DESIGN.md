@@ -1,8 +1,18 @@
 # ProofReady — Q1 & Q2 design write-up (signup model + role/identity)
 
-**Status:** design / decision doc. Nothing here is implemented yet. These are the
-two open questions from the security audit (`SECURITY-AUDIT.md`) that change
-user-facing behaviour, so they need your call before they're built.
+**Status:** ✅ **DECIDED + IMPLEMENTED** (2026-06-11, branch
+`security/audit-batch-ab-2026-06-11`). Rob chose the recommended options:
+Q2A "ship first", Q2B "B1", Q1 "harden now, verify later". This doc is kept as
+the rationale of record. What shipped:
+- **Q2A** — authoritative role → `app_metadata`; gates use `authoritativeRole()`;
+  backfill script `scripts/backfill-role-to-app-metadata.ts` (run before deploy).
+- **Q2B** — B1: identity keyed on `(platform, canvas_user_id)`, no email
+  auto-linking, createUser race converges, email collisions → clean 409. The
+  self-service "link my Canvas account" UX remains a follow-up feature.
+- **Q1** — phase 1: dropped the body role + global daily signup cap. Phase 2
+  (email verification) deferred until self-signup opens beyond invited pilots.
+
+Original proposal follows.
 
 Grounded in the current code (2026-06-11): `api/signup.ts`, `api/set-role.ts`,
 `lib/auth.ts`, `lib/lti/user-provision.ts`, `public/auth.html`,

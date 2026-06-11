@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-11 (v1 security pass in the morning; v2 full-stack pass + first fixes in the afternoon)
 **Auditor:** Claude (Opus 4.8). v2 covers: Canvas LTI (deepest), API authz, DB/RLS, frontend, LLM pipeline/cost/reliability, code quality/ops.
-**Status:** 🟢 **Batch A + Batch B committed; Batch C in progress — P1/H3, P2, M4, P8, P4 done** (branch `security/audit-batch-ab-2026-06-11`, PR #5). 🟡 LTI hotfix run + verified; **two migrations must now be run in Supabase: `submissions-update-hardening-migration.sql` (M4) + `submission-idempotency-migration.sql` (P8)**. Remaining Batch C: P5 caching half (deferred), withHandler/CI; open questions Q1/Q2.
+**Status:** 🟢 **Batches A–C + Q1/Q2 implemented** on branch `security/audit-batch-ab-2026-06-11` (PR #5). Done: all LTI hardening, API authz/privacy, M4, P8, P4, P1/H3, P2, P5-cap, **Q2A role→app_metadata (H2), Q2B LTI identity (L1/LTI-12), Q1 signup phase-1 (C1)**. 🟡 Before deploy: run the M4 + P8 migrations (already done per Rob) and the **role backfill script**. Remaining: P5 caching half, Q1 email-verification (phase 2), Q2B opt-in link UX, withHandler/CI — all non-blocking follow-ups.
 
 ---
 
@@ -11,7 +11,9 @@
 1. ~~Run `scripts/lti-hardening-migration.sql`~~ ✅ DONE + verified live (anon RPC now 401s, `lti_dl_sessions` RLS returns `[]`).
 2. **Run `scripts/submissions-update-hardening-migration.sql` in the Supabase SQL editor** (M4 — drops the over-broad student UPDATE policy that let a student forge `total_mark`/`graded_at`/`feedback` via the anon key; revokes the table UPDATE privilege from anon/authenticated). Verification queries are in the file footer.
 3. **Run `scripts/submission-idempotency-migration.sql` in the Supabase SQL editor** (P8 — partial unique indexes so a double-submit can't create two rows at the same draft_version). If it errors on pre-existing duplicates, the file footer has the dedupe query.
-4. **Commit + deploy the working tree.** Remember the flaky auto-deploy: verify, or `vercel --prod`.
+4. **Run `npx tsx scripts/backfill-role-to-app-metadata.ts` (Q2A) BEFORE deploying** — copies each user's role into `app_metadata`. The teacher gates fail closed, so a teacher would lose teacher access until this runs. (`--dry-run` first to preview.)
+5. **Optional cleanup:** `scripts/drop-lti-find-user-by-email.sql` (Q2B — drops the now-unused RPC; already locked down by LTI-9, so not urgent).
+6. **Commit + deploy the working tree.** Remember the flaky auto-deploy: verify, or `vercel --prod`.
 
 ---
 
@@ -47,7 +49,7 @@ v2 adds a second systemic theme:
 
 | # | Sev | Status | Issue |
 |---|-----|--------|-------|
-| L1 | **High** (multi-school) | CONFIRMED, open | Cross-tenant identity via email (`lti_find_user_by_email` linking + magic-link login by email). Must fix **before school #2**. → Open Question 2. |
+| L1 | **High** (multi-school) | ✅ FIXED (Q2B) | Cross-tenant identity via email (`lti_find_user_by_email` linking + magic-link login by email). Must fix **before school #2**. → Open Question 2. |
 | L2 | High | ✅ **FIXED today** (run the SQL) | `lti_dl_sessions` RLS. |
 | L3 | Medium | ✅ FIXED (Batch B) | `consumeNonce` read-then-write race (`lib/lti/nonce.ts:15-31`). Atomic CAS fix in Batch C. |
 | L4 | Medium | ✅ FIXED (Batch B) | `redirect_uri` = unvalidated `target_link_uri` (`api/lti/login.ts`). Allowlist fix in Batch C. |
@@ -63,7 +65,7 @@ v2 adds a second systemic theme:
 | LTI-9 | **Critical** | ✅ **FIXED today** (run the SQL) | **`lti_find_user_by_email` RPC publicly executable.** SECURITY DEFINER fn in `public` schema; Postgres grants EXECUTE to PUBLIC by default and the migration never revoked it. Verified live: anon key → `POST /rest/v1/rpc/lti_find_user_by_email` → HTTP 200. Returned any user's id + **full `raw_user_meta_data`** (role, display name, graduation year) for any email — user enumeration + PII disclosure. |
 | LTI-10 | **High** | ✅ **FIXED today** | **Reflected HTML on unauthenticated `/lti/login`** — `res.send(string)` in @vercel/node defaults to `Content-Type: text/html` (verified in the package source), and `login.ts` echoed `iss`/`client_id` query params into the 403 body; served on the proofready.app origin (via the `/lti/*` rewrite) where the Supabase session lives in localStorage. `launch.ts` echoed the token's email claim similarly (lower risk — needs a signed token). Both handlers now force `text/plain`. |
 | LTI-11 | **Medium** | ✅ FIXED (Batch B) | **NRPS roster sync fires after the response.** `syncRoster(...).catch(...)` is not awaited (`api/lti/launch.ts:140-144`) and the handler redirects immediately. On Vercel serverless, post-response work is frozen/killed — large roster syncs can silently die partway AND the `.catch → captureError` may never run. Fix: `await` it before the redirect (with a time budget), or move to `waitUntil` (`@vercel/functions`). |
-| LTI-12 | Low | open | **First-launch createUser race not converged.** Two concurrent launches for a brand-new user both miss the mapping and the email lookup; both call `admin.createUser` — the loser gets "already registered" and **throws → 500** (`lib/lti/user-provision.ts:54-59`). The 23505 convergence exists for the mapping insert but not for createUser. Fix: on "already registered", re-run the email lookup and converge. |
+| LTI-12 | Low | ✅ FIXED (Q2B) | **First-launch createUser race not converged.** Two concurrent launches for a brand-new user both miss the mapping and the email lookup; both call `admin.createUser` — the loser gets "already registered" and **throws → 500** (`lib/lti/user-provision.ts:54-59`). The 23505 convergence exists for the mapping insert but not for createUser. Fix: on "already registered", re-run the email lookup and converge. |
 | LTI-13 | Low | open | **Role-mapping choices worth a deliberate decision** (`lib/lti/roles.ts`): institution-level `Administrator` → teacher in any course they launch; `TeachingAssistant` → full teacher (incl. marking + insights); `Observer` (parents) → a normal **student** account that can submit work. Also: a launch never updates an existing user's role (good), but a self-signed-up "teacher" keeps teacher on LTI launch. |
 | LTI-14 | Info | open | **State is not browser-bound.** state+nonce are DB-validated, single-use, 10-min TTL — but nothing ties the completing browser to the initiating one (no cookie; largely unachievable in Canvas iframes with third-party-cookie blocking). Residual login-CSRF risk is inherent to LTI form_post; accept and document. |
 | LTI-15 | Info | open | **AGS portability:** `${lineItemUrl}/scores` breaks if a platform's line-item URL carries a query string (fine on Canvas; Moodle etc. use query params). Insert `/scores` before the query string when you outgrow Canvas. |
@@ -75,9 +77,9 @@ v2 adds a second systemic theme:
 
 ## Cross-cutting (v1) — v2 status
 
-- **C1 — `api/signup.ts` unauthenticated, unthrottled, pre-confirmed account creation with body-supplied role.** CONFIRMED verbatim (`api/signup.ts:27-32`). → Open Question 1.
+- **C1 — `api/signup.ts` unauthenticated, unthrottled, pre-confirmed, body-supplied role.** 🟡 PARTIAL (Q1 phase 1): body role removed (new accounts unroled until authenticated set-role) + global daily signup cap. Email verification (phase 2) + per-IP/captcha deferred.
 - **H1 — `generate-feedback` never 401s a null user.** ✅ FIXED (Batch B). Was worse than v1 stated: anon callers skip the draft caps and per-user limits entirely; only the global 5000/day cap applies, and that resets daily (`api/generate-feedback.ts:100`, branches at `:198`/`:242`). Highest-priority one-line fix.
-- **H2 — self-assignable `user_metadata.role` trusted by `attachment.ts:62` upload path.** CONFIRMED; still no upload rate limit. → Batch C + Open Question 2.
+- **H2 — self-assignable `user_metadata.role`.** ✅ FIXED (Q2A): authoritative role moved to `app_metadata` (service-role only); gates read authoritativeRole(); backfill script must run before deploy. (Upload rate limit already added in Batch B.)
 - **H3 — prompt injection.** ✅ FIXED (Batch C, P1/H3): wrapUntrusted() + system rule end-to-end. See P1 row.
 - **M1 — email-domain school scoping / search leaks class names.** CONFIRMED, open.
 - **M2 — student email into prompts/summaries.** ✅ FIXED (Batch B). Was at (`insights-card-generate.ts:806`; same pattern `insights-student.ts:136`).
@@ -161,9 +163,10 @@ Dependency notes: `jose` 5→6 worth scheduling (LTI surface); Sentry 8→10 def
 - ✅ **P8 DONE**: partial unique indexes on (student_id, task_id/own_task_id, draft_version) + 23505 treated as benign duplicate in all 3 insert sites (SQL must be run in Supabase). ✅ **P4 DONE**: callTool requiredKeys/stop_reason guard — a truncated student-facing pass rejects (essay/maths-PassB abort with no draft consumed; maths-PassC degrades to line annotations) instead of persisting gutted feedback. ✅ **P5 cap DONE**: shared-key global circuit breaker (insights-card-student:global, 1500/day, userId=null) caps total student-card spend — the per-student key no longer gives each student its own 400/day bucket. Per-student fingerprint caching deferred (cost-efficiency, needs a cache table).
 - `withHandler` refactor + health endpoint + CI (quality items 1–3).
 
-**Open questions (unchanged from v1 — they change user-facing behaviour):**
-- **Q1 Signup model (C1):** email verification vs instant signup + rate-limit only.
-- **Q2 Role model (H2/L1):** move authoritative role to `app_metadata` + namespace LTI identity by platform. Required before onboarding school #2; the L1 email-linking fix depends on it.
+**Open questions — RESOLVED (decisions in `SECURITY-Q1-Q2-DESIGN.md`, implemented):**
+- **Q1 Signup model (C1):** decided "harden now, verify later". Phase 1 done (drop body role + global daily cap). Phase 2 (email verification) deferred until self-signup opens beyond invited pilots.
+- **Q2A Role model (H2):** ✅ authoritative role → `app_metadata`. **Run `scripts/backfill-role-to-app-metadata.ts` before deploy.**
+- **Q2B LTI identity (L1):** ✅ B1 — identity keyed on `(platform, canvas_user_id)`; no email auto-linking; createUser race converges; genuine email collisions get a clean 409. Remaining UX follow-up: the self-service "link my Canvas account" flow (a feature, not a vuln).
 
 **Deferred:** M1 search-scope fix (independent piece can go in Batch B), M3 via withHandler, listUsers pagination, LTI-13 role-mapping decisions, LTI-15/16 portability + co-teacher story, P11–P13, frontend helper consolidation, jose 6.
 

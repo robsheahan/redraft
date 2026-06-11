@@ -5,7 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { findPlatform } from '../../lib/lti/config.js';
 import { consumeNonce } from '../../lib/lti/nonce.js';
 import { verifyPlatformIdToken } from '../../lib/lti/jwt.js';
-import { provisionUser, generateLoginUrl } from '../../lib/lti/user-provision.js';
+import { provisionUser, generateLoginUrl, LtiAccountLinkRequiredError } from '../../lib/lti/user-provision.js';
 import { provisionClass, enrolStudent } from '../../lib/lti/course-provision.js';
 import { roleFromLtiRoles } from '../../lib/lti/roles.js';
 import { syncRoster } from '../../lib/lti/nrps.js';
@@ -191,6 +191,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const loginUrl = await generateLoginUrl(email, `${SITE_ORIGIN}${target}`);
     res.redirect(302, loginUrl);
   } catch (err) {
+    // A pre-existing account already uses this email and isn't mapped to this
+    // Canvas identity. We won't auto-link across that trust boundary (L1) — give
+    // the user a clear path instead of a 500.
+    if (err instanceof LtiAccountLinkRequiredError) {
+      console.warn('[lti] launch reject 409 account-link-required');
+      return res.status(409).send(
+        'A ProofReady account already uses this email address. Please sign in directly at https://proofready.app with that account. (Linking your Canvas login to an existing account is coming soon — contact support if you need it now.)',
+      );
+    }
     captureError(err, { endpoint: 'lti/launch' });
     res.status(500).send('LTI launch error');
   }
