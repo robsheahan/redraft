@@ -10,10 +10,9 @@
  * one step or two?") rather than a silent corruption of the diagnostic.
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
 import Anthropic from '@anthropic-ai/sdk';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
+import { withHandler } from '../lib/with-handler.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
 import { callTool } from '../lib/anthropic-tool-call.js';
@@ -23,12 +22,8 @@ import {
   buildMathsStructureWorkingUserPrompt,
 } from '../prompts/maths-system.js';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+export default withHandler({ methods: ['POST'], label: 'structure-maths-working' }, async (req, res, ctx) => {
+  const user = ctx.user!;
 
   const { task_id, raw_text, input_mode } = (req.body || {}) as {
     task_id?: string;
@@ -98,6 +93,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ working_lines: lines });
   } catch (err: any) {
     captureError(err, { stage: 'structure-maths-working', task_id, user_id: user.id });
-    return res.status(500).json({ error: err?.message || 'Failed to parse your working.' });
+    return res.status(500).json({ error: 'Failed to parse your working. Please try again.' });
   }
-}
+});

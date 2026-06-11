@@ -1,15 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
 import { postCompletionIfLinked } from '../lib/lti/ags.js';
 import { captureError } from '../lib/sentry.js';
+import { withHandler } from '../lib/with-handler.js';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'PUT') return res.status(405).json({ error: 'Method not allowed' });
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+export default withHandler({ methods: ['PUT'], label: 'submission-grade' }, async (req, res, ctx) => {
+  const user = ctx.user!;
 
   const {
     submission_id,
@@ -91,4 +87,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   return res.status(200).json({ ok: true });
-}
+});

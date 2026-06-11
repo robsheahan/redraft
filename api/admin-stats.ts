@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
 import { getSchoolTeacherIds, getSchoolStudentIds } from '../lib/schools.js';
 import { isGlobalAdmin } from '../lib/admin.js';
+import { withHandler } from '../lib/with-handler.js';
 
 /**
  * Admin-only usage dashboard endpoint. Gated by lib/admin.ts (user_id
@@ -10,13 +10,8 @@ import { isGlobalAdmin } from '../lib/admin.js';
  * activity — not personally identifiable content like draft text.
  */
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const user = await verifyAuth(req);
+export default withHandler({ methods: ['GET'], auth: 'optional', label: 'admin-stats' }, async (req, res, ctx) => {
+  const user = ctx.user;
   if (!user || !isGlobalAdmin(user)) {
     return res.status(404).json({ error: 'Not found' }); // 404 rather than 403 so admin existence isn't advertised
   }
@@ -274,4 +269,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     users: allUsers,
     by_domain: byDomain,
   });
-}
+});

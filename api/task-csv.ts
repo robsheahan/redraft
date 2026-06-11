@@ -1,7 +1,5 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { getUserInfoBatch } from '../lib/user-names.js';
+import { withHandler } from '../lib/with-handler.js';
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return '';
@@ -28,28 +26,20 @@ function summariseFeedback(fb: any): { overall: string; priority: string; improv
   };
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
-
+export default withHandler({ methods: ['GET'], label: 'task-csv' }, async (req, res, { user, supabase }) => {
   const taskId = (req.query.task_id as string || '').trim();
   if (!taskId) return res.status(400).json({ error: 'task_id is required.' });
-
-  const supabase = getSupabase();
 
   const { data: task } = await supabase
     .from('tasks').select('id, title, course, question, classes(teacher_id, name)').eq('id', taskId).maybeSingle();
   if (!task) return res.status(404).json({ error: 'Task not found.' });
   const teacherId = (task.classes as any)?.teacher_id;
-  if (teacherId !== user.id) return res.status(403).json({ error: 'Not authorised.' });
+  if (teacherId !== user!.id) return res.status(403).json({ error: 'Not authorised.' });
 
   const { data: submissions, error } = await supabase
     .from('submissions').select('student_id, draft_version, draft_text, feedback, created_at').eq('task_id', taskId)
     .order('created_at', { ascending: true });
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw error;
 
   const studentIds = [...new Set((submissions || []).map(s => s.student_id).filter(Boolean))] as string[];
   const userInfo = await getUserInfoBatch(supabase, studentIds);
@@ -77,4 +67,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   return res.status(200).send(csv);
-}
+});

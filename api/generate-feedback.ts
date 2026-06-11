@@ -1,8 +1,6 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { buildSystemPrompt, buildUserPrompt } from '../prompts/feedback-system.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { currentYearLevelFromGraduationYear } from '../data/nesa-reference.js';
 import { VERB_DEPTH_MAP } from '../data/nesa-reference.js';
@@ -16,6 +14,7 @@ import { looksLikeBandRubric, stripBandLabels } from '../lib/rubric-detect.js';
 import { postCompletionIfLinked } from '../lib/lti/ags.js';
 import { recordSkillSignals, readSkillProfile } from '../lib/skill-profile.js';
 import { wrapUntrusted, capLen, sanitizeLabel, UNTRUSTED_CONTENT_RULE } from '../lib/prompt-safety.js';
+import { withHandler } from '../lib/with-handler.js';
 
 function buildCriteriaCheckPrompt(courseName?: string, isBandRubric?: boolean): string {
   const subjectLabel = courseName || "this HSC subject";
@@ -96,14 +95,8 @@ Respond in JSON:
 }`;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+export default withHandler({ methods: ['POST'], label: 'generate-feedback' }, async (req, res, ctx) => {
+  const user = ctx.user!;
   const { question, course, criteria, criteria_text, outcomes, draft, notes, task_id, task_title, task_type,
     own_task_id, own_task_title, own_task_class_id, student_attachments,
     keystroke_count, paste_attempts_blocked, typing_session_count, total_typing_time_ms, time_to_first_keystroke_ms } = req.body;
@@ -545,7 +538,7 @@ Assess this draft against each marking criterion above. Address every criterion 
       // model and teacher marking will never see.
       if (insertErr) {
         captureError(insertErr, { stage: 'submission-insert', task_id, user_id: user.id });
-        return res.status(500).json({ error: 'Could not save your submission. ' + insertErr.message });
+        return res.status(500).json({ error: 'Could not save your submission. Please try again.' });
       }
 
       // Post-submission side effects. These must never affect the feedback the
@@ -608,6 +601,6 @@ Assess this draft against each marking criterion above. Address every criterion 
     return res.status(200).json(successPayload);
   } catch (err: any) {
     captureError(err, { stage: 'top-level', task_id, user_id: user?.id });
-    return res.status(500).json({ error: err.message || 'Failed to generate feedback' });
+    return res.status(500).json({ error: 'Failed to generate feedback. Please try again.' });
   }
-}
+});

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
+import { withHandler } from '../lib/with-handler.js';
 
 /**
  * "Data about the currently signed-in user" endpoint.
@@ -11,23 +11,17 @@ import { getSupabase, verifyAuth } from '../lib/auth.js';
  *   GET /api/me?resource=teacher-markbook         → teacher's full markbook: classes → tasks + students + per-cell marks
  */
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
-
+export default withHandler({ methods: ['GET'], label: 'me' }, async (req, res, { user }) => {
   const resource = (req.query.resource as string || '').trim();
   switch (resource) {
-    case 'submissions':       return returnSubmissions(req, res, user.id);
-    case 'task-drafts':       return returnTaskDrafts(req, res, user.id);
-    case 'results':           return returnResults(req, res, user.id);
-    case 'teacher-markbook':  return returnTeacherMarkbook(req, res, user.id);
+    case 'submissions':       return returnSubmissions(req, res, user!.id);
+    case 'task-drafts':       return returnTaskDrafts(req, res, user!.id);
+    case 'results':           return returnResults(req, res, user!.id);
+    case 'teacher-markbook':  return returnTeacherMarkbook(req, res, user!.id);
     default:
       return res.status(400).json({ error: 'Unknown resource. Use ?resource=submissions|task-drafts|results|teacher-markbook' });
   }
-}
+});
 
 async function returnSubmissions(_req: VercelRequest, res: VercelResponse, userId: string) {
   const supabase = getSupabase();

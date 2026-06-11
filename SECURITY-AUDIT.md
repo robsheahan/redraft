@@ -2,18 +2,18 @@
 
 **Date:** 2026-06-11 (v1 security pass in the morning; v2 full-stack pass + first fixes in the afternoon)
 **Auditor:** Claude (Opus 4.8). v2 covers: Canvas LTI (deepest), API authz, DB/RLS, frontend, LLM pipeline/cost/reliability, code quality/ops.
-**Status:** 🟢 **Batches A–C + Q1/Q2 implemented** on branch `security/audit-batch-ab-2026-06-11` (PR #5). Done: all LTI hardening, API authz/privacy, M4, P8, P4, P1/H3, P2, P5-cap, **Q2A role→app_metadata (H2), Q2B LTI identity (L1/LTI-12), Q1 signup phase-1 (C1)**. 🟡 Before deploy: run the M4 + P8 migrations (already done per Rob) and the **role backfill script**. Remaining: P5 caching half, Q1 email-verification (phase 2), Q2B opt-in link UX, withHandler/CI — all non-blocking follow-ups.
+**Status:** 🟢 **Batches A–C + Q1/Q2 MERGED to `main`** (PR #5, 2026-06-11). All migrations + the role backfill have been run in prod; the code-level fixes go live on the next Vercel deploy of `main`. Done: all LTI hardening, API authz/privacy, M4, P8, P4, P1/H3, P2, P5-cap, **Q2A role→app_metadata (H2), Q2B LTI identity (L1/LTI-12), Q1 signup phase-1 (C1)**. Remaining (all non-blocking follow-ups): P5 caching half, Q1 email-verification (phase 2), Q2B opt-in link UX, and the withHandler/CI refactor (in progress — PR #7).
 
 ---
 
-## ⚠️ ACTION REQUIRED NOW
+## ⚠️ ACTION REQUIRED — ✅ all done (kept as the run log)
 
-1. ~~Run `scripts/lti-hardening-migration.sql`~~ ✅ DONE + verified live (anon RPC now 401s, `lti_dl_sessions` RLS returns `[]`).
-2. **Run `scripts/submissions-update-hardening-migration.sql` in the Supabase SQL editor** (M4 — drops the over-broad student UPDATE policy that let a student forge `total_mark`/`graded_at`/`feedback` via the anon key; revokes the table UPDATE privilege from anon/authenticated). Verification queries are in the file footer.
-3. **Run `scripts/submission-idempotency-migration.sql` in the Supabase SQL editor** (P8 — partial unique indexes so a double-submit can't create two rows at the same draft_version). If it errors on pre-existing duplicates, the file footer has the dedupe query.
-4. **Run `npx tsx scripts/backfill-role-to-app-metadata.ts` (Q2A) BEFORE deploying** — copies each user's role into `app_metadata`. The teacher gates fail closed, so a teacher would lose teacher access until this runs. (`--dry-run` first to preview.)
-5. **Optional cleanup:** `scripts/drop-lti-find-user-by-email.sql` (Q2B — drops the now-unused RPC; already locked down by LTI-9, so not urgent).
-6. **Commit + deploy the working tree.** Remember the flaky auto-deploy: verify, or `vercel --prod`.
+1. ✅ `scripts/lti-hardening-migration.sql` — run + verified live (anon RPC now 401s, `lti_dl_sessions` RLS returns `[]`).
+2. ✅ `scripts/submissions-update-hardening-migration.sql` (M4) — run.
+3. ✅ `scripts/submission-idempotency-migration.sql` (P8) — run.
+4. ✅ `scripts/backfill-role-to-app-metadata.ts` (Q2A) — run: 78 users, all roles copied into `app_metadata` (re-run confirms 0 remaining). The teacher gates now resolve correctly once deployed.
+5. `scripts/drop-lti-find-user-by-email.sql` (Q2B) — optional cleanup, not yet run (RPC already locked down by LTI-9).
+6. **Deploy:** PR #5 is merged to `main`. **Verify the Vercel auto-deploy landed (or run `vercel --prod`)** — the code-level fixes only take effect once `main` is deployed. Smoke test: a teacher can still create a task / generate criteria (exercises the new `app_metadata.role` gate).
 
 ---
 

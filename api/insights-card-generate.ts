@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
-import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
+import { withHandler } from '../lib/with-handler.js';
 import { resolveInsightsAccess, getSchoolTeacherIds, listAllAuthUsers, getInScopeStudentIds, getInScopeClassIds } from '../lib/schools.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
@@ -337,12 +337,8 @@ function buildStudentSummaryPrompt(rows: any[], studentName: string): string {
   return `Below are ${rows.length} of ${studentName}'s submissions. Write the narrative summary now.\n\n${lines}`;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+export default withHandler({ methods: ['POST'], label: 'insights-card-generate' }, async (req, res, ctx) => {
+  const user = ctx.user!;
 
   const kind = String(req.body?.kind || '').trim();
   const isStudentKind = kind.startsWith('student_');
@@ -610,7 +606,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     value = result.value;
   } catch (err: any) {
     captureError(err, { stage: 'insights-card-generate', kind, school_id: schoolId, user_id: user.id });
-    return res.status(500).json({ error: err?.message || 'Failed to generate.' });
+    return res.status(500).json({ error: 'Failed to generate. Please try again.' });
   }
 
   // Validate the model's output against each card's required keys before
@@ -704,7 +700,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     source_task_count: sourceTaskCount,
     generated_at: generatedAt,
   });
-}
+});
 
 // ─────────────── Student-kind handler ───────────────
 
@@ -845,7 +841,7 @@ async function handleStudentKind(
     value = result.value;
   } catch (err: any) {
     captureError(err, { stage: 'insights-card-generate', kind, student_id: studentId, user_id: user.id });
-    return res.status(500).json({ error: err?.message || 'Failed to generate.' });
+    return res.status(500).json({ error: 'Failed to generate. Please try again.' });
   }
 
   // Validate required keys.
@@ -1036,6 +1032,6 @@ async function handleClassProfileSummary(
     });
   } catch (err: any) {
     captureError(err, { stage: 'insights-card-class-profile', class_id: classId, user_id: user.id });
-    return res.status(500).json({ error: err?.message || 'Failed to generate.' });
+    return res.status(500).json({ error: 'Failed to generate. Please try again.' });
   }
 }

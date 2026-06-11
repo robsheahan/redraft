@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
 import { isGlobalAdmin } from '../lib/admin.js';
+import { withHandler } from '../lib/with-handler.js';
 
 /**
  * CRUD for the schools table. Global-admin only — schools are the unit of
@@ -39,13 +39,8 @@ function normaliseDomainList(raw: unknown): string[] {
   return [];
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (!['POST', 'PUT', 'DELETE'].includes(req.method || '')) {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const user = await verifyAuth(req);
+export default withHandler({ methods: ['POST', 'PUT', 'DELETE'], auth: 'optional', label: 'admin-schools' }, async (req, res, ctx) => {
+  const user = ctx.user;
   if (!user || !isGlobalAdmin(user)) {
     return res.status(404).json({ error: 'Not found' });
   }
@@ -127,4 +122,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
-}
+});

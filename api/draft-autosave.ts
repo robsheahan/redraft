@@ -1,19 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
+import { withHandler } from '../lib/with-handler.js';
 
 const MAX_DRAFT_CHARS = 50_000;
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
-
-  if (req.method === 'GET')  return getAutosave(req, res, user.id);
-  if (req.method === 'PUT')  return putAutosave(req, res, user.id);
-  return res.status(405).json({ error: 'Method not allowed' });
-}
+export default withHandler({ methods: ['GET', 'PUT'], label: 'draft-autosave' }, async (req, res, ctx) => {
+  const user = ctx.user!;
+  if (req.method === 'GET') return getAutosave(req, res, user.id);
+  return putAutosave(req, res, user.id);
+});
 
 async function getAutosave(req: VercelRequest, res: VercelResponse, userId: string) {
   const taskId = (req.query.task_id as string || '').trim();

@@ -20,10 +20,9 @@
  * follow the same lib/lti/ags.ts pattern when added).
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
 import Anthropic from '@anthropic-ai/sdk';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
+import { withHandler } from '../lib/with-handler.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
 import { callTool } from '../lib/anthropic-tool-call.js';
@@ -59,12 +58,8 @@ function sanitiseLines(input: any): WorkingLine[] {
     .filter((l): l is WorkingLine => l !== null);
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback' }, async (req, res, ctx) => {
+  const user = ctx.user!;
 
   const {
     task_id,
@@ -291,7 +286,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (insertErr) {
       captureError(insertErr, { stage: 'submission-insert-maths', task_id, user_id: user.id });
-      return res.status(500).json({ error: 'Could not save your submission. ' + insertErr.message });
+      return res.status(500).json({ error: 'Could not save your submission. Please try again.' });
     }
 
     // Post-submission side effects. Each swallows its own error so it can't
@@ -349,6 +344,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json(successPayload);
   } catch (err: any) {
     captureError(err, { stage: 'top-level-maths', task_id, user_id: user.id });
-    return res.status(500).json({ error: err?.message || 'Failed to generate maths feedback.' });
+    return res.status(500).json({ error: 'Failed to generate maths feedback. Please try again.' });
   }
-}
+});

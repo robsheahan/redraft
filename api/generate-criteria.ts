@@ -1,19 +1,14 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
 import Anthropic from '@anthropic-ai/sdk';
-import { getSupabase, verifyAuth, authoritativeRole } from '../lib/auth.js';
+import { getSupabase, authoritativeRole } from '../lib/auth.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
+import { withHandler } from '../lib/with-handler.js';
 
 const MODEL = 'claude-sonnet-4-6';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+export default withHandler({ methods: ['POST'], label: 'generate-criteria' }, async (req, res, ctx) => {
+  const user = ctx.user!;
   // Teacher-only: students could otherwise generate a NESA-style marking view
   // of their own question — a soft bypass of "students never see the criteria".
   if (authoritativeRole(user) !== 'teacher') {
@@ -82,9 +77,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ criteria_text: text });
   } catch (err: any) {
     captureError(err, { stage: 'generate-criteria', user_id: user.id });
-    return res.status(500).json({ error: err?.message || 'Failed to generate criteria.' });
+    return res.status(500).json({ error: 'Failed to generate criteria. Please try again.' });
   }
-}
+});
 
 function buildSystemPrompt(opts: {
   course: string | null;

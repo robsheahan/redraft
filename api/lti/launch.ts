@@ -31,6 +31,9 @@ function reject(res: VercelResponse, status: number, message: string, context?: 
   return res.status(status).send(message);
 }
 
+// Intentionally NOT on lib/with-handler: LTI replies are text/plain + 302
+// redirects, not the wrapper's JSON error body, and this already has its own
+// try/catch + reject logging. Wrapping it would break the LTI contract.
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Error paths echo token claims (e.g. the raw email) back in the body.
   // res.send(string) defaults to text/html, which would render those echoes
