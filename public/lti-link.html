@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Link your Canvas account — ProofReady</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="/proofready/favicon-96x96.png" sizes="96x96" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #faf7f2; color: #111827; line-height: 1.5;
+      -webkit-font-smoothing: antialiased; padding: 40px 24px;
+    }
+    .wrap { max-width: 460px; margin: 0 auto; }
+    h1 { font-size: 22px; margin-bottom: 6px; }
+    p.lede { color: #4b5563; margin-bottom: 22px; }
+    .card { background: #fff; border: 1px solid #e8e0d4; border-radius: 12px; padding: 24px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 4px; }
+    input {
+      width: 100%; padding: 10px 12px; border: 1px solid #d6cdbf; border-radius: 8px;
+      font-size: 15px; font-family: inherit; background: #fff;
+    }
+    button {
+      margin-top: 18px; width: 100%; padding: 11px 16px; border: none; border-radius: 8px;
+      background: #ed7615; color: #fff; font-weight: 700; font-size: 15px; cursor: pointer;
+      font-family: inherit;
+    }
+    button:disabled { opacity: 0.6; cursor: default; }
+    button.secondary { background: #fff; color: #4b5563; border: 1px solid #d6cdbf; }
+    .email { font-weight: 700; color: #111827; }
+    .msg { margin-top: 14px; font-size: 14px; }
+    .msg.error { color: #b91c1c; }
+    .msg.ok { color: #15803d; }
+    .muted { color: #6b7280; font-size: 13px; margin-top: 14px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Link your Canvas account</h1>
+    <p class="lede">A ProofReady account already exists for this email. Sign in to it once to connect your Canvas login — future launches will sign you straight in.</p>
+    <div class="card" id="card">
+      <p id="loading">Loading…</p>
+
+      <!-- Sign-in (shown when not logged in) -->
+      <div id="signin" class="hidden">
+        <label for="email">Email</label>
+        <input type="email" id="email" autocomplete="username" placeholder="you@school.edu">
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password" placeholder="Your ProofReady password">
+        <button id="signinBtn" onclick="doSignIn()">Sign in</button>
+        <p class="muted">Forgot your password? <a href="/forgot-password.html">Reset it</a>, then come back to this page.</p>
+      </div>
+
+      <!-- Confirm link (shown when signed in + email matches) -->
+      <div id="confirm" class="hidden">
+        <p>Connect your Canvas login to your ProofReady account <span class="email" id="confirmEmail"></span>?</p>
+        <button id="confirmBtn" onclick="doConfirm()">Link my Canvas account</button>
+      </div>
+
+      <!-- Mismatch (signed in as a different account) -->
+      <div id="mismatch" class="hidden">
+        <p>You're signed in as <span class="email" id="yourEmail"></span>, but this Canvas launch is for <span class="email" id="canvasEmail"></span>.</p>
+        <button class="secondary" onclick="signOutAndRetry()">Sign out and use the other account</button>
+      </div>
+
+      <div id="msg" class="msg"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    const token = new URLSearchParams(location.search).get('token') || '';
+    const $ = (id) => document.getElementById(id);
+    const show = (id) => $(id).classList.remove('hidden');
+    const hide = (id) => $(id).classList.add('hidden');
+    function setMsg(text, kind) { const m = $('msg'); m.textContent = text || ''; m.className = 'msg' + (kind ? ' ' + kind : ''); }
+
+    (async function init() {
+      if (!token) { $('loading').textContent = ''; setMsg('This link is missing its token. Relaunch ProofReady from Canvas.', 'error'); return; }
+      const user = await getCurrentUser();
+      if (!user) { $('loading').classList.add('hidden'); show('signin'); return; }
+      loadStatus();
+    })();
+
+    async function loadStatus() {
+      hide('signin'); hide('confirm'); hide('mismatch'); setMsg('');
+      $('loading').classList.remove('hidden');
+      try {
+        const res = await authFetch('/api/lti/link?token=' + encodeURIComponent(token));
+        const data = await res.json().catch(() => ({}));
+        $('loading').classList.add('hidden');
+        if (!res.ok) { setMsg(data.error || 'Something went wrong. Relaunch from Canvas.', 'error'); return; }
+        if (data.email_matches) {
+          $('confirmEmail').textContent = data.canvas_email;
+          show('confirm');
+        } else {
+          $('yourEmail').textContent = data.your_email || '(unknown)';
+          $('canvasEmail').textContent = data.canvas_email;
+          show('mismatch');
+        }
+      } catch (e) {
+        $('loading').classList.add('hidden');
+        setMsg('Network error. Please try again.', 'error');
+      }
+    }
+
+    async function doSignIn() {
+      const email = $('email').value.trim();
+      const password = $('password').value;
+      if (!email || !password) { setMsg('Enter your email and password.', 'error'); return; }
+      const btn = $('signinBtn'); btn.disabled = true; btn.textContent = 'Signing in…'; setMsg('');
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      btn.disabled = false; btn.textContent = 'Sign in';
+      if (error) { setMsg(error.message || 'Could not sign in.', 'error'); return; }
+      loadStatus();
+    }
+
+    async function doConfirm() {
+      const btn = $('confirmBtn'); btn.disabled = true; btn.textContent = 'Linking…'; setMsg('');
+      try {
+        const res = await authFetch('/api/lti/link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { btn.disabled = false; btn.textContent = 'Link my Canvas account'; setMsg(data.error || 'Could not link your account.', 'error'); return; }
+        hide('confirm');
+        setMsg('✓ Linked! Relaunch ProofReady from Canvas — you\'ll be signed straight in from now on.', 'ok');
+      } catch (e) {
+        btn.disabled = false; btn.textContent = 'Link my Canvas account';
+        setMsg('Network error. Please try again.', 'error');
+      }
+    }
+
+    async function signOutAndRetry() {
+      await sb.auth.signOut();
+      hide('mismatch'); show('signin'); setMsg('');
+    }
+  </script>
+</body>
+</html>
