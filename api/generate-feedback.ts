@@ -415,6 +415,7 @@ Assess this draft against each marking criterion above. Address every criterion 
           tool: CRITERIA_CHECK_TOOL,
           cacheSystem: true,
           label: 'feedback:criteria',
+          requiredKeys: ['criteria_feedback'],
         })
       : Promise.resolve(null);
     const [pass1Settled, pass2Settled, inlineSettled] = await Promise.allSettled([
@@ -428,6 +429,11 @@ Assess this draft against each marking criterion above. Address every criterion 
         tool: HOLISTIC_FEEDBACK_TOOL,
         cacheSystem: true,
         label: 'feedback:holistic',
+        // Student-facing essentials. A truncation that cuts into these makes
+        // Pass 1 fail (→ friendly 502, draft NOT consumed) rather than persist
+        // gutted feedback. The trailing skill_assessment is intentionally not
+        // required — the schema orders it last so truncation drops it first.
+        requiredKeys: ['what_youve_done_well', 'improvements', 'top_priority'],
       }),
       pass2Promise,
       generateInlineSuggestions(client, {
@@ -482,6 +488,21 @@ Assess this draft against each marking criterion above. Address every criterion 
       is_band_rubric: isBandRubric,
     };
 
+    const successPayload = {
+      feedback,
+      draft_text: draft,
+      meta: {
+        taskVerb,
+        taskVerbs,
+        question: resolvedQuestion,
+        course: resolvedCourse,
+        title: resolvedTitle,
+        task_id: task_id || null,
+        draftVersion,
+        maxDrafts: MAX_DRAFTS,
+      },
+    };
+
     // Save submission if user is authenticated
     if (user) {
       const supabase = getSupabase();
@@ -510,8 +531,17 @@ Assess this draft against each marking criterion above. Address every criterion 
         time_to_first_keystroke_ms: typeof time_to_first_keystroke_ms === 'number' ? time_to_first_keystroke_ms : null,
         student_attachments: Array.isArray(student_attachments) ? student_attachments.slice(0, 5) : [],
       });
-      // A failed insert means the draft was never stored — surfacing it (as the
-      // maths path does) beats silently returning feedback that the 3-draft
+      // 23505 = a concurrent/duplicate submit already stored this
+      // draft_version (double-click). The unique index kept it from becoming a
+      // second row + a second round of Sonnet spend; the student still gets
+      // their feedback, so return it and skip the side-effects the winning
+      // request already ran — don't 500.
+      if (insertErr && (insertErr as any).code === '23505') {
+        console.warn('[generate-feedback] duplicate draft insert ignored (idempotent)', { task_id, user_id: user.id, draftVersion });
+        return res.status(200).json(successPayload);
+      }
+      // Any other failure means the draft was never stored — surfacing it (as
+      // the maths path does) beats silently returning feedback that the 3-draft
       // model and teacher marking will never see.
       if (insertErr) {
         captureError(insertErr, { stage: 'submission-insert', task_id, user_id: user.id });
@@ -575,20 +605,7 @@ Assess this draft against each marking criterion above. Address every criterion 
       await Promise.allSettled(bgWrites);
     }
 
-    return res.status(200).json({
-      feedback,
-      draft_text: draft,
-      meta: {
-        taskVerb,
-        taskVerbs,
-        question: resolvedQuestion,
-        course: resolvedCourse,
-        title: resolvedTitle,
-        task_id: task_id || null,
-        draftVersion,
-        maxDrafts: MAX_DRAFTS,
-      },
-    });
+    return res.status(200).json(successPayload);
   } catch (err: any) {
     captureError(err, { stage: 'top-level', task_id, user_id: user?.id });
     return res.status(500).json({ error: err.message || 'Failed to generate feedback' });
