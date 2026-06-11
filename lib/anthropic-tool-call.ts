@@ -39,6 +39,21 @@ interface CallToolOptions {
   cacheSystem?: boolean;
   /** Short label for the usage log line (e.g. "feedback:holistic"). */
   label?: string;
+  /**
+   * Keys the tool output must contain (and be non-empty) to count as a usable
+   * result. If any is missing — typically because a max_tokens truncation cut
+   * into the student-facing fields — callTool throws instead of returning
+   * gutted feedback that would persist and burn one of the student's drafts.
+   * Optional fields (e.g. trailing skill_assessment, ordered last in the
+   * schema so truncation drops them first) should NOT be listed here.
+   */
+  requiredKeys?: string[];
+}
+
+function isEmptyValue(v: unknown): boolean {
+  return v === undefined || v === null
+    || (typeof v === 'string' && v.trim() === '')
+    || (Array.isArray(v) && v.length === 0);
 }
 
 export interface TokenUsage {
@@ -56,7 +71,7 @@ export interface ToolCallResult<T> {
 }
 
 export async function callTool<T = unknown>(opts: CallToolOptions): Promise<ToolCallResult<T>> {
-  const { client, model, max_tokens, temperature, system, user, tool, retries = 3, cacheSystem, label } = opts;
+  const { client, model, max_tokens, temperature, system, user, tool, retries = 3, cacheSystem, label, requiredKeys } = opts;
   const totalAttempts = retries + 1;
   let lastErr: unknown;
 
@@ -65,6 +80,11 @@ export async function callTool<T = unknown>(opts: CallToolOptions): Promise<Tool
   const systemParam: string | Anthropic.Messages.TextBlockParam[] = cacheSystem
     ? [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }]
     : system;
+
+  // A soft output failure (no tool_use block, or output incomplete/truncated)
+  // is billed on every attempt — the API call itself succeeded — so unlike a
+  // network error it gets at most ONE retry.
+  let softFailureRetried = false;
 
   for (let attempt = 1; attempt <= totalAttempts; attempt++) {
     try {
@@ -81,21 +101,38 @@ export async function callTool<T = unknown>(opts: CallToolOptions): Promise<Tool
       const usage = extractUsage(resp);
       logUsage(label || tool.name, model, usage);
 
+      const stopReason = (resp as any).stop_reason || null;
       const block = resp.content.find((b) => b.type === 'tool_use');
       if (!block || block.type !== 'tool_use') {
-        throw new Error(`Model did not return a tool_use block for ${tool.name} (stop_reason=${(resp as any).stop_reason || 'unknown'})`);
+        throw new Error(`Model did not return a tool_use block for ${tool.name} (stop_reason=${stopReason || 'unknown'})`);
+      }
+
+      const value = block.input as T;
+      // Required-key validation: a max_tokens truncation can return a partial
+      // tool input. Reject it here so the caller doesn't persist gutted
+      // feedback (which would also count as one of the student's 3 drafts).
+      if (requiredKeys && requiredKeys.length) {
+        const missing = requiredKeys.filter((k) => isEmptyValue((value as any)?.[k]));
+        if (missing.length) {
+          const trunc = stopReason === 'max_tokens' ? ' (output truncated at max_tokens)' : '';
+          throw new Error(`Tool ${tool.name} returned incomplete output${trunc}; missing: ${missing.join(', ')}`);
+        }
       }
 
       return {
-        value: block.input as T,
+        value,
         attempts: attempt,
-        stop_reason: (resp as any).stop_reason || null,
+        stop_reason: stopReason,
         usage,
       };
     } catch (err: any) {
       lastErr = err;
       if (attempt >= totalAttempts) break;
       if (!isTransient(err)) break;
+      if (isSoftOutputFailure(err)) {
+        if (softFailureRetried) break;
+        softFailureRetried = true;
+      }
       const base = 1000 * 2 ** (attempt - 1);
       const jitter = Math.floor(Math.random() * 500);
       await new Promise((r) => setTimeout(r, base + jitter));
@@ -130,10 +167,14 @@ function logUsage(label: string, model: string, u: TokenUsage): void {
   );
 }
 
+function isSoftOutputFailure(err: any): boolean {
+  return /did not return a tool_use|incomplete output/i.test(String(err?.message || err || ''));
+}
+
 function isTransient(err: any): boolean {
   const status = err?.status ?? err?.response?.status;
   if (status === 429) return true;
   if (typeof status === 'number' && status >= 500 && status <= 599) return true;
   const msg = String(err?.message || err || '');
-  return /timeout|network|ETIMEDOUT|ECONN|fetch failed|tool_use|did not return|overloaded|rate.?limit/i.test(msg);
+  return /timeout|network|ETIMEDOUT|ECONN|fetch failed|tool_use|did not return|incomplete output|overloaded|rate.?limit/i.test(msg);
 }

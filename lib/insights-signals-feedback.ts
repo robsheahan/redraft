@@ -36,7 +36,7 @@ export async function generateInsightsSignals(opts: {
 }): Promise<InsightsSignals> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set');
-  const client = new Anthropic({ apiKey });
+  const client = new Anthropic({ apiKey, maxRetries: 0 });
 
   const family: SkillFamily = opts.family === 'maths' ? 'maths' : 'writing';
   const { system, user } = buildInsightsSignalsPrompt({ ...opts, family });

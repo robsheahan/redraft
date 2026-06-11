@@ -59,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let unroledCount = 0;
   const userList = users?.users || [];
   for (const u of userList) {
-    const role = u.user_metadata?.role;
+    const role = u.app_metadata?.role ?? u.user_metadata?.role;
     if (role === 'teacher') teacherCount++;
     else if (role === 'student') studentCount++;
     else unroledCount++;
@@ -106,7 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       id: u.id,
       email: u.email || '',
       name: userMap[u.id]?.name || u.email || 'unknown',
-      role: (u.user_metadata?.role as string) || null,
+      role: ((u.app_metadata?.role ?? u.user_metadata?.role) as string) || null,
       created_at: u.created_at,
       last_sign_in_at: u.last_sign_in_at || null,
       email_domain: (u.email || '').split('@')[1] || '',

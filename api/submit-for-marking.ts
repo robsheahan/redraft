@@ -155,6 +155,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       input_mode: (input_mode === 'freeform' || input_mode === 'talkthrough') ? input_mode : 'structured',
     } : {}),
   });
+  // 23505 = a concurrent/duplicate submit already created this row (double-
+  // click on Submit). The lock check above catches the sequential case; the
+  // unique index catches the race. Report it cleanly rather than 500.
+  if (insertErr && (insertErr as any).code === '23505') {
+    return res.status(409).json({ error: 'You have already submitted this task for marking.' });
+  }
   if (insertErr) {
     captureError(insertErr, { stage: 'submit-for-marking-insert', task_id, user_id: user.id });
     return res.status(500).json({ error: 'Could not save your submission.' });

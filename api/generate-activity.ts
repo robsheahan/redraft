@@ -47,6 +47,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { data: task } = await supabase.from('tasks').select('*').eq('id', task_id).maybeSingle();
   if (!task) return res.status(404).json({ error: 'Task not found.' });
   if (!task.lesson_builder) return res.status(200).json(MAIN_ACTIVITY);
+  // Draft tasks are invisible to students everywhere else; without this gate a
+  // class member holding the UUID could trigger generation early and read a
+  // re-skinned variant of the unpublished question.
+  if (!task.published_at) return res.status(400).json({ error: 'This task is a draft and not yet open.' });
 
   const { data: membership } = await supabase
     .from('class_members').select('student_id')
@@ -105,7 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   let value: any;
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
     const result = await callTool<any>({
       client,
       model: MODEL,
@@ -161,7 +165,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // three pass; any rejection or error degrades silently to the original
     // question. Overall pass is derived here, never trusted to a single field.
     try {
-      const verifyClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const verifyClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
       const verdict = await callTool<any>({
         client: verifyClient,
         model: MODEL,

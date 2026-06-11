@@ -19,6 +19,7 @@
  */
 
 import { DISCIPLINE_PERSONAS } from "./feedback-system.js";
+import { UNTRUSTED_CONTENT_RULE } from "../lib/prompt-safety.js";
 
 export function buildInlineSuggestionsSystemPrompt(
   courseName?: string,
@@ -29,6 +30,8 @@ export function buildInlineSuggestionsSystemPrompt(
   const subjectLabel = courseName || "this subject";
 
   return `You are an experienced NSW ${persona} with 15+ years of HSC marking experience. You have just written holistic feedback on a student's draft response in ${subjectLabel}. Now you are going back over the draft a second time to leave short, specific margin notes on particular sentences — the way a marker annotates a paper with a pen.
+
+${UNTRUSTED_CONTENT_RULE}
 
 VOICE AND TONE:
 Write directly to the student ("you"/"your"). Warm, honest, specific. Australian English only (analyse, organisation, behaviour, colour, prioritise, recognise). Match the voice of the holistic feedback — these annotations should feel like the same teacher, not a separate system.

@@ -190,6 +190,14 @@ function buildCohortPatternsPrompt(rows: any[]): string {
 
 const STUDENT_LLM_FLOOR = 3;
 
+// True daily ceiling on student-card generation across ALL students and
+// callers. The per-student rate limit keys its global cap by student_id, so on
+// its own it only bounds spend per-student (a school of N students would get
+// N×400/day of headroom). This shared-key cap is the actual circuit breaker on
+// the most expensive uncapped authenticated path (P5). Generous enough for
+// legitimate pilot use; low enough to stop a runaway.
+const STUDENT_CARD_GLOBAL_PER_DAY = 1500;
+
 const STUDENT_KIND_CONFIG: Record<string, {
   tool: any;
   endpointName: string;
@@ -587,7 +595,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // -- Anthropic call --
   let value: any;
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
     const result = await callTool<Record<string, any>>({
       client,
       model: MODEL,
@@ -717,6 +725,20 @@ async function handleStudentKind(
   const studentId = (req.body?.student_id ? String(req.body.student_id) : '').trim();
   if (!studentId) return res.status(400).json({ error: 'student_id is required for student-* kinds.' });
 
+  // True global circuit breaker across ALL students/callers. userId=null so
+  // this is a pure global check (no per-user component) on a shared key — the
+  // ceiling the per-student cap below can't provide. Checked first so a request
+  // that would breach the global budget is rejected before anything else runs.
+  const globalGuard = await checkAndLogRateLimit(supabase, null, {
+    endpoint: 'insights-card-student:global',
+    perUserPerHour: 0, // unused when userId is null
+    globalPerDay: STUDENT_CARD_GLOBAL_PER_DAY,
+  });
+  if (!globalGuard.ok) {
+    if (globalGuard.retryAfterSeconds) res.setHeader('Retry-After', String(globalGuard.retryAfterSeconds));
+    return res.status(429).json({ error: globalGuard.reason || 'ProofReady has hit its daily capacity. Please try again tomorrow.' });
+  }
+
   // Rate-limit per (subject, kind, student) — endpointName already names
   // the kind, so include student_id in the rate-limit subject so spamming
   // one student doesn't lock out other students for the same caller.
@@ -800,15 +822,17 @@ async function handleStudentKind(
     };
   });
 
-  // Student name (for prompt + response context).
+  // Student name (for prompt + response context). No email fallback: this
+  // string is interpolated into LLM prompts, and a student's email address
+  // must never reach Anthropic (privacy contract).
   const { data: { user: studentUser } } = await supabase.auth.admin.getUserById(studentId);
   const meta = (studentUser?.user_metadata || {}) as any;
-  const studentName = meta.display_name || meta.full_name || meta.name || studentUser?.email || 'this student';
+  const studentName = meta.display_name || meta.full_name || meta.name || 'this student';
 
   // -- Anthropic call --
   let value: any;
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
     const result = await callTool<Record<string, any>>({
       client,
       model: MODEL,
@@ -978,7 +1002,7 @@ async function handleClassProfileSummary(
   const userPrompt = `Below are ${profileLines.length} anonymised student profiles drawn from the cohort. Synthesise the class-level baseline.\n\n${profileLines.join('\n\n')}`;
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
     const result = await callTool<Record<string, any>>({
       client,
       model: MODEL,

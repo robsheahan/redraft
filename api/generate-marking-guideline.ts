@@ -17,7 +17,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { applyCors } from '../lib/cors.js';
 import Anthropic from '@anthropic-ai/sdk';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase, verifyAuth, authoritativeRole } from '../lib/auth.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
 
@@ -48,6 +48,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const user = await verifyAuth(req);
   if (!user) return res.status(401).json({ error: 'Not authenticated' });
+  // Teacher-only: students could otherwise generate a marking guideline for
+  // their own task's question — a soft bypass of "students never see it".
+  if (authoritativeRole(user) !== 'teacher') {
+    return res.status(403).json({ error: 'Only teachers can generate marking guidelines.' });
+  }
 
   const { title, question, course, total_marks, outcomes } = (req.body || {}) as {
     title?: string;
@@ -91,7 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'Server not configured.' });
-  const client = new Anthropic({ apiKey });
+  const client = new Anthropic({ apiKey, maxRetries: 0 });
 
   try {
     const resp = await client.messages.create({

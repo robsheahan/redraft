@@ -15,6 +15,7 @@ import { HOLISTIC_FEEDBACK_TOOL, CRITERIA_CHECK_TOOL } from '../lib/feedback-too
 import { looksLikeBandRubric, stripBandLabels } from '../lib/rubric-detect.js';
 import { postCompletionIfLinked } from '../lib/lti/ags.js';
 import { recordSkillSignals, readSkillProfile } from '../lib/skill-profile.js';
+import { wrapUntrusted, capLen, sanitizeLabel, UNTRUSTED_CONTENT_RULE } from '../lib/prompt-safety.js';
 
 function buildCriteriaCheckPrompt(courseName?: string, isBandRubric?: boolean): string {
   const subjectLabel = courseName || "this HSC subject";
@@ -28,6 +29,8 @@ function buildCriteriaCheckPrompt(courseName?: string, isBandRubric?: boolean): 
     // of evidence") and give feedback per dimension — no band labels, no
     // mark predictions.
     return `You are a senior ${subjectLabel} marker. The teacher has provided a band-style rubric — descriptors at different performance levels rather than separate criteria. You are independently assessing a student's draft. You have NOT seen any other feedback — you are making a fresh assessment.
+
+${UNTRUSTED_CONTENT_RULE}
 
 YOUR TASK:
 Identify 3–5 distinct QUALITY DIMENSIONS embedded in the band descriptors (e.g. "Depth of analysis", "Use of evidence", "Communication and structure", "Integration across the question"). For EACH dimension, give the student specific feedback on their draft.
@@ -64,6 +67,8 @@ Respond in JSON:
 
   return `You are a senior ${subjectLabel} marker. You are independently assessing a student's draft response against the marking criteria provided by their teacher. You have NOT seen any other feedback — you are making a fresh assessment.
 
+${UNTRUSTED_CONTENT_RULE}
+
 YOUR TASK:
 For EACH marking criterion the teacher has provided, assess the student's draft and produce specific feedback. You must address every criterion individually — do not skip any.
 
@@ -98,6 +103,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const user = await verifyAuth(req);
+  if (!user) return res.status(401).json({ error: 'Not authenticated' });
   const { question, course, criteria, criteria_text, outcomes, draft, notes, task_id, task_title, task_type,
     own_task_id, own_task_title, own_task_class_id, student_attachments,
     keystroke_count, paste_attempts_blocked, typing_session_count, total_typing_time_ms, time_to_first_keystroke_ms } = req.body;
@@ -138,9 +144,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Your draft is too long. Please shorten it to under 30,000 characters.' });
   }
 
-  // Rate limit / spend protection. Logged-in users get a per-user hourly
-  // cap and count toward the global daily cap; anon users only count toward
-  // the global cap (no identity to cap them individually).
+  // Rate limit / spend protection: a per-user hourly cap plus a global
+  // daily cap.
   //
   // Own-task submissions use a separate endpoint key for the per-hour and global
   // call limits. The per-DAY limit is enforced as "distinct tasks started today"
@@ -272,6 +277,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  // Own-task fields arrive from req.body, student-authored and unbounded. Cap
+  // each (P10) and sanitise the course label that lands in the system prompt;
+  // the prompt builders fence the rest as untrusted (via `untrusted` below).
+  // Teacher-task fields come from the DB and stay as-is.
+  if (isOwnTaskSubmission) {
+    if (resolvedQuestion) resolvedQuestion = capLen(resolvedQuestion, 5000);
+    if (resolvedCriteriaText) resolvedCriteriaText = capLen(resolvedCriteriaText, 10000);
+    if (teacherNotes) teacherNotes = capLen(teacherNotes, 2000);
+    if (resolvedCourse) resolvedCourse = sanitizeLabel(resolvedCourse, 80);
+    if (resolvedTitle) resolvedTitle = capLen(resolvedTitle, 200);
+  }
+
   const taskVerbs = extractTaskVerbs(String(resolvedQuestion || ''));
   const taskVerb = taskVerbs[0] || null;
 
@@ -338,10 +355,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     priorDrafts: priorDrafts.length > 0 ? priorDrafts : undefined,
     draftVersion,
     readiness,
+    untrusted: isOwnTaskSubmission,
   });
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
 
     // Pass 2 prompt (independent — doesn't depend on Pass 1). Runs for both
     // band-style and per-criterion rubrics; the system prompt switches on
@@ -358,15 +376,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           : 'No specific criteria provided — assess against general HSC standards');
 
     const criteriaCheckPrompt = `ASSESSMENT TASK:
-${taskDescription}
+${isOwnTaskSubmission ? wrapUntrusted('student_task_brief', taskDescription) : taskDescription}
 
 MARKING CRITERIA:
-${criteriaBlock}
+${isOwnTaskSubmission ? wrapUntrusted('student_task_criteria', criteriaBlock) : criteriaBlock}
 
 ---
 
 STUDENT'S DRAFT RESPONSE:
-${draft}
+${wrapUntrusted('student_draft', draft)}
 
 ---
 
@@ -397,6 +415,7 @@ Assess this draft against each marking criterion above. Address every criterion 
           tool: CRITERIA_CHECK_TOOL,
           cacheSystem: true,
           label: 'feedback:criteria',
+          requiredKeys: ['criteria_feedback'],
         })
       : Promise.resolve(null);
     const [pass1Settled, pass2Settled, inlineSettled] = await Promise.allSettled([
@@ -410,6 +429,11 @@ Assess this draft against each marking criterion above. Address every criterion 
         tool: HOLISTIC_FEEDBACK_TOOL,
         cacheSystem: true,
         label: 'feedback:holistic',
+        // Student-facing essentials. A truncation that cuts into these makes
+        // Pass 1 fail (→ friendly 502, draft NOT consumed) rather than persist
+        // gutted feedback. The trailing skill_assessment is intentionally not
+        // required — the schema orders it last so truncation drops it first.
+        requiredKeys: ['what_youve_done_well', 'improvements', 'top_priority'],
       }),
       pass2Promise,
       generateInlineSuggestions(client, {
@@ -464,10 +488,25 @@ Assess this draft against each marking criterion above. Address every criterion 
       is_band_rubric: isBandRubric,
     };
 
+    const successPayload = {
+      feedback,
+      draft_text: draft,
+      meta: {
+        taskVerb,
+        taskVerbs,
+        question: resolvedQuestion,
+        course: resolvedCourse,
+        title: resolvedTitle,
+        task_id: task_id || null,
+        draftVersion,
+        maxDrafts: MAX_DRAFTS,
+      },
+    };
+
     // Save submission if user is authenticated
     if (user) {
       const supabase = getSupabase();
-      await supabase.from('submissions').insert({
+      const { error: insertErr } = await supabase.from('submissions').insert({
         student_id: user.id,
         task_id: task_id || null,
         // Own-task columns are only written for own tasks — so a teacher-task
@@ -492,6 +531,22 @@ Assess this draft against each marking criterion above. Address every criterion 
         time_to_first_keystroke_ms: typeof time_to_first_keystroke_ms === 'number' ? time_to_first_keystroke_ms : null,
         student_attachments: Array.isArray(student_attachments) ? student_attachments.slice(0, 5) : [],
       });
+      // 23505 = a concurrent/duplicate submit already stored this
+      // draft_version (double-click). The unique index kept it from becoming a
+      // second row + a second round of Sonnet spend; the student still gets
+      // their feedback, so return it and skip the side-effects the winning
+      // request already ran — don't 500.
+      if (insertErr && (insertErr as any).code === '23505') {
+        console.warn('[generate-feedback] duplicate draft insert ignored (idempotent)', { task_id, user_id: user.id, draftVersion });
+        return res.status(200).json(successPayload);
+      }
+      // Any other failure means the draft was never stored — surfacing it (as
+      // the maths path does) beats silently returning feedback that the 3-draft
+      // model and teacher marking will never see.
+      if (insertErr) {
+        captureError(insertErr, { stage: 'submission-insert', task_id, user_id: user.id });
+        return res.status(500).json({ error: 'Could not save your submission. ' + insertErr.message });
+      }
 
       // Post-submission side effects. These must never affect the feedback the
       // student just received (each swallows its own error), but they DO need to
@@ -550,20 +605,7 @@ Assess this draft against each marking criterion above. Address every criterion 
       await Promise.allSettled(bgWrites);
     }
 
-    return res.status(200).json({
-      feedback,
-      draft_text: draft,
-      meta: {
-        taskVerb,
-        taskVerbs,
-        question: resolvedQuestion,
-        course: resolvedCourse,
-        title: resolvedTitle,
-        task_id: task_id || null,
-        draftVersion,
-        maxDrafts: MAX_DRAFTS,
-      },
-    });
+    return res.status(200).json(successPayload);
   } catch (err: any) {
     captureError(err, { stage: 'top-level', task_id, user_id: user?.id });
     return res.status(500).json({ error: err.message || 'Failed to generate feedback' });

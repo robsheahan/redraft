@@ -95,6 +95,17 @@ Respond in the following JSON structure:
   "overall_snapshot": "2-3 sentences giving an honest overall picture of class performance. Where does the class sit? What's the standout pattern?"
 }`;
 
+  // These feedback fields are {summary, detail} objects (older rows may be
+  // plain strings) — interpolating them directly prints "[object Object]".
+  const fieldText = (v: any): string => {
+    if (!v) return 'N/A';
+    if (typeof v === 'string') return v;
+    return String(v.summary || v.detail || 'N/A');
+  };
+  // Per-student + per-field caps so one verbose feedback row (or a very large
+  // class) can't blow out the synthesis prompt.
+  const cap = (s: string, n: number) => (s.length > n ? s.slice(0, n) + '…' : s);
+
   const userPrompt = `ASSESSMENT TASK:
 ${task.course ? task.course + '\n' : ''}Question: ${task.question}
 
@@ -102,18 +113,18 @@ TOTAL SUBMISSIONS: ${feedbacks.length}
 
 INDIVIDUAL STUDENT FEEDBACKS:
 ${feedbacks.map((f: any, i: number) => `--- Student ${i + 1} ---
-Strengths: ${JSON.stringify(f.what_youve_done_well || [])}
-Key term check: ${f.task_verb_check || 'N/A'}
-Improvements: ${JSON.stringify(f.improvements || [])}
-Overall: ${f.overall || 'N/A'}
-Top priority: ${f.top_priority || 'N/A'}`).join('\n\n')}
+Strengths: ${cap(JSON.stringify(f.what_youve_done_well || []), 1500)}
+Key term check: ${cap(fieldText(f.task_verb_check), 600)}
+Improvements: ${cap(JSON.stringify(f.improvements || []), 1500)}
+Overall: ${cap(fieldText(f.overall), 600)}
+Top priority: ${cap(fieldText(f.top_priority), 600)}`).join('\n\n')}
 
 ---
 
 Synthesise the above into a class-level overview. Look for patterns — what comes up repeatedly? What are the common strengths and gaps? Be honest and specific.`;
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
 
     const result = await callTool<Record<string, any>>({
       client,

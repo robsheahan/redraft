@@ -38,6 +38,25 @@ const ALPHA = 0.4;
 // Observations needed before a dimension is treated as fully confident.
 const CONFIDENCE_FULL_AT = 5;
 
+// Anti-gaming damping (P2). Two guards stop a couple of gamed drafts from
+// flipping a profile to secure/extending (which would strip scaffolding,
+// harden Lesson Builder re-skins, and pollute teacher insights):
+//   1. The model's per-observation confidence scales how far that observation
+//      moves the rollup — a weakly-evidenced read barely shifts it.
+//   2. A hard ±1 cap on how far any single submission can move the stored
+//      level, regardless of how extreme the reading.
+const MAX_LEVEL_DELTA = 1;
+const EVIDENCE_WEIGHT: Record<string, number> = { high: 1, medium: 0.6, low: 0.3 };
+// A note this short can't carry concrete evidence — treat as low confidence
+// however the model labelled it.
+const MIN_EVIDENCE_NOTE_LEN = 25;
+
+function evidenceWeight(confidence: string, note: string): number {
+  let w = EVIDENCE_WEIGHT[confidence.toLowerCase()] ?? EVIDENCE_WEIGHT.medium;
+  if (note.trim().length < MIN_EVIDENCE_NOTE_LEN) w = Math.min(w, EVIDENCE_WEIGHT.low);
+  return w;
+}
+
 const VALID_LEVELS = new Set<string>(SKILL_LEVELS);
 
 function nearestLabel(value: number): SkillLevel {
@@ -63,13 +82,18 @@ export async function recordSkillSignals(opts: {
 
   // Keep only well-formed, actually-assessed signals for a dimension in this
   // family with a recognised level.
-  const signals: Array<{ dimension: string; level: SkillLevel; note: string }> = [];
+  const signals: Array<{ dimension: string; level: SkillLevel; note: string; confidence: string }> = [];
   for (const raw of assessment as RawSignal[]) {
     if (!raw || raw.assessed === false) continue;
     const dim = typeof raw.dimension === 'string' ? raw.dimension : '';
     const level = typeof raw.level === 'string' ? raw.level.toLowerCase() : '';
     if (!validKeys.has(dim) || !VALID_LEVELS.has(level)) continue;
-    signals.push({ dimension: dim, level: level as SkillLevel, note: (raw.note || '').toString().slice(0, 400) });
+    signals.push({
+      dimension: dim,
+      level: level as SkillLevel,
+      note: (raw.note || '').toString().slice(0, 400),
+      confidence: typeof raw.confidence === 'string' ? raw.confidence : '',
+    });
   }
   if (signals.length === 0) return 0;
 
@@ -89,7 +113,16 @@ export async function recordSkillSignals(opts: {
   const rows = signals.map(s => {
     const obs = LEVEL_VALUE[s.level];
     const before = prev.get(s.dimension);
-    const newLevel = before ? ALPHA * obs + (1 - ALPHA) * before.level : obs;
+    let newLevel: number;
+    if (before) {
+      // Evidence-weighted EWMA: a weakly-evidenced observation moves the
+      // estimate less, then a hard ±1 cap bounds any single submission.
+      const effAlpha = ALPHA * evidenceWeight(s.confidence, s.note);
+      const ewma = effAlpha * obs + (1 - effAlpha) * before.level;
+      newLevel = Math.max(before.level - MAX_LEVEL_DELTA, Math.min(before.level + MAX_LEVEL_DELTA, ewma));
+    } else {
+      newLevel = obs;
+    }
     const count = (before?.observation_count ?? 0) + 1;
     let trend: string;
     if (!before) trend = 'new';

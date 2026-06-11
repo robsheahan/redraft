@@ -164,7 +164,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     : null;
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
 
     // Pass B — per-line diagnostic. Load-bearing.
     const tB0 = Date.now();
@@ -186,6 +186,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tool: MATHS_PER_LINE_DIAGNOSTIC_TOOL,
       cacheSystem: true,
       label: 'maths:perline',
+      // Load-bearing: a truncated diagnostic throws here → top-level catch →
+      // 500 with no submission inserted, so the draft isn't consumed.
+      requiredKeys: ['line_annotations'],
     });
     console.log('[generate-maths-feedback] Pass B in', Date.now() - tB0, 'ms');
 
@@ -211,6 +214,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         tool: MATHS_HOLISTIC_TOOL,
         cacheSystem: true,
         label: 'maths:holistic',
+        // A truncated holistic rejects cleanly rather than returning a
+        // half-built summary; the handler still ships the Pass B line
+        // annotations (exempting that degraded draft from the count is P9).
+        requiredKeys: ['what_youve_done_well', 'top_priority', 'improvements'],
       }),
     ]);
     console.log('[generate-maths-feedback] Pass C in', Date.now() - tC0, 'ms');
@@ -260,7 +267,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       student_attachments: Array.isArray(student_attachments) ? student_attachments.slice(0, 5) : [],
     };
 
+    const successPayload = {
+      feedback,
+      working_lines: lines,
+      meta: {
+        question,
+        course: task.course || null,
+        title: task.title || null,
+        task_id,
+        draftVersion,
+        maxDrafts: MAX_DRAFTS,
+      },
+    };
+
     const { error: insertErr } = await supabase.from('submissions').insert(insertPayload);
+    // 23505 = a concurrent/duplicate submit already stored this draft_version
+    // (double-click). The unique index blocked the second row; the student
+    // still gets their feedback, so return it and skip the side-effects the
+    // winning request already ran — don't 500.
+    if (insertErr && (insertErr as any).code === '23505') {
+      console.warn('[generate-maths-feedback] duplicate draft insert ignored (idempotent)', { task_id, user_id: user.id, draftVersion });
+      return res.status(200).json(successPayload);
+    }
     if (insertErr) {
       captureError(insertErr, { stage: 'submission-insert-maths', task_id, user_id: user.id });
       return res.status(500).json({ error: 'Could not save your submission. ' + insertErr.message });
@@ -318,18 +346,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     await Promise.allSettled(bgWrites);
 
-    return res.status(200).json({
-      feedback,
-      working_lines: lines,
-      meta: {
-        question,
-        course: task.course || null,
-        title: task.title || null,
-        task_id,
-        draftVersion,
-        maxDrafts: MAX_DRAFTS,
-      },
-    });
+    return res.status(200).json(successPayload);
   } catch (err: any) {
     captureError(err, { stage: 'top-level-maths', task_id, user_id: user.id });
     return res.status(500).json({ error: err?.message || 'Failed to generate maths feedback.' });

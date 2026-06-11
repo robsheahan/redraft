@@ -1,10 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { waitUntil } from '@vercel/functions';
 import { decodeJwt } from 'jose';
 import { randomUUID } from 'node:crypto';
 import { findPlatform } from '../../lib/lti/config.js';
 import { consumeNonce } from '../../lib/lti/nonce.js';
 import { verifyPlatformIdToken } from '../../lib/lti/jwt.js';
-import { provisionUser, generateLoginUrl } from '../../lib/lti/user-provision.js';
+import { provisionUser, generateLoginUrl, LtiAccountLinkRequiredError } from '../../lib/lti/user-provision.js';
 import { provisionClass, enrolStudent } from '../../lib/lti/course-provision.js';
 import { roleFromLtiRoles } from '../../lib/lti/roles.js';
 import { syncRoster } from '../../lib/lti/nrps.js';
@@ -23,14 +24,25 @@ const CLAIM_NRPS = 'https://purl.imsglobal.org/spec/lti-nrps/claim/namesroleserv
 const CLAIM_AGS = 'https://purl.imsglobal.org/spec/lti-ags/claim/endpoint';
 const CLAIM_DL_SETTINGS = 'https://purl.imsglobal.org/spec/lti-dl/claim/deep_linking_settings';
 
+// Every early 4xx otherwise vanishes into the Canvas iframe with no trace —
+// one log line per rejection turns a 5-hour pilot incident into a 5-minute one.
+function reject(res: VercelResponse, status: number, message: string, context?: Record<string, unknown>) {
+  console.warn('[lti] launch reject', status, message, context ? JSON.stringify(context) : '');
+  return res.status(status).send(message);
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Error paths echo token claims (e.g. the raw email) back in the body.
+  // res.send(string) defaults to text/html, which would render those echoes
+  // as live HTML on our own origin. Plain text only.
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   try {
     const body = req.body as Record<string, string>;
     const idToken = body.id_token;
     const state = body.state;
 
     if (!idToken || !state) {
-      return res.status(400).send('Missing id_token or state');
+      return reject(res, 400, 'Missing id_token or state', { has_id_token: !!idToken, has_state: !!state });
     }
 
     const unverified = decodeJwt(idToken);
@@ -38,12 +50,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const audience = Array.isArray(unverified.aud) ? unverified.aud[0] : unverified.aud;
     const deploymentId = unverified[CLAIM_DEPLOYMENT_ID] as string | undefined;
     if (!issuer || !audience || !deploymentId) {
-      return res.status(400).send('Malformed id_token claims');
+      return reject(res, 400, 'Malformed id_token claims', { iss: issuer, aud: audience, deployment_id: deploymentId });
     }
 
     const platform = await findPlatform(issuer, audience, deploymentId);
     if (!platform) {
-      return res.status(403).send('Unknown platform on launch');
+      return reject(res, 403, 'Unknown platform on launch', { iss: issuer, aud: audience, deployment_id: deploymentId });
     }
 
     const payload = await verifyPlatformIdToken(idToken, {
@@ -53,10 +65,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     const nonce = payload.nonce as string | undefined;
-    if (!nonce) return res.status(400).send('Missing nonce in id_token');
+    if (!nonce) return reject(res, 400, 'Missing nonce in id_token', { platform: platform.id });
     const nonceCheck = await consumeNonce(nonce, state);
     if (!nonceCheck || nonceCheck.platformId !== platform.id) {
-      return res.status(400).send('Invalid or expired nonce/state');
+      return reject(res, 400, 'Invalid or expired nonce/state', { platform: platform.id });
     }
 
     const messageType = payload[CLAIM_MESSAGE_TYPE] as string;
@@ -68,8 +80,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const name = (payload.name as string) || (payload.given_name as string) || email || `Canvas user ${sub}`;
 
     if (!email) {
-      return res.status(400).send(
+      return reject(res, 400,
         'Launch is missing the user email. Ask the Canvas admin to set the developer key privacy level to "public", or add Person.email.primary to the custom params.',
+        { platform: platform.id, sub },
       );
     }
 
@@ -79,8 +92,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // validate email address: invalid format" — turning what should be a handled
     // config issue into a 500. Catch it here and return the same clean 400.
     if (!isValidEmail(email)) {
-      return res.status(400).send(
+      return reject(res, 400,
         `Canvas sent "${rawEmail}" as this user's email, which isn't a valid address, so ProofReady can't create their account. Ask the Canvas admin to correct this user's email in Canvas.`,
+        { platform: platform.id, sub },
       );
     }
 
@@ -97,8 +111,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (messageType === 'LtiDeepLinkingRequest') {
       const dlSettings = payload[CLAIM_DL_SETTINGS] as Record<string, unknown> | undefined;
-      if (!dlSettings) return res.status(400).send('Missing deep linking settings');
-      if (role !== 'teacher') return res.status(403).send('Only teachers can add ProofReady tasks');
+      if (!dlSettings) return reject(res, 400, 'Missing deep linking settings', { platform: platform.id });
+      if (role !== 'teacher') return reject(res, 403, 'Only teachers can add ProofReady tasks', { platform: platform.id, roles });
 
       let classId: string | null = null;
       if (context) {
@@ -137,11 +151,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         classId = provision.classId;
         const nrps = payload[CLAIM_NRPS] as { context_memberships_url?: string } | undefined;
         if (nrps?.context_memberships_url) {
-          syncRoster({
-            platform,
-            classId: provision.classId,
-            membershipsUrl: nrps.context_memberships_url,
-          }).catch(err => captureError(err, { stage: 'roster-sync', platform: platform.id }));
+          // waitUntil keeps the function alive past the redirect — a plain
+          // fire-and-forget promise is frozen/killed once the response is
+          // sent on Vercel, silently dropping large roster syncs.
+          waitUntil(
+            syncRoster({
+              platform,
+              classId: provision.classId,
+              membershipsUrl: nrps.context_memberships_url,
+            }).catch(err => captureError(err, { stage: 'roster-sync', platform: platform.id })),
+          );
         }
       } else {
         const supabase = getSupabase();
@@ -172,6 +191,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const loginUrl = await generateLoginUrl(email, `${SITE_ORIGIN}${target}`);
     res.redirect(302, loginUrl);
   } catch (err) {
+    // A pre-existing account already uses this email and isn't mapped to this
+    // Canvas identity. We won't auto-link across that trust boundary (L1) — give
+    // the user a clear path instead of a 500.
+    if (err instanceof LtiAccountLinkRequiredError) {
+      console.warn('[lti] launch reject 409 account-link-required');
+      return res.status(409).send(
+        'A ProofReady account already uses this email address. Please sign in directly at https://proofready.app with that account. (Linking your Canvas login to an existing account is coming soon — contact support if you need it now.)',
+      );
+    }
     captureError(err, { endpoint: 'lti/launch' });
     res.status(500).send('LTI launch error');
   }

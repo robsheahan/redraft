@@ -32,9 +32,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 async function returnSubmissions(_req: VercelRequest, res: VercelResponse, userId: string) {
   const supabase = getSupabase();
 
+  // Explicit column list: skill_assessment (the per-dimension developmental
+  // read) must never reach students — mirror returnTaskDrafts below.
   const { data, error } = await supabase
     .from('submissions')
-    .select('*')
+    .select('id, task_id, own_task_id, own_task_title, own_task_class_id, draft_text, feedback, draft_version, created_at, question, course, criterion_marks, total_mark, teacher_comment, teacher_annotations, graded_at, graded_by, submitted_for_marking, working_lines, input_mode, student_attachments')
     .eq('student_id', userId)
     .order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
