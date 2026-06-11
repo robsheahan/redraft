@@ -189,7 +189,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const userPrompt = buildUserPrompt(schoolName, taggedTasks);
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
     const result = await callTool<Record<string, any>>({
       client,
       model: MODEL,

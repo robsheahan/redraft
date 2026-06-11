@@ -164,7 +164,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     : null;
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
 
     // Pass B — per-line diagnostic. Load-bearing.
     const tB0 = Date.now();

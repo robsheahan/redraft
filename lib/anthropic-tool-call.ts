@@ -66,6 +66,10 @@ export async function callTool<T = unknown>(opts: CallToolOptions): Promise<Tool
     ? [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }]
     : system;
 
+  // A missing tool_use block is billed on every attempt (the API call itself
+  // succeeded), so unlike network errors it gets at most ONE retry.
+  let missingToolUseRetried = false;
+
   for (let attempt = 1; attempt <= totalAttempts; attempt++) {
     try {
       const resp = await client.messages.create({
@@ -96,6 +100,10 @@ export async function callTool<T = unknown>(opts: CallToolOptions): Promise<Tool
       lastErr = err;
       if (attempt >= totalAttempts) break;
       if (!isTransient(err)) break;
+      if (isMissingToolUse(err)) {
+        if (missingToolUseRetried) break;
+        missingToolUseRetried = true;
+      }
       const base = 1000 * 2 ** (attempt - 1);
       const jitter = Math.floor(Math.random() * 500);
       await new Promise((r) => setTimeout(r, base + jitter));
@@ -128,6 +136,10 @@ function logUsage(label: string, model: string, u: TokenUsage): void {
     `[usage] ${label} model=${model} in=${u.input_tokens} out=${u.output_tokens} ` +
     `cache_read=${cached} cache_write=${u.cache_creation_input_tokens} cache_hit=${hitPct}%`,
   );
+}
+
+function isMissingToolUse(err: any): boolean {
+  return /did not return a tool_use/i.test(String(err?.message || err || ''));
 }
 
 function isTransient(err: any): boolean {
