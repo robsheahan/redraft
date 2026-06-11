@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { createClient } from '@supabase/supabase-js';
+import { withHandler } from '../lib/with-handler.js';
 import { getUserInfoBatch } from '../lib/user-names.js';
 
 /**
@@ -38,17 +38,18 @@ async function nameFor(supabase: any, userId: string | null | undefined): Promis
   } catch { return null; }
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  switch (req.method) {
-    case 'GET':    return handleGet(req, res);
-    case 'POST':   return handlePost(req, res);
-    case 'PUT':    return handleUpdate(req, res);
-    case 'DELETE': return handleDelete(req, res);
-    default:
-      return res.status(405).json({ error: 'Method not allowed' });
-  }
-}
+// auth:'none' — each sub-handler does its own verifyAuth + ownership checks.
+export default withHandler(
+  { methods: ['GET', 'POST', 'PUT', 'DELETE'], auth: 'none', label: 'class' },
+  async (req, res) => {
+    switch (req.method) {
+      case 'GET':    return handleGet(req, res);
+      case 'POST':   return handlePost(req, res);
+      case 'PUT':    return handleUpdate(req, res);
+      case 'DELETE': return handleDelete(req, res);
+    }
+  },
+);
 
 async function handleGet(req: VercelRequest, res: VercelResponse) {
   // Public: join preview by code
@@ -191,7 +192,7 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
 async function listForUser(res: VercelResponse, userId: string, supabase: any) {
   const { data: owned, error: ownedErr } = await supabase
     .from('classes').select('*').eq('teacher_id', userId).order('created_at', { ascending: false });
-  if (ownedErr) return res.status(500).json({ error: ownedErr.message });
+  if (ownedErr) throw ownedErr;
 
   const { data: memberships } = await supabase
     .from('class_members').select('class_id, joined_at').eq('student_id', userId);
@@ -329,7 +330,7 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
     name: String(name).trim(),
     course: course ? String(course).trim() : null,
   }).select('*').single();
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw error;
   return res.status(200).json({ class: data });
 }
 
@@ -345,7 +346,7 @@ async function studentJoin(req: VercelRequest, res: VercelResponse, userId: stri
     { class_id: cls.id, student_id: userId },
     { onConflict: 'class_id,student_id' },
   );
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw error;
   return res.status(200).json({ class_id: cls.id });
 }
 
@@ -354,7 +355,7 @@ async function studentLeave(req: VercelRequest, res: VercelResponse, userId: str
   if (!classId) return res.status(400).json({ error: 'class_id is required.' });
   const { error } = await supabase.from('class_members')
     .delete().eq('class_id', classId).eq('student_id', userId);
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw error;
   return res.status(200).json({ ok: true });
 }
 
@@ -366,7 +367,7 @@ async function teacherArchive(req: VercelRequest, res: VercelResponse, userId: s
   if (!cls) return res.status(404).json({ error: 'Class not found.' });
   if (cls.teacher_id !== userId) return res.status(403).json({ error: 'You can only modify your own classes.' });
   const { error } = await supabase.from('classes').update({ archived_at: archivedAt }).eq('id', classId);
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw error;
   return res.status(200).json({ ok: true });
 }
 
@@ -388,7 +389,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'Nothing to update.' });
 
   const { error } = await supabase.from('classes').update(patch).eq('id', id);
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw error;
   return res.status(200).json({ ok: true });
 }
 
@@ -412,6 +413,6 @@ async function handleDelete(req: VercelRequest, res: VercelResponse) {
   }
   await supabase.from('class_members').delete().eq('class_id', id);
   const { error } = await supabase.from('classes').delete().eq('id', id);
-  if (error) return res.status(500).json({ error: error.message });
+  if (error) throw error;
   return res.status(200).json({ ok: true });
 }

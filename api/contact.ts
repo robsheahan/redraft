@@ -1,7 +1,6 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
+import { withHandler } from '../lib/with-handler.js';
 
 /**
  * Contact form endpoint — sends an email to help@proofready.app via Resend.
@@ -26,12 +25,7 @@ function escapeHtml(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
+export default withHandler({ methods: ['POST'], auth: 'optional', label: 'contact' }, async (req, res, ctx) => {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.error('[contact] RESEND_API_KEY is not set');
@@ -51,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Rate limit — fail-closed for signed-in users, global cap for anon.
-  const user = await verifyAuth(req);
+  const user = ctx.user;
   const rate = await checkAndLogRateLimit(getSupabase(), user?.id || null, {
     endpoint: 'contact',
     perUserPerHour: 5,
@@ -116,4 +110,4 @@ Sent from the ProofReady contact form.`;
   }
 
   return res.status(200).json({ ok: true });
-}
+});

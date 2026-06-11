@@ -1,9 +1,8 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createHash } from 'node:crypto';
-import { applyCors } from '../lib/cors.js';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabase } from '../lib/auth.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
+import { withHandler } from '../lib/with-handler.js';
 
 /**
  * Send a password-reset email.
@@ -35,12 +34,7 @@ function emailRateKey(email: string): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
+export default withHandler({ methods: ['POST'], auth: 'none', label: 'request-password-reset' }, async (req, res) => {
   const { email } = req.body || {};
   if (!email || typeof email !== 'string' || !email.includes('@')) {
     return res.status(400).json({ error: 'A valid email address is required.' });
@@ -100,7 +94,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ok: true,
     message: 'If an account exists for that address, a reset link has been sent.',
   });
-}
+});
 
 async function sendResetEmail(apiKey: string, to: string, link: string): Promise<void> {
   const text =

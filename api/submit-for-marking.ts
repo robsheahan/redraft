@@ -1,7 +1,6 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
 import { captureError } from './../lib/sentry.js';
+import { withHandler } from '../lib/with-handler.js';
 import { generateInsightsSignals } from '../lib/insights-signals-feedback.js';
 import { recordSkillSignals } from '../lib/skill-profile.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
@@ -9,12 +8,8 @@ import { familyForSubjectType } from '../data/skill-taxonomy.js';
 
 const MAX_DRAFT_CHARS = 50_000;
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, async (req, res, ctx) => {
+  const user = ctx.user!;
 
   const {
     task_id,
@@ -213,4 +208,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   await Promise.allSettled(bgWrites);
 
   return res.status(200).json({ ok: true, draft_version: nextVersion });
-}
+});
