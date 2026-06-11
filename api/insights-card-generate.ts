@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createHash } from 'node:crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '../lib/auth.js';
 import { withHandler } from '../lib/with-handler.js';
@@ -721,34 +722,6 @@ async function handleStudentKind(
   const studentId = (req.body?.student_id ? String(req.body.student_id) : '').trim();
   if (!studentId) return res.status(400).json({ error: 'student_id is required for student-* kinds.' });
 
-  // True global circuit breaker across ALL students/callers. userId=null so
-  // this is a pure global check (no per-user component) on a shared key — the
-  // ceiling the per-student cap below can't provide. Checked first so a request
-  // that would breach the global budget is rejected before anything else runs.
-  const globalGuard = await checkAndLogRateLimit(supabase, null, {
-    endpoint: 'insights-card-student:global',
-    perUserPerHour: 0, // unused when userId is null
-    globalPerDay: STUDENT_CARD_GLOBAL_PER_DAY,
-  });
-  if (!globalGuard.ok) {
-    if (globalGuard.retryAfterSeconds) res.setHeader('Retry-After', String(globalGuard.retryAfterSeconds));
-    return res.status(429).json({ error: globalGuard.reason || 'ProofReady has hit its daily capacity. Please try again tomorrow.' });
-  }
-
-  // Rate-limit per (subject, kind, student) — endpointName already names
-  // the kind, so include student_id in the rate-limit subject so spamming
-  // one student doesn't lock out other students for the same caller.
-  const rateSubject = schoolId || user.id;
-  const rateLimit = await checkAndLogRateLimit(supabase, rateSubject, {
-    endpoint: cfg.endpointName + ':' + studentId.slice(0, 8),
-    perUserPerHour: 8,   // 4 cards × 2 regens per hour per student
-    globalPerDay: 400,
-  });
-  if (!rateLimit.ok) {
-    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
-    return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded. Please try again later.' });
-  }
-
   // Scope check.
   const allowedStudents = new Set(await getInScopeStudentIds(
     supabase, callerRole, user.id, schoolId, restrictedFaculties,
@@ -818,6 +791,54 @@ async function handleStudentKind(
     };
   });
 
+  // Cache check (free hit). Keyed per (student, kind, scope); a fingerprint over
+  // the in-scope corpus decides freshness. A hit returns without a Sonnet call
+  // and without consuming the rate-limit / spend budget — same contract as the
+  // cohort cards.
+  const scopeKey = studentScopeKey(studentClassIds);
+  const fingerprint = 'sc1|' + cohortFingerprint(subs);
+  const { data: hit } = await supabase
+    .from('student_insights_cards')
+    .select('content, fingerprint, source_submission_count, source_task_count, generated_at')
+    .eq('student_id', studentId)
+    .eq('card_kind', kind)
+    .eq('scope_key', scopeKey)
+    .maybeSingle();
+  if (hit && hit.fingerprint === fingerprint &&
+      (Date.now() - new Date(hit.generated_at).getTime()) < CARD_CACHE_TTL_MS) {
+    return res.status(200).json({
+      kind,
+      student_id: studentId,
+      content: hit.content,
+      source_submission_count: hit.source_submission_count,
+      source_task_count: hit.source_task_count,
+      generated_at: hit.generated_at,
+      source: 'cache',
+    });
+  }
+
+  // Cache miss → an actual generation. Apply the spend guards now (a cache hit
+  // above skips them, matching the cohort path).
+  const globalGuard = await checkAndLogRateLimit(supabase, null, {
+    endpoint: 'insights-card-student:global',
+    perUserPerHour: 0, // unused when userId is null
+    globalPerDay: STUDENT_CARD_GLOBAL_PER_DAY,
+  });
+  if (!globalGuard.ok) {
+    if (globalGuard.retryAfterSeconds) res.setHeader('Retry-After', String(globalGuard.retryAfterSeconds));
+    return res.status(429).json({ error: globalGuard.reason || 'ProofReady has hit its daily capacity. Please try again tomorrow.' });
+  }
+  const rateSubject = schoolId || user.id;
+  const rateLimit = await checkAndLogRateLimit(supabase, rateSubject, {
+    endpoint: cfg.endpointName + ':' + studentId.slice(0, 8),
+    perUserPerHour: 8,   // 4 cards × 2 regens per hour per student
+    globalPerDay: 400,
+  });
+  if (!rateLimit.ok) {
+    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded. Please try again later.' });
+  }
+
   // Student name (for prompt + response context). No email fallback: this
   // string is interpolated into LLM prompts, and a student's email address
   // must never reach Anthropic (privacy contract).
@@ -857,14 +878,37 @@ async function handleStudentKind(
     return res.status(502).json({ error: 'Generation finished but the response was incomplete. Try again — usually clears on retry.' });
   }
 
+  const sourceTaskCount = new Set(enriched.map(r => r.task_title)).size;
+  const generatedAt = new Date().toISOString();
+  // Cache the fresh card so a re-click with no new work returns it for free.
+  await supabase.from('student_insights_cards').upsert({
+    student_id: studentId,
+    card_kind: kind,
+    scope_key: scopeKey,
+    content: value,
+    fingerprint,
+    source_submission_count: enriched.length,
+    source_task_count: sourceTaskCount,
+    generated_at: generatedAt,
+    generated_by: user.id,
+  });
+
   return res.status(200).json({
     kind,
     student_id: studentId,
     content: value,
     source_submission_count: enriched.length,
-    source_task_count: new Set(enriched.map(r => r.task_title)).size,
-    generated_at: new Date().toISOString(),
+    source_task_count: sourceTaskCount,
+    generated_at: generatedAt,
+    source: 'generated',
   });
+}
+
+// Stable cache scope for a student card: a hash of the caller's in-scope class
+// set for this student. Same scope ⇒ same key (callers share); different scope
+// ⇒ different rows (no thrash).
+function studentScopeKey(classIds: string[]): string {
+  return createHash('sha256').update([...classIds].sort().join(',')).digest('hex').slice(0, 24);
 }
 
 /**
