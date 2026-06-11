@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "test-feedback": "npx tsx test/evaluate-sample.ts",
     "test-inline": "npx tsx test/test-inline-suggestions.ts",
     "backfill-inline": "npx tsx scripts/backfill-inline-suggestions.ts",
