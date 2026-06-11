@@ -1,3 +1,5 @@
+import { wrapUntrusted } from "../lib/prompt-safety.js";
+
 interface InlineSuggestionsUserInput {
   taskDescription: string;
   taskVerbs?: string[];
@@ -10,8 +12,9 @@ export function buildInlineSuggestionsUserPrompt(input: InlineSuggestionsUserInp
     ? `KEY TERM${input.taskVerbs.length > 1 ? 'S' : ''}: ${input.taskVerbs.join(', ')}\n\n`
     : '';
 
+  // Improvements are model-written (Pass 1) and replayed here — fence them.
   const improvementsBlock = input.holisticImprovements.length > 0
-    ? input.holisticImprovements.map((s, i) => `[${i}] ${s}`).join('\n')
+    ? wrapUntrusted('prior_improvements', input.holisticImprovements.map((s, i) => `[${i}] ${s}`).join('\n'))
     : '(none — the holistic pass did not list specific improvements)';
 
   return `ASSESSMENT TASK:
@@ -23,7 +26,7 @@ ${improvementsBlock}
 ---
 
 STUDENT'S DRAFT (annotate this):
-${input.studentText}
+${wrapUntrusted('student_draft', input.studentText)}
 
 ---
 

@@ -10,6 +10,7 @@
 
 import { dimensionByKey, type SkillFamily } from '../data/skill-taxonomy.js';
 import type { SkillProfileRow } from '../lib/skill-profile.js';
+import { sanitizeInline, UNTRUSTED_CONTENT_RULE } from '../lib/prompt-safety.js';
 
 export function buildActivitySystemPrompt(opts: {
   question: string;
@@ -26,6 +27,8 @@ export function buildActivitySystemPrompt(opts: {
 
   return [
     `You are an experienced NSW NESA-trained teacher differentiating ONE student's support on a shared ${subject} task. Every student in the class answers the SAME question against the SAME criteria — your job is to tune only the SUPPORT (scaffolding, an optional extension, and a short focus) to this student's current skills.`,
+    ``,
+    UNTRUSTED_CONTENT_RULE,
     ``,
     `THE TASK (fixed — never change the question, the criteria, or the learning goal):`,
     `Question: ${question}`,
@@ -69,6 +72,8 @@ export function buildMathsActivitySystemPrompt(opts: {
     : `2. Calibrate DIFFICULTY only by changing numbers/coefficients/context — NOT the structure. For a clearly developing student, make it more accessible (cleaner numbers, a more straightforward instance); for a clearly secure/extending student, make it more demanding (messier values, an applied twist). Keep the SAME number of steps and the SAME structure as the original — never add, remove, or reorder a step. If you cannot re-skin within those bounds, set difficulty to "same" and stay as close to the original as possible.`;
   return [
     `You are an experienced NSW NESA-trained mathematics teacher creating ONE student's version of a class maths task. Every student works towards the SAME outcome using the SAME method — you re-skin the QUESTION to the right difficulty for this student, and nothing more.`,
+    ``,
+    UNTRUSTED_CONTENT_RULE,
     ``,
     `THE ORIGINAL QUESTION (preserve the skill + method exactly):`,
     `Question: ${question}`,
@@ -146,7 +151,10 @@ export function buildActivityUserPrompt(rows: SkillProfileRow[]): string {
       const dim = dimensionByKey(r.dimension);
       const name = dim ? dim.label : r.dimension;
       const conf = Math.round((r.confidence || 0) * 100);
-      return `- ${r.dimension} (${name}): level ${r.level.toFixed(1)}/5 [${r.level_label || '—'}], trend ${r.trend || 'n/a'}, confidence ${conf}%${r.signal ? ` — "${r.signal}"` : ''}`;
+      // `signal` is model-written from the student's drafts — sanitise this
+      // second-order channel before replaying it into the differentiation prompt.
+      const signal = r.signal ? ` — "${sanitizeInline(r.signal)}"` : '';
+      return `- ${r.dimension} (${name}): level ${r.level.toFixed(1)}/5 [${r.level_label || '—'}], trend ${r.trend || 'n/a'}, confidence ${conf}%${signal}`;
     });
   return `Student skill profile for this subject:\n${lines.join('\n')}\n\nDifferentiate this student's support via the tool.`;
 }

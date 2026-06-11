@@ -15,6 +15,7 @@ import { HOLISTIC_FEEDBACK_TOOL, CRITERIA_CHECK_TOOL } from '../lib/feedback-too
 import { looksLikeBandRubric, stripBandLabels } from '../lib/rubric-detect.js';
 import { postCompletionIfLinked } from '../lib/lti/ags.js';
 import { recordSkillSignals, readSkillProfile } from '../lib/skill-profile.js';
+import { wrapUntrusted, capLen, sanitizeLabel, UNTRUSTED_CONTENT_RULE } from '../lib/prompt-safety.js';
 
 function buildCriteriaCheckPrompt(courseName?: string, isBandRubric?: boolean): string {
   const subjectLabel = courseName || "this HSC subject";
@@ -28,6 +29,8 @@ function buildCriteriaCheckPrompt(courseName?: string, isBandRubric?: boolean): 
     // of evidence") and give feedback per dimension — no band labels, no
     // mark predictions.
     return `You are a senior ${subjectLabel} marker. The teacher has provided a band-style rubric — descriptors at different performance levels rather than separate criteria. You are independently assessing a student's draft. You have NOT seen any other feedback — you are making a fresh assessment.
+
+${UNTRUSTED_CONTENT_RULE}
 
 YOUR TASK:
 Identify 3–5 distinct QUALITY DIMENSIONS embedded in the band descriptors (e.g. "Depth of analysis", "Use of evidence", "Communication and structure", "Integration across the question"). For EACH dimension, give the student specific feedback on their draft.
@@ -63,6 +66,8 @@ Respond in JSON:
   }
 
   return `You are a senior ${subjectLabel} marker. You are independently assessing a student's draft response against the marking criteria provided by their teacher. You have NOT seen any other feedback — you are making a fresh assessment.
+
+${UNTRUSTED_CONTENT_RULE}
 
 YOUR TASK:
 For EACH marking criterion the teacher has provided, assess the student's draft and produce specific feedback. You must address every criterion individually — do not skip any.
@@ -272,6 +277,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
+  // Own-task fields arrive from req.body, student-authored and unbounded. Cap
+  // each (P10) and sanitise the course label that lands in the system prompt;
+  // the prompt builders fence the rest as untrusted (via `untrusted` below).
+  // Teacher-task fields come from the DB and stay as-is.
+  if (isOwnTaskSubmission) {
+    if (resolvedQuestion) resolvedQuestion = capLen(resolvedQuestion, 5000);
+    if (resolvedCriteriaText) resolvedCriteriaText = capLen(resolvedCriteriaText, 10000);
+    if (teacherNotes) teacherNotes = capLen(teacherNotes, 2000);
+    if (resolvedCourse) resolvedCourse = sanitizeLabel(resolvedCourse, 80);
+    if (resolvedTitle) resolvedTitle = capLen(resolvedTitle, 200);
+  }
+
   const taskVerbs = extractTaskVerbs(String(resolvedQuestion || ''));
   const taskVerb = taskVerbs[0] || null;
 
@@ -338,6 +355,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     priorDrafts: priorDrafts.length > 0 ? priorDrafts : undefined,
     draftVersion,
     readiness,
+    untrusted: isOwnTaskSubmission,
   });
 
   try {
@@ -358,15 +376,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           : 'No specific criteria provided — assess against general HSC standards');
 
     const criteriaCheckPrompt = `ASSESSMENT TASK:
-${taskDescription}
+${isOwnTaskSubmission ? wrapUntrusted('student_task_brief', taskDescription) : taskDescription}
 
 MARKING CRITERIA:
-${criteriaBlock}
+${isOwnTaskSubmission ? wrapUntrusted('student_task_criteria', criteriaBlock) : criteriaBlock}
 
 ---
 
 STUDENT'S DRAFT RESPONSE:
-${draft}
+${wrapUntrusted('student_draft', draft)}
 
 ---
 

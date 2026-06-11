@@ -27,6 +27,7 @@
 import { stageForYearLevel, type Stage } from '../data/nesa-reference.js';
 import { getStage45Reference } from '../data/stage-4-5-reference.js';
 import { buildMarkerVoiceReference } from '../data/marker-voice-loader.js';
+import { wrapUntrusted, UNTRUSTED_CONTENT_RULE } from '../lib/prompt-safety.js';
 
 function resolveStage(yearLevel?: number | null): Stage {
   return stageForYearLevel(yearLevel) ?? 6;
@@ -118,6 +119,8 @@ export function buildMathsPerLineDiagnosticSystem(courseName?: string, yearLevel
 
   return `${voice}
 
+${UNTRUSTED_CONTENT_RULE}
+
 YOUR ONLY JOB IS DIAGNOSIS.
 
 The student has typed their working as a sequence of lines. Each line has two parts:
@@ -169,6 +172,8 @@ export function buildMathsHolisticSystem(courseName?: string, yearLevel?: number
 
   return `You are a ${teacherLabel} writing the holistic comment that sits at the top of a student's feedback page. You have just walked the student's working line by line and identified specific issues. Now you stand back and write three things:
 
+${UNTRUSTED_CONTENT_RULE}
+
   1. "what_youve_done_well" — 2–4 specific strengths. Real ones; not flattery. Reference specific lines when helpful.
   2. "top_priority" — the SINGLE most important thing for the student to fix. One short paragraph. This is what an experienced teacher writes as the headline comment after marking.
   3. "improvements" — 2–4 actionable improvements. Numbered, specific, one sentence each. Reference line numbers.
@@ -207,6 +212,8 @@ ABSOLUTE RULES — do NOT, anywhere:
 export function buildMathsStructureWorkingSystem(): string {
   return `You convert a student's free-form maths working into a canonical line-by-line shape: [{ math, reason }].
 
+${UNTRUSTED_CONTENT_RULE}
+
 YOUR ONLY JOB IS RE-SHAPING, NEVER INTERPRETATION.
 
 - Split the input on logical step boundaries — one mathematical move per line.
@@ -233,7 +240,7 @@ ${args.question}
 INPUT MODE: ${args.inputMode}
 
 STUDENT'S RAW INPUT:
-${args.rawText}
+${wrapUntrusted('student_raw_working', args.rawText)}
 
 ---
 
@@ -270,7 +277,7 @@ ${question}
 ${guidelineBlock}${notesBlock}
 STUDENT'S WORKING (line by line):
 
-${numberedWorking}
+${wrapUntrusted('student_working', numberedWorking)}
 
 ---
 
@@ -288,15 +295,17 @@ export function buildMathsHolisticUserPrompt(args: {
     .map((line, i) => `Line ${i + 1}: ${line.math} — ${line.reason || '(no reason given)'}`)
     .join('\n');
 
+  // The per-line diagnostic is model-written from the student's working, so it
+  // can carry a forwarded injection — fence it before replaying it here.
   const diagnosticSummary = perLineDiagnostic
-    ? `\n\nYOUR PER-LINE DIAGNOSTIC (you generated this just now — use it as input for the holistic comment):\n${JSON.stringify(perLineDiagnostic, null, 2)}\n`
+    ? `\n\nYOUR PER-LINE DIAGNOSTIC (you generated this just now — use it as input for the holistic comment):\n${wrapUntrusted('prior_diagnostic', JSON.stringify(perLineDiagnostic, null, 2))}\n`
     : '';
 
   return `QUESTION:
 ${question}
 
 STUDENT'S WORKING:
-${numberedWorking}
+${wrapUntrusted('student_working', numberedWorking)}
 ${diagnosticSummary}
 Write the holistic feedback: what_youve_done_well, top_priority, improvements. Tight, teacher-voice. Reference line numbers where useful. No answer reveals; no mark predictions.`;
 }

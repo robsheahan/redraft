@@ -11,6 +11,7 @@
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { extractTaskVerbs } from '../lib/task-verbs.js';
 import type { SkillFamily } from '../data/skill-taxonomy.js';
+import { wrapUntrusted, UNTRUSTED_CONTENT_RULE } from '../lib/prompt-safety.js';
 
 export function buildInsightsSignalsPrompt(opts: {
   course: string | null;
@@ -28,6 +29,8 @@ export function buildInsightsSignalsPrompt(opts: {
   const system = isMaths ? [
     `You are extracting structured insights signals from a student's HSC-stage mathematics working for school-level analytics. This output is NEVER shown to the student — it feeds aggregate cohort patterns of what students struggle with and do well.`,
     ``,
+    UNTRUSTED_CONTENT_RULE,
+    ``,
     `Subject: ${subjectLabel} (mathematics)`,
     `The submission is the student's typed working, line by line (the math on each step plus a short reason).`,
     ``,
@@ -40,6 +43,8 @@ export function buildInsightsSignalsPrompt(opts: {
     `- If the working is very short or off-task, name that honestly rather than fabricating.`,
   ].join('\n') : [
     `You are extracting structured insights signals from a student's HSC-stage draft for school-level analytics. This output is NEVER shown to the student — it feeds aggregate cohort patterns showing what students struggle with, what they do well, and how they handle directive verbs.`,
+    ``,
+    UNTRUSTED_CONTENT_RULE,
     ``,
     `Subject: ${subjectLabel}`,
     `Primary directive verb in the task: ${verb}`,
@@ -55,7 +60,7 @@ export function buildInsightsSignalsPrompt(opts: {
 
   const user =
     `Task question:\n${opts.question}\n\n` +
-    `${isMaths ? 'Student working' : 'Student draft'}:\n${opts.draft}\n\n` +
+    `${isMaths ? 'Student working' : 'Student draft'}:\n${wrapUntrusted(isMaths ? 'student_working' : 'student_draft', opts.draft)}\n\n` +
     `Produce the insights signals via the tool now.`;
 
   return { system, user };
