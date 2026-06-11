@@ -18,6 +18,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'node:crypto';
 import { applyCors } from '../lib/cors.js';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 
 const BUCKET = 'attachments';
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
@@ -61,6 +62,18 @@ async function signUpload(req: VercelRequest, res: VercelResponse, user: any) {
   }
   if (scope === 'task' && user.user_metadata?.role !== 'teacher') {
     return res.status(403).json({ error: 'Only teachers can attach task materials.' });
+  }
+
+  // Storage-abuse guard: each successful call mints a signed write into the
+  // bucket, so cap how fast one account can fill it.
+  const rateLimit = await checkAndLogRateLimit(getSupabase(), user.id, {
+    endpoint: 'attachment-upload',
+    perUserPerHour: 60,
+    globalPerDay: 2000,
+  });
+  if (!rateLimit.ok) {
+    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    return res.status(429).json({ error: 'Too many uploads — please wait a while and try again.' });
   }
 
   const folder = scope === 'task' ? 'tasks' : 'submissions';

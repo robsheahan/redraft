@@ -14,6 +14,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const user = await verifyAuth(req);
   if (!user) return res.status(401).json({ error: 'Not authenticated' });
+  // Teacher-only: students could otherwise generate a NESA-style marking view
+  // of their own question — a soft bypass of "students never see the criteria".
+  if (user.user_metadata?.role !== 'teacher') {
+    return res.status(403).json({ error: 'Only teachers can generate marking criteria.' });
+  }
 
   const { title, question, course, total_marks, outcomes } = (req.body || {}) as {
     title?: string;
@@ -60,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'Server not configured.' });
-  const client = new Anthropic({ apiKey });
+  const client = new Anthropic({ apiKey, maxRetries: 0 });
 
   try {
     const resp = await client.messages.create({

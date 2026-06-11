@@ -133,7 +133,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ── Student header info ───────────────────────────────────────────
   const { data: { user: studentUser } } = await supabase.auth.admin.getUserById(studentId);
   const studentMeta = (studentUser?.user_metadata || {}) as any;
-  const studentName = studentMeta.display_name || studentMeta.full_name || studentMeta.name || studentUser?.email || 'Unknown';
+  // No email fallback in the name — downstream summaries treat display_name
+  // as prompt-safe, and the email is already returned separately for the UI.
+  const studentName = studentMeta.display_name || studentMeta.full_name || studentMeta.name || 'Unknown';
   const gy = studentMeta.graduation_year;
   const yearLevel = yearLevelFromGraduationYear(typeof gy === 'string' ? parseInt(gy, 10) : gy);
 

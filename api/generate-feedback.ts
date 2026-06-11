@@ -98,6 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const user = await verifyAuth(req);
+  if (!user) return res.status(401).json({ error: 'Not authenticated' });
   const { question, course, criteria, criteria_text, outcomes, draft, notes, task_id, task_title, task_type,
     own_task_id, own_task_title, own_task_class_id, student_attachments,
     keystroke_count, paste_attempts_blocked, typing_session_count, total_typing_time_ms, time_to_first_keystroke_ms } = req.body;
@@ -138,9 +139,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Your draft is too long. Please shorten it to under 30,000 characters.' });
   }
 
-  // Rate limit / spend protection. Logged-in users get a per-user hourly
-  // cap and count toward the global daily cap; anon users only count toward
-  // the global cap (no identity to cap them individually).
+  // Rate limit / spend protection: a per-user hourly cap plus a global
+  // daily cap.
   //
   // Own-task submissions use a separate endpoint key for the per-hour and global
   // call limits. The per-DAY limit is enforced as "distinct tasks started today"
@@ -341,7 +341,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   });
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
 
     // Pass 2 prompt (independent — doesn't depend on Pass 1). Runs for both
     // band-style and per-criterion rubrics; the system prompt switches on
@@ -467,7 +467,7 @@ Assess this draft against each marking criterion above. Address every criterion 
     // Save submission if user is authenticated
     if (user) {
       const supabase = getSupabase();
-      await supabase.from('submissions').insert({
+      const { error: insertErr } = await supabase.from('submissions').insert({
         student_id: user.id,
         task_id: task_id || null,
         // Own-task columns are only written for own tasks — so a teacher-task
@@ -492,6 +492,13 @@ Assess this draft against each marking criterion above. Address every criterion 
         time_to_first_keystroke_ms: typeof time_to_first_keystroke_ms === 'number' ? time_to_first_keystroke_ms : null,
         student_attachments: Array.isArray(student_attachments) ? student_attachments.slice(0, 5) : [],
       });
+      // A failed insert means the draft was never stored — surfacing it (as the
+      // maths path does) beats silently returning feedback that the 3-draft
+      // model and teacher marking will never see.
+      if (insertErr) {
+        captureError(insertErr, { stage: 'submission-insert', task_id, user_id: user.id });
+        return res.status(500).json({ error: 'Could not save your submission. ' + insertErr.message });
+      }
 
       // Post-submission side effects. These must never affect the feedback the
       // student just received (each swallows its own error), but they DO need to

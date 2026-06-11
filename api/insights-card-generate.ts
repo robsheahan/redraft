@@ -587,7 +587,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // -- Anthropic call --
   let value: any;
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
     const result = await callTool<Record<string, any>>({
       client,
       model: MODEL,
@@ -800,15 +800,17 @@ async function handleStudentKind(
     };
   });
 
-  // Student name (for prompt + response context).
+  // Student name (for prompt + response context). No email fallback: this
+  // string is interpolated into LLM prompts, and a student's email address
+  // must never reach Anthropic (privacy contract).
   const { data: { user: studentUser } } = await supabase.auth.admin.getUserById(studentId);
   const meta = (studentUser?.user_metadata || {}) as any;
-  const studentName = meta.display_name || meta.full_name || meta.name || studentUser?.email || 'this student';
+  const studentName = meta.display_name || meta.full_name || meta.name || 'this student';
 
   // -- Anthropic call --
   let value: any;
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
     const result = await callTool<Record<string, any>>({
       client,
       model: MODEL,
@@ -978,7 +980,7 @@ async function handleClassProfileSummary(
   const userPrompt = `Below are ${profileLines.length} anonymised student profiles drawn from the cohort. Synthesise the class-level baseline.\n\n${profileLines.join('\n\n')}`;
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
     const result = await callTool<Record<string, any>>({
       client,
       model: MODEL,
