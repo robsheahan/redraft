@@ -66,7 +66,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const supabase = getSupabase();
+  // Authoritative role goes in app_metadata (service-role only — the user
+  // cannot rewrite it). The user_metadata.role written below is a display
+  // mirror the client can read; no server gate ever trusts it.
   const { error } = await supabase.auth.admin.updateUserById(user.id, {
+    app_metadata: { ...((user.app_metadata as Record<string, unknown>) || {}), role: effectiveRole },
     user_metadata: meta,
   });
   if (error) {

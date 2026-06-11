@@ -115,7 +115,7 @@
       const user = await requireAuth();
       if (!user) return;
       const meta = user.user_metadata || {};
-      const role = meta.role || 'student';
+      const role = (user.app_metadata?.role ?? meta.role) || 'student';
       document.getElementById('backLink').href = role === 'teacher' ? 'teacher.html' : 'student.html';
       render({ user, meta, role });
     })();

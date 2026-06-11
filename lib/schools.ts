@@ -100,6 +100,7 @@ interface MinimalAuthUser {
   id: string;
   email: string | null | undefined;
   user_metadata: Record<string, any> | null | undefined;
+  app_metadata: Record<string, any> | null | undefined;
 }
 
 /**
@@ -182,7 +183,7 @@ async function getSchoolUserRoles(
 
   const roleByUserId: Record<string, string | null> = {};
   allUsers.forEach(u => {
-    roleByUserId[u.id] = u.user_metadata?.role || null;
+    roleByUserId[u.id] = (u.app_metadata?.role ?? u.user_metadata?.role) || null;
     if (domains.length > 0) {
       const domain = (u.email || '').split('@')[1]?.toLowerCase().trim();
       if (domain && domains.includes(domain)) ids.add(u.id);

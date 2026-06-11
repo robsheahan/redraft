@@ -338,7 +338,7 @@
     getCurrentUser().then(user => {
       if (!user) return;
       if (isAdminUser(user)) { window.location.href = '/admin.html'; return; }
-      const role = user.user_metadata?.role;
+      const role = user.app_metadata?.role ?? user.user_metadata?.role;
       if (role === 'teacher') window.location.href = '/teacher.html';
       else if (role === 'student') window.location.href = '/student.html';
       else window.location.href = '/choose-role.html';

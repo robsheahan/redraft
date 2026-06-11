@@ -17,7 +17,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'node:crypto';
 import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase, verifyAuth, authoritativeRole } from '../lib/auth.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 
 const BUCKET = 'attachments';
@@ -60,7 +60,7 @@ async function signUpload(req: VercelRequest, res: VercelResponse, user: any) {
   if (typeof size !== 'number' || size <= 0 || size > MAX_SIZE) {
     return res.status(400).json({ error: 'Each file must be 10MB or smaller.' });
   }
-  if (scope === 'task' && user.user_metadata?.role !== 'teacher') {
+  if (scope === 'task' && authoritativeRole(user) !== 'teacher') {
     return res.status(403).json({ error: 'Only teachers can attach task materials.' });
   }
 

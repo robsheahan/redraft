@@ -42,7 +42,10 @@ export async function provisionUser(opts: {
     userId = existing.id;
     const meta = existing.raw_user_meta_data || {};
     if (!meta.role) {
+      // Authoritative role in app_metadata; user_metadata.role kept as a
+      // display mirror (no server gate trusts it).
       await supabase.auth.admin.updateUserById(userId, {
+        app_metadata: { role: opts.role },
         user_metadata: {
           ...meta,
           role: opts.role,
@@ -54,6 +57,7 @@ export async function provisionUser(opts: {
     const { data: created, error: createErr } = await supabase.auth.admin.createUser({
       email: opts.email,
       email_confirm: true,
+      app_metadata: { role: opts.role },
       user_metadata: { display_name: opts.displayName, role: opts.role, lti_provisioned: true },
     });
     if (createErr || !created.user) throw new Error(`createUser failed: ${createErr?.message}`);

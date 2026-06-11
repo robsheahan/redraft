@@ -79,7 +79,9 @@ async function requireAuth(expectedRole) {
     window.location.href = '/auth.html' + (expectedRole ? '?role=' + expectedRole : '');
     return null;
   }
-  const role = user.user_metadata?.role;
+  // Authoritative role lives in app_metadata; user_metadata.role is only a
+  // display mirror (present on older sessions until the token refreshes).
+  const role = user.app_metadata?.role ?? user.user_metadata?.role;
   if (expectedRole && role !== expectedRole) {
     window.location.href = '/';
     return null;
@@ -88,7 +90,7 @@ async function requireAuth(expectedRole) {
 }
 
 function getUserMeta(user) {
-  const role = user.user_metadata?.role || 'student';
+  const role = (user.app_metadata?.role ?? user.user_metadata?.role) || 'student';
   // Google OAuth populates full_name/name; email/password signup uses display_name.
   let displayName = user.user_metadata?.display_name
     || user.user_metadata?.full_name
