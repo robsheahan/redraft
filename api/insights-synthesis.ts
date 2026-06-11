@@ -1,7 +1,6 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Anthropic from '@anthropic-ai/sdk';
-import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
+import { withHandler } from '../lib/with-handler.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
 import { callTool } from '../lib/anthropic-tool-call.js';
@@ -22,14 +21,8 @@ const MODEL = 'claude-sonnet-4-6';
  * admins (lib/admin.ts) bypass via ?school_id= for development access.
  */
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'GET' && req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+export default withHandler({ methods: ['GET', 'POST'], label: 'insights-synthesis' }, async (req, res, ctx) => {
+  const user = ctx.user!;
 
   const supabase = getSupabase();
 
@@ -222,9 +215,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (err: any) {
     captureError(err, { stage: 'insights-synthesis', school_id: schoolId, user_id: user.id });
-    return res.status(500).json({ error: err?.message || 'Failed to generate insights.' });
+    return res.status(500).json({ error: 'Failed to generate insights. Please try again.' });
   }
-}
+});
 
 async function collectScopeStats(supabase: ReturnType<typeof getSupabase>, schoolId: string) {
   const teacherIds = await getSchoolTeacherIds(supabase, schoolId);

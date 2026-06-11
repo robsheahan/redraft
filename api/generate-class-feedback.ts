@@ -1,22 +1,13 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
 import Anthropic from '@anthropic-ai/sdk';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
 import { callTool } from '../lib/anthropic-tool-call.js';
 import { CLASS_FEEDBACK_TOOL } from '../lib/feedback-tools.js';
+import { withHandler } from '../lib/with-handler.js';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const user = await verifyAuth(req);
-  if (!user) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
+export default withHandler({ methods: ['POST'], label: 'generate-class-feedback' }, async (req, res, ctx) => {
+  const user = ctx.user!;
 
   const taskId = (req.body?.task_id as string || '').trim();
   if (!taskId) return res.status(400).json({ error: 'task_id is required.' });
@@ -51,9 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .not('feedback', 'is', null)
     .order('created_at', { ascending: false });
 
-  if (subError) {
-    return res.status(500).json({ error: subError.message });
-  }
+  if (subError) throw subError; // generic 500 via withHandler — don't leak the message
 
   if (!allSubmissions || allSubmissions.length === 0) {
     return res.status(400).json({ error: 'No submissions with feedback found for this task' });
@@ -149,6 +138,6 @@ Synthesise the above into a class-level overview. Look for patterns — what com
     return res.status(200).json({ feedback: classFeedback, submission_count: feedbacks.length });
   } catch (err: any) {
     captureError(err, { stage: 'class-feedback', task_id: taskId, user_id: user.id });
-    return res.status(500).json({ error: err.message || 'Failed to generate class feedback' });
+    return res.status(500).json({ error: 'Failed to generate class feedback. Please try again.' });
   }
-}
+});

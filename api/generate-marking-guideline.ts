@@ -14,12 +14,11 @@
  * directly into the Marking guideline textarea on new-task.html.
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
 import Anthropic from '@anthropic-ai/sdk';
-import { getSupabase, verifyAuth, authoritativeRole } from '../lib/auth.js';
+import { getSupabase, authoritativeRole } from '../lib/auth.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
+import { withHandler } from '../lib/with-handler.js';
 
 const MODEL = 'claude-sonnet-4-6';
 
@@ -42,12 +41,8 @@ function inferStage(outcomes: string[], course: string | null): Stage {
   return 6;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+export default withHandler({ methods: ['POST'], label: 'generate-marking-guideline' }, async (req, res, ctx) => {
+  const user = ctx.user!;
   // Teacher-only: students could otherwise generate a marking guideline for
   // their own task's question — a soft bypass of "students never see it".
   if (authoritativeRole(user) !== 'teacher') {
@@ -113,9 +108,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ marking_guideline: text, stage });
   } catch (err: any) {
     captureError(err, { stage: 'generate-marking-guideline', user_id: user.id });
-    return res.status(500).json({ error: err?.message || 'Failed to generate marking guideline.' });
+    return res.status(500).json({ error: 'Failed to generate marking guideline. Please try again.' });
   }
-}
+});
 
 function buildSystemPrompt(opts: { course: string | null; totalMarks: number; stage: Stage }): string {
   const isHsc = opts.stage === 6;
