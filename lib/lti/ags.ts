@@ -1,33 +1,7 @@
-import { getServiceAccessToken, SCOPE_AGS_LINEITEM, SCOPE_AGS_SCORE } from './service-auth.js';
+import { getServiceAccessToken, SCOPE_AGS_SCORE } from './service-auth.js';
 import type { LtiPlatform } from './config.js';
 import { getSupabase } from '../auth.js';
 import { getPlatformById } from './config.js';
-
-export async function createLineItem(opts: {
-  platform: LtiPlatform;
-  lineItemsUrl: string;
-  resourceLinkId: string;
-  label: string;
-  scoreMaximum?: number;
-}): Promise<string> {
-  const token = await getServiceAccessToken(opts.platform, [SCOPE_AGS_LINEITEM]);
-  const res = await fetch(opts.lineItemsUrl, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/vnd.ims.lis.v2.lineitem+json',
-      Accept: 'application/vnd.ims.lis.v2.lineitem+json',
-    },
-    body: JSON.stringify({
-      scoreMaximum: opts.scoreMaximum ?? 1,
-      label: opts.label,
-      resourceLinkId: opts.resourceLinkId,
-    }),
-  });
-  if (!res.ok) throw new Error(`AGS line item create failed: ${res.status} ${await res.text()}`);
-  const json = await res.json() as { id: string };
-  return json.id;
-}
 
 export async function postCompletionScore(opts: {
   platform: LtiPlatform;

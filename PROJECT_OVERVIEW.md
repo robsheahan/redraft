@@ -296,7 +296,6 @@ LTI: `api/lti/*` — `jwks.ts`, `login.ts`, `launch.ts`, `deep-link.ts`
 ### `lib/`
 - `auth.ts` — `getSupabase()`, `verifyAuth(req)`
 - `cors.ts` — `applyCors()` for api.proofready.app
-- `extract-json.ts` — `extractFirstJsonObject(text)` — robustly pulls balanced JSON from a model response
 - `generate-inline-suggestions.ts` — Pass 3 implementation
 - `insights-signals-feedback.ts` — silent Haiku pass for marked/quick task submissions
 - `skill-profile.ts` — `recordSkillSignals()` (validate `skill_assessment` against the taxonomy + EWMA rollup into `student_skill_profile`) and `readSkillProfile()` (read side, used by Lesson Builder)
@@ -329,7 +328,6 @@ LTI: `api/lti/*` — `jwks.ts`, `login.ts`, `launch.ts`, `deep-link.ts`
 - `marker-voice-loader.ts` — Reads NESA Notes JSON → calibration block
 - `nesa-marking-feedback/*.json` — Scraped NESA Notes 2021–2024 by subject
 - `stage-4-5-reference.ts` — Stage 4/5 (Y7–10) calibration for maths + writing
-- `pdhpe-stage6.ts`, `hms-stage6.ts` — Detailed syllabus outcomes
 
 ### `public/`
 Auth + onboarding: `index.html`, `auth.html`, `choose-role.html`, `forgot-password.html`, `reset.html`
@@ -351,13 +349,18 @@ Shared JS: `js/app.js` (Supabase client, `authFetch`, `requireAuth`, `apiUrl`, S
 - Smoke tests: `lti-smoke-test.ts`, `insights-teacher-smoke-test.ts`, `insights-student-smoke-test.ts`
 
 ### Config
-- `vercel.json` — `maxDuration: 300` (Pro plan), rewrites `/lti/*` → `/api/lti/*`, `/deck` → `/deck.html`, `/handout` → `/handout.html`
-- `tsconfig.json` — NodeNext modules to match Vercel runtime
-- `package.json` — `@anthropic-ai/sdk`, `@supabase/supabase-js`, `@sentry/node`, `@vercel/node`, `jose`
+- `vercel.json` — `maxDuration: 300` (Pro plan) on every Claude-backed endpoint, security headers (nosniff, HSTS, referrer policy, `frame-ancestors` allowing Canvas iframes), rewrites `/lti/*` → `/api/lti/*`, `/deck` → `/deck.html`, `/handout` → `/handout.pdf`
+- `tsconfig.json` — `module: ESNext` + `moduleResolution: bundler`, strict
+- `package.json` — `@anthropic-ai/sdk`, `@supabase/supabase-js`, `@sentry/node`, `@vercel/node`, `@vercel/functions`, `jose`
+
+### `test/`
+- `evaluate-sample.ts`, `smoke-rubric-parse.ts`, `smoke-tool-use.ts`, `test-inline-suggestions.ts` — manual/smoke harnesses, run directly with `tsx` (no test runner wired up yet)
 
 ## Env vars
 
-- `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` (service_role)
+- Core: `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` (service_role), `SUPABASE_ANON_KEY`, `SUPABASE_SITE_URL`
+- LTI: `LTI_PRIVATE_KEY` or `LTI_PRIVATE_KEY_HEX`, `LTI_KEY_ID`, `SITE_ORIGIN`
+- Misc: `RESEND_API_KEY` (contact form), `SENTRY_DSN`, `ADMIN_USER_IDS`
 - `SUPABASE_ANON_KEY` — used by the password-reset fallback path
 - `RESEND_API_KEY` — Resend; powers the contact form and password-reset emails
 - `SENTRY_DSN` — optional; observability no-ops without it
@@ -390,7 +393,6 @@ Shared JS: `js/app.js` (Supabase client, `authFetch`, `requireAuth`, `apiUrl`, S
 ## Known issues / gotchas
 
 - **Google OAuth doesn't work in Expo Go** — N/A for ProofReady (web only). Mentioned only because the same person also runs Citrafort.
-- **`insights-synthesis.ts` has three pre-existing TS errors** (`schoolId: string | null` passed to functions expecting `string`). Pre-dates the insights tier overhaul. Functionally fine — the null path is guarded earlier — but worth fixing eventually.
 - **Skill capture: marked/quick tasks run on Haiku.** Quick tasks (the bulk of submissions) score skills via the cheaper Haiku pass, which is less nuanced than Sonnet — accepted because aggregation smooths noise and the AI-feedback paths add Sonnet-quality signal. Worth sanity-checking captured `signal` notes against teacher judgment before any reader depends on them.
 - **Skill taxonomy is versioned** (`TAXONOMY_VERSION`). Adding/renaming a dimension orphans prior data or needs a re-score — change deliberately.
 - **Surname parsing is naive** — last whitespace-separated token. Doesn't handle compound surnames ("Van Der Berg") gracefully in the ranking heuristic. The search still works (substring match catches it); only the ranking boost might miss.
