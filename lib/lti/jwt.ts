@@ -70,6 +70,7 @@ export async function verifyPlatformIdToken(
   const { payload } = await jwtVerify(idToken, jwks, {
     issuer: expected.issuer,
     audience: expected.audience,
+    algorithms: ['RS256'],
   });
   return payload;
 }

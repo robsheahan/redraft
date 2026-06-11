@@ -110,6 +110,7 @@ alter table public.lti_platforms        enable row level security;
 alter table public.lti_nonces           enable row level security;
 alter table public.lti_user_mappings    enable row level security;
 alter table public.lti_course_mappings  enable row level security;
+alter table public.lti_dl_sessions      enable row level security;
 
 drop policy if exists "user reads own lti mapping" on public.lti_user_mappings;
 create policy "user reads own lti mapping"
@@ -133,6 +134,9 @@ as $$
 $$;
 
 grant execute on function public.lti_find_user_by_email(text) to service_role;
+-- Functions in public default to EXECUTE for PUBLIC, which would let anyone
+-- with the anon key call this via PostgREST and enumerate users by email.
+revoke execute on function public.lti_find_user_by_email(text) from public, anon, authenticated;
 
 -- =========================================================================
 -- 7. Seed: Penrith Christian School (PCS) — Canvas Cloud
