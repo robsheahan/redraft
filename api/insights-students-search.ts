@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
+import { withHandler } from '../lib/with-handler.js';
 import {
   resolveInsightsAccess,
   getInScopeStudentIds,
@@ -31,12 +31,8 @@ interface SearchResult {
   class_summary: string;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+export default withHandler({ methods: ['GET'], label: 'insights-students-search' }, async (req, res, ctx) => {
+  const user = ctx.user!;
 
   const q = (req.query.q as string || '').trim().toLowerCase();
   if (q.length < 2) return res.status(200).json({ rows: [] });
@@ -122,4 +118,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   });
 
   return res.status(200).json({ rows });
-}
+});

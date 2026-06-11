@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
+import { withHandler } from '../lib/with-handler.js';
 import { getSchoolTeacherIds, resolveInsightsAccess, listAllAuthUsers } from '../lib/schools.js';
 import { getUserInfoBatch } from '../lib/user-names.js';
 import { isGlobalAdmin } from '../lib/admin.js';
@@ -45,12 +45,8 @@ function bandFor(awarded: number, total: number): string {
   return 'E';
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+export default withHandler({ methods: ['GET'], label: 'insights-detail' }, async (req, res, ctx) => {
+  const user = ctx.user!;
 
   const kind = String(req.query.kind || '').trim();
   if (!['teachers', 'classes', 'tasks', 'submissions'].includes(kind)) {
@@ -315,4 +311,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   return res.status(400).json({ error: 'Unknown kind' });
-}
+});

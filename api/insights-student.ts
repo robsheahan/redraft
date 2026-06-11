@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyCors } from '../lib/cors.js';
-import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { getSupabase } from '../lib/auth.js';
+import { withHandler } from '../lib/with-handler.js';
 import {
   resolveInsightsAccess,
   getInScopeClassIds,
@@ -45,12 +45,8 @@ function bandFor(awarded: number, total: number): string {
 
 const LLM_FLOOR = 3; // min submissions-with-feedback before LLM cards run
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (applyCors(req, res)) return;
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-
-  const user = await verifyAuth(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
+export default withHandler({ methods: ['GET'], label: 'insights-student' }, async (req, res, ctx) => {
+  const user = ctx.user!;
 
   const studentId = (req.query.student_id as string || '').trim();
   if (!studentId) return res.status(400).json({ error: 'student_id is required' });
@@ -177,7 +173,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       llm: {},
     },
   });
-}
+});
 
 // ─────────────── Compute helpers (student-scoped) ───────────────
 
