@@ -6,6 +6,7 @@ import { findPlatform } from '../../lib/lti/config.js';
 import { consumeNonce } from '../../lib/lti/nonce.js';
 import { verifyPlatformIdToken } from '../../lib/lti/jwt.js';
 import { provisionUser, generateLoginUrl, LtiAccountLinkRequiredError } from '../../lib/lti/user-provision.js';
+import { createLinkRequest } from '../../lib/lti/link.js';
 import { provisionClass, enrolStudent } from '../../lib/lti/course-provision.js';
 import { roleFromLtiRoles } from '../../lib/lti/roles.js';
 import { syncRoster } from '../../lib/lti/nrps.js';
@@ -101,13 +102,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       );
     }
 
-    const userResult = await provisionUser({
-      platformId: platform.id,
-      canvasUserId: sub,
-      email,
-      displayName: name,
-      role,
-    });
+    let userResult;
+    try {
+      userResult = await provisionUser({
+        platformId: platform.id,
+        canvasUserId: sub,
+        email,
+        displayName: name,
+        role,
+      });
+    } catch (e) {
+      // The email already belongs to a different account and we won't auto-link
+      // (L1). Offer the consent-based link flow instead of a dead end: record a
+      // short-lived link request and send the user to the link page, where —
+      // signed into that existing account — they can confirm the link.
+      if (e instanceof LtiAccountLinkRequiredError) {
+        const token = await createLinkRequest({ platformId: platform.id, canvasUserId: sub, email, displayName: name, role });
+        console.warn('[lti] launch → account-link required, redirecting to link page', { platform: platform.id, sub });
+        return res.redirect(302, `${SITE_ORIGIN}/lti-link.html?token=${encodeURIComponent(token)}`);
+      }
+      throw e;
+    }
 
     const context = payload[CLAIM_CONTEXT] as { id: string; title?: string } | undefined;
     const resourceLink = payload[CLAIM_RESOURCE_LINK] as { id: string } | undefined;

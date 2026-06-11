@@ -8,7 +8,7 @@ the rationale of record. What shipped:
   backfill script `scripts/backfill-role-to-app-metadata.ts` (run before deploy).
 - **Q2B** — B1: identity keyed on `(platform, canvas_user_id)`, no email
   auto-linking, createUser race converges, email collisions → clean 409. The
-  self-service "link my Canvas account" UX remains a follow-up feature.
+  self-service "link my Canvas account" UX is now built (lti-link.html + api/lti/link.ts; consent + email-match required).
 - **Q1** — phase 1: dropped the body role + global daily signup cap. Phase 2
   (email verification) deferred until self-signup opens beyond invited pilots.
 

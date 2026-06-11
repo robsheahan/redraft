@@ -2,7 +2,7 @@
 
 **Date:** 2026-06-11 (v1 security pass in the morning; v2 full-stack pass + first fixes in the afternoon)
 **Auditor:** Claude (Opus 4.8). v2 covers: Canvas LTI (deepest), API authz, DB/RLS, frontend, LLM pipeline/cost/reliability, code quality/ops.
-**Status:** 🟢 **Batches A–C + Q1/Q2 MERGED to `main`** (PR #5, 2026-06-11). All migrations + the role backfill have been run in prod; the code-level fixes go live on the next Vercel deploy of `main`. Done: all LTI hardening, API authz/privacy, M4, P8, P4, P1/H3, P2, P5-cap, **Q2A role→app_metadata (H2), Q2B LTI identity (L1/LTI-12), Q1 signup phase-1 (C1)**. Remaining (all non-blocking follow-ups): Q1 email-verification (phase 2), Q2B opt-in link UX, and the withHandler/CI refactor (in progress — PR #7).
+**Status:** 🟢 **Entire audit implemented + merged to `main`.** Batches A–C + Q1/Q2 (PR #5), withHandler/CI refactor (PR #7), `/health` rewrite (PR #8), P5 caching (PR #9), and the Q2B opt-in link UX (PR #10). **The only remaining item is Q1 email-verification (phase 2)**, deliberately parked. Pending migrations to run in Supabase: `student-insights-cards.sql` (P5) + `lti-link-requests-migration.sql` (Q2B).
 
 ---
 
@@ -166,7 +166,7 @@ Dependency notes: `jose` 5→6 worth scheduling (LTI surface); Sentry 8→10 def
 **Open questions — RESOLVED (decisions in `SECURITY-Q1-Q2-DESIGN.md`, implemented):**
 - **Q1 Signup model (C1):** decided "harden now, verify later". Phase 1 done (drop body role + global daily cap). Phase 2 (email verification) deferred until self-signup opens beyond invited pilots.
 - **Q2A Role model (H2):** ✅ authoritative role → `app_metadata`. **Run `scripts/backfill-role-to-app-metadata.ts` before deploy.**
-- **Q2B LTI identity (L1):** ✅ B1 — identity keyed on `(platform, canvas_user_id)`; no email auto-linking; createUser race converges; genuine email collisions get a clean 409. Remaining UX follow-up: the self-service "link my Canvas account" flow (a feature, not a vuln).
+- **Q2B LTI identity (L1):** ✅ B1 — identity keyed on `(platform, canvas_user_id)`; no email auto-linking; createUser race converges; genuine email collisions get a clean 409. ✅ Self-service "link my Canvas account" flow now built: a launch whose email collides records a link request and redirects to lti-link.html, where the user signs into the existing account and confirms (email-match required) — replacing the dead-end 409. (scripts/lti-link-requests-migration.sql, lib/lti/link.ts, api/lti/link.ts, public/lti-link.html)
 
 **Deferred:** M1 search-scope fix (independent piece can go in Batch B), M3 via withHandler, listUsers pagination, LTI-13 role-mapping decisions, LTI-15/16 portability + co-teacher story, P11–P13, frontend helper consolidation, jose 6.
 
