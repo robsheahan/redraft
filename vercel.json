@@ -28,6 +28,7 @@
   ],
   "rewrites": [
     { "source": "/lti/:path*", "destination": "/api/lti/:path*" },
+    { "source": "/health", "destination": "/api/health" },
     { "source": "/deck", "destination": "/deck.html" },
     { "source": "/handout", "destination": "/handout.pdf" }
   ]
