@@ -73,7 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const question = String(task.question || '').trim();
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
     const result = await callTool<{ lines: Array<{ math: string; reason: string }> }>({
       client,
       model: 'claude-haiku-4-5-20251001',
