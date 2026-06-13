@@ -293,18 +293,34 @@
     /* Lesson Builder — pale-orange secondary action that contrasts the solid
        orange publish button while staying on-brand. Access-gated per school;
        reveals an access message when not enabled for the caller's school. */
-    .lesson-builder-teaser { }
+    .lesson-builder-teaser { display: inline-flex; align-items: center; }
     .btn-lesson-builder {
       display: inline-flex; align-items: center; gap: 8px;
       padding: 12px 24px;
-      background: #f5973a;
+      background: #ed7615;
       color: #fff;
       border: none; border-radius: 8px;
       font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit;
       transition: background 0.15s;
     }
-    .btn-lesson-builder:hover { background: #ee8824; }
+    .btn-lesson-builder:hover { background: #d4690f; }
     .btn-lesson-builder svg { width: 17px; height: 17px; flex-shrink: 0; }
+    /* Help icon + hover tooltip */
+    .help-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; margin-left: 8px; flex-shrink: 0;
+      border-radius: 50%; background: #e8e0d4; color: #6b7280;
+      font-size: 12px; font-weight: 700; cursor: help; position: relative;
+    }
+    .help-icon:hover, .help-icon:focus { background: #d8cdb8; color: #374151; outline: none; }
+    .help-tooltip {
+      display: none; position: absolute; bottom: 135%; left: 50%; transform: translateX(-50%);
+      width: 260px; background: #111827; color: #fff;
+      font-size: 12.5px; font-weight: 500; line-height: 1.5;
+      padding: 10px 12px; border-radius: 8px; z-index: 20;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.18); text-align: left;
+    }
+    .help-icon:hover .help-tooltip, .help-icon:focus .help-tooltip { display: block; }
     .lb-locked {
       margin-top: 10px; font-size: 12.5px; color: #9a4a08; line-height: 1.5;
       background: #fdeee0; border: 1px solid #f6d4b4; border-radius: 8px; padding: 9px 12px;
@@ -708,6 +724,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></svg>
             Publish with Lesson Differentiator
           </button>
+          <span class="help-icon" tabindex="0" role="img" aria-label="What is Lesson Differentiator?">?<span class="help-tooltip">Publishes the task and gives each student a version attuned to their skill profile — a personalised focus and scaffolding — while the task itself and the marking stay the same. Students without enough data just get the standard task.</span></span>
         </div>
         <div style="display:flex; gap:8px; margin-left:auto">
           <button class="btn-create" style="background:transparent;color:#6b7280;border:1px solid transparent;box-shadow:none" onclick="cancelTask()">Cancel</button>
