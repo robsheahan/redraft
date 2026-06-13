@@ -5,6 +5,9 @@ import { generateInsightsSignals } from '../lib/insights-signals-feedback.js';
 import { recordSkillSignals } from '../lib/skill-profile.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { familyForSubjectType } from '../data/skill-taxonomy.js';
+import { processExamAnswers, type ProcessedExam } from '../lib/exam-submission.js';
+import { serializeExamAnswers } from '../lib/exam-transcript.js';
+import type { ExamQuestion } from '../lib/exam-questions.js';
 
 const MAX_DRAFT_CHARS = 50_000;
 
@@ -16,6 +19,7 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
     draft,
     working_lines,
     input_mode,
+    answers,
     keystroke_count,
     paste_attempts_blocked,
     typing_session_count,
@@ -27,13 +31,18 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
 
   if (!task_id) return res.status(400).json({ error: 'task_id is required.' });
 
-  // Two submission shapes: an essay draft (text) or maths working (ordered
-  // {math, reason} lines, e.g. an in-class maths exam). Maths serialises its
-  // lines into draft_text so the rest of the pipeline (silent insights pass,
-  // marking screen) stays shape-agnostic.
+  // Three submission shapes:
+  //   - essay draft (text),
+  //   - maths working (ordered {math, reason} lines), or
+  //   - a multi-question exam (answers[], one per task question).
+  // All serialise into draft_text so the rest of the pipeline (silent insights
+  // pass, marking screen, CSV) stays shape-agnostic. The exam case is finished
+  // after the task (its questions) is loaded below.
   const isMathsSubmission = Array.isArray(working_lines);
-  let draftText: string;
+  const isExamSubmission = !isMathsSubmission && Array.isArray(answers);
+  let draftText = '';
   let mathLines: Array<{ math: string; reason: string }> | null = null;
+  let processedExam: ProcessedExam | null = null;
   if (isMathsSubmission) {
     mathLines = (working_lines as any[])
       .map((l) => ({ math: String(l?.math || '').trim(), reason: String(l?.reason || '').trim() }))
@@ -44,6 +53,9 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
     draftText = mathLines
       .map((l, i) => `Line ${i + 1}: ${l.math}\n  Reason: ${l.reason || '(blank)'}`)
       .join('\n');
+  } else if (isExamSubmission) {
+    // draftText + per-question marks are built after the task is loaded (we need
+    // its questions to snapshot text/marks and auto-mark MC).
   } else {
     if (typeof draft !== 'string') return res.status(400).json({ error: 'draft must be a string.' });
     draftText = draft.trim();
@@ -51,7 +63,7 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
       return res.status(400).json({ error: 'Your draft is too short. Write at least a paragraph and try again.' });
     }
   }
-  if (draftText.length > MAX_DRAFT_CHARS) {
+  if (!isExamSubmission && draftText.length > MAX_DRAFT_CHARS) {
     return res.status(400).json({ error: 'Your submission is too long.' });
   }
 
@@ -75,7 +87,7 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
 
   // Read task context for the submission row
   const { data: task } = await supabase
-    .from('tasks').select('id, question, course, class_id, task_mode, subject_type').eq('id', task_id as string).maybeSingle();
+    .from('tasks').select('id, question, questions, course, class_id, task_mode, subject_type').eq('id', task_id as string).maybeSingle();
   if (!task) return res.status(404).json({ error: 'Task not found.' });
 
   // Confirm the student is a member of the class
@@ -83,6 +95,23 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
     .from('class_members').select('class_id')
     .eq('class_id', task.class_id).eq('student_id', user.id).maybeSingle();
   if (!member) return res.status(403).json({ error: 'You are not enrolled in this class.' });
+
+  // Multi-question exam: snapshot the task's questions into the stored answers,
+  // auto-mark MC, and serialise the transcript into draft_text.
+  if (isExamSubmission) {
+    const questions = Array.isArray((task as any).questions) ? (task as any).questions as ExamQuestion[] : null;
+    if (!questions || questions.length === 0) {
+      return res.status(400).json({ error: 'This task does not accept multi-question answers.' });
+    }
+    processedExam = processExamAnswers(questions, answers);
+    if (!processedExam.hasContent) {
+      return res.status(400).json({ error: 'Write at least one answer before submitting.' });
+    }
+    draftText = serializeExamAnswers(processedExam.answers);
+    if (draftText.length > MAX_DRAFT_CHARS) {
+      return res.status(400).json({ error: 'Your submission is too long.' });
+    }
+  }
 
   // Determine the next draft version (continues the existing per-task sequence)
   const { data: existingDrafts } = await supabase
@@ -104,10 +133,19 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
   const wantsSilentInsights = taskMode === 'marked_task' || taskMode === 'quick_task';
   if (wantsSilentInsights) {
     try {
+      // Exam submissions have no single question — give Haiku a header plus, when
+      // there are MC questions, an unstored tally line so the skill read accounts
+      // for objective performance while weighting toward the written answers.
+      const haikuQuestion = isExamSubmission
+        ? `In-class exam (${processedExam!.answers.length} questions)`
+        : ((task as any).question || '');
+      const haikuDraft = (isExamSubmission && processedExam && processedExam.mcTotal > 0)
+        ? `[Multiple choice: ${processedExam.mcCorrect}/${processedExam.mcTotal} correct — weight the skill read toward the written answers below.]\n\n${draftText}`
+        : draftText;
       const signals = await generateInsightsSignals({
         course: (task as any).course || null,
-        question: (task as any).question || '',
-        draft: draftText,
+        question: haikuQuestion,
+        draft: haikuDraft,
         family,
       });
       // Pull the skill read out — it's captured for the skill database, kept
@@ -130,7 +168,8 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
   const { error: insertErr } = await supabase.from('submissions').insert({
     student_id: user.id,
     task_id: task_id as string,
-    question: task.question,
+    // Exam submissions are self-describing via `answers`; the scalar question is null.
+    question: isExamSubmission ? null : task.question,
     course: task.course,
     draft_text: draftText,
     feedback: insightsFeedback,
@@ -143,11 +182,17 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
     total_typing_time_ms: typeof total_typing_time_ms === 'number' ? total_typing_time_ms : null,
     time_to_first_keystroke_ms: typeof time_to_first_keystroke_ms === 'number' ? time_to_first_keystroke_ms : null,
     student_attachments: Array.isArray(student_attachments) ? student_attachments.slice(0, 5) : [],
-    over_time_cutoff_index: (typeof over_time_cutoff_index === 'number' && Number.isInteger(over_time_cutoff_index) && over_time_cutoff_index >= 0)
+    // Exam over-time cutoffs live per-answer (inside `answers`); the submission-
+    // level column stays null for exams.
+    over_time_cutoff_index: (!isExamSubmission && typeof over_time_cutoff_index === 'number' && Number.isInteger(over_time_cutoff_index) && over_time_cutoff_index >= 0)
       ? over_time_cutoff_index : null,
     ...(isMathsSubmission ? {
       working_lines: mathLines,
       input_mode: (input_mode === 'freeform' || input_mode === 'talkthrough') ? input_mode : 'structured',
+    } : {}),
+    ...(isExamSubmission ? {
+      answers: processedExam!.answers,
+      question_marks: processedExam!.questionMarks,
     } : {}),
   });
   // 23505 = a concurrent/duplicate submit already created this row (double-

@@ -169,6 +169,20 @@
     .lb-focus ul { margin: 8px 0 0; padding-left: 18px; }
     .lb-focus li { font-size: 13.5px; color: #374151; line-height: 1.5; margin-bottom: 4px; }
     .lb-extension { margin-top: 8px; font-size: 13.5px; color: #374151; }
+    /* Multi-question exam answer blocks */
+    .exam-answer-block { padding-top: 16px; }
+    .exam-answer-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+    .exam-answer-num { font-size: 16px; font-weight: 700; color: #111827; }
+    .exam-answer-marks { font-size: 13px; font-weight: 600; color: #b45309; background: #fef3e6; border: 1px solid #f6d9bb; border-radius: 6px; padding: 2px 8px; }
+    .exam-answer-block .draft-textarea { min-height: 200px; }
+    .exam-q-materials { margin-bottom: 12px; }
+    .exam-mc-group { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+    .exam-mc-opt { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid #e8e0d4; border-radius: 8px; cursor: pointer; font-size: 15px; color: #111827; background: #fff; transition: border-color 0.15s, background 0.15s; }
+    .exam-mc-opt:hover { border-color: #d1bfa3; }
+    .exam-mc-opt input { width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; }
+    .exam-mc-radio:disabled { cursor: not-allowed; }
+    .exam-mc-opt:has(input:checked) { border-color: #ed7615; background: #fff7ef; }
+    .exam-mc-opt:has(input:disabled) { cursor: not-allowed; opacity: 0.85; }
   </style>
 </head>
 <body>
@@ -305,9 +319,17 @@
       if (t.time_limit_minutes) metaParts.push('Time limit: ' + e(String(t.time_limit_minutes)) + ' min');
       html += '<div class="task-meta">' + metaParts.join(' · ') + '</div>';
 
+      // Multi-question exams render each question above its own answer box, so
+      // the top card omits the single "Task description" block (t.question is null).
+      const _multiQuestion = isMultiQuestionExam();
       html += '<div class="card">';
-      html += '<div class="task-question-wrap"><h4>Task description</h4>';
-      html += '<div class="task-question">' + renderTaskDescription(questionText, e) + '</div></div>';
+      if (!_multiQuestion) {
+        html += '<div class="task-question-wrap"><h4>Task description</h4>';
+        html += '<div class="task-question">' + renderTaskDescription(questionText, e) + '</div></div>';
+      } else {
+        html += '<div class="task-question-wrap"><h4>Exam</h4>';
+        html += '<div class="task-question">This exam has ' + (t.questions.length) + ' questions. Answer each in its own box below. Marks are shown for each question.</div></div>';
+      }
       if (criteriaText) {
         // Guarded — if /js/rubric.js failed to load (extension blockers etc.)
         // show the raw criteria text instead of crashing.
@@ -404,6 +426,8 @@
           html += '<h3>Open this on a laptop or desktop</h3>';
           html += '<p>This task requires you to <strong>type your response</strong>. Open ProofReady on a larger screen with a keyboard to draft your response. The task details above are still visible so you can plan ahead.</p>';
           html += '</div>';
+        } else if (isMultiQuestionExam()) {
+          html += renderExamAnswerBlocks();
         } else {
           html += '<div class="card" id="draftCard">';
           if (typedOnly) {
@@ -458,7 +482,12 @@
           onChange: (arr) => { studentAttachments = arr; },
         }));
       }
-      if (used < MAX_DRAFTS) wireDraftBehaviour();
+      if (isMultiQuestionExam()) {
+        renderExamQuestionMaterials();
+        wireExamBehaviour();
+      } else if (used < MAX_DRAFTS) {
+        wireDraftBehaviour();
+      }
     }
 
     // Teacher's accompanying materials, shown to the student on the task.
@@ -633,19 +662,34 @@
           el.style.cssText = 'font-size:13px;font-weight:600;color:#ed7615;background:#fef3e6;border:1px solid #f6d9bb;border-radius:8px;padding:6px 10px;margin-bottom:10px;display:inline-block';
           el.textContent = '⏱ ' + mm + ':' + (ss < 10 ? '0' : '') + ss + ' remaining';
         } else {
-          // Deadline passed — snapshot the draft once (the before/after boundary).
-          if (textAtDeadline == null) {
-            var ta = document.getElementById('draftTextarea');
-            textAtDeadline = ta ? ta.value : '';
-            telemetry.text_at_deadline = textAtDeadline;
-            pushAutosave(currentTask.id);
-          }
+          // Deadline passed — snapshot the work once (the before/after boundary).
+          captureDeadlineSnapshot();
           el.style.cssText = 'font-size:13px;font-weight:600;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:6px 10px;margin-bottom:10px;display:block';
           el.textContent = "⏱ Time's up — anything you add now is recorded as submitted after the time limit.";
         }
       }
       tick();
       examTimerInterval = setInterval(tick, 1000);
+    }
+
+    // Snapshot the work at the moment the time limit elapses (the before/after
+    // boundary). Single-question: one draft string. Multi-question: every
+    // answer, keyed by question_id. Idempotent — only the first call captures.
+    function captureDeadlineSnapshot() {
+      if (isMultiQuestionExam()) {
+        if (examAnswersAtDeadline == null) {
+          examAnswersAtDeadline = readExamAnswers();
+          telemetry.answers_at_deadline = examAnswersAtDeadline;
+          pushExamAutosave(currentTask.id);
+        }
+      } else {
+        if (textAtDeadline == null) {
+          var ta = document.getElementById('draftTextarea');
+          textAtDeadline = ta ? ta.value : '';
+          telemetry.text_at_deadline = textAtDeadline;
+          pushAutosave(currentTask.id);
+        }
+      }
     }
 
     function commonPrefixLength(a, b) {
@@ -795,9 +839,331 @@
       if (!savedAt) setSaveIndicator('idle');
     }
 
+    // ===== Multi-question in-class exam (marked_task with task.questions) =====
+    // A parallel writing surface: one textarea per question, sharing the same
+    // telemetry counters and the same whole-exam timer. Answers autosave as a
+    // per-question object; at submit they become an answers[] payload with a
+    // per-answer over-time cutoff. The single-question functions above are left
+    // untouched — this path only runs when isMultiQuestionExam() is true.
+    var examAnswersAtDeadline = null;   // { question_id: text } snapshot at the limit
+    var examLastInTimeAnswers = {};     // most recent in-time snapshot of all answers
+    var examLastSavedJSON = '';
+
+    function isMultiQuestionExam() {
+      return !!(currentTask && currentTask.task_mode === 'marked_task'
+        && Array.isArray(currentTask.questions) && currentTask.questions.length > 0);
+    }
+
+    function examQuestionEls() {
+      return Array.prototype.slice.call(document.querySelectorAll('.exam-answer-text'));
+    }
+
+    // Read every answer keyed by question_id. Text → the textarea value; MC →
+    // the selected option id (or '' if none picked).
+    function readExamAnswers() {
+      var out = {};
+      (currentTask.questions || []).forEach(function(q) {
+        if (q.type === 'multiple_choice') {
+          var checked = document.querySelector('.exam-mc-radio[name="examq_' + q.id + '"]:checked');
+          out[q.id] = checked ? checked.value : '';
+        } else {
+          var ta = document.getElementById('examAns_' + q.id);
+          out[q.id] = ta ? ta.value : '';
+        }
+      });
+      return out;
+    }
+
+    // Restore saved answers into the inputs (text boxes + MC radios).
+    function applyExamAnswers(map) {
+      (currentTask.questions || []).forEach(function(q) {
+        var v = map[q.id];
+        if (typeof v !== 'string') return;
+        if (q.type === 'multiple_choice') {
+          document.querySelectorAll('.exam-mc-radio[name="examq_' + q.id + '"]').forEach(function(r) {
+            if (r.value === v) r.checked = true;
+          });
+        } else {
+          var ta = document.getElementById('examAns_' + q.id);
+          if (ta) { ta.value = v; updateExamWordCount(ta); }
+        }
+      });
+    }
+
+    // Serialize the answers into a transcript so the autosave's draft_text is
+    // never empty for legacy readers (server rebuilds its own at submit). MC
+    // lines carry the selected option text only — never which one is correct.
+    function serializeExamAnswersClient() {
+      var ans = readExamAnswers();
+      return (currentTask.questions || []).map(function(q, i) {
+        if (q.type === 'multiple_choice') {
+          var sel = (q.options || []).find(function(o) { return o.id === ans[q.id]; });
+          return 'Question ' + (i + 1) + ' (multiple choice): ' + (q.text || '') + '\nSelected: ' + (sel ? sel.text : '(no answer)');
+        }
+        var body = (ans[q.id] || '').trim() || '(no answer)';
+        return 'Question ' + (i + 1) + ': ' + (q.text || '') + '\nAnswer: ' + body;
+      }).join('\n\n');
+    }
+
+    function renderExamAnswerBlocks() {
+      var typedOnly = currentTask.typed_response_only !== false;
+      var html = '';
+      if (typedOnly) {
+        html += '<div class="typed-only-banner"><span class="pill">Typed only</span><span>Pasting is disabled for this task. ProofReady records your typing for your teacher.</span></div>';
+      }
+      html += '<div id="examTimer"></div>';
+      (currentTask.questions || []).forEach(function(q, i) {
+        html += '<div class="card exam-answer-block" data-qid="' + e(q.id) + '">';
+        html += '<div class="exam-answer-head"><span class="exam-answer-num">Question ' + (i + 1) + '</span>';
+        if (q.marks) html += '<span class="exam-answer-marks">' + e(String(q.marks)) + ' mark' + (q.marks == 1 ? '' : 's') + '</span>';
+        html += '</div>';
+        html += '<div class="task-question">' + renderTaskDescription(q.text || '', e) + '</div>';
+        if (Array.isArray(q.attachments) && q.attachments.length) {
+          html += '<div class="exam-q-materials" id="examQMat_' + e(q.id) + '"></div>';
+        }
+        if (q.type === 'multiple_choice') {
+          html += '<div class="exam-mc-group">';
+          (q.options || []).forEach(function(o) {
+            html += '<label class="exam-mc-opt"><input type="radio" class="exam-mc-radio" name="examq_' + e(q.id) + '" value="' + e(o.id) + '"><span>' + e(o.text) + '</span></label>';
+          });
+          html += '</div>';
+        } else {
+          html += '<textarea class="draft-textarea exam-answer-text" id="examAns_' + e(q.id) + '" data-qid="' + e(q.id) + '" placeholder="Write your answer here..."></textarea>';
+          html += '<div class="draft-meta-row"><div class="word-count" id="examWc_' + e(q.id) + '">0 words</div></div>';
+        }
+        html += '</div>';
+      });
+      html += '<div class="card" id="examSubmitCard">';
+      html += '<div class="draft-meta-row" style="justify-content:flex-end"><div class="save-indicator" id="saveIndicator"></div></div>';
+      if (currentTask.allow_student_attachments) html += '<div class="attach-block"><div id="studentAttachmentsMount"></div></div>';
+      html += '<div class="submit-row"><button class="submit-btn" onclick="submitForMarking()" style="max-width:340px">Submit</button></div>';
+      html += '<div class="submit-final-hint">Once submitted, you can\'t resubmit. Your teacher will mark this and you\'ll see your result when they\'re done.</div>';
+      html += '</div>';
+      return html;
+    }
+
+    function renderExamQuestionMaterials() {
+      if (!window.Attachments) return;
+      (currentTask.questions || []).forEach(function(q) {
+        if (!Array.isArray(q.attachments) || !q.attachments.length) return;
+        var mount = document.getElementById('examQMat_' + q.id);
+        if (mount) Attachments.renderAttachmentList(mount, {
+          attachments: q.attachments,
+          taskId: currentTask.id,
+          heading: 'Materials for this question',
+        });
+      });
+    }
+
+    function updateExamWordCount(ta) {
+      var countEl = document.getElementById('examWc_' + ta.dataset.qid);
+      if (!countEl) return;
+      var words = ta.value.trim() ? ta.value.trim().split(/\s+/).length : 0;
+      countEl.textContent = words + ' words';
+    }
+
+    async function pushExamAutosave() {
+      var answers = readExamAnswers();
+      var json = JSON.stringify(answers);
+      if (json === examLastSavedJSON) return;
+      setSaveIndicator('saving');
+      try {
+        var res = await authFetch('/api/draft-autosave', {
+          method: 'PUT',
+          body: JSON.stringify({
+            task_id: currentTask.id,
+            draft_text: serializeExamAnswersClient(),
+            answers: answers,
+            telemetry: telemetry,
+          }),
+        });
+        if (!res.ok) throw new Error('save failed');
+        examLastSavedJSON = json;
+        savedAt = Date.now();
+        setSaveIndicator('saved');
+      } catch (_) {
+        setSaveIndicator('failed');
+      }
+    }
+
+    function scheduleExamAutosave() {
+      clearTimeout(autosaveTimer);
+      autosaveTimer = setTimeout(function() { pushExamAutosave(); }, 1500);
+    }
+
+    function disableExamMcInputs() {
+      document.querySelectorAll('.exam-mc-radio').forEach(function(r) { r.disabled = true; });
+    }
+
+    // Shared activity bookkeeping for any answer change (text keystroke OR MC
+    // selection): start the whole-exam clock on first activity, and maintain the
+    // over-time boundary. MC questions lock at the deadline.
+    function examOnActivity(now) {
+      if (telemetry.time_to_first_keystroke_ms == null) {
+        telemetry.time_to_first_keystroke_ms = now - pageLoadedAt;
+        telemetry.typing_session_count = Math.max(1, telemetry.typing_session_count);
+      }
+      if (examStartedAt == null && examLimitMs()) {
+        examStartedAt = now;
+        telemetry.exam_started_at = examStartedAt;
+        startExamTimer();
+      }
+      if (examLimitMs() && examStartedAt != null) {
+        if (now < examStartedAt + examLimitMs()) {
+          examLastInTimeAnswers = readExamAnswers();
+        } else if (examAnswersAtDeadline == null) {
+          examAnswersAtDeadline = examLastInTimeAnswers;
+          telemetry.answers_at_deadline = examAnswersAtDeadline;
+          disableExamMcInputs();
+        }
+      }
+    }
+
+    function wireExamBehaviour() {
+      var typedOnly = currentTask.typed_response_only !== false;
+      var els = examQuestionEls();
+      var radios = Array.prototype.slice.call(document.querySelectorAll('.exam-mc-radio'));
+      if (!els.length && !radios.length) return;
+
+      // Restore autosaved answers + telemetry + exam clock + deadline snapshot.
+      loadAutosave(currentTask.id).then(function(data) {
+        if (!data) { if (!savedAt) setSaveIndicator('idle'); return; }
+        if (data.answers && typeof data.answers === 'object') {
+          applyExamAnswers(data.answers);
+          examLastSavedJSON = JSON.stringify(readExamAnswers());
+          savedAt = data.updated_at ? new Date(data.updated_at).getTime() : Date.now();
+          setSaveIndicator('saved');
+        }
+        if (data.telemetry && typeof data.telemetry === 'object') {
+          Object.keys(telemetry).forEach(function(k) {
+            if (typeof data.telemetry[k] === 'number') telemetry[k] = data.telemetry[k];
+          });
+          if (typeof data.telemetry.exam_started_at === 'number') {
+            examStartedAt = data.telemetry.exam_started_at;
+            telemetry.exam_started_at = examStartedAt;
+          }
+          if (data.telemetry.answers_at_deadline && typeof data.telemetry.answers_at_deadline === 'object') {
+            examAnswersAtDeadline = data.telemetry.answers_at_deadline;
+            telemetry.answers_at_deadline = examAnswersAtDeadline;
+          }
+        }
+        if (examStartedAt != null && examLimitMs()) startExamTimer();
+        // If the deadline already elapsed (reopened past time), lock MC inputs.
+        if (examLimitMs() && examStartedAt != null && Date.now() >= examStartedAt + examLimitMs()) disableExamMcInputs();
+      });
+
+      els.forEach(function(el) {
+        el.addEventListener('input', function() {
+          updateExamWordCount(el);
+          var now = Date.now();
+          examOnActivity(now);
+          telemetry.keystroke_count += 1;
+          if (lastInputAt) {
+            var gap = now - lastInputAt;
+            telemetry.total_typing_time_ms += Math.min(gap, 5000);
+          }
+          lastInputAt = now;
+          scheduleExamAutosave();
+        });
+        el.addEventListener('focus', function() {
+          if (lastBlurAt && Date.now() - lastBlurAt > 5 * 60 * 1000) telemetry.typing_session_count += 1;
+        });
+        el.addEventListener('blur', function() { lastBlurAt = Date.now(); });
+        el.addEventListener('keydown', function(ev) {
+          if (ev.key === 'Tab' && !ev.shiftKey) {
+            ev.preventDefault();
+            var s = el.selectionStart, e2 = el.selectionEnd;
+            el.value = el.value.slice(0, s) + '\t' + el.value.slice(e2);
+            el.selectionStart = el.selectionEnd = s + 1;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        });
+        if (typedOnly) {
+          el.addEventListener('paste', function(ev) {
+            ev.preventDefault();
+            telemetry.paste_attempts_blocked += 1;
+            showToast('Pasting is disabled for this task. Please type your response.');
+          });
+          el.addEventListener('drop', function(ev) {
+            ev.preventDefault();
+            telemetry.paste_attempts_blocked += 1;
+            showToast('Dragging text in is disabled for this task.');
+          });
+          el.addEventListener('dragover', function(ev) { ev.preventDefault(); });
+        }
+      });
+
+      // MC selections also count as activity (and start the clock for all-MC exams).
+      radios.forEach(function(r) {
+        r.addEventListener('change', function() {
+          examOnActivity(Date.now());
+          scheduleExamAutosave();
+        });
+      });
+
+      if (!savedAt) setSaveIndicator('idle');
+    }
+
+    async function submitExamForMarking() {
+      var questions = currentTask.questions || [];
+      var answersMap = readExamAnswers();
+      var anyAnswer = questions.some(function(q) {
+        return q.type === 'multiple_choice' ? !!answersMap[q.id] : (answersMap[q.id] || '').trim().length > 0;
+      });
+      if (!anyAnswer) { alert('Answer at least one question before submitting.'); return; }
+
+      var ok = confirm('Submit this exam?\n\nYour teacher will mark it. You can only submit once for this task — make sure you\'re ready.');
+      if (!ok) return;
+
+      submissionInFlight = true;
+      var markBtn = document.querySelector('.submit-btn');
+      var originalLabel = markBtn ? markBtn.textContent : '';
+      if (markBtn) { markBtn.disabled = true; markBtn.textContent = 'Submitting...'; }
+
+      var answersPayload = questions.map(function(q) {
+        if (q.type === 'multiple_choice') {
+          // If the deadline elapsed, the locked snapshot selection wins.
+          var sel = (examAnswersAtDeadline && typeof examAnswersAtDeadline[q.id] === 'string')
+            ? examAnswersAtDeadline[q.id]
+            : (answersMap[q.id] || '');
+          return { question_id: q.id, selected_option_id: sel || null };
+        }
+        var finalText = (answersMap[q.id] || '').trim();
+        var cutoff = null;
+        if (examAnswersAtDeadline && typeof examAnswersAtDeadline[q.id] === 'string') {
+          cutoff = commonPrefixLength(examAnswersAtDeadline[q.id].replace(/^\s+/, ''), finalText);
+        }
+        return { question_id: q.id, text: finalText, over_time_cutoff_index: cutoff };
+      });
+
+      try {
+        var res = await authFetch('/api/submit-for-marking', {
+          method: 'POST',
+          body: JSON.stringify({
+            task_id: currentTask.id,
+            answers: answersPayload,
+            keystroke_count: telemetry.keystroke_count,
+            paste_attempts_blocked: telemetry.paste_attempts_blocked,
+            typing_session_count: telemetry.typing_session_count,
+            total_typing_time_ms: telemetry.total_typing_time_ms,
+            time_to_first_keystroke_ms: telemetry.time_to_first_keystroke_ms,
+            student_attachments: studentAttachments,
+          }),
+        });
+        var data = await res.json().catch(function() { return {}; });
+        if (!res.ok) throw new Error(data.error || 'Could not submit for marking.');
+        window.location.reload();
+      } catch (err) {
+        alert(err.message);
+        if (markBtn) { markBtn.disabled = false; markBtn.textContent = originalLabel || 'Submit'; }
+        submissionInFlight = false;
+      }
+    }
+
     var submissionInFlight = false;
     async function submitForMarking() {
       if (submissionInFlight) return;
+      if (isMultiQuestionExam()) return submitExamForMarking();
       const draftEl = document.getElementById('draftTextarea');
       if (!draftEl) return;
       const draft = draftEl.value.trim();
