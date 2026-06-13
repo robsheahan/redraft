@@ -813,7 +813,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
     let currentClassId = null;
     let selectedTaskMode = null;
     let selectedAssessmentKind = null; // 'take_home' | 'in_class_exam' (only when Assessment chosen)
-    let selectedSubjectType = 'essay';
+    let selectedSubjectType = null;
     let taskAttachments = [];
 
     // Subject-aware labels. Essay leaves the existing copy in place; Maths
@@ -1076,6 +1076,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       }
 
       if (!currentClassId) { alert('No class context. Go back and pick a class.'); restoreButtons(); return; }
+      if (!selectedSubjectType) { alert('Pick a subject type first (Essay or Maths).'); restoreButtons(); return; }
 
       const course = document.getElementById('courseInput').value.trim();
       const title = document.getElementById('titleInput').value.trim();
@@ -1265,8 +1266,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         refreshExamEditor();
       }
       subjectBtns.forEach(b => b.addEventListener('click', () => selectSubjectType(b.dataset.subject)));
-      // Default subject to essay so existing teachers' muscle memory works.
-      selectSubjectType('essay');
+      // No subject is preselected — the teacher chooses essay or maths.
 
       // Task-type buttons at the bottom of Step 1. Quick Task: nothing appears
       // below. Assessment Task is a parent — it reveals a second picker (Take-home
