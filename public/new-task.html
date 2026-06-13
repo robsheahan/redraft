@@ -572,9 +572,8 @@
           <label>Task title</label>
           <input type="text" id="titleInput" placeholder="e.g. Task 2 — Health Priorities Essay">
         </div>
-        <div class="form-group">
+        <div class="form-group" id="instructionsGroup">
           <label>Task instructions</label>
-          <div class="hint">Optional. Shown to students above the questions — e.g. how long they have, which sections to answer, materials allowed.</div>
           <textarea id="instructionsInput" placeholder="e.g. Answer ALL questions. You have 60 minutes. Write in full sentences."></textarea>
         </div>
         <div class="form-group" id="singleQuestionGroup">
@@ -1004,12 +1003,14 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
     // subject or task type changes.
     function refreshExamEditor() {
       const isExamEssay = selectedTaskMode === 'marked_task' && selectedSubjectType === 'essay';
+      const isQuick = selectedTaskMode === 'quick_task';
       const editor = document.getElementById('examQuestionsGroup');
       const single = document.getElementById('singleQuestionGroup');
       const totalMarks = document.getElementById('totalMarksGroup');
       if (!editor || !single) return;
       editor.style.display = isExamEssay ? '' : 'none';
-      single.style.display = isExamEssay ? 'none' : '';
+      // Quick tasks have no separate question — the instructions are the prompt.
+      single.style.display = (isExamEssay || isQuick) ? 'none' : '';
       if (totalMarks) totalMarks.style.display = isExamEssay ? 'none' : '';
       if (isExamEssay) {
         const list = document.getElementById('examQuestionsList');
@@ -1081,15 +1082,18 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       const instructions = document.getElementById('instructionsInput').value.trim() || null;
       const due_date = document.querySelector('.step:nth-child(1) input[type="date"]').value || null;
 
-      // In-class exam uses the question-list editor. One question saves as a
-      // single-question task (scalar `question`); two or more as a `questions[]`
-      // exam (server recomputes total_marks). All other modes use the single
-      // Task question field as before.
-      const isExam = selectedTaskMode === 'marked_task';
+      // Written in-class exams use the question-list editor. One question saves
+      // as a single-question task (scalar `question`); two or more as a
+      // `questions[]` exam (server recomputes total_marks). Quick tasks have no
+      // separate question — the instructions are the prompt. Everything else
+      // (take-home, maths exam) uses the single Task question field.
+      const isExamEssay = selectedTaskMode === 'marked_task' && selectedSubjectType === 'essay';
+      const isQuick = selectedTaskMode === 'quick_task';
       let question = null;
       let total_marks = null;
       let questionsPayload = null;
-      if (isExam) {
+      let instructionsToSend = instructions;
+      if (isExamEssay) {
         const qs = readExamQuestions();
         if (qs.length === 0) { alert('Add at least one question.'); restoreButtons(); return; }
         for (let i = 0; i < qs.length; i++) {
@@ -1109,6 +1113,14 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         } else {
           questionsPayload = qs;
         }
+      } else if (isQuick) {
+        // The instructions ARE the prompt; store them as the question (so the
+        // student sees them and the insights pass has context) and don't send a
+        // separate instructions block (avoids showing the same text twice).
+        question = instructions;
+        if (!question) { alert('Enter the task instructions first.'); restoreButtons(); return; }
+        total_marks = document.querySelector('#totalMarksGroup input[type="number"]').value || null;
+        instructionsToSend = null;
       } else {
         question = document.querySelector('#singleQuestionGroup textarea').value;
         total_marks = document.querySelector('#totalMarksGroup input[type="number"]').value || null;
@@ -1173,7 +1185,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         const res = await authFetch('/api/task', {
           method: 'POST',
           body: JSON.stringify({
-            class_id: currentClassId, course, title, instructions, question, questions: questionsPayload, total_marks, due_date,
+            class_id: currentClassId, course, title, instructions: instructionsToSend, question, questions: questionsPayload, total_marks, due_date,
             outcomes, criteria_text, notes, publish: !!publish, typed_response_only,
             hide_criteria_from_students,
             task_mode, completion_only,
