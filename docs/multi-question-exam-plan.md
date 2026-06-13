@@ -12,7 +12,7 @@ Multi-question support lands in **`marked_task` (In-class exam) only**, with **t
 **Why the exam mode:**
 - It has **no student-facing AI**. A take-home `feedback_task` runs three Sonnet passes per draft × up to 3 drafts — per-question that explodes cost and breaks the draft model conceptually (what is "draft 2" across 6 questions?). An exam runs one silent Haiku pass at submit; multi-question there is a data-model + UI problem, not an LLM-cost problem.
 - It's where the constraint actually bites. Take-home drafts are typically one extended response. A real NSW in-class exam is short answers building to an extended response.
-- It composes with existing decisions: single submission, no criteria requirement, no feedback rendering, no Lesson Builder (standardisation).
+- It composes with existing decisions: single submission, no criteria requirement, no feedback rendering, no Lesson Differentiator (standardisation).
 
 **Why text + MC, not maths:** text answers cover short answers and extended responses; MC covers Section-I-style objective items — together that's a complete NSW exam paper for written subjects. Per-question MathLive working is still ~a doubling of scope with no pilot demand, so maths exams keep the existing single-question flow; the per-question `type` field means it can be added later **without migration**. **MC builds last** (step 8, after the typed-text flow is verified end-to-end) so its one sharp edge — answer-key stripping — lands on a proven foundation; steps 1–7 are shippable without it.
 
@@ -27,7 +27,7 @@ Multi-question support lands in **`marked_task` (In-class exam) only**, with **t
 - Multi-question maths (per-question working lines).
 - Sections as a schema concept; per-question time limits.
 - Multi-question on `quick_task` / `feedback_task` (deliberate; revisit post-pilot).
-- Lesson Builder on exams (stays off — and v1 adds the missing API-level gate, see §8).
+- Lesson Differentiator on exams (stays off — and v1 adds the missing API-level gate, see §8).
 
 ---
 
@@ -165,7 +165,7 @@ Branch on `submission.answers` non-null.
 - **Save:** body gains `question_marks[]` for text questions only; server validates each `question_id` against the submission's answers and each mark ≥0 and ≤ that question's marks, preserves the `source:'auto'` MC rows untouched, computes and writes `total_mark` = sum server-side.
 - **Release stays teacher-controlled:** even an all-MC exam needs the teacher's save to set `graded_at` (one click) — students never see MC results, or anything else, before the teacher releases. Annotations validated as today plus `question_id` membership.
 - **AGS passback: zero change** — it reads `total_mark`.
-- "Support this student was given" Lesson Builder block: n/a (gated off exams, §8).
+- "Support this student was given" Lesson Differentiator block: n/a (gated off exams, §8).
 
 ---
 
@@ -180,7 +180,7 @@ Branch on `submission.answers` non-null.
 
 ## 8. Hardening folded in (pre-existing gap)
 
-The explorer pass found Lesson Builder is only **UI-gated** off exams — `new-task.html` hides the button, but neither `api/task.ts` nor `api/generate-activity.ts` rejects `lesson_builder=true` on a `marked_task`. v1 adds:
+The explorer pass found Lesson Differentiator is only **UI-gated** off exams — `new-task.html` hides the button, but neither `api/task.ts` nor `api/generate-activity.ts` rejects `lesson_builder=true` on a `marked_task`. v1 adds:
 - `api/task.ts`: reject `lesson_builder` unless `task_mode='quick_task'` (matching the UI's stated rule).
 - `api/generate-activity.ts`: return the main activity (no LLM call) for `marked_task`, belt-and-braces.
 
@@ -204,7 +204,7 @@ This protects exam standardisation independent of this feature, and removes the 
 
 ## 10. Build order (each step shippable behind the previous)
 
-1. **Migration + serializer + validation** — `multi-question-exam-migration.sql`, `lib/exam-transcript.ts`, `api/task.ts` questions validation + lock-on-publish + the Lesson Builder API gate (§8).
+1. **Migration + serializer + validation** — `multi-question-exam-migration.sql`, `lib/exam-transcript.ts`, `api/task.ts` questions validation + lock-on-publish + the Lesson Differentiator API gate (§8).
 2. **Authoring** — `new-task.html` question-list editor, N=1 legacy fallback, marks auto-sum.
 3. **Student flow** — `submit.html` multi-question render, autosave (`api/draft-autosave.ts` + column), telemetry attach, per-question deadline snapshots + cutoffs, submit payload.
 4. **Submit endpoint** — `answers[]` shape in `submit-for-marking.ts`, snapshotting, transcript serialization, Haiku prompt line.

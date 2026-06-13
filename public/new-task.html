@@ -462,7 +462,7 @@
       margin-top: 8px;
     }
     .exam-q-marks label { font-size: 13px; color: #6b7280; font-weight: 600; }
-    .exam-q-marks input { max-width: 110px; }
+    .exam-q-marks input { max-width: 72px; }
     .exam-q-attach { margin-top: 10px; }
     .exam-add-row {
       display: flex; align-items: center; justify-content: space-between;
@@ -481,7 +481,7 @@
     }
     .exam-add-btn:hover { background: #000; border-color: #000; }
     .exam-total { font-size: 14px; font-weight: 600; color: #111827; }
-    .exam-total span { color: #b45309; }
+    .exam-total span { color: #111827; }
     /* Compact — overrides the full-width .form-group select rule so the answer-type
        picker stays a small box and the "Question N" header sits on one line. */
     .exam-q-type {
@@ -706,7 +706,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
             Publish with Lesson Differentiator
           </button>
         </div>
-        <div style="display:flex; gap:8px">
+        <div style="display:flex; gap:8px; justify-content:flex-end">
           <button class="btn-create" style="background:transparent;color:#6b7280;border:1px solid transparent;box-shadow:none" onclick="cancelTask()">Cancel</button>
           <button class="btn-create" style="background:#fff;color:#374151;border:1px solid #e8e0d4;box-shadow:none" onclick="createTask(false)">Save draft</button>
           <button class="btn-create" onclick="createTask(true)">Save &amp; publish</button>
@@ -1303,7 +1303,6 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         } else {
           selectedTaskMode = null;
           if (assessmentSteps) assessmentSteps.style.display = 'none';
-          setTimeout(() => kindGroup && kindGroup.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
         }
       }
       typeBtns.forEach(b => b.addEventListener('click', () => selectTaskType(b.dataset.mode)));
@@ -1325,7 +1324,6 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         if (assessmentSteps) {
           assessmentSteps.style.display = '';
           if (assessmentSteps.dataset.revealed !== 'yes') assessmentSteps.dataset.revealed = 'yes';
-          setTimeout(() => assessmentSteps.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
         }
       }
       kindBtns.forEach(b => b.addEventListener('click', () => selectAssessmentKind(b.dataset.kind)));
