@@ -574,16 +574,16 @@
         <div id="taskFormRest" style="display:none">
         <div class="form-group">
           <label>Task title</label>
-          <input type="text" id="titleInput" placeholder="e.g. Task 2 — Health Priorities Essay">
+          <input type="text" id="titleInput">
         </div>
         <div class="form-group" id="instructionsGroup">
           <label>Task instructions</label>
-          <textarea id="instructionsInput" placeholder="e.g. Answer ALL questions. You have 60 minutes. Write in full sentences."></textarea>
+          <textarea id="instructionsInput"></textarea>
         </div>
         <div class="form-group" id="singleQuestionGroup">
           <label>Task question</label>
           <div class="hint">The full question students need to respond to</div>
-          <textarea placeholder="e.g. Analyse how the Ottawa Charter can be used to address cardiovascular disease (CVD) as a health priority in Australia."></textarea>
+          <textarea></textarea>
           <div id="taskAttachmentsMount" style="margin-top:8px"></div>
         </div>
         <!-- Multi-question exam editor (in-class exam only). Replaces the single
@@ -601,7 +601,7 @@
         <div class="form-row" id="marksDateRow">
           <div class="form-group" id="totalMarksGroup">
             <label>Total marks</label>
-            <input type="number" placeholder="e.g. 8">
+            <input type="number">
           </div>
           <div class="form-group" id="dueDateGroup">
             <label>Due date</label>
@@ -640,7 +640,7 @@
         </div>
         <div class="form-group">
           <div class="hint">Enter the syllabus outcome codes this task assesses (one per line). These help the feedback engine understand what the student needs to demonstrate.</div>
-          <textarea id="outcomesText" placeholder="e.g.&#10;HM-12-01 — analyses the health status of Australians&#10;HM-12-06 — critically analyses relationships and implications of health and movement concepts" style="min-height:100px"></textarea>
+          <textarea id="outcomesText" style="min-height:100px"></textarea>
         </div>
       </div>
 
@@ -658,11 +658,7 @@
             </button>
             <span class="generate-hint">For in-class tasks: enter the task title, question and total marks, and we'll draft a NESA-aligned rubric you can edit.</span>
           </div>
-          <textarea class="criteria-textarea" id="criteriaText" placeholder="e.g.
-Criteria 1: Knowledge and understanding of key concepts (3-5 marks)
-Criteria 2: Use of relevant examples and evidence (3-5 marks)
-Criteria 3: Analysis and critical thinking (2-4 marks)
-Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
+          <textarea class="criteria-textarea" id="criteriaText"></textarea>
         </div>
         <div class="form-group">
           <div class="toggle-card" id="hideCriteriaCard">
@@ -684,7 +680,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         <div class="form-group">
           <label>Time limit (minutes)</label>
           <div class="hint">Optional. Shown to students on the task so they know how long they have. Not enforced — you supervise the time in class.</div>
-          <input type="number" id="timeLimitInput" min="1" placeholder="e.g. 60" style="max-width:160px">
+          <input type="number" id="timeLimitInput" min="1" style="max-width:160px">
         </div>
       </div>
 
@@ -697,7 +693,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         <div class="form-group">
           <label>Notes for the feedback engine</label>
           <div class="hint">Anything specific you want the feedback to watch for — common mistakes, focus areas, things students tend to miss</div>
-          <textarea placeholder="e.g. Students often forget to use specific data when explaining why this is a health priority. Watch for students who list points without connecting them to the question."></textarea>
+          <textarea></textarea>
         </div>
       </div>
 
@@ -737,7 +733,10 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       const noun = isMaths ? 'marking guideline' : 'marking criteria';
 
       const title = document.getElementById('titleInput').value.trim();
-      const question = document.querySelector('#singleQuestionGroup textarea').value.trim();
+      // Maths has no separate question field — the instructions are the prompt.
+      const question = (isMaths
+        ? document.getElementById('instructionsInput').value
+        : document.querySelector('#singleQuestionGroup textarea').value).trim();
       const totalMarksRaw = document.querySelector('#totalMarksGroup input[type="number"]').value;
       const totalMarks = totalMarksRaw ? Number(totalMarksRaw) : NaN;
       const course = document.getElementById('courseInput').value.trim();
@@ -849,7 +848,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       if (subject === 'maths') {
         if (step3) step3.textContent = 'Marking guideline (optional)';
         if (step3Hint) step3Hint.textContent = 'Optional per-step mark allocation. Helps ProofReady flag steps the student has skipped. Skip this for in-class practice or Year 7–10 tasks where you\'d mark the working holistically. Students never see this.';
-        if (criteriaTA) criteriaTA.placeholder = "e.g.\n- Differentiates the function correctly (1 mark)\n- Sets derivative to zero and solves (1 mark)\n- Determines nature of stationary points (1 mark)\n- Calculates y-values (1 mark)\n- Evaluates endpoints on the interval (1 mark)\n- States absolute max and min with coordinates (1 mark)";
+        if (criteriaTA) criteriaTA.placeholder = "";
         // Generate-criteria button is essay-specific in v0 (no maths generator yet).
         // Reveal the generate button for maths and relabel it; the maths
         // handler calls /api/generate-marking-guideline instead.
@@ -870,7 +869,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       } else {
         if (step3) step3.textContent = 'Marking criteria';
         if (step3Hint) step3Hint.textContent = 'Enter your marking criteria exactly as they appear on your task notification. ProofReady will detect the different criteria and marking levels automatically.';
-        if (criteriaTA) criteriaTA.placeholder = "e.g.\nCriteria 1: Knowledge and understanding of key concepts (3-5 marks)\nCriteria 2: Use of relevant examples and evidence (3-5 marks)\nCriteria 3: Analysis and critical thinking (2-4 marks)\nCriteria 4: Structure, clarity and communication (1-3 marks)";
+        if (criteriaTA) criteriaTA.placeholder = "";
         if (genBtn) {
           genBtn.style.display = '';
           var lblE = genBtn.querySelector('.btn-label');
@@ -955,13 +954,13 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
           '<button type="button" class="exam-q-ctrl down" title="Move down">&#8595;</button>' +
           '<button type="button" class="exam-q-ctrl remove" title="Remove question">&#215;</button>' +
         '</div>' +
-        '<textarea class="exam-q-text" placeholder="e.g. Outline TWO factors that influence health status."></textarea>' +
+        '<textarea class="exam-q-text"></textarea>' +
         '<div class="exam-q-options" style="display:none">' +
           '<div class="exam-q-options-list"></div>' +
           '<button type="button" class="exam-opt-add">+ Add option</button>' +
           '<div class="exam-opt-hint">Select the radio beside the correct answer. Students see the options in a scrambled order.</div>' +
         '</div>' +
-        '<div class="exam-q-marks"><label>Marks</label><input type="number" min="1" step="1" placeholder="e.g. 3"></div>' +
+        '<div class="exam-q-marks"><label>Marks</label><input type="number" min="1" step="1"></div>' +
         '<div class="exam-q-attach"></div>';
       list.appendChild(row);
 
@@ -1015,21 +1014,22 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       return row;
     }
 
-    // The multi-question editor is for WRITTEN in-class exams only. Maths exams
-    // stay single-question (they route to submit-maths.html), and take-home /
-    // quick tasks keep the single Task question field. Re-evaluated whenever the
-    // subject or task type changes.
+    // The multi-question editor is for WRITTEN in-class exams only. Maths and
+    // quick tasks have no separate Task question field — the instructions are the
+    // prompt. Only essay take-home tasks use the single question field.
+    // Re-evaluated whenever the subject or task type changes.
     function refreshExamEditor() {
       const isExamEssay = selectedTaskMode === 'marked_task' && selectedSubjectType === 'essay';
       const isQuick = selectedTaskMode === 'quick_task';
+      const isMaths = selectedSubjectType === 'maths';
       const editor = document.getElementById('examQuestionsGroup');
       const single = document.getElementById('singleQuestionGroup');
       const totalMarks = document.getElementById('totalMarksGroup');
       const dueDate = document.getElementById('dueDateGroup');
       if (!editor || !single) return;
       editor.style.display = isExamEssay ? '' : 'none';
-      // Quick tasks have no separate question — the instructions are the prompt.
-      single.style.display = (isExamEssay || isQuick) ? 'none' : '';
+      // Maths + quick tasks use the instructions as the prompt — no question field.
+      single.style.display = (isExamEssay || isQuick || isMaths) ? 'none' : '';
       // Quick tasks aren't graded against a mark total or a due date; written
       // exams auto-sum their marks, so the manual total is hidden there too.
       if (totalMarks) totalMarks.style.display = (isExamEssay || isQuick) ? 'none' : '';
@@ -1107,11 +1107,12 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
 
       // Written in-class exams use the question-list editor. One question saves
       // as a single-question task (scalar `question`); two or more as a
-      // `questions[]` exam (server recomputes total_marks). Quick tasks have no
-      // separate question — the instructions are the prompt. Everything else
-      // (take-home, maths exam) uses the single Task question field.
+      // `questions[]` exam (server recomputes total_marks). Quick AND maths tasks
+      // have no separate question — the instructions are the prompt. Only essay
+      // take-home tasks use the single Task question field.
       const isExamEssay = selectedTaskMode === 'marked_task' && selectedSubjectType === 'essay';
       const isQuick = selectedTaskMode === 'quick_task';
+      const isMaths = selectedSubjectType === 'maths';
       let question = null;
       let total_marks = null;
       let questionsPayload = null;
@@ -1136,7 +1137,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         } else {
           questionsPayload = qs;
         }
-      } else if (isQuick) {
+      } else if (isQuick || isMaths) {
         // The instructions ARE the prompt; store them as the question (so the
         // student sees them and the insights pass has context) and don't send a
         // separate instructions block (avoids showing the same text twice).
@@ -1167,8 +1168,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       const rawCriteria = document.getElementById('criteriaText').value.trim();
       // Assessment tasks require criteria (or, for maths, a marking guideline).
       // Quick tasks don't. selectedSubjectType controls which one the same
-      // text field is treated as.
-      var isMaths = selectedSubjectType === 'maths';
+      // text field is treated as. (isMaths already declared above.)
       // Essays: criteria required for assessment. Maths: marking guideline
       // is optional even on assessment tasks — the feedback engine works
       // without one and they're rare at Stage 4/5.
