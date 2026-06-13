@@ -213,7 +213,7 @@
       // Lesson Builder: the support this student was given — context while marking.
       if (studentActivity && studentActivity.status === 'differentiated' && studentActivity.activity) {
         const act = studentActivity.activity;
-        html += '<div class="lb-support"><div class="lb-support-label">Lesson Builder — support this student was given</div>';
+        html += '<div class="lb-support"><div class="lb-support-label">Lesson Differentiator — support this student was given</div>';
         if (act.student_focus) html += '<p>' + e(act.student_focus) + '</p>';
         if (Array.isArray(act.scaffolding) && act.scaffolding.length) {
           html += '<ul>' + act.scaffolding.map(s => '<li>' + e(s) + '</li>').join('') + '</ul>';
