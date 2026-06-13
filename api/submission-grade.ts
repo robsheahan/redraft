@@ -3,6 +3,7 @@ import { getSupabase } from '../lib/auth.js';
 import { postCompletionIfLinked } from '../lib/lti/ags.js';
 import { captureError } from '../lib/sentry.js';
 import { withHandler } from '../lib/with-handler.js';
+import { mergeExamGrade } from '../lib/exam-submission.js';
 
 export default withHandler({ methods: ['PUT'], label: 'submission-grade' }, async (req, res, ctx) => {
   const user = ctx.user!;
@@ -11,6 +12,7 @@ export default withHandler({ methods: ['PUT'], label: 'submission-grade' }, asyn
     submission_id,
     criterion_marks,
     total_mark,
+    question_marks,
     teacher_comment,
     teacher_annotations,
     completion_status,
@@ -31,7 +33,7 @@ export default withHandler({ methods: ['PUT'], label: 'submission-grade' }, asyn
 
   const { data: submission, error: subErr } = await supabase
     .from('submissions')
-    .select('id, task_id, student_id, graded_at, tasks(class_id, total_marks, classes(teacher_id))')
+    .select('id, task_id, student_id, graded_at, answers, question_marks, tasks(class_id, total_marks, classes(teacher_id))')
     .eq('id', submission_id)
     .maybeSingle();
   if (subErr || !submission) return res.status(404).json({ error: 'Submission not found.' });
@@ -41,14 +43,40 @@ export default withHandler({ methods: ['PUT'], label: 'submission-grade' }, asyn
     return res.status(403).json({ error: 'Only the class teacher can grade this submission.' });
   }
 
+  // Multi-question exam grading. The teacher marks the TEXT questions only; the
+  // MC rows were auto-marked at submit (source:'auto') and are preserved as-is.
+  // The total is computed server-side as the sum of all marks — the client's
+  // total_mark is ignored for exams.
+  const examAnswers: any[] | null = Array.isArray((submission as any).answers) && (submission as any).answers.length > 0
+    ? (submission as any).answers
+    : null;
+  const isExamGrade = !!examAnswers;
+  let mergedQuestionMarks: any[] | null = null;
+  let computedTotal: number | null = null;
+  if (isExamGrade) {
+    const merged = mergeExamGrade(examAnswers!, (submission as any).question_marks, question_marks);
+    if ('error' in merged) return res.status(400).json({ error: merged.error });
+    mergedQuestionMarks = merged.questionMarks;
+    computedTotal = merged.total;
+  }
+
+  // Keep only annotations that anchor to a real answer (exam) — defensive against
+  // a stale client. Non-exam annotations pass through unchanged.
+  const cleanAnnotations = (isExamGrade && Array.isArray(teacher_annotations))
+    ? teacher_annotations.filter((a: any) => !a?.question_id || examAnswers!.some((ans) => ans.question_id === a.question_id))
+    : (teacher_annotations ?? null);
+
+  const effectiveTotal = isExamGrade ? computedTotal : (total_mark ?? null);
+
   const patch: Record<string, unknown> = {
-    criterion_marks: criterion_marks ?? null,
-    total_mark: total_mark ?? null,
+    criterion_marks: isExamGrade ? null : (criterion_marks ?? null),
+    total_mark: effectiveTotal,
     teacher_comment: teacher_comment ?? null,
-    teacher_annotations: teacher_annotations ?? null,
-    completion_status: completion_status ?? null,
+    teacher_annotations: cleanAnnotations,
+    completion_status: isExamGrade ? null : (completion_status ?? null),
     graded_by: user.id,
   };
+  if (isExamGrade) patch.question_marks = mergedQuestionMarks;
   if (!submission.graded_at) patch.graded_at = new Date().toISOString();
 
   const { error: updateErr } = await supabase
@@ -73,16 +101,16 @@ export default withHandler({ methods: ['PUT'], label: 'submission-grade' }, asyn
   }
 
   const taskTotalMarks = (submission.tasks as any)?.total_marks;
-  if (typeof total_mark === 'number' && typeof taskTotalMarks === 'number' && taskTotalMarks > 0) {
+  if (typeof effectiveTotal === 'number' && typeof taskTotalMarks === 'number' && taskTotalMarks > 0) {
     // Await before responding — on Vercel the instance freezes once the response
     // is sent, which would tear down this in-flight passback socket (surfaces as
     // `write ETIMEDOUT` / `fetch failed`). The .catch keeps it non-fatal.
     await postCompletionIfLinked({
       taskId: submission.task_id as string,
       studentId: submission.student_id as string,
-      scoreGiven: total_mark,
+      scoreGiven: effectiveTotal,
       scoreMaximum: taskTotalMarks,
-      comment: `Graded by teacher: ${total_mark}/${taskTotalMarks}`,
+      comment: `Graded by teacher: ${effectiveTotal}/${taskTotalMarks}`,
     }).catch(err => captureError(err, { stage: 'ags-grade-passback', submission_id }));
   }
 

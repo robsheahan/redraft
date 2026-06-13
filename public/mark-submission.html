@@ -203,6 +203,33 @@
     .lb-support ul { margin: 6px 0 0; padding-left: 18px; }
     .lb-support li { font-size: 13px; color: #374151; line-height: 1.5; margin-bottom: 3px; }
     .lb-support .lb-ext { margin-top: 6px; font-size: 13px; color: #374151; }
+    /* Multi-question exam marking */
+    .exam-mark-block { padding-top: 14px; }
+    .exam-answer-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+    .exam-answer-num { font-size: 15px; font-weight: 700; color: #111827; }
+    .exam-answer-marks { font-size: 12px; font-weight: 600; color: #b45309; background: #fef3e6; border: 1px solid #f6d9bb; border-radius: 6px; padding: 2px 8px; }
+    .exam-answer-draft { margin-top: 6px; }
+    .empty-answer { color: #9ca3af; font-style: italic; }
+    .exam-q-materials { margin: 8px 0; }
+    .exam-mark-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1ece2; }
+    .exam-mark-row:last-of-type { border-bottom: none; }
+    .exam-mark-label { font-size: 14px; font-weight: 600; color: #111827; }
+    .exam-mark-mc { font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.3px; }
+    .exam-mark-input-wrap { font-size: 14px; color: #6b7280; }
+    .exam-mark-input { padding: 8px; border: 1px solid #ed7615; border-radius: 6px; font-size: 15px; font-family: inherit; text-align: center; font-weight: 700; width: 64px; }
+    .exam-mark-auto { font-size: 13px; font-weight: 600; color: #059669; }
+    .exam-mc-summary { font-size: 13px; color: #6b7280; margin-top: 10px; padding-top: 8px; border-top: 1px solid #f1ece2; }
+    /* Read-only MC display on the marking screen */
+    .mc-readonly { margin-top: 8px; }
+    .mc-opt { font-size: 14px; color: #374151; padding: 7px 10px; border-radius: 6px; margin-bottom: 5px; border: 1px solid #ece4d6; }
+    .mc-opt.mc-correct { background: #f0fdf4; border-color: #bbf7d0; }
+    .mc-opt.mc-wrong { background: #fef2f2; border-color: #fecaca; }
+    .mc-bullet { color: #9ca3af; }
+    .mc-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+    .mc-tag-correct { background: #d1fae5; color: #065f46; }
+    .mc-tag-chose { background: #e0e7ff; color: #3730a3; }
+    .mc-noanswer { font-size: 13px; color: #9ca3af; font-style: italic; margin-top: 4px; }
+    .ac-qnum { font-size: 11px; font-weight: 700; color: #b45309; background: #fef3e6; border-radius: 4px; padding: 1px 6px; margin-right: 6px; }
   </style>
 </head>
 <body>
@@ -249,8 +276,9 @@
     let submission = null;
     let task = null;
     let studentActivity = null;    // Lesson Builder: the support this student was given (if any)
-    let teacherAnnotations = [];   // [{quote, comment, category, start, end}]
+    let teacherAnnotations = [];   // [{quote, comment, category, start, end, question_id?}]
     let criterionMarksState = {};  // {criterionName: number}
+    let examTextMarks = {};        // multi-question exam: {question_id: number} teacher marks for text questions
     let bandMarkState = null;      // for band rubrics
     let pendingSelection = null;   // {start, end, quote}
     let dialogOpen = false;
@@ -304,6 +332,13 @@
         } else if (submission.criterion_marks && typeof submission.criterion_marks === 'object' && submission.criterion_marks.mark != null) {
           bandMarkState = submission.criterion_marks.mark;
         }
+        // Multi-question exam: hydrate the teacher's per-text-question marks (the
+        // auto MC rows stay server-side and are shown read-only).
+        if (Array.isArray(submission.question_marks)) {
+          submission.question_marks.forEach(m => {
+            if (m && m.source === 'teacher' && typeof m.mark === 'number') examTextMarks[m.question_id] = m.mark;
+          });
+        }
 
         render(studentName);
       } catch (err) {
@@ -321,7 +356,15 @@
       return '<span class="badge badge-late">Submitted ' + days + ' day' + (days === 1 ? '' : 's') + ' late</span>';
     }
 
+    function isExamSubmission() {
+      return Array.isArray(submission.answers) && submission.answers.length > 0;
+    }
+    function examQuestionById(qid) {
+      return (task.questions || []).find(q => q.id === qid) || null;
+    }
+
     function render(studentName) {
+      if (isExamSubmission()) return renderExamMarking(studentName);
       const container = document.getElementById('content');
       const structured = task.criteria_structured || null;
       const format = structured ? structured.format : null;
@@ -471,6 +514,184 @@
       updateTotal(format);
     }
 
+    // ===== Multi-question exam marking =====================================
+    // One answer per card on the left (text annotatable per-answer, MC read-only).
+    // The teacher marks text questions only; MC marks are auto and shown read-only.
+    // Total = sum of MC auto marks + entered text marks (server recomputes too).
+    function renderExamMarking(studentName) {
+      const container = document.getElementById('content');
+      const answers = submission.answers || [];
+
+      let html = '';
+      html += '<h1>Mark submission</h1>';
+      var metaParts = [];
+      if (task.title) metaParts.push(e(task.title));
+      if (task.class && task.class.name) metaParts.push(e(task.class.name));
+      html += '<div class="task-meta">' + metaParts.join(' · ') + '</div>';
+
+      html += '<div class="student-strip">';
+      html += '<span class="student-name">' + e(studentName) + '</span>';
+      html += '<span class="draft-info">Submission</span>';
+      html += lateBadge(submission, task);
+      if (submission.graded_at) html += '<span class="badge" style="background:#d1fae5;color:#065f46">Already marked — editing</span>';
+      html += '</div>';
+
+      if (task.time_limit_minutes) {
+        html += '<div class="exam-note">⏱ Timed exam · ' + e(String(task.time_limit_minutes)) + ' min — any work added after the limit is highlighted within each answer.</div>';
+      }
+
+      html += '<div class="layout">';
+
+      // Left: one card per answer
+      html += '<div>';
+      answers.forEach((a, i) => {
+        const q = examQuestionById(a.question_id);
+        html += '<div class="card exam-mark-block">';
+        html += '<div class="exam-answer-head"><span class="exam-answer-num">Question ' + (i + 1) + '</span>';
+        html += '<span class="exam-answer-marks">' + e(String(a.marks)) + ' mark' + (a.marks == 1 ? '' : 's') + '</span></div>';
+        html += '<div class="task-question">' + renderTaskDescription(a.question_text || '', e) + '</div>';
+        if (q && Array.isArray(q.attachments) && q.attachments.length) {
+          html += '<div class="exam-q-materials" id="examMat_' + e(a.question_id) + '"></div>';
+        }
+        if (a.type === 'multiple_choice') {
+          html += renderMcReadonly(a, q);
+        } else {
+          html += '<div class="draft-text exam-answer-draft" data-qid="' + e(a.question_id) + '" id="examDraft_' + e(a.question_id) + '">' + renderExamAnswerDraft(a) + '</div>';
+        }
+        html += '</div>';
+      });
+      if (Array.isArray(submission.student_attachments) && submission.student_attachments.length) {
+        html += '<div class="card"><div id="studentAttachments"></div></div>';
+      }
+      html += '</div>';
+
+      // Right: marks + comment + annotations + save
+      html += '<div>';
+      const mcCount = answers.filter(a => a.type === 'multiple_choice').length;
+      const mcCorrect = (submission.question_marks || []).filter(m => m.source === 'auto' && m.mark > 0).length;
+      html += '<div class="card"><h3>Marks</h3>';
+      answers.forEach((a, i) => {
+        if (a.type === 'multiple_choice') {
+          const autoRow = (submission.question_marks || []).find(m => m.question_id === a.question_id && m.source === 'auto');
+          const autoMark = autoRow ? autoRow.mark : 0;
+          html += '<div class="exam-mark-row"><span class="exam-mark-label">Q' + (i + 1) + ' <span class="exam-mark-mc">multiple choice</span></span>';
+          html += '<span class="exam-mark-auto">' + e(String(autoMark)) + ' / ' + e(String(a.marks)) + ' · auto</span></div>';
+        } else {
+          html += '<div class="exam-mark-row"><span class="exam-mark-label">Q' + (i + 1) + '</span>';
+          html += '<span class="exam-mark-input-wrap"><input type="number" class="exam-mark-input" data-qid="' + e(a.question_id) + '" min="0" max="' + e(String(a.marks)) + '" step="0.5"> / ' + e(String(a.marks)) + '</span></div>';
+        }
+      });
+      if (mcCount) html += '<div class="exam-mc-summary">Multiple choice: ' + mcCorrect + ' / ' + mcCount + ' correct — automarked</div>';
+      html += '<div class="total-row"><span class="total-label">Total</span><span class="total-value" id="totalDisplay">— / ' + e(String(task.total_marks || '—')) + '</span></div>';
+      html += '</div>';
+
+      html += '<div class="card"><h3>Overall comment</h3>';
+      html += '<textarea class="comment-area" id="teacherComment" placeholder="Write your overall feedback for this exam..."></textarea></div>';
+
+      html += '<div class="card"><h3>Inline annotations</h3>';
+      html += '<div class="annotation-cards" id="annotationCards">' + renderAnnotationCards() + '</div>';
+      html += '<p style="margin-top:10px;font-size:12.5px;color:#9ca3af">Select text in any written answer to add an annotation.</p></div>';
+
+      const allSubs = window.__allSubmissions || [];
+      const currentIdx = allSubs.findIndex(s => s.id === submission.id);
+      const nextUnmarked = currentIdx >= 0
+        ? (allSubs.slice(currentIdx + 1).find(s => !s.graded_at) || allSubs.slice(0, currentIdx).find(s => !s.graded_at))
+        : null;
+      html += '<div class="save-bar">';
+      html += '<div class="lock-note">Saving <strong>locks</strong> this task for the student — they can no longer submit again.</div>';
+      html += '<button type="button" class="btn btn-primary" id="saveGradeBtn" onclick="saveGrade()">Save grade</button>';
+      if (nextUnmarked) html += '<button type="button" class="btn btn-primary" id="saveNextBtn" onclick="saveGrade(\'' + e(nextUnmarked.id) + '\')" style="margin-left:8px">Save and next</button>';
+      html += '</div>';
+      html += '</div>'; // right
+      html += '</div>'; // layout
+
+      container.innerHTML = html;
+
+      if (window.Attachments) {
+        if (Array.isArray(submission.student_attachments) && submission.student_attachments.length) {
+          Attachments.renderAttachmentList(document.getElementById('studentAttachments'), {
+            attachments: submission.student_attachments || [], submissionId: submission.id, heading: 'Student attachments',
+          });
+        }
+        (task.questions || []).forEach(q => {
+          if (Array.isArray(q.attachments) && q.attachments.length) {
+            const mount = document.getElementById('examMat_' + q.id);
+            if (mount) Attachments.renderAttachmentList(mount, { attachments: q.attachments, taskId: task.id, heading: 'Materials for this question' });
+          }
+        });
+      }
+
+      document.getElementById('teacherComment').value = submission.teacher_comment || '';
+      document.querySelectorAll('.exam-mark-input').forEach(inp => {
+        const v = examTextMarks[inp.dataset.qid];
+        if (typeof v === 'number') inp.value = v;
+        inp.addEventListener('input', () => {
+          const val = inp.value === '' ? null : parseFloat(inp.value);
+          if (val == null || isNaN(val)) delete examTextMarks[inp.dataset.qid];
+          else examTextMarks[inp.dataset.qid] = val;
+          updateExamTotal();
+        });
+      });
+      wireSelection();
+      updateExamTotal();
+    }
+
+    // Render one text answer with its annotations + per-answer over-time split.
+    function renderExamAnswerDraft(a) {
+      const text = a.text || '';
+      if (!text) return '<span class="empty-answer">No answer</span>';
+      const anns = teacherAnnotations
+        .filter(an => an.question_id === a.question_id)
+        .sort((x, y) => x.start - y.start)
+        .map((an, i) => ({ ...an, num: i + 1 }));
+      const c = a.over_time_cutoff_index;
+      const cutoff = (typeof c === 'number' && c >= 0 && c < text.length) ? c : null;
+      if (cutoff == null) return anns.length === 0 ? e(text) : renderAnnotatedSegment(text, 0, anns);
+      const before = renderAnnotatedSegment(text.slice(0, cutoff), 0, anns.filter(x => x.start < cutoff));
+      const after = renderAnnotatedSegment(text.slice(cutoff), cutoff, anns.filter(x => x.start >= cutoff));
+      return before
+        + '<span class="over-time-divider">⏱ Time limit reached — text below was added after the limit</span>'
+        + '<span class="over-time">' + after + '</span>';
+    }
+
+    // Read-only MC: options in canonical order, student's pick + correct answer marked.
+    function renderMcReadonly(a, q) {
+      const opts = (q && q.options) || [];
+      const correctId = q && q.correct_option_id;
+      let html = '<div class="mc-readonly">';
+      opts.forEach(o => {
+        const isSel = o.id === a.selected_option_id;
+        const isCorrect = o.id === correctId;
+        let cls = 'mc-opt';
+        if (isCorrect) cls += ' mc-correct';
+        if (isSel && !isCorrect) cls += ' mc-wrong';
+        html += '<div class="' + cls + '">';
+        html += '<span class="mc-bullet">' + (isSel ? '●' : '○') + '</span> ' + e(o.text);
+        if (isCorrect) html += ' <span class="mc-tag mc-tag-correct">correct answer</span>';
+        if (isSel) html += ' <span class="mc-tag mc-tag-chose">student chose</span>';
+        html += '</div>';
+      });
+      if (!a.selected_option_id) html += '<div class="mc-noanswer">No answer selected</div>';
+      html += '</div>';
+      return html;
+    }
+
+    function updateExamTotal() {
+      const answers = submission.answers || [];
+      let total = 0;
+      answers.forEach(a => {
+        if (a.type === 'multiple_choice') {
+          const am = (submission.question_marks || []).find(m => m.question_id === a.question_id && m.source === 'auto');
+          total += (am && typeof am.mark === 'number') ? am.mark : 0;
+        } else {
+          const tm = examTextMarks[a.question_id];
+          total += (typeof tm === 'number') ? tm : 0;
+        }
+      });
+      const display = document.getElementById('totalDisplay');
+      if (display) display.textContent = total + ' / ' + (task.total_marks || '—');
+    }
+
     function wireMarkInputs(format) {
       document.querySelectorAll('.rubric-mark-input').forEach(inp => {
         inp.addEventListener('input', () => {
@@ -511,8 +732,8 @@
     // ---- Selection + annotation ----
 
     function wireSelection() {
-      const draftEl = document.getElementById('draftText');
-      if (!draftEl) return;
+      // Single-question: one #draftText. Multi-question exam: many .exam-answer-draft.
+      if (!document.getElementById('draftText') && !document.querySelector('.exam-answer-draft')) return;
       document.addEventListener('selectionchange', handleSelection);
       document.getElementById('annotatePopup').addEventListener('mousedown', (ev) => {
         ev.preventDefault();
@@ -525,8 +746,24 @@
       const sel = window.getSelection();
       const popup = document.getElementById('annotatePopup');
       if (!sel || sel.isCollapsed) { popup.classList.remove('visible'); pendingSelection = null; return; }
-      const draftEl = document.getElementById('draftText');
+
+      // Resolve the draft element the selection sits in + the text its offsets
+      // index into. Multi-question: the containing .exam-answer-draft (offsets
+      // relative to that answer's text, tagged with its question_id).
+      let draftEl, sourceText, questionId = null;
+      if (isExamSubmission()) {
+        const anchorEl = sel.anchorNode && (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement);
+        draftEl = anchorEl ? anchorEl.closest('.exam-answer-draft') : null;
+        if (!draftEl) { popup.classList.remove('visible'); pendingSelection = null; return; }
+        questionId = draftEl.dataset.qid;
+        const ans = (submission.answers || []).find(a => a.question_id === questionId);
+        sourceText = ans ? (ans.text || '') : '';
+      } else {
+        draftEl = document.getElementById('draftText');
+        sourceText = submission.draft_text || '';
+      }
       if (!draftEl) { popup.classList.remove('visible'); return; }
+
       const anchor = sel.anchorNode;
       const focus = sel.focusNode;
       if (!draftEl.contains(anchor) || !draftEl.contains(focus)) {
@@ -536,9 +773,9 @@
       const quote = range.toString().trim();
       if (quote.length < 4) { popup.classList.remove('visible'); pendingSelection = null; return; }
 
-      const offsets = computeOffsets(draftEl, range);
+      const offsets = computeOffsets(draftEl, range, sourceText);
       if (!offsets) { popup.classList.remove('visible'); pendingSelection = null; return; }
-      pendingSelection = { start: offsets.start, end: offsets.end, quote };
+      pendingSelection = { start: offsets.start, end: offsets.end, quote, question_id: questionId };
 
       const rect = range.getBoundingClientRect();
       popup.style.left = (window.scrollX + rect.left + rect.width / 2 - 70) + 'px';
@@ -546,9 +783,11 @@
       popup.classList.add('visible');
     }
 
-    function computeOffsets(container, range) {
-      // Get start/end character offsets relative to container's plain text
-      const fullText = submission.draft_text || '';
+    function computeOffsets(container, range, sourceText) {
+      // Get start/end character offsets relative to container's plain text.
+      // sourceText is the string the offsets index into — the whole draft for a
+      // single submission, or one answer's text for a multi-question exam.
+      const fullText = (typeof sourceText === 'string') ? sourceText : (submission.draft_text || '');
       const selectedText = range.toString();
       // Walk the container's text nodes, accumulating until we hit the range
       let charsBefore = 0;
@@ -600,25 +839,54 @@
       const comment = document.getElementById('annotateComment').value.trim();
       if (!comment) { alert('Please write a comment for this annotation.'); return; }
       const category = document.getElementById('annotateCategory').value;
-      teacherAnnotations.push({
+      const ann = {
         quote: pendingSelection.quote,
         comment, category,
         start: pendingSelection.start,
         end: pendingSelection.end,
-      });
-      teacherAnnotations.sort((a, b) => a.start - b.start);
+      };
+      // Multi-question exam: anchor the annotation to its answer.
+      if (pendingSelection.question_id) ann.question_id = pendingSelection.question_id;
+      teacherAnnotations.push(ann);
+      sortAnnotations();
       pendingSelection = null;
       closeAnnotateDialog();
-      document.getElementById('draftText').innerHTML = renderDraftWithAnnotations();
+      rerenderDrafts();
       document.getElementById('annotationCards').innerHTML = renderAnnotationCards();
     }
 
     function removeAnnotation(idx) {
       teacherAnnotations.splice(idx, 1);
-      document.getElementById('draftText').innerHTML = renderDraftWithAnnotations();
+      rerenderDrafts();
       document.getElementById('annotationCards').innerHTML = renderAnnotationCards();
     }
     window.removeAnnotation = removeAnnotation;
+
+    // Order annotations for the cards list: by answer (exam) then by position.
+    function sortAnnotations() {
+      teacherAnnotations.sort((a, b) => {
+        if (isExamSubmission()) {
+          const ai = (submission.answers || []).findIndex(x => x.question_id === a.question_id);
+          const bi = (submission.answers || []).findIndex(x => x.question_id === b.question_id);
+          if (ai !== bi) return ai - bi;
+        }
+        return a.start - b.start;
+      });
+    }
+
+    // Re-render the draft surface(s) after an annotation change.
+    function rerenderDrafts() {
+      if (isExamSubmission()) {
+        (submission.answers || []).forEach(a => {
+          if (a.type === 'multiple_choice') return;
+          const el = document.getElementById('examDraft_' + a.question_id);
+          if (el) el.innerHTML = renderExamAnswerDraft(a);
+        });
+      } else {
+        const el = document.getElementById('draftText');
+        if (el) el.innerHTML = renderDraftWithAnnotations();
+      }
+    }
 
     // Render a slice of the draft with the teacher annotations that overlap it.
     // `anns` carry absolute offsets + a display number; `segStart` is the slice's
@@ -660,8 +928,14 @@
         return '<div class="empty-annotations">No annotations yet. Select text in the student draft to add one.</div>';
       }
       return teacherAnnotations.map((ann, i) => {
+        let qLabel = '';
+        if (ann.question_id) {
+          const qi = (submission.answers || []).findIndex(a => a.question_id === ann.question_id);
+          if (qi >= 0) qLabel = '<span class="ac-qnum">Q' + (qi + 1) + '</span>';
+        }
         return '<div class="annotation-card">' +
           '<button type="button" class="ac-remove" onclick="removeAnnotation(' + i + ')" aria-label="Remove">×</button>' +
+          qLabel +
           '<span class="ac-category ac-category--' + e(ann.category || 'note') + '">' + e((ann.category || 'note').toUpperCase()) + '</span>' +
           '<div class="ac-quote">' + e(ann.quote) + '</div>' +
           '<div class="ac-comment">' + e(ann.comment) + '</div>' +
@@ -672,6 +946,7 @@
     // ---- Save ----
 
     async function saveGrade(nextSubmissionId) {
+      if (isExamSubmission()) return saveExamGrade(nextSubmissionId);
       const structured = task.criteria_structured || null;
       const format = structured ? structured.format : null;
       const isCompletionOnly = task.task_mode === 'quick_task' && task.completion_only === true;
@@ -744,6 +1019,48 @@
         if (nextBtn) nextBtn.disabled = false;
       }
     }
+
+    // Multi-question exam: send per-text-question marks (MC stays auto, server-
+    // side) + annotations + comment. The server recomputes total_mark.
+    async function saveExamGrade(nextSubmissionId) {
+      const questionMarks = [];
+      (submission.answers || []).forEach(a => {
+        if (a.type === 'multiple_choice') return; // auto-marked server-side
+        const m = examTextMarks[a.question_id];
+        if (typeof m === 'number') questionMarks.push({ question_id: a.question_id, mark: m });
+      });
+      const teacherComment = document.getElementById('teacherComment').value.trim();
+
+      const btn = document.getElementById('saveGradeBtn');
+      const nextBtn = document.getElementById('saveNextBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      if (nextBtn) nextBtn.disabled = true;
+      try {
+        const res = await authFetch('/api/submission-grade', {
+          method: 'PUT',
+          body: JSON.stringify({
+            submission_id: submission.id,
+            question_marks: questionMarks,
+            teacher_comment: teacherComment || null,
+            teacher_annotations: teacherAnnotations,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to save grade');
+        if (nextSubmissionId) {
+          window.location.href = 'mark-submission.html?task_id=' + encodeURIComponent(task.id) + '&submission_id=' + encodeURIComponent(nextSubmissionId);
+        } else {
+          window.location.href = 'task-detail.html?id=' + encodeURIComponent(task.id);
+        }
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+        btn.textContent = 'Save grade';
+        if (nextBtn) nextBtn.disabled = false;
+      }
+    }
+
     window.closeAnnotateDialog = closeAnnotateDialog;
     window.saveAnnotation = saveAnnotation;
     window.saveGrade = saveGrade;

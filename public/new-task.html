@@ -420,6 +420,87 @@
     }
     .site-footer a { color: #9ca3af; text-decoration: none; margin: 0 10px; }
     .site-footer a:hover { color: #6b7280; }
+
+    /* Multi-question exam editor */
+    .exam-q {
+      border: 1px solid #e8e0d4;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      background: #fffdf9;
+    }
+    .exam-q-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .exam-q-num { font-weight: 700; color: #111827; font-size: 15px; }
+    .exam-q-head .spacer { flex: 1; }
+    .exam-q-ctrl {
+      border: 1px solid #e8e0d4;
+      background: #fff;
+      border-radius: 6px;
+      width: 28px; height: 28px;
+      cursor: pointer;
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .exam-q-ctrl:hover:not(:disabled) { border-color: #d1d5db; color: #111827; }
+    .exam-q-ctrl:disabled { opacity: 0.4; cursor: default; }
+    .exam-q-ctrl.remove:hover { border-color: #fca5a5; color: #dc2626; }
+    .exam-q textarea {
+      width: 100%;
+      min-height: 70px;
+      box-sizing: border-box;
+    }
+    .exam-q-marks {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 8px;
+    }
+    .exam-q-marks label { font-size: 13px; color: #6b7280; font-weight: 600; }
+    .exam-q-marks input { max-width: 110px; }
+    .exam-q-attach { margin-top: 10px; }
+    .exam-add-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 4px;
+    }
+    .exam-add-btn {
+      background: #fff;
+      border: 1px dashed #d1bfa3;
+      color: #b45309;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .exam-add-btn:hover { border-color: #b45309; }
+    .exam-total { font-size: 14px; font-weight: 600; color: #111827; }
+    .exam-total span { color: #b45309; }
+    .exam-q-type {
+      font-size: 13px; padding: 5px 8px; border: 1px solid #e8e0d4; border-radius: 6px;
+      background: #fff; font-family: inherit; color: #374151; cursor: pointer;
+    }
+    .exam-q-options { margin-top: 10px; }
+    .exam-q-options-list { display: flex; flex-direction: column; gap: 6px; }
+    .exam-opt { display: flex; align-items: center; gap: 8px; }
+    .exam-opt-correct { width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; }
+    .exam-opt-text { flex: 1; padding: 8px 10px; border: 1px solid #e8e0d4; border-radius: 6px; font-size: 14px; font-family: inherit; }
+    .exam-opt-remove {
+      border: 1px solid #e8e0d4; background: #fff; border-radius: 6px; width: 28px; height: 28px;
+      cursor: pointer; color: #6b7280; font-size: 14px; flex-shrink: 0;
+    }
+    .exam-opt-remove:hover { border-color: #fca5a5; color: #dc2626; }
+    .exam-opt-add {
+      margin-top: 8px; background: #fff; border: 1px dashed #d1bfa3; color: #b45309;
+      border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .exam-opt-add:hover { border-color: #b45309; }
+    .exam-opt-hint { font-size: 12px; color: #9ca3af; margin-top: 8px; }
   </style>
 </head>
 <body>
@@ -464,14 +545,26 @@
           <label>Task title</label>
           <input type="text" id="titleInput" placeholder="e.g. Task 2 — Health Priorities Essay">
         </div>
-        <div class="form-group">
+        <div class="form-group" id="singleQuestionGroup">
           <label>Task question</label>
           <div class="hint">The full question students need to respond to</div>
           <textarea placeholder="e.g. Analyse how the Ottawa Charter can be used to address cardiovascular disease (CVD) as a health priority in Australia."></textarea>
           <div id="taskAttachmentsMount" style="margin-top:8px"></div>
         </div>
+        <!-- Multi-question exam editor (in-class exam only). Replaces the single
+             Task question field. One question → saved as a single-question task
+             (legacy path); two or more → saved as a questions[] exam. -->
+        <div class="form-group" id="examQuestionsGroup" style="display:none">
+          <label>Exam questions</label>
+          <div class="hint">Add each question students answer. Marks are shown to students. Add a second question to build a full multi-question exam; one question saves as a single-question task.</div>
+          <div id="examQuestionsList"></div>
+          <div class="exam-add-row">
+            <button type="button" class="exam-add-btn" id="examAddQuestionBtn">+ Add question</button>
+            <div class="exam-total">Total: <span id="examTotalMarks">0</span> marks</div>
+          </div>
+        </div>
         <div class="form-row">
-          <div class="form-group">
+          <div class="form-group" id="totalMarksGroup">
             <label>Total marks</label>
             <input type="number" placeholder="e.g. 8">
           </div>
@@ -763,6 +856,188 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       }
     }
 
+    // ---- Multi-question exam editor ---------------------------------------
+    // Shown only for the In-class exam kind: the single Task question field is
+    // hidden and this list takes over. One row saves as a single-question task
+    // (legacy scalar path); two or more save as a questions[] exam. Each row
+    // owns its own attachments array (row._attachments).
+    function makeQuestionId() {
+      return (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : 'q-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    }
+
+    function renumberExamQuestions() {
+      const list = document.getElementById('examQuestionsList');
+      if (!list) return;
+      const rows = Array.from(list.children);
+      let total = 0;
+      rows.forEach((row, i) => {
+        const num = row.querySelector('.exam-q-num');
+        if (num) num.textContent = 'Question ' + (i + 1);
+        const up = row.querySelector('.exam-q-ctrl.up');
+        const down = row.querySelector('.exam-q-ctrl.down');
+        const remove = row.querySelector('.exam-q-ctrl.remove');
+        if (up) up.disabled = (i === 0);
+        if (down) down.disabled = (i === rows.length - 1);
+        if (remove) remove.disabled = (rows.length <= 1); // keep at least one
+        const marksEl = row.querySelector('.exam-q-marks input');
+        const m = marksEl ? parseFloat(marksEl.value) : 0;
+        if (Number.isFinite(m) && m > 0) total += m;
+      });
+      const totalEl = document.getElementById('examTotalMarks');
+      if (totalEl) totalEl.textContent = String(total);
+    }
+
+    function addExamOption(optList, qid, prefillText) {
+      const opt = document.createElement('div');
+      opt.className = 'exam-opt';
+      opt.dataset.oid = makeQuestionId();
+      opt.innerHTML =
+        '<input type="radio" name="correct_' + qid + '" class="exam-opt-correct" title="Mark as the correct answer">' +
+        '<input type="text" class="exam-opt-text" placeholder="Answer option">' +
+        '<button type="button" class="exam-opt-remove" title="Remove option">&#215;</button>';
+      optList.appendChild(opt);
+      if (prefillText) opt.querySelector('.exam-opt-text').value = prefillText;
+      opt.querySelector('.exam-opt-remove').addEventListener('click', () => {
+        if (optList.children.length <= 2) return; // minimum two options
+        opt.remove();
+      });
+      return opt;
+    }
+
+    function addExamQuestion(prefill) {
+      const list = document.getElementById('examQuestionsList');
+      if (!list) return null;
+      const row = document.createElement('div');
+      row.className = 'exam-q';
+      const qid = makeQuestionId();
+      row.dataset.qid = qid;
+      row._attachments = [];
+      row.innerHTML =
+        '<div class="exam-q-head">' +
+          '<span class="exam-q-num">Question</span>' +
+          '<select class="exam-q-type" title="Answer type">' +
+            '<option value="text">Text answer</option>' +
+            '<option value="multiple_choice">Multiple choice</option>' +
+          '</select>' +
+          '<span class="spacer"></span>' +
+          '<button type="button" class="exam-q-ctrl up" title="Move up">&#8593;</button>' +
+          '<button type="button" class="exam-q-ctrl down" title="Move down">&#8595;</button>' +
+          '<button type="button" class="exam-q-ctrl remove" title="Remove question">&#215;</button>' +
+        '</div>' +
+        '<textarea class="exam-q-text" placeholder="e.g. Outline TWO factors that influence health status."></textarea>' +
+        '<div class="exam-q-options" style="display:none">' +
+          '<div class="exam-q-options-list"></div>' +
+          '<button type="button" class="exam-opt-add">+ Add option</button>' +
+          '<div class="exam-opt-hint">Select the radio beside the correct answer. Students see the options in a scrambled order.</div>' +
+        '</div>' +
+        '<div class="exam-q-marks"><label>Marks</label><input type="number" min="1" step="1" placeholder="e.g. 3"></div>' +
+        '<div class="exam-q-attach"></div>';
+      list.appendChild(row);
+
+      if (prefill && prefill.text) row.querySelector('.exam-q-text').value = prefill.text;
+      if (prefill && prefill.marks) row.querySelector('.exam-q-marks input').value = prefill.marks;
+
+      const attachMount = row.querySelector('.exam-q-attach');
+      if (attachMount && window.Attachments) {
+        attachMount.appendChild(Attachments.createAttachmentUploader({
+          scope: 'task',
+          initial: row._attachments,
+          onChange: (arr) => { row._attachments = arr; },
+        }));
+      }
+
+      const typeSel = row.querySelector('.exam-q-type');
+      const optsWrap = row.querySelector('.exam-q-options');
+      const optList = row.querySelector('.exam-q-options-list');
+      const marksInput = row.querySelector('.exam-q-marks input');
+      typeSel.addEventListener('change', () => {
+        const isMc = typeSel.value === 'multiple_choice';
+        optsWrap.style.display = isMc ? '' : 'none';
+        if (isMc && optList.children.length === 0) {
+          for (let i = 0; i < 4; i++) addExamOption(optList, qid);
+          if (!marksInput.value) { marksInput.value = '1'; renumberExamQuestions(); }
+        }
+      });
+      row.querySelector('.exam-opt-add').addEventListener('click', () => {
+        if (optList.children.length >= 6) return; // maximum six options
+        addExamOption(optList, qid);
+      });
+
+      marksInput.addEventListener('input', renumberExamQuestions);
+      row.querySelector('.exam-q-ctrl.up').addEventListener('click', () => {
+        const prev = row.previousElementSibling;
+        if (prev) list.insertBefore(row, prev);
+        renumberExamQuestions();
+      });
+      row.querySelector('.exam-q-ctrl.down').addEventListener('click', () => {
+        const next = row.nextElementSibling;
+        if (next) list.insertBefore(next, row);
+        renumberExamQuestions();
+      });
+      row.querySelector('.exam-q-ctrl.remove').addEventListener('click', () => {
+        if (list.children.length <= 1) return;
+        row.remove();
+        renumberExamQuestions();
+      });
+
+      renumberExamQuestions();
+      return row;
+    }
+
+    // The multi-question editor is for WRITTEN in-class exams only. Maths exams
+    // stay single-question (they route to submit-maths.html), and take-home /
+    // quick tasks keep the single Task question field. Re-evaluated whenever the
+    // subject or task type changes.
+    function refreshExamEditor() {
+      const isExamEssay = selectedTaskMode === 'marked_task' && selectedSubjectType === 'essay';
+      const editor = document.getElementById('examQuestionsGroup');
+      const single = document.getElementById('singleQuestionGroup');
+      const totalMarks = document.getElementById('totalMarksGroup');
+      if (!editor || !single) return;
+      editor.style.display = isExamEssay ? '' : 'none';
+      single.style.display = isExamEssay ? 'none' : '';
+      if (totalMarks) totalMarks.style.display = isExamEssay ? 'none' : '';
+      if (isExamEssay) {
+        const list = document.getElementById('examQuestionsList');
+        if (list && list.children.length === 0) {
+          // Seed one row, migrating any text already typed in the single field.
+          const seedTextEl = single.querySelector('textarea');
+          const seedText = seedTextEl ? seedTextEl.value.trim() : '';
+          const tmEl = document.querySelector('#totalMarksGroup input[type="number"]');
+          const seedMarks = tmEl && tmEl.value ? tmEl.value : '';
+          addExamQuestion({ text: seedText, marks: seedMarks });
+        }
+      }
+    }
+
+    // Read the editor into a questions[] array (one entry per row).
+    function readExamQuestions() {
+      const list = document.getElementById('examQuestionsList');
+      const rows = list ? Array.from(list.children) : [];
+      return rows.map((row) => {
+        const marks = parseFloat(row.querySelector('.exam-q-marks input').value);
+        const type = row.querySelector('.exam-q-type').value === 'multiple_choice' ? 'multiple_choice' : 'text';
+        const q = {
+          id: row.dataset.qid,
+          type,
+          text: (row.querySelector('.exam-q-text').value || '').trim(),
+          marks: Number.isFinite(marks) ? marks : NaN,
+          attachments: row._attachments || [],
+        };
+        if (type === 'multiple_choice') {
+          const optEls = Array.from(row.querySelectorAll('.exam-q-options-list .exam-opt'));
+          q.options = optEls
+            .map((o) => ({ id: o.dataset.oid, text: (o.querySelector('.exam-opt-text').value || '').trim() }))
+            .filter((o) => o.text);
+          const checked = optEls.find((o) => o.querySelector('.exam-opt-correct').checked);
+          q.correct_option_id = checked ? checked.dataset.oid : null;
+        }
+        return q;
+      });
+    }
+
     // Lesson Builder is access-gated per school — reveal the access message
     // when the caller's school doesn't have it enabled.
     async function createTask(publish, lessonBuilder) {
@@ -791,11 +1066,41 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
 
       const course = document.getElementById('courseInput').value.trim();
       const title = document.getElementById('titleInput').value.trim();
-      const question = document.querySelector('.step:nth-child(1) textarea').value;
-      const total_marks = document.querySelector('.step:nth-child(1) input[type="number"]').value || null;
       const due_date = document.querySelector('.step:nth-child(1) input[type="date"]').value || null;
 
-      if (!question) { alert('Please enter the task question.'); restoreButtons(); return; }
+      // In-class exam uses the question-list editor. One question saves as a
+      // single-question task (scalar `question`); two or more as a `questions[]`
+      // exam (server recomputes total_marks). All other modes use the single
+      // Task question field as before.
+      const isExam = selectedTaskMode === 'marked_task';
+      let question = null;
+      let total_marks = null;
+      let questionsPayload = null;
+      if (isExam) {
+        const qs = readExamQuestions();
+        if (qs.length === 0) { alert('Add at least one question.'); restoreButtons(); return; }
+        for (let i = 0; i < qs.length; i++) {
+          if (!qs[i].text) { alert('Question ' + (i + 1) + ' needs question text.'); restoreButtons(); return; }
+          if (!(qs[i].marks > 0)) { alert('Question ' + (i + 1) + ' needs a mark value greater than zero.'); restoreButtons(); return; }
+          if (qs[i].type === 'multiple_choice') {
+            if (!qs[i].options || qs[i].options.length < 2) { alert('Question ' + (i + 1) + ' needs at least two answer options.'); restoreButtons(); return; }
+            if (!qs[i].correct_option_id) { alert('Question ' + (i + 1) + ' needs the correct answer selected.'); restoreButtons(); return; }
+          }
+        }
+        if (qs.length === 1) {
+          // Single-question exam → legacy scalar path. The row's attachments
+          // become the task's accompanying material.
+          question = qs[0].text;
+          total_marks = qs[0].marks;
+          taskAttachments = qs[0].attachments || [];
+        } else {
+          questionsPayload = qs;
+        }
+      } else {
+        question = document.querySelector('#singleQuestionGroup textarea').value;
+        total_marks = document.querySelector('#totalMarksGroup input[type="number"]').value || null;
+        if (!question) { alert('Please enter the task question.'); restoreButtons(); return; }
+      }
 
       // Outcomes apply to both assessment kinds (take-home + in-class exam);
       // the input lives inside #assessmentSteps which is hidden for quick_task.
@@ -855,7 +1160,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         const res = await authFetch('/api/task', {
           method: 'POST',
           body: JSON.stringify({
-            class_id: currentClassId, course, title, question, total_marks, due_date,
+            class_id: currentClassId, course, title, question, questions: questionsPayload, total_marks, due_date,
             outcomes, criteria_text, notes, publish: !!publish, typed_response_only,
             hide_criteria_from_students,
             task_mode, completion_only,
@@ -922,6 +1227,9 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         }));
       }
 
+      const examAddBtn = document.getElementById('examAddQuestionBtn');
+      if (examAddBtn) examAddBtn.addEventListener('click', () => addExamQuestion());
+
       // Subject-type buttons (Essay / Maths) at the top of Step 1. Drives the
       // labels and placeholders on Step 3 (Marking criteria vs Marking guideline).
       const subjectBtns = document.querySelectorAll('#subjectTypePicker .task-type-btn');
@@ -929,6 +1237,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         selectedSubjectType = subject;
         subjectBtns.forEach(b => b.classList.toggle('is-selected', b.dataset.subject === subject));
         applySubjectLabels(subject);
+        refreshExamEditor();
       }
       subjectBtns.forEach(b => b.addEventListener('click', () => selectSubjectType(b.dataset.subject)));
       // Default subject to essay so existing teachers' muscle memory works.
@@ -953,6 +1262,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
           if (kindGroup) kindGroup.style.display = 'none';
           if (assessmentSteps) assessmentSteps.style.display = 'none';
           if (lbTeaser) lbTeaser.style.display = '';
+          refreshExamEditor();
           return;
         }
         if (lbTeaser) lbTeaser.style.display = 'none';
@@ -976,6 +1286,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         // Take-home = feedback_task (criteria + live feedback). In-class exam =
         // marked_task (no criteria, submit-for-marking only, optional time limit).
         selectedTaskMode = isExam ? 'marked_task' : 'feedback_task';
+        refreshExamEditor();
         const stepCriteria = document.getElementById('stepCriteria');
         const stepNotes = document.getElementById('stepNotes');
         const stepTimeLimit = document.getElementById('stepTimeLimit');

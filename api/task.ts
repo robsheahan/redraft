@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { parseRubricWithAI } from '../lib/parse-rubric-with-ai.js';
 import { withHandler } from '../lib/with-handler.js';
+import { validateExamQuestions, studentTaskView, type ExamQuestion } from '../lib/exam-questions.js';
 
 /**
  * Task CRUD under the classes redesign.
@@ -81,15 +82,15 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
   }
 
   // Scrub teacher notes for non-owners
-  const payload: any = { ...task };
+  let payload: any = { ...task };
   if (!isOwner) delete payload.notes;
 
-  // Strip criteria / marking guideline from the student view until they
-  // have a graded submission. Two cases:
-  //   (a) Essay tasks with hide_criteria_from_students=true → strip criteria.
-  //   (b) Maths tasks → marking guideline is ALWAYS hidden from students
-  //       pre-grading (it's the teacher's instrument); reveals post-grading.
-  if (!isOwner && (task.hide_criteria_from_students || task.subject_type === 'maths')) {
+  // Several student-facing reveals hinge on whether this student already has a
+  // graded submission: criteria (hide_criteria_from_students), the maths marking
+  // guideline, and the multi-question exam answer key. Resolve graded status
+  // once, then apply each.
+  const hasQuestions = Array.isArray((task as any).questions) && (task as any).questions.length > 0;
+  if (!isOwner && (task.hide_criteria_from_students || task.subject_type === 'maths' || hasQuestions)) {
     const { data: gradedSub } = await supabase
       .from('submissions')
       .select('id')
@@ -98,7 +99,8 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
       .not('graded_at', 'is', null)
       .limit(1)
       .maybeSingle();
-    if (!gradedSub) {
+    const isGraded = !!gradedSub;
+    if (!isGraded) {
       if (task.hide_criteria_from_students) {
         payload.criteria_text = null;
         payload.criteria_structured = null;
@@ -107,6 +109,11 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
       if (task.subject_type === 'maths') {
         payload.marking_guideline = null;
       }
+    }
+    // Multi-question exams: strip the MC answer key + scramble option order per
+    // student. The key is revealed only once their submission is graded.
+    if (hasQuestions) {
+      payload = studentTaskView(payload, user.id, { revealAnswerKey: isGraded });
     }
   }
 
@@ -123,7 +130,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
 
   const supabase = getSupabase();
   const {
-    class_id, course, title, question, task_type, total_marks, due_date,
+    class_id, course, title, question, questions, task_type, total_marks, due_date,
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
     hide_criteria_from_students, completion_only,
     subject_type, marking_guideline, lesson_builder, attachments, time_limit_minutes,
@@ -131,7 +138,6 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
   } = req.body || {};
 
   if (!class_id) return res.status(400).json({ error: 'class_id is required — tasks must belong to a class.' });
-  if (!question || !String(question).trim()) return res.status(400).json({ error: 'Task question is required.' });
 
   const { data: cls } = await supabase.from('classes').select('id, teacher_id').eq('id', class_id).maybeSingle();
   if (!cls) return res.status(404).json({ error: 'Class not found.' });
@@ -139,6 +145,28 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
 
   const taskMode = resolveTaskMode(req.body);
   const subjectType = subject_type === 'maths' ? 'maths' : 'essay';
+
+  // Multi-question exams: a marked_task (essay) may carry a `questions` array
+  // instead of a single scalar `question`. Policy gate — multi-question is only
+  // available on a written in-class exam for now (see plan §1). The restriction
+  // lives here, not in the schema, so widening it later is a validation change.
+  let examQuestions: ExamQuestion[] | null = null;
+  let examTotalMarks: number | null = null;
+  if (questions !== undefined && questions !== null) {
+    if (taskMode !== 'marked_task' || subjectType !== 'essay') {
+      return res.status(400).json({ error: 'Multiple questions are only available on a written in-class exam.' });
+    }
+    const v = validateExamQuestions(questions);
+    if ('error' in v) return res.status(400).json({ error: v.error });
+    examQuestions = v.questions;
+    examTotalMarks = v.totalMarks;
+  }
+
+  // Single-question tasks still require a scalar question; multi-question exams
+  // carry their questions in the array instead.
+  if (!examQuestions && (!question || !String(question).trim())) {
+    return res.status(400).json({ error: 'Task question is required.' });
+  }
   const hasCriteria = !!(criteria_text && String(criteria_text).trim());
   const hasMarkingGuideline = !!(marking_guideline && String(marking_guideline).trim());
   // Maths assessment tasks need a marking guideline; essay assessment tasks
@@ -169,10 +197,11 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     teacher_id: user.id,
     course: course || null,
     title: title || null,
-    question: question || null,
+    question: examQuestions ? null : (question || null),
+    questions: examQuestions,
     task_type: task_type || null,
     task_mode: taskMode,
-    total_marks: total_marks || null,
+    total_marks: examQuestions ? examTotalMarks : (total_marks || null),
     due_date: due_date || null,
     outcomes: outcomes || [],
     criteria: criteria || [],
@@ -185,7 +214,10 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     completion_only: resolvedCompletionOnly,
     subject_type: subjectType,
     marking_guideline: subjectType === 'maths' ? (marking_guideline || null) : null,
-    lesson_builder: !!lesson_builder,
+    // Lesson Builder is offered for quick tasks only — assessments (feedback_task,
+    // marked_task) must stay standardised. Coerce off for anything else so the
+    // API enforces what the UI already restricts (no DB safety net otherwise).
+    lesson_builder: taskMode === 'quick_task' ? !!lesson_builder : false,
     teacher_attachments: Array.isArray(attachments) ? attachments.slice(0, 5) : [],
     time_limit_minutes: (Number.isFinite(Number(time_limit_minutes)) && Number(time_limit_minutes) > 0)
       ? Math.round(Number(time_limit_minutes)) : null,
@@ -201,7 +233,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   if (!user) return res.status(401).json({ error: 'Not authenticated' });
 
   const {
-    id, course, title, question, task_type, total_marks, due_date,
+    id, course, title, question, questions, task_type, total_marks, due_date,
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
     hide_criteria_from_students,
     task_mode: incomingTaskMode, completion_only,
@@ -212,7 +244,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
 
   const supabase = getSupabase();
   const { data: existing } = await supabase
-    .from('tasks').select('id, class_id, published_at, criteria_text, task_mode, classes(teacher_id)').eq('id', id).maybeSingle();
+    .from('tasks').select('id, class_id, published_at, criteria_text, task_mode, subject_type, questions, classes(teacher_id)').eq('id', id).maybeSingle();
   if (!existing) return res.status(404).json({ error: 'Task not found.' });
   const teacherId = (existing.classes as any)?.teacher_id;
   if (teacherId !== user.id) return res.status(403).json({ error: 'You can only update your own tasks.' });
@@ -259,6 +291,41 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Assessment tasks need marking criteria. Either add criteria or switch to a quick task.' });
   }
   if (modeInBody) patch.task_mode = newMode;
+
+  // Lesson Builder stays a quick-task-only capability (assessments standardised).
+  // Coerce off whenever the effective mode isn't quick_task — the API enforces
+  // what the UI restricts, with no DB safety net.
+  if (Object.prototype.hasOwnProperty.call(patch, 'lesson_builder') && newMode !== 'quick_task') {
+    patch.lesson_builder = false;
+  }
+
+  // Multi-question exams. `questions` present (non-null) → validate + store the
+  // array, drop the scalar question, recompute total_marks. Multi-question is
+  // marked_task (essay) only. Questions LOCK on publish: the array can't change
+  // once published_at is set, because submitted answers anchor to question ids.
+  if (questions !== undefined) {
+    const effSubject = (subject_type === 'essay' || subject_type === 'maths')
+      ? subject_type : ((existing as any).subject_type || 'essay');
+    if (questions === null) {
+      if (existing.published_at) {
+        return res.status(400).json({ error: "A published exam's questions can't be changed." });
+      }
+      patch.questions = null;
+    } else {
+      if (newMode !== 'marked_task' || effSubject !== 'essay') {
+        return res.status(400).json({ error: 'Multiple questions are only available on a written in-class exam.' });
+      }
+      const v = validateExamQuestions(questions);
+      if ('error' in v) return res.status(400).json({ error: v.error });
+      if (existing.published_at &&
+          JSON.stringify((existing as any).questions ?? null) !== JSON.stringify(v.questions)) {
+        return res.status(400).json({ error: "A published exam's questions can't be changed." });
+      }
+      patch.questions = v.questions;
+      patch.question = null;
+      patch.total_marks = v.totalMarks;
+    }
+  }
 
   // completion_only: derive defensively from the new mode + criteria. Only
   // quick_task without criteria gets completion-only by default; everything

@@ -486,6 +486,28 @@
       .annotation-card { break-inside: avoid; box-shadow: none; border: 1px solid #e8e0d4; }
       .annotated-draft-text { box-shadow: none; border: 1px solid #e8e0d4; }
     }
+    /* Multi-question exam — graded student view */
+    .exam-graded-block { border: 1px solid #e8e0d4; border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; background: #fff; }
+    .exam-graded-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+    .exam-graded-num { font-size: 15px; font-weight: 700; color: #111827; }
+    .exam-graded-mark { font-size: 14px; font-weight: 700; color: #b45309; background: #fef3e6; border: 1px solid #f6d9bb; border-radius: 6px; padding: 2px 10px; }
+    .exam-graded-q { font-size: 14px; color: #374151; line-height: 1.6; background: #fdf6ee; border: 1px solid #ece4d6; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+    .exam-graded-answer { font-size: 14.5px; color: #111827; line-height: 1.7; white-space: pre-wrap; }
+    .exam-graded-answer .empty-answer { color: #9ca3af; font-style: italic; }
+    .exam-graded-anns { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+    .exam-graded-ann { font-size: 13px; color: #374151; line-height: 1.5; background: #f9fafb; border-radius: 6px; padding: 7px 10px; }
+    .ega-cat { font-size: 10.5px; font-weight: 700; letter-spacing: 0.3px; padding: 1px 6px; border-radius: 4px; margin-right: 6px; background: #e5e7eb; color: #374151; }
+    .ega-cat--praise { background: #d1fae5; color: #065f46; }
+    .ega-cat--improve { background: #fef3c7; color: #92400e; }
+    .mc-readonly { margin-top: 4px; }
+    .mc-opt { font-size: 14px; color: #374151; padding: 7px 10px; border-radius: 6px; margin-bottom: 5px; border: 1px solid #ece4d6; }
+    .mc-opt.mc-correct { background: #f0fdf4; border-color: #bbf7d0; }
+    .mc-opt.mc-wrong { background: #fef2f2; border-color: #fecaca; }
+    .mc-bullet { color: #9ca3af; }
+    .mc-tag { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+    .mc-tag-correct { background: #d1fae5; color: #065f46; }
+    .mc-tag-chose { background: #e0e7ff; color: #3730a3; }
+    .mc-noanswer { font-size: 13px; color: #9ca3af; font-style: italic; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -912,6 +934,10 @@
     }
 
     function renderTeacherMarkHtml(grade, task, anns, draftText) {
+      // Multi-question exam: per-question graded view.
+      if (Array.isArray(grade.answers) && grade.answers.length > 0) {
+        return renderExamTeacherMarkHtml(grade, task, anns);
+      }
       const total = grade.total_mark != null ? grade.total_mark : '—';
       const max   = task.total_marks || '—';
       let html = '<div class="teacher-mark-hero">';
@@ -963,6 +989,95 @@
         html += '</div>';
       }
 
+      return html;
+    }
+
+    // Multi-question exam — student's graded view: per-question mark, answer,
+    // annotations, and (post-grading) the MC correct answer.
+    function renderExamTeacherMarkHtml(grade, task, anns) {
+      const answers = grade.answers || [];
+      const qmarks = Array.isArray(grade.question_marks) ? grade.question_marks : [];
+      const markFor = (qid) => { const m = qmarks.find(x => x.question_id === qid); return m ? m.mark : null; };
+      const total = grade.total_mark != null ? grade.total_mark : '—';
+      const max = task.total_marks || '—';
+
+      let html = '<div class="teacher-mark-hero">';
+      html += '<div class="label">Marked by your teacher</div>';
+      html += '<div class="grade"><span class="total">' + e(String(total)) + '</span><span class="max">/ ' + e(String(max)) + ' marks</span></div>';
+      if (task.due_date && grade.created_at) {
+        const due = new Date(task.due_date + 'T23:59:59');
+        const sub = new Date(grade.created_at);
+        if (sub <= due) html += '<div class="late-line">Submitted on time.</div>';
+        else {
+          const days = Math.ceil((sub - due) / (1000 * 60 * 60 * 24));
+          html += '<div class="late-line late">Submitted ' + days + ' day' + (days === 1 ? '' : 's') + ' late.</div>';
+        }
+      }
+      html += '</div>';
+
+      answers.forEach((a, i) => {
+        const q = (task.questions || []).find(x => x.id === a.question_id) || null;
+        const m = markFor(a.question_id);
+        html += '<div class="exam-graded-block">';
+        html += '<div class="exam-graded-head"><span class="exam-graded-num">Question ' + (i + 1) + '</span>';
+        html += '<span class="exam-graded-mark">' + (m != null ? e(String(m)) : '—') + ' / ' + e(String(a.marks)) + '</span></div>';
+        html += '<div class="exam-graded-q">' + e(a.question_text || '') + '</div>';
+        if (a.type === 'multiple_choice') {
+          html += renderExamGradedMc(a, q);
+        } else {
+          const qAnns = (anns || []).filter(an => an.question_id === a.question_id);
+          html += renderExamAnswerAnnotated(a.text || '', qAnns);
+        }
+        html += '</div>';
+      });
+
+      if (grade.teacher_comment && grade.teacher_comment.trim()) {
+        html += '<div class="teacher-section-title">Overall comment</div>';
+        html += '<div class="teacher-comment-block">' + e(grade.teacher_comment) + '</div>';
+      }
+      return html;
+    }
+
+    function renderExamAnswerAnnotated(text, qAnns) {
+      if (!text) return '<div class="exam-graded-answer"><span class="empty-answer">No answer</span></div>';
+      const sorted = qAnns.slice().sort((a, b) => (a.start || 0) - (b.start || 0));
+      let body = '', cursor = 0;
+      sorted.forEach((a) => {
+        if (typeof a.start !== 'number' || typeof a.end !== 'number' || a.start < cursor || a.end > text.length) return;
+        body += e(text.slice(cursor, a.start));
+        body += '<span class="annotation annotation--teacher-' + e(a.category || 'note') + '">' + e(text.slice(a.start, a.end)) + '</span>';
+        cursor = a.end;
+      });
+      body += e(text.slice(cursor));
+      let cards = '';
+      if (sorted.length) {
+        cards = '<div class="exam-graded-anns">' + sorted.map((a) =>
+          '<div class="exam-graded-ann"><span class="ega-cat ega-cat--' + e(a.category || 'note') + '">' + e((a.category || 'note').toUpperCase()) + '</span> ' + e(a.comment) + '</div>'
+        ).join('') + '</div>';
+      }
+      return '<div class="exam-graded-answer">' + body + '</div>' + cards;
+    }
+
+    function renderExamGradedMc(a, q) {
+      const opts = (q && q.options) || [];
+      const correctId = q && q.correct_option_id; // present post-grading
+      let html = '<div class="mc-readonly">';
+      if (opts.length === 0 && a.selected_option_text) {
+        html += '<div class="mc-opt">Your answer: <strong>' + e(a.selected_option_text) + '</strong></div>';
+      }
+      opts.forEach(o => {
+        const isSel = o.id === a.selected_option_id;
+        const isCorrect = correctId && o.id === correctId;
+        let cls = 'mc-opt';
+        if (isCorrect) cls += ' mc-correct';
+        if (isSel && correctId && !isCorrect) cls += ' mc-wrong';
+        html += '<div class="' + cls + '"><span class="mc-bullet">' + (isSel ? '●' : '○') + '</span> ' + e(o.text);
+        if (isCorrect) html += ' <span class="mc-tag mc-tag-correct">correct</span>';
+        if (isSel) html += ' <span class="mc-tag mc-tag-chose">your answer</span>';
+        html += '</div>';
+      });
+      if (!a.selected_option_id) html += '<div class="mc-noanswer">You did not answer this question.</div>';
+      html += '</div>';
       return html;
     }
 

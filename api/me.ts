@@ -247,11 +247,17 @@ async function returnTaskDrafts(req: VercelRequest, res: VercelResponse, userId:
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from('submissions')
-    .select('id, draft_text, feedback, draft_version, created_at, question, course, criterion_marks, total_mark, teacher_comment, teacher_annotations, graded_at, graded_by, submitted_for_marking, working_lines, input_mode, student_attachments')
+    .select('id, draft_text, feedback, draft_version, created_at, question, course, criterion_marks, total_mark, teacher_comment, teacher_annotations, graded_at, graded_by, submitted_for_marking, working_lines, input_mode, student_attachments, answers, question_marks')
     .eq('student_id', userId)
     .eq('task_id', taskId)
     .order('draft_version', { ascending: true });
 
   if (error) return res.status(500).json({ error: error.message });
-  return res.status(200).json({ drafts: data || [] });
+
+  // Multi-question exams: `answers` (the student's own work) is always safe to
+  // return, but `question_marks` encodes per-question correctness (incl. MC
+  // auto-marks) — strip it until the teacher has graded, so a student can't read
+  // the answer key from their own submission mid-exam.
+  const drafts = (data || []).map((d: any) => (d.graded_at ? d : { ...d, question_marks: null }));
+  return res.status(200).json({ drafts });
 }

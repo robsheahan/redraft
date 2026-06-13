@@ -31,24 +31,36 @@ export default withHandler({ methods: ['GET'], label: 'task-csv' }, async (req, 
   if (!taskId) return res.status(400).json({ error: 'task_id is required.' });
 
   const { data: task } = await supabase
-    .from('tasks').select('id, title, course, question, classes(teacher_id, name)').eq('id', taskId).maybeSingle();
+    .from('tasks').select('id, title, course, question, questions, classes(teacher_id, name)').eq('id', taskId).maybeSingle();
   if (!task) return res.status(404).json({ error: 'Task not found.' });
   const teacherId = (task.classes as any)?.teacher_id;
   if (teacherId !== user!.id) return res.status(403).json({ error: 'Not authorised.' });
 
   const { data: submissions, error } = await supabase
-    .from('submissions').select('student_id, draft_version, draft_text, feedback, created_at').eq('task_id', taskId)
+    .from('submissions').select('student_id, draft_version, draft_text, feedback, created_at, answers, question_marks').eq('task_id', taskId)
     .order('created_at', { ascending: true });
   if (error) throw error;
 
   const studentIds = [...new Set((submissions || []).map(s => s.student_id).filter(Boolean))] as string[];
   const userInfo = await getUserInfoBatch(supabase, studentIds);
 
-  const headers = ['student_name','student_email','draft_version','submitted_at','overall','top_priority','improvements','strengths','draft_text'];
+  // Multi-question exam: append a qN_mark column per question (auto + teacher
+  // marks) and a qN_selected column for each MC question. Legacy tasks unchanged.
+  const examQuestions: any[] | null = Array.isArray((task as any).questions) && (task as any).questions.length > 0
+    ? (task as any).questions : null;
+  const examHeaders: string[] = [];
+  if (examQuestions) {
+    examQuestions.forEach((q, i) => {
+      examHeaders.push(`q${i + 1}_mark`);
+      if (q.type === 'multiple_choice') examHeaders.push(`q${i + 1}_selected`);
+    });
+  }
+
+  const headers = ['student_name','student_email','draft_version','submitted_at','overall','top_priority','improvements','strengths','draft_text', ...examHeaders];
   const rows: string[] = [headers.join(',')];
   for (const s of (submissions || [])) {
     const summary = summariseFeedback(s.feedback);
-    rows.push([
+    const cells: unknown[] = [
       userInfo[s.student_id]?.name || 'Unknown',
       userInfo[s.student_id]?.email || '',
       s.draft_version || 1,
@@ -58,7 +70,20 @@ export default withHandler({ methods: ['GET'], label: 'task-csv' }, async (req, 
       summary.improvements,
       summary.strengths,
       s.draft_text || '',
-    ].map(csvEscape).join(','));
+    ];
+    if (examQuestions) {
+      const marks = Array.isArray((s as any).question_marks) ? (s as any).question_marks : [];
+      const answers = Array.isArray((s as any).answers) ? (s as any).answers : [];
+      examQuestions.forEach((q) => {
+        const m = marks.find((x: any) => x.question_id === q.id);
+        cells.push(m && typeof m.mark === 'number' ? m.mark : '');
+        if (q.type === 'multiple_choice') {
+          const a = answers.find((x: any) => x.question_id === q.id);
+          cells.push(a ? (a.selected_option_text || '') : '');
+        }
+      });
+    }
+    rows.push(cells.map(csvEscape).join(','));
   }
 
   const csv = '\uFEFF' + rows.join('\n') + '\n';

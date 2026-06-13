@@ -17,7 +17,7 @@ async function getAutosave(req: VercelRequest, res: VercelResponse, userId: stri
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from('draft_autosaves')
-    .select('draft_text, telemetry, updated_at')
+    .select('draft_text, answers, telemetry, updated_at')
     .eq('student_id', userId)
     .eq('task_id', taskId)
     .maybeSingle();
@@ -25,13 +25,16 @@ async function getAutosave(req: VercelRequest, res: VercelResponse, userId: stri
 
   return res.status(200).json({
     draft_text: data?.draft_text || '',
+    // Multi-question exams: in-progress per-question answers, keyed by
+    // question_id. null/absent for single-response tasks.
+    answers: data?.answers ?? null,
     telemetry: data?.telemetry || {},
     updated_at: data?.updated_at || null,
   });
 }
 
 async function putAutosave(req: VercelRequest, res: VercelResponse, userId: string) {
-  const { task_id, draft_text, telemetry } = req.body || {};
+  const { task_id, draft_text, answers, telemetry } = req.body || {};
   if (!task_id) return res.status(400).json({ error: 'task_id is required.' });
   if (typeof draft_text !== 'string') return res.status(400).json({ error: 'draft_text must be a string.' });
   if (draft_text.length > MAX_DRAFT_CHARS) {
@@ -43,6 +46,10 @@ async function putAutosave(req: VercelRequest, res: VercelResponse, userId: stri
     student_id: userId,
     task_id,
     draft_text,
+    // Multi-question exams send a per-question answers object. Stored verbatim
+    // (jsonb); null for single-response tasks. The serialized draft_text is
+    // sent alongside so any legacy reader still sees the work.
+    answers: answers && typeof answers === 'object' ? answers : null,
     telemetry: telemetry && typeof telemetry === 'object' ? telemetry : {},
     updated_at: new Date().toISOString(),
   }, { onConflict: 'student_id,task_id' });

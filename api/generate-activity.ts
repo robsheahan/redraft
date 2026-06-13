@@ -42,6 +42,9 @@ export default withHandler({ methods: ['POST'], label: 'generate-activity' }, as
   const { data: task } = await supabase.from('tasks').select('*').eq('id', task_id).maybeSingle();
   if (!task) return res.status(404).json({ error: 'Task not found.' });
   if (!task.lesson_builder) return res.status(200).json(MAIN_ACTIVITY);
+  // Belt-and-braces: in-class exams must stay standardised — never differentiate
+  // a marked_task even if a legacy row somehow carries lesson_builder = true.
+  if (task.task_mode === 'marked_task') return res.status(200).json(MAIN_ACTIVITY);
   // Draft tasks are invisible to students everywhere else; without this gate a
   // class member holding the UUID could trigger generation early and read a
   // re-skinned variant of the unpublished question.
