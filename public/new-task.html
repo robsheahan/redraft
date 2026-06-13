@@ -735,10 +735,8 @@
       const noun = isMaths ? 'marking guideline' : 'marking criteria';
 
       const title = document.getElementById('titleInput').value.trim();
-      // Maths has no separate question field — the instructions are the prompt.
-      const question = (isMaths
-        ? document.getElementById('instructionsInput').value
-        : document.querySelector('#singleQuestionGroup textarea').value).trim();
+      // The instructions field is the prompt for every non-exam format.
+      const question = document.getElementById('instructionsInput').value.trim();
       const totalMarksRaw = document.querySelector('#totalMarksGroup input[type="number"]').value;
       const totalMarks = totalMarksRaw ? Number(totalMarksRaw) : NaN;
       const course = document.getElementById('courseInput').value.trim();
@@ -1030,8 +1028,10 @@
       const dueDate = document.getElementById('dueDateGroup');
       if (!editor || !single) return;
       editor.style.display = isExamEssay ? '' : 'none';
-      // Maths + quick tasks use the instructions as the prompt — no question field.
-      single.style.display = (isExamEssay || isQuick || isMaths) ? 'none' : '';
+      // Every format now uses the instructions field as the prompt (or, for essay
+      // in-class exams, the question editor) — the standalone question field is
+      // never shown.
+      single.style.display = 'none';
       // Quick tasks aren't graded against a mark total or a due date; written
       // exams auto-sum their marks, so the manual total is hidden there too.
       if (totalMarks) totalMarks.style.display = (isExamEssay || isQuick) ? 'none' : '';
@@ -1139,18 +1139,15 @@
         } else {
           questionsPayload = qs;
         }
-      } else if (isQuick || isMaths) {
-        // The instructions ARE the prompt; store them as the question (so the
-        // student sees them and the insights pass has context) and don't send a
-        // separate instructions block (avoids showing the same text twice).
+      } else {
+        // Every non-exam format (quick, maths, essay take-home) uses the
+        // instructions as the prompt: store them as the question (so the student
+        // sees them and the insights pass has context) and don't send a separate
+        // instructions block (avoids showing the same text twice).
         question = instructions;
         if (!question) { alert('Enter the task instructions first.'); restoreButtons(); return; }
         total_marks = document.querySelector('#totalMarksGroup input[type="number"]').value || null;
         instructionsToSend = null;
-      } else {
-        question = document.querySelector('#singleQuestionGroup textarea').value;
-        total_marks = document.querySelector('#totalMarksGroup input[type="number"]').value || null;
-        if (!question) { alert('Please enter the task question.'); restoreButtons(); return; }
       }
 
       // Outcomes apply to both assessment kinds (take-home + in-class exam);
