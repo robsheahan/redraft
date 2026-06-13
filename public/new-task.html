@@ -189,6 +189,8 @@
     /* Keep the date input compact — otherwise on in-class exams (where Total
        marks is hidden) it's alone in the row and stretches across the page. */
     #dueDateGroup input[type="date"] { max-width: 200px; }
+    /* Total marks is a small number — don't let it fill half the row. */
+    #totalMarksGroup input[type="number"] { max-width: 120px; }
 
     /* Task type pills */
     .task-types {
