@@ -579,12 +579,14 @@
         <div class="form-group" id="instructionsGroup">
           <label>Task instructions</label>
           <textarea id="instructionsInput"></textarea>
+          <!-- Task-level file attachments live here so they're available in every
+               format, including the instructions-only quick + maths tasks. -->
+          <div id="taskAttachmentsMount" style="margin-top:8px"></div>
         </div>
         <div class="form-group" id="singleQuestionGroup">
           <label>Task question</label>
           <div class="hint">The full question students need to respond to</div>
           <textarea></textarea>
-          <div id="taskAttachmentsMount" style="margin-top:8px"></div>
         </div>
         <!-- Multi-question exam editor (in-class exam only). Replaces the single
              Task question field. One question → saved as a single-question task
