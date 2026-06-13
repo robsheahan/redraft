@@ -568,6 +568,10 @@
             <div class="course-suggestions" id="courseSuggestions"></div>
           </div>
         </div>
+        <!-- The rest of Step 1 stays hidden until the teacher has made enough of
+             a choice to reveal it: a maths subject (opens immediately), or an
+             essay subject + a task type. -->
+        <div id="taskFormRest" style="display:none">
         <div class="form-group">
           <label>Task title</label>
           <input type="text" id="titleInput" placeholder="e.g. Task 2 — Health Priorities Essay">
@@ -623,6 +627,7 @@
             </div>
           </div>
         </div>
+        </div><!-- /#taskFormRest -->
       </div>
 
       <div id="assessmentSteps" style="display:none">
@@ -699,7 +704,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       </div><!-- /#assessmentSteps -->
 
       <!-- Submit -->
-      <div class="submit-section">
+      <div class="submit-section" id="submitSection" style="display:none">
         <div class="lesson-builder-teaser" id="lessonBuilderTeaser" style="display:none">
           <button type="button" class="btn-lesson-builder" onclick="createTask(true, true)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .962 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.962 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></svg>
@@ -814,6 +819,19 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
     let selectedTaskMode = null;
     let selectedAssessmentKind = null; // 'take_home' | 'in_class_exam' (only when Assessment chosen)
     let selectedSubjectType = null;
+    let taskTypeChosen = false;        // a task type (quick or assessment) has been picked
+
+    // Progressive disclosure: the rest of the form (and the submit bar) stays
+    // hidden until the teacher has chosen enough. Maths reveals on subject alone;
+    // essay reveals once a task type is also picked.
+    function refreshFormReveal() {
+      const revealed = (selectedSubjectType === 'maths')
+        || (selectedSubjectType === 'essay' && taskTypeChosen);
+      const rest = document.getElementById('taskFormRest');
+      const submit = document.getElementById('submitSection');
+      if (rest) rest.style.display = revealed ? '' : 'none';
+      if (submit) submit.style.display = revealed ? '' : 'none';
+    }
     let taskAttachments = [];
 
     // Subject-aware labels. Essay leaves the existing copy in place; Maths
@@ -1268,6 +1286,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         subjectBtns.forEach(b => b.classList.toggle('is-selected', b.dataset.subject === subject));
         applySubjectLabels(subject);
         refreshExamEditor();
+        refreshFormReveal();
       }
       subjectBtns.forEach(b => b.addEventListener('click', () => selectSubjectType(b.dataset.subject)));
       // No subject is preselected — the teacher chooses essay or maths.
@@ -1285,6 +1304,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
 
       function selectTaskType(mode) {
         typeBtns.forEach(b => b.classList.toggle('is-selected', b.dataset.mode === mode));
+        taskTypeChosen = true;
         if (mode === 'quick_task') {
           selectedTaskMode = 'quick_task';
           selectedAssessmentKind = null;
@@ -1292,6 +1312,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
           if (assessmentSteps) assessmentSteps.style.display = 'none';
           if (lbTeaser) lbTeaser.style.display = '';
           refreshExamEditor();
+          refreshFormReveal();
           return;
         }
         if (lbTeaser) lbTeaser.style.display = 'none';
@@ -1304,11 +1325,13 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
           selectedTaskMode = null;
           if (assessmentSteps) assessmentSteps.style.display = 'none';
         }
+        refreshFormReveal();
       }
       typeBtns.forEach(b => b.addEventListener('click', () => selectTaskType(b.dataset.mode)));
 
       function selectAssessmentKind(kind) {
         selectedAssessmentKind = kind;
+        taskTypeChosen = true;
         kindBtns.forEach(b => b.classList.toggle('is-selected', b.dataset.kind === kind));
         const isExam = kind === 'in_class_exam';
         // Take-home = feedback_task (criteria + live feedback). In-class exam =
@@ -1325,6 +1348,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
           assessmentSteps.style.display = '';
           if (assessmentSteps.dataset.revealed !== 'yes') assessmentSteps.dataset.revealed = 'yes';
         }
+        refreshFormReveal();
       }
       kindBtns.forEach(b => b.addEventListener('click', () => selectAssessmentKind(b.dataset.kind)));
 
