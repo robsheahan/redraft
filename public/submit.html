@@ -183,6 +183,9 @@
     .exam-mc-radio:disabled { cursor: not-allowed; }
     .exam-mc-opt:has(input:checked) { border-color: #ed7615; background: #fff7ef; }
     .exam-mc-opt:has(input:disabled) { cursor: not-allowed; opacity: 0.85; }
+    .instructions-box { background: #fff7ef; border: 1px solid #f6d9bb; border-left: 3px solid #ed7615; border-radius: 10px; padding: 14px 16px; margin-bottom: 18px; }
+    .instructions-box h4 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #c2570a; margin: 0 0 6px; }
+    .instructions-body { font-size: 14px; color: #374151; line-height: 1.6; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -318,6 +321,10 @@
       if (t.due_date) metaParts.push('Due ' + e(t.due_date));
       if (t.time_limit_minutes) metaParts.push('Time limit: ' + e(String(t.time_limit_minutes)) + ' min');
       html += '<div class="task-meta">' + metaParts.join(' · ') + '</div>';
+
+      if (t.instructions && t.instructions.trim()) {
+        html += '<div class="instructions-box"><h4>Instructions</h4><div class="instructions-body">' + e(t.instructions) + '</div></div>';
+      }
 
       // Multi-question exams render each question above its own answer box, so
       // the top card omits the single "Task description" block (t.question is null).

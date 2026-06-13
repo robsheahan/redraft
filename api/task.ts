@@ -130,7 +130,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
 
   const supabase = getSupabase();
   const {
-    class_id, course, title, question, questions, task_type, total_marks, due_date,
+    class_id, course, title, instructions, question, questions, task_type, total_marks, due_date,
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
     hide_criteria_from_students, completion_only,
     subject_type, marking_guideline, lesson_builder, attachments, time_limit_minutes,
@@ -197,6 +197,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     teacher_id: user.id,
     course: course || null,
     title: title || null,
+    instructions: instructions || null,
     question: examQuestions ? null : (question || null),
     questions: examQuestions,
     task_type: task_type || null,
@@ -233,7 +234,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   if (!user) return res.status(401).json({ error: 'Not authenticated' });
 
   const {
-    id, course, title, question, questions, task_type, total_marks, due_date,
+    id, course, title, instructions, question, questions, task_type, total_marks, due_date,
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
     hide_criteria_from_students,
     task_mode: incomingTaskMode, completion_only,
@@ -252,6 +253,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   const patch: any = {
     course: course ?? undefined,
     title: title ?? undefined,
+    instructions: instructions ?? undefined,
     question: question ?? undefined,
     task_type: task_type ?? undefined,
     total_marks: total_marks ?? undefined,

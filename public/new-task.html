@@ -434,8 +434,9 @@
       align-items: center;
       gap: 8px;
       margin-bottom: 8px;
+      flex-wrap: nowrap;
     }
-    .exam-q-num { font-weight: 700; color: #111827; font-size: 15px; }
+    .exam-q-num { font-weight: 700; color: #111827; font-size: 15px; flex-shrink: 0; }
     .exam-q-head .spacer { flex: 1; }
     .exam-q-ctrl {
       border: 1px solid #e8e0d4;
@@ -468,9 +469,9 @@
       margin-top: 4px;
     }
     .exam-add-btn {
-      background: #fff;
-      border: 1px dashed #d1bfa3;
-      color: #b45309;
+      background: #111827;
+      border: 1px solid #111827;
+      color: #fff;
       border-radius: 8px;
       padding: 9px 14px;
       font-size: 14px;
@@ -478,10 +479,13 @@
       cursor: pointer;
       font-family: inherit;
     }
-    .exam-add-btn:hover { border-color: #b45309; }
+    .exam-add-btn:hover { background: #000; border-color: #000; }
     .exam-total { font-size: 14px; font-weight: 600; color: #111827; }
     .exam-total span { color: #b45309; }
+    /* Compact — overrides the full-width .form-group select rule so the answer-type
+       picker stays a small box and the "Question N" header sits on one line. */
     .exam-q-type {
+      width: auto; max-width: 180px;
       font-size: 13px; padding: 5px 8px; border: 1px solid #e8e0d4; border-radius: 6px;
       background: #fff; font-family: inherit; color: #374151; cursor: pointer;
     }
@@ -501,6 +505,9 @@
     }
     .exam-opt-add:hover { border-color: #b45309; }
     .exam-opt-hint { font-size: 12px; color: #9ca3af; margin-top: 8px; }
+    /* Give the typed-only toggle breathing room below the marks/due-date row
+       (which is a flex .form-row with no bottom margin of its own). */
+    #typedOnlyCard { margin-top: 12px; }
   </style>
 </head>
 <body>
@@ -513,7 +520,7 @@
   <div class="container">
 
     <h1>Create a new task</h1>
-    <p class="subtitle">Set up the task — pick a type at the end of Step 1 to reveal the rest.</p>
+    <p class="subtitle">Set up the task — pick a subject and task type to reveal the rest.</p>
 
     <div id="formSection">
 
@@ -531,6 +538,26 @@
           </div>
         </div>
         <div class="form-group">
+          <label>Task type</label>
+          <div class="task-type-picker" id="taskTypePicker">
+            <button type="button" class="task-type-btn" data-mode="quick_task">Quick Task</button>
+            <button type="button" class="task-type-btn" data-mode="assessment">Assessment Task</button>
+          </div>
+        </div>
+        <div class="form-group" id="assessmentKindGroup" style="display:none">
+          <label>Assessment type</label>
+          <div id="assessmentKindPicker">
+            <div class="assessment-option">
+              <button type="button" class="task-type-btn" data-kind="take_home">Take-home assessment</button>
+              <span class="assessment-option-desc">Includes a marking criteria section and gives students feedback across up to 3 drafts. No time limit.</span>
+            </div>
+            <div class="assessment-option">
+              <button type="button" class="task-type-btn" data-kind="in_class_exam">In-class exam</button>
+              <span class="assessment-option-desc">No marking criteria — students submit once, straight for marking, with no live feedback. Optional time limit.</span>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
           <label>Class</label>
           <div class="hint" id="classContextHint">Loading class...</div>
         </div>
@@ -544,6 +571,11 @@
         <div class="form-group">
           <label>Task title</label>
           <input type="text" id="titleInput" placeholder="e.g. Task 2 — Health Priorities Essay">
+        </div>
+        <div class="form-group">
+          <label>Task instructions</label>
+          <div class="hint">Optional. Shown to students above the questions — e.g. how long they have, which sections to answer, materials allowed.</div>
+          <textarea id="instructionsInput" placeholder="e.g. Answer ALL questions. You have 60 minutes. Write in full sentences."></textarea>
         </div>
         <div class="form-group" id="singleQuestionGroup">
           <label>Task question</label>
@@ -589,26 +621,6 @@
             <div class="toggle-body">
               <label for="allowAttachToggle">Allow students to attach a document to their submission</label>
               <div class="toggle-sub">Off by default. When on, students get an "Attach file" button on their submission (images or PDFs).</div>
-            </div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Task type</label>
-          <div class="task-type-picker" id="taskTypePicker">
-            <button type="button" class="task-type-btn" data-mode="quick_task">Quick Task</button>
-            <button type="button" class="task-type-btn" data-mode="assessment">Assessment Task</button>
-          </div>
-        </div>
-        <div class="form-group" id="assessmentKindGroup" style="display:none">
-          <label>Assessment type</label>
-          <div id="assessmentKindPicker">
-            <div class="assessment-option">
-              <button type="button" class="task-type-btn" data-kind="take_home">Take-home assessment</button>
-              <span class="assessment-option-desc">Includes a marking criteria section and gives students feedback across up to 3 drafts. No time limit.</span>
-            </div>
-            <div class="assessment-option">
-              <button type="button" class="task-type-btn" data-kind="in_class_exam">In-class exam</button>
-              <span class="assessment-option-desc">No marking criteria — students submit once, straight for marking, with no live feedback. Optional time limit.</span>
             </div>
           </div>
         </div>
@@ -721,8 +733,8 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
       const noun = isMaths ? 'marking guideline' : 'marking criteria';
 
       const title = document.getElementById('titleInput').value.trim();
-      const question = document.querySelector('.step:nth-child(1) textarea').value.trim();
-      const totalMarksRaw = document.querySelector('.step:nth-child(1) input[type="number"]').value;
+      const question = document.querySelector('#singleQuestionGroup textarea').value.trim();
+      const totalMarksRaw = document.querySelector('#totalMarksGroup input[type="number"]').value;
       const totalMarks = totalMarksRaw ? Number(totalMarksRaw) : NaN;
       const course = document.getElementById('courseInput').value.trim();
       const outcomesRaw = document.getElementById('outcomesText').value;
@@ -1066,6 +1078,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
 
       const course = document.getElementById('courseInput').value.trim();
       const title = document.getElementById('titleInput').value.trim();
+      const instructions = document.getElementById('instructionsInput').value.trim() || null;
       const due_date = document.querySelector('.step:nth-child(1) input[type="date"]').value || null;
 
       // In-class exam uses the question-list editor. One question saves as a
@@ -1160,7 +1173,7 @@ Criteria 4: Structure, clarity and communication (1-3 marks)"></textarea>
         const res = await authFetch('/api/task', {
           method: 'POST',
           body: JSON.stringify({
-            class_id: currentClassId, course, title, question, questions: questionsPayload, total_marks, due_date,
+            class_id: currentClassId, course, title, instructions, question, questions: questionsPayload, total_marks, due_date,
             outcomes, criteria_text, notes, publish: !!publish, typed_response_only,
             hide_criteria_from_students,
             task_mode, completion_only,
