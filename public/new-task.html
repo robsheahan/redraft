@@ -679,7 +679,7 @@
             <button type="button" class="btn-generate-criteria" id="generateCriteriaBtn" onclick="generateCriteria()">
               <span class="btn-label">Generate marking criteria</span>
             </button>
-            <span class="generate-hint">For in-class tasks: enter the task title, question and total marks, and we'll draft a NESA-aligned rubric you can edit.</span>
+            <span class="generate-hint">For in-class tasks: enter the task title, question and total marks, and we'll draft a syllabus-aligned rubric you can edit.</span>
           </div>
           <textarea class="criteria-textarea" id="criteriaText"></textarea>
         </div>
@@ -899,7 +899,7 @@
         }
         if (genHint) {
           genHint.style.display = '';
-          genHint.textContent = "For in-class tasks: enter the task title, question and total marks, and we'll draft a NESA-aligned rubric you can edit.";
+          genHint.textContent = "For in-class tasks: enter the task title, question and total marks, and we'll draft a syllabus-aligned rubric you can edit.";
         }
         if (typedOnlyHelp) typedOnlyHelp.textContent = 'Disables paste in the draft box. Teachers see typing telemetry (keystrokes, paste attempts, time on task). Recommended for assessment integrity.';
         if (hideCritCard) hideCritCard.parentElement.style.display = '';
