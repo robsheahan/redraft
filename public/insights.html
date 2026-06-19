@@ -1423,7 +1423,7 @@
         html += '</ul></div>';
       }
       if (ins.verb_depth_patterns) {
-        html += '<div class="section verb-adherence"><div class="section-title"><span class="section-dot"></span>NESA verb-depth patterns</div>';
+        html += '<div class="section verb-adherence"><div class="section-title"><span class="section-dot"></span>Syllabus verb-depth patterns</div>';
         html += '<p class="section-text">' + e(ins.verb_depth_patterns) + '</p></div>';
       }
       if (ins.by_faculty && ins.by_faculty.length) {
@@ -1841,7 +1841,7 @@
 
       // 1. Mark distribution
       html += '<div class="card card-span-12">'
-        + cardHeader('Mark distribution', 'NESA Common Grade Scale')
+        + cardHeader('Mark distribution', 'Common Grade Scale')
         + renderMarkDistribution(cd.mark_distribution)
         + '</div>';
 
@@ -1906,7 +1906,7 @@
 
       // Mark distribution (A-E) — 5 cols
       html += '<div class="card card-span-5">'
-        + cardHeader('Mark distribution', 'NESA Common Grade Scale')
+        + cardHeader('Mark distribution', 'Common Grade Scale')
         + renderMarkDistribution(cd.mark_distribution)
         + '</div>';
 
@@ -2452,7 +2452,7 @@
 
     function renderMarkDistribution(dist) {
       if (!dist || !dist.total) {
-        return '<div class="card-empty"><strong>No marks awarded yet</strong>This bucket shows the NESA Common Grade Scale spread across all marked submissions.</div>';
+        return '<div class="card-empty"><strong>No marks awarded yet</strong>This bucket shows the Common Grade Scale spread across all marked submissions.</div>';
       }
       const counts = dist.counts || {};
       const total = dist.total || 1;
