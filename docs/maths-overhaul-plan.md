@@ -19,10 +19,10 @@ Central design question (unchanged): **"How can we get the most accurate possibl
 |---|------|--------|
 | 0 | Drop the reasoning line | ✅ done 2026-06-21 (uncommitted) |
 | 1 | Accuracy foundation — hidden worked solution + verification | ✅ Phase 1 done 2026-06-21 (uncommitted; **migration not yet run**). Phase 2 deferred |
-| 2 | Multi-part questions (`(a)(b)(c)` + "Hence") for maths | later |
-| 3 | Handwriting / OCR — **student** input (transcribe → confirm → diagnose) | later |
+| 2 | Multi-part questions (`(a)(b)(c)` + "Hence") for maths | ✅ done 2026-06-21 (uncommitted; **migration not yet run**) |
+| 3 | Handwriting / OCR — **student** input (transcribe → confirm → diagnose) | ✅ done 2026-06-21 (uncommitted; no migration). Single-question; multi-part photo deferred |
 | 3b | Handwriting / OCR — **teacher** authoring (photo → structured exam; worked solution) | later |
-| 4 | Maths-native cohort insights (aggregate the per-line categories) | later |
+| 4 | Maths-native cohort insights (aggregate the per-line categories) | ✅ done 2026-06-21 (uncommitted; no migration) |
 
 #0 and #1 are independent of input modality — they operate on the `[{math}]` line substrate, which both typed and (future) handwriting input produce. So they can ship before the capture work and don't get rebuilt when it lands.
 
@@ -148,6 +148,123 @@ A symbolic/numeric check (math.js inline, a small sympy service, or Claude tool-
 - `public/new-task.html`: "Worked solution (optional · hidden from students)" textarea in Step 3, maths-only, wired into the create payload.
 - Verified: `tsc` clean; prompt-render smoke (block present with a solution, absent without, no-leak + alt-method rules in the system prompt); leak audit — `worked_solution` appears in no student surface or read path.
 - **Not wired:** the silent Haiku insights pass (`submit-for-marking` → marked/quick maths) doesn't use the worked solution yet — only the `feedback_task` Pass B does. And `new-task.html` is create-only, so there's no edit-existing UI for the field yet (consistent with `marking_guideline`).
+
+---
+
+## #2 — Multi-part maths questions (take-home feedback) — SPEC
+
+**Scope (locked — option A):** a maths `feedback_task` whose question has parts `(a)(b)(c)`, each part worked separately and getting its own per-line diagnostic + holistic feedback. "Hence" parts see earlier parts. This is the *feedback* flow (where the moat is) — **not** the in-class exam `questions[]` infra (that's a later option B that would reuse this part model). Single-question maths tasks are unchanged; multi-part is purely additive (a task either has `parts` or it doesn't).
+
+### Core idea — reuse the single-part engine per part
+A multi-part question = **run the existing single-part Pass B + Pass C once per part**, in parallel, each part seeing the prior parts (their text + the student's working + their worked solutions) as context for "Hence"/cross-references. Minimal new engine logic; the per-part worked-solution anchor from #1 carries straight over.
+
+### Data model
+- **`tasks.question`** keeps holding the shared **stem** (common preamble; may be empty).
+- **New `tasks.parts` jsonb** (nullable) — ordered `[{ id, label, text, marks?, marking_guideline?, worked_solution? }]`. Null/absent = single-question task (current behaviour). `label` is free text (`"(a)"`, `"(b)(i)"`) — **flat list, no real nesting** (same pragmatic call the exam feature made). Per-part `marking_guideline` + `worked_solution` are optional and hidden (extend #1 per part).
+- **New `submissions.part_working` jsonb** (nullable) — `[{ part_id, working_lines: [{math}], input_mode }]`. Null = single-question (uses existing `working_lines`). Distinct name from the exam `submissions.answers` to avoid collision.
+- **`submissions.feedback`** for multi-part: `{ kind: 'maths_multipart', parts: [{ part_id, line_annotations, step_gaps, what_youve_done_well, top_priority, improvements }] }`. Renderers branch on `kind` (`'maths'` vs `'maths_multipart'`).
+- **`skill_assessment`**: concat each part's Pass-C `skill_assessment` into one array → `recordSkillSignals` (already takes an array; no new rollup logic).
+- Migration: `scripts/maths-multipart-migration.sql` (`tasks.parts`, `submissions.part_working`).
+
+### New lib — `lib/maths-parts.ts`
+Mirrors `lib/exam-questions.ts` but simpler (no MC, no answer key, no scrambling):
+- types (`MathsPart`), `validateMathsParts(raw)` → normalised parts + derived total (caps: ≤ ~12 parts, text length).
+- `studentPartsView(parts, { isGraded })` — the chokepoint for student reads: strips `worked_solution` from every part **always**, and `marking_guideline` **pre-grading** (revealed post-grade, mirroring the single-question marking-guideline reveal).
+
+### API
+- **`api/task.ts`**: accept `parts` only for `subject_type === 'maths' && task_mode === 'feedback_task'` (reject otherwise — policy, like the exam gate); validate via `validateMathsParts`; derive `total_marks` from per-part marks if present. For non-owners, apply `studentPartsView` (the per-part analogue of the single-question strip + the exam `studentTaskView`).
+- **`api/generate-maths-feedback.ts`**: if `task.parts?.length`, branch — for each part run Pass B then Pass C (per-part worked solution + guideline + prior-part context for "Hence"); `Promise.allSettled` across parts (all working is already submitted, so parts diagnose in parallel even with cross-refs). Assemble the `maths_multipart` feedback; concat skill assessments. Re-skin guard from #1 still applies per part (drop a part's worked solution if that part was re-skinned — N/A until Lesson Differentiator supports parts, so simply: parts + lesson_builder are mutually exclusive in v1).
+- **`api/submit-for-marking.ts`**: out of scope (multi-part is feedback-task only in v1; marked/quick stay single).
+
+### Prompts — `prompts/maths-system.ts`
+- `buildMathsPerLineUserPrompt` gains an optional `priorParts` block: for "Hence", inject earlier parts' `{ label, text, student working, worked solution }` as "EARLIER PARTS (context — the student's results from these may be used here)". Same never-reveal posture.
+- Stem (`tasks.question`) prepended to each part's question context so the model has the common setup.
+
+### UI
+- **`new-task.html`** (maths feedback authoring): a **stem** field + a **parts editor** (ordered list; per part: label, text, optional marks, optional hidden marking guideline, optional hidden worked solution). Mirrors the exam-questions editor pattern but maths-flavoured. A "single question" task is the zero-parts default; "+ Add part" switches it to multi-part.
+- **`submit-maths.html`**: stem at top, then per part: part label + text + its own working area (the Line-by-line / Freeform / Talk-through modes, namespaced per part). One submit → all parts. 3-draft model unchanged (a draft = the whole multi-part attempt; prior-draft seed restores all parts).
+- **`feedback-maths.html`**: per part — label + text, working + per-line annotations + step gaps, then that part's holistic (done well / top priority / improvements). Branch on `kind`.
+- **`mark-submission-maths.html`**: per part — working + AI annotations + teacher notes; overall total mark + comment (per-part marks optional, v1 keeps one overall mark like the single-question screen).
+
+### Scope calls (defaults — flag if any is wrong)
+- **Flat parts, free-text labels** (handles `(b)(i)` without a nested tree). ✅ default
+- **Per-part marks optional** (it's a feedback task, not an exam). ✅ default
+- **Per-part holistic only** (no separate whole-question holistic in v1 — simpler; can add later). ✅ default
+- **Multi-part is feedback-task only** in v1; marked/quick + Lesson Differentiator stay single-question. ✅ default
+- **Per-part worked solution + marking guideline**, both optional/hidden (extend #1). ✅ default
+
+### Build order
+1. Migration + `lib/maths-parts.ts` (types, validate, studentPartsView) + a smoke test.
+2. `api/task.ts` accept/validate/strip parts.
+3. Engine: `generate-maths-feedback.ts` per-part branch + prompt `priorParts` block.
+4. `new-task.html` stem + parts authoring.
+5. `submit-maths.html` per-part working.
+6. `feedback-maths.html` per-part feedback.
+7. `mark-submission-maths.html` per-part marking.
+8. PROJECT_OVERVIEW + plan update; verify (tsc, smoke, live per-part run, leak test on per-part worked solution).
+
+### Verify
+- `tsc` clean; `lib/maths-parts.ts` smoke (validation + studentPartsView strips worked_solution always, marking_guideline pre-grade).
+- Live per-part run: a 3-part question (with a "Hence" part) returns per-part diagnostics; the worked solution never leaks; a "Hence" part correctly uses the earlier part's result.
+- Leak test: per-part `worked_solution` / pre-grade `marking_guideline` never in a student payload.
+
+### Done — #2 (2026-06-21, uncommitted)
+- **Migration `scripts/maths-multipart-migration.sql` (tasks.parts, submissions.part_working) NOT yet run in Supabase.** ⚠️ Run before deploy.
+- `lib/maths-parts.ts` (types, `validateMathsParts`, `studentPartsView`); smoke `scripts/maths-parts-smoke-test.ts` (22 checks pass).
+- `api/task.ts`: accept/validate `parts` (maths feedback_task only), derive total, `studentPartsView` strip for non-owners. `api/me.ts` + `api/task-submissions.ts` carry `part_working`.
+- `api/generate-maths-feedback.ts`: per-part branch (Pass B+C per part, parallel, prior-part "Hence" context, concat skill_assessment); single-question path preserved. Prompt `priorParts` block in `maths-system.ts`.
+- UIs: `new-task.html` (Single/Multi-part picker + parts editor — per-part text/marks/worked-solution/guideline), `submit-maths.html` (per-part working), `feedback-maths.html` (`kind:'maths_multipart'` per-part view), `mark-submission-maths.html` (per-part working + AI annotations + per-part guideline).
+- Verified: `tsc` clean; parts smoke (22/22); **live Hence run** — per-part diagnosis correctly used part (a)'s result for the "Hence" part and never leaked the worked solution.
+- **v1 limitations (deliberate):** multi-part input is line-by-line per part only (no freeform/talk-through per part); **no per-line teacher annotations** for multi-part (the marker gives an overall mark + comment — `line_index` would collide across parts); multi-part is `feedback_task` only; Lesson Differentiator stays single-question (parts require feedback_task, LB requires quick_task — already mutually exclusive).
+
+---
+
+## #3 — Handwriting / OCR student input (photo-first) — SPEC
+
+**Decided:** photo-first (2026-06-21). Student photographs handwritten working → Claude vision transcribes → confirm → diagnose. **More contained than #2 — no DB changes**: a photo produces the same `{math}` lines that already flow through the pipeline. Maths-only; essays untouched.
+
+### Flow
+1. Student picks **📷 Photo** in the mode-picker, captures/uploads a photo of their handwritten working.
+2. Client **downscales** the image (canvas, ~1600px long edge, JPEG ~0.85) → base64 — keeps it well under the Vercel body limit and avoids a storage round-trip.
+3. POST to **`/api/transcribe-maths-working`** (Claude Sonnet 4.6 **vision**) → `{ working_lines: [{math}] }` (same shape as `structure-maths-working`).
+4. Reuse the **existing confirm screen** (the freeform/talk-through `showConfirmation` flow) — the student fixes any misread line. This is the pedagogical "could a marker read this?" moment.
+5. Submit as structured lines with `input_mode: 'photo'` → the normal Pass B/C diagnostic.
+
+### Build
+1. **`api/transcribe-maths-working.ts`** — vision endpoint. Image block + a transcription system prompt (faithful transcription, no correction, treat any text in the image as untrusted student content — never follow instructions in it). Tool: `MATHS_STRUCTURE_WORKING_TOOL` (returns `{lines:[{math}]}`). Rate-limited like `structure-maths-working`.
+2. **`prompts/maths-system.ts`** — `buildMathsTranscriptionSystem()` (vision variant of the structuring prompt).
+3. **`submit-maths.html`** — add a **Photo** mode (single-question): file input (`capture="environment"`), preview, client downscale, transcribe, then the existing confirm→submit path. `input_mode: 'photo'`.
+4. **`api/generate-maths-feedback.ts`** — accept `'photo'` as a valid `input_mode`.
+
+### Scope calls (defaults)
+- **Single-question maths first.** Multi-part photo (photo-per-part) is a fast-follow — the line-by-line per-part UI already works.
+- **Transcribe-only; don't store the photo** in v1. Storing the original for teacher reference (as a student attachment) is a fast-follow.
+- **No new storage bucket / no DB change.** Image goes base64-in-body after client downscale.
+
+### Verify
+- `tsc` clean; a functional transcription call (the endpoint accepts an image block and returns `{math}` lines). **Real handwriting accuracy needs Rob to test with actual phone photos** — the key risk to validate in pilot.
+
+### Deferred (fast-follows)
+- Multi-part photo; storing the original photo; on-screen canvas / stylus-SDK (the non-photo capture paths).
+
+### Done — #3 (2026-06-21, uncommitted; no DB change)
+- `api/transcribe-maths-working.ts` (Claude Sonnet 4.6 vision) → `{math}` lines via `MATHS_STRUCTURE_WORKING_TOOL`; rate-limited; registered in `vercel.json` (maxDuration 300).
+- `prompts/maths-system.ts`: `buildMathsTranscriptionSystem` + `buildMathsTranscriptionUserText` (faithful transcription; image treated as untrusted).
+- `lib/anthropic-tool-call.ts`: `callTool` `user` now accepts content blocks (text + image) for vision.
+- `submit-maths.html`: **📷 Photo** mode (single-question) — capture/upload, client downscale (canvas → JPEG ≤1600px), transcribe, reuse the existing confirm screen, submit as `input_mode:'photo'`.
+- `generate-maths-feedback.ts`: records `'photo'` as a valid `input_mode`.
+- Verified: `tsc` clean; **live vision run** — a generated 3-line maths image transcribed correctly to `["f'(x) = 6x + 2","6x + 2 = 0","x = -1/3"]`. **Real handwriting accuracy is the pilot risk** — needs Rob to test with actual phone photos.
+
+---
+
+## #4 — Maths-native cohort insights — DONE (2026-06-21, uncommitted; no DB change)
+
+The thesis from `maths-feedback-plan.md` §7: maths cohort cards write themselves because the categories are objective. A **"Maths errors by category"** card already existed (leader/admin only, single-question, occurrence counts). #4 finished it:
+- `computeMathsErrorCategories` (`insights-cards.ts`) now handles **multi-part** (`fb.parts[].line_annotations`/`step_gaps`), counts **distinct students** per category (the "8 students dropped +C" headline, not raw line counts), and folds **skipped mark-bearing steps** (`step_gaps`) in as a `step_skipped` bucket.
+- The renderer leads with student counts; the card is now **also shown in the teacher grid** (`renderTeacherCardsGrid`) — the individual maths teacher is the key audience — gated so non-maths teachers don't see an empty maths card.
+- **No LLM, no rate limit, no migration** — a deterministic count over data already captured. Respects the existing scope + time-window filters.
+- **Coverage caveat:** feedback-task maths only. Marked/quick maths run the Haiku insights pass, which doesn't emit per-line categories — so those submissions don't feed this card. (Giving the Haiku pass a lightweight category output is a possible follow-up.)
+- Verified: `tsc` clean; unit test of the aggregation (10 checks — single + multi-part, distinct-student counting across drafts, `step_skipped`, sort, label resolution, `ok`/essay excluded).
 
 ---
 

@@ -450,6 +450,7 @@
       margin-bottom: 12px;
       background: #fffdf9;
     }
+    .maths-part-worked, .maths-part-guideline { min-height: 52px; font-size: 13px; background: #faf6ef; margin-top: 6px; }
     .exam-q-head {
       display: flex;
       align-items: center;
@@ -604,6 +605,14 @@
                format, including the instructions-only quick + maths tasks. -->
           <div id="taskAttachmentsMount" style="margin-top:8px"></div>
         </div>
+        <!-- Maths take-home only: single vs multi-part (a)(b)(c). -->
+        <div class="form-group" id="mathsFormatGroup" style="display:none">
+          <label>Question format</label>
+          <div class="task-type-picker">
+            <button type="button" class="task-type-btn is-selected" data-format="single" onclick="selectMathsFormat('single')">Single question</button>
+            <button type="button" class="task-type-btn" data-format="multipart" onclick="selectMathsFormat('multipart')">Multi-part (a)(b)(c)</button>
+          </div>
+        </div>
         <div class="form-group" id="singleQuestionGroup">
           <label>Task question</label>
           <div class="hint">The full question students need to respond to</div>
@@ -619,6 +628,16 @@
           <div class="exam-add-row">
             <button type="button" class="exam-add-btn" id="examAddQuestionBtn">+ Add question</button>
             <div class="exam-total">Total: <span id="examTotalMarks">0</span> marks</div>
+          </div>
+        </div>
+        <!-- Maths multi-part: (a)(b)(c) parts. The instructions above are the shared stem. -->
+        <div class="form-group" id="mathsPartsGroup" style="display:none">
+          <label>Question parts</label>
+          <div class="hint">The instructions above are the shared stem (optional). Add each part — (a), (b), (c)… Students work and get feedback on each one. The worked solution + marking guideline are per part and hidden from students.</div>
+          <div id="mathsPartsList"></div>
+          <div class="exam-add-row">
+            <button type="button" class="exam-add-btn" id="mathsAddPartBtn">+ Add part</button>
+            <div class="exam-total">Total: <span id="mathsPartsTotalMarks">0</span> marks</div>
           </div>
         </div>
         <div class="form-row" id="marksDateRow">
@@ -1044,6 +1063,105 @@
       return row;
     }
 
+    // ---- Maths multi-part authoring (take-home only) ----
+    let selectedMathsFormat = 'single';
+    function selectMathsFormat(fmt) {
+      selectedMathsFormat = fmt === 'multipart' ? 'multipart' : 'single';
+      applyMathsFormatVisibility();
+    }
+    window.selectMathsFormat = selectMathsFormat;
+
+    function applyMathsFormatVisibility() {
+      const multi = selectedMathsFormat === 'multipart';
+      const partsGroup = document.getElementById('mathsPartsGroup');
+      const stepCriteria = document.getElementById('stepCriteria');
+      const totalMarks = document.getElementById('totalMarksGroup');
+      if (partsGroup) partsGroup.style.display = multi ? '' : 'none';
+      // Multi-part authors the guideline + worked solution PER PART, so hide the
+      // task-level Step 3 (which contains both) and the manual total (parts sum).
+      if (stepCriteria) stepCriteria.style.display = multi ? 'none' : '';
+      if (totalMarks) totalMarks.style.display = multi ? 'none' : '';
+      document.querySelectorAll('#mathsFormatGroup .task-type-btn').forEach(b =>
+        b.classList.toggle('is-selected', b.dataset.format === selectedMathsFormat));
+      if (multi && document.querySelectorAll('#mathsPartsList .maths-part').length === 0) addMathsPart();
+    }
+
+    function autoPartLabel(i) {
+      let s = '', n = i;
+      do { s = String.fromCharCode(97 + (n % 26)) + s; n = Math.floor(n / 26) - 1; } while (n >= 0);
+      return '(' + s + ')';
+    }
+
+    function renumberMathsParts() {
+      const rows = Array.from(document.querySelectorAll('#mathsPartsList .maths-part'));
+      let total = 0;
+      rows.forEach((row, i) => {
+        const labelEl = row.querySelector('.maths-part-label');
+        if (labelEl) labelEl.placeholder = autoPartLabel(i);
+        const remove = row.querySelector('.exam-q-ctrl.remove');
+        if (remove) remove.disabled = (rows.length <= 1);
+        const m = parseFloat(row.querySelector('.maths-part-marks').value);
+        if (Number.isFinite(m) && m > 0) total += m;
+      });
+      const totalEl = document.getElementById('mathsPartsTotalMarks');
+      if (totalEl) totalEl.textContent = String(total);
+    }
+
+    function addMathsPart(prefill) {
+      const list = document.getElementById('mathsPartsList');
+      if (!list) return null;
+      const row = document.createElement('div');
+      row.className = 'exam-q maths-part';
+      row.dataset.pid = makeQuestionId();
+      row.innerHTML =
+        '<div class="exam-q-head">' +
+          '<span class="exam-q-num">Part</span>' +
+          '<input type="text" class="maths-part-label" style="width:70px;padding:6px 8px" placeholder="(a)">' +
+          '<span class="spacer"></span>' +
+          '<div class="exam-q-marks"><label>Marks</label><input type="number" min="1" step="1" class="maths-part-marks"></div>' +
+          '<button type="button" class="exam-q-ctrl remove" title="Remove part">&#215;</button>' +
+        '</div>' +
+        '<textarea class="exam-q-text maths-part-text" placeholder="The question for this part"></textarea>' +
+        '<textarea class="exam-q-text maths-part-worked" placeholder="Worked solution for this part — optional, hidden from students"></textarea>' +
+        '<textarea class="exam-q-text maths-part-guideline" placeholder="Marking guideline for this part — optional, hidden from students"></textarea>';
+      list.appendChild(row);
+      if (prefill) {
+        if (prefill.label) row.querySelector('.maths-part-label').value = prefill.label;
+        if (prefill.text) row.querySelector('.maths-part-text').value = prefill.text;
+        if (prefill.marks) row.querySelector('.maths-part-marks').value = prefill.marks;
+        if (prefill.worked_solution) row.querySelector('.maths-part-worked').value = prefill.worked_solution;
+        if (prefill.marking_guideline) row.querySelector('.maths-part-guideline').value = prefill.marking_guideline;
+      }
+      row.querySelector('.maths-part-marks').addEventListener('input', renumberMathsParts);
+      row.querySelector('.exam-q-ctrl.remove').addEventListener('click', () => {
+        if (list.children.length <= 1) return;
+        row.remove();
+        renumberMathsParts();
+      });
+      renumberMathsParts();
+      return row;
+    }
+    window.addMathsPart = addMathsPart;
+
+    function readMathsParts() {
+      const parts = [];
+      document.querySelectorAll('#mathsPartsList .maths-part').forEach((row, i) => {
+        const text = (row.querySelector('.maths-part-text').value || '').trim();
+        if (!text) return; // skip empty parts
+        const labelRaw = (row.querySelector('.maths-part-label').value || '').trim();
+        const marksRaw = row.querySelector('.maths-part-marks').value;
+        const worked = (row.querySelector('.maths-part-worked').value || '').trim();
+        const guideline = (row.querySelector('.maths-part-guideline').value || '').trim();
+        const part = { id: row.dataset.pid, label: labelRaw || autoPartLabel(i), text };
+        const marks = marksRaw ? parseFloat(marksRaw) : NaN;
+        if (Number.isFinite(marks) && marks > 0) part.marks = marks;
+        if (worked) part.worked_solution = worked;
+        if (guideline) part.marking_guideline = guideline;
+        parts.push(part);
+      });
+      return parts;
+    }
+
     // The multi-question editor is for WRITTEN in-class exams only. Maths and
     // quick tasks have no separate Task question field — the instructions are the
     // prompt. Only essay take-home tasks use the single question field.
@@ -1076,6 +1194,19 @@
           const seedMarks = tmEl && tmEl.value ? tmEl.value : '';
           addExamQuestion({ text: seedText, marks: seedMarks });
         }
+      }
+
+      // Maths take-home can be single or multi-part; the format picker (and, when
+      // multi-part, the parts editor) only applies there.
+      const isMathsTakeHome = isMaths && selectedTaskMode === 'feedback_task';
+      const mathsFormatGroup = document.getElementById('mathsFormatGroup');
+      if (mathsFormatGroup) mathsFormatGroup.style.display = isMathsTakeHome ? '' : 'none';
+      if (!isMathsTakeHome) {
+        selectedMathsFormat = 'single';
+        const pg = document.getElementById('mathsPartsGroup');
+        if (pg) pg.style.display = 'none';
+      } else {
+        applyMathsFormatVisibility();
       }
     }
 
@@ -1175,7 +1306,9 @@
         // sees them and the insights pass has context) and don't send a separate
         // instructions block (avoids showing the same text twice).
         question = instructions;
-        if (!question) { alert('Enter the task instructions first.'); restoreButtons(); return; }
+        // For multi-part maths the stem (instructions) is optional — the parts
+        // carry the content.
+        if (!question && !(isMaths && selectedMathsFormat === 'multipart')) { alert('Enter the task instructions first.'); restoreButtons(); return; }
         total_marks = document.querySelector('#totalMarksGroup input[type="number"]').value || null;
         instructionsToSend = null;
       }
@@ -1214,6 +1347,21 @@
       // Maths-only hidden correctness anchor for the per-line diagnostic.
       const workedSolutionEl = document.getElementById('workedSolutionText');
       const worked_solution = isMaths ? ((workedSolutionEl && workedSolutionEl.value.trim()) || null) : null;
+      // Maths multi-part: parts carry their own per-part guideline + worked
+      // solution, so the task-level ones are unused.
+      let parts = null;
+      let markingGuidelineToSend = marking_guideline;
+      let workedSolutionToSend = worked_solution;
+      if (isMaths && selectedMathsFormat === 'multipart') {
+        parts = readMathsParts();
+        if (parts.length === 0) {
+          alert('Add at least one part with question text, or switch to a single question.');
+          restoreButtons();
+          return;
+        }
+        markingGuidelineToSend = null;
+        workedSolutionToSend = null;
+      }
       // Quick task with no criteria → completion-only marking by default
       // (a single "Mark as complete" button). Quick task with criteria uses
       // criterion-based marking. Assessment task always uses criterion marking.
@@ -1245,8 +1393,9 @@
             hide_criteria_from_students,
             task_mode, completion_only,
             subject_type: selectedSubjectType,
-            marking_guideline,
-            worked_solution,
+            marking_guideline: markingGuidelineToSend,
+            worked_solution: workedSolutionToSend,
+            parts,
             lesson_builder: !!lessonBuilder,
             attachments: taskAttachments,
             time_limit_minutes,
@@ -1310,6 +1459,8 @@
 
       const examAddBtn = document.getElementById('examAddQuestionBtn');
       if (examAddBtn) examAddBtn.addEventListener('click', () => addExamQuestion());
+      const mathsAddBtn = document.getElementById('mathsAddPartBtn');
+      if (mathsAddBtn) mathsAddBtn.addEventListener('click', () => addMathsPart());
 
       // Subject-type buttons (Essay / Maths) at the top of Step 1. Drives the
       // labels and placeholders on Step 3 (Marking criteria vs Marking guideline).

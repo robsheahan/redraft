@@ -82,6 +82,15 @@
 
     /* Right column */
     .guideline-block { padding: 12px 14px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; color: #374151; }
+    .mp-part { padding: 14px 0; border-bottom: 1px solid #f0e6d6; }
+    .mp-part:last-child { border-bottom: none; }
+    .mp-part-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+    .mp-part-label { font-size: 15px; font-weight: 800; color: #111827; }
+    .mp-part-marks { font-size: 12px; font-weight: 600; color: #9ca3af; }
+    .mp-part-text { font-size: 13px; line-height: 1.55; color: #374151; margin-bottom: 10px; padding: 8px 10px; background: #fdf6ee; border: 1px solid #e8e0d4; border-radius: 8px; }
+    .mp-empty { font-size: 13px; color: #9ca3af; padding: 4px 0; }
+    .mp-guideline { margin-top: 10px; }
+    .mp-guideline-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #9ca3af; margin-bottom: 4px; }
     .guideline-empty { padding: 12px; background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; font-size: 13px; color: #78350f; }
     .mark-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
     .mark-input { flex: 1; padding: 12px 14px; border: 1px solid #e8e0d4; border-radius: 8px; font-size: 22px; font-weight: 800; font-family: inherit; outline: none; color: #111827; text-align: center; }
@@ -194,6 +203,7 @@
       const container = document.getElementById('content');
       const total = task.total_marks ?? '';
       const existingTotal = submission.total_mark != null ? submission.total_mark : '';
+      const isMultipart = Array.isArray(task.parts) && task.parts.length > 0;
 
       let html = '';
       html += '<h1>Mark maths submission</h1>';
@@ -240,7 +250,7 @@
         html += '<div class="exam-note">⏱ Timed exam · ' + e(String(task.time_limit_minutes)) + ' min — '
           + (_over ? 'lines added after the limit are highlighted below.' : 'submitted within the time limit.') + '</div>';
       }
-      html += '<div id="workingBlock">' + renderWorking() + '</div>';
+      html += '<div id="workingBlock">' + (isMultipart ? renderMultipartWorking() : renderWorking()) + '</div>';
       html += '</div>';
       if (Array.isArray(submission.student_attachments) && submission.student_attachments.length) {
         html += '<div class="card"><div id="studentAttachments"></div></div>';
@@ -249,7 +259,9 @@
 
       // RIGHT — guideline + mark + comment
       html += '<div>';
-      if (task.marking_guideline && task.marking_guideline.trim()) {
+      if (isMultipart) {
+        html += '<div class="card"><h3>Marking guideline</h3><div class="guideline-empty">Per-part marking guidelines are shown beside each part on the left.</div></div>';
+      } else if (task.marking_guideline && task.marking_guideline.trim()) {
         html += '<div class="card">';
         html += '<h3>Marking guideline</h3>';
         html += '<div class="guideline-block">' + e(task.marking_guideline) + '</div>';
@@ -342,6 +354,52 @@
         (gapsAfter[i] || []).forEach(g => {
           html += '<div class="annot warn"><span class="annot-pref">' + statusSvg('warn') + ' Step gap:</span> ' + e(g.comment) + '</div>';
         });
+      });
+      return html;
+    }
+
+    // Multi-part marking view: per-part working + read-only AI annotations +
+    // per-part marking guideline. v1 has no per-line teacher annotations for
+    // multi-part (line_index would collide across parts) — the teacher gives an
+    // overall mark + comment.
+    function renderMultipartWorking() {
+      const parts = Array.isArray(task.parts) ? task.parts : [];
+      const pwById = {};
+      (Array.isArray(submission.part_working) ? submission.part_working : []).forEach(pw => { if (pw && pw.part_id) pwById[pw.part_id] = Array.isArray(pw.working_lines) ? pw.working_lines : []; });
+      const fbById = {};
+      const fbParts = (submission.feedback && Array.isArray(submission.feedback.parts)) ? submission.feedback.parts : [];
+      fbParts.forEach(p => { if (p && p.part_id) fbById[p.part_id] = p; });
+
+      let html = '';
+      parts.forEach((part, idx) => {
+        const working = pwById[part.id] || [];
+        const pfb = fbById[part.id] || {};
+        const annotsByLine = {};
+        (Array.isArray(pfb.line_annotations) ? pfb.line_annotations : []).forEach(a => { if (a && typeof a.line_index === 'number') annotsByLine[a.line_index] = a; });
+        const gapsAfter = {};
+        (Array.isArray(pfb.step_gaps) ? pfb.step_gaps : []).forEach(g => { if (g && typeof g.after_line_index === 'number') { (gapsAfter[g.after_line_index] = gapsAfter[g.after_line_index] || []).push(g); } });
+
+        html += '<div class="mp-part">';
+        html += '<div class="mp-part-head"><span class="mp-part-label">' + e(part.label || ('(' + String.fromCharCode(97 + idx) + ')')) + '</span>';
+        if (part.marks) html += '<span class="mp-part-marks">' + e(String(part.marks)) + ' mark' + (part.marks === 1 ? '' : 's') + '</span>';
+        html += '</div>';
+        if (part.text) html += '<div class="mp-part-text">' + e(part.text) + '</div>';
+
+        (gapsAfter[-1] || []).forEach(g => { html += '<div class="annot warn"><span class="annot-pref">' + statusSvg('warn') + ' Before first line:</span> ' + e(g.comment) + '</div>'; });
+        if (working.length === 0) html += '<div class="mp-empty">No working submitted for this part.</div>';
+        working.forEach((line, i) => {
+          html += '<div class="line-row"><div class="line-head"><span class="line-label">Line ' + (i + 1) + '</span></div>';
+          html += '<div class="line-math" data-tex="' + e(line.math || '') + '">' + (line.math ? '<span class="ml" data-tex="' + e(line.math) + '">' + e(line.math) + '</span>' : '<span style="color:#9ca3af">(empty)</span>') + '</div>';
+          const a = annotsByLine[i];
+          if (a) html += renderAiAnnot(a);
+          html += '</div>';
+          (gapsAfter[i] || []).forEach(g => { html += '<div class="annot warn"><span class="annot-pref">' + statusSvg('warn') + ' Step gap:</span> ' + e(g.comment) + '</div>'; });
+        });
+
+        if (part.marking_guideline && String(part.marking_guideline).trim()) {
+          html += '<div class="mp-guideline"><div class="mp-guideline-label">Marking guideline</div><div class="guideline-block">' + e(part.marking_guideline) + '</div></div>';
+        }
+        html += '</div>';
       });
       return html;
     }

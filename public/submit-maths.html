@@ -131,6 +131,14 @@
     .lb-focus ul { margin: 8px 0 0; padding-left: 18px; }
     .lb-focus li { font-size: 13.5px; color: #374151; line-height: 1.5; margin-bottom: 4px; }
     .lb-extension { margin-top: 8px; font-size: 13.5px; color: #374151; }
+    .part-card .part-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+    .part-card .part-label { font-size: 16px; font-weight: 800; color: #111827; }
+    .part-card .part-marks { font-size: 12px; font-weight: 600; color: #9ca3af; }
+    .part-card .part-text { font-size: 14.5px; line-height: 1.6; color: #374151; margin-bottom: 12px; padding: 10px 12px; background: #fdf6ee; border: 1px solid #e8e0d4; border-radius: 8px; }
+    .photo-pick-btn { display: inline-block; padding: 12px 18px; border: 1.5px dashed #d1d5db; border-radius: 10px; background: transparent; color: #6b7280; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .photo-pick-btn:hover { border-color: #ed7615; color: #ed7615; background: #fef3e6; }
+    .photo-thumb { display: block; max-width: 100%; max-height: 320px; border-radius: 10px; border: 1px solid #e8e0d4; margin-top: 12px; }
+    .photo-filename { font-size: 12.5px; color: #6b7280; margin-top: 6px; }
   </style>
 </head>
 <body>
@@ -285,6 +293,12 @@
         return;
       }
 
+      // Multi-part maths (take-home feedback): per-part working areas.
+      if (Array.isArray(t.parts) && t.parts.length > 0) {
+        renderMultipart(t, used, remaining);
+        return;
+      }
+
       // In-class exam (and quick task): single submission, no live feedback.
       const isFeedback = (t.task_mode || 'feedback_task') === 'feedback_task';
       let html = renderHeader(t);
@@ -302,6 +316,7 @@
       html += '<button type="button" class="mode-btn is-selected" data-mode="structured" onclick="switchMode(\'structured\')">Line by line</button>';
       html += '<button type="button" class="mode-btn" data-mode="freeform" onclick="switchMode(\'freeform\')">Freeform</button>';
       html += '<button type="button" class="mode-btn" data-mode="talkthrough" onclick="switchMode(\'talkthrough\')">Talk-through</button>';
+      html += '<button type="button" class="mode-btn" data-mode="photo" onclick="switchMode(\'photo\')">📷 Photo</button>';
       html += '</div>';
       html += '<div id="modeStructured" class="mode-pane">';
       html += '<div class="inline-hint">' + (used > 0
@@ -317,6 +332,12 @@
       html += '<div id="modeTalkthrough" class="mode-pane" hidden>';
       html += '<div class="inline-hint">Type your working as prose, with the maths inline like $f(x) = 2x+3$. ProofReady splits it into per-step lines on submit — you\'ll confirm the split before feedback runs.</div>';
       html += '<textarea id="talkthroughInput" class="talkthrough-textarea" placeholder="e.g. I want to find the stationary points of $f(x) = 2x^3 - 3x^2 - 12x + 5$. Differentiating gives $f\'(x) = 6x^2 - 6x - 12$. Setting that to zero..."></textarea>';
+      html += '</div>';
+      html += '<div id="modePhoto" class="mode-pane" hidden>';
+      html += '<div class="inline-hint">Take or upload a clear, well-lit photo of your handwritten working. ProofReady reads it into lines — you check and fix them before feedback runs.</div>';
+      html += '<input type="file" id="photoInput" accept="image/*" capture="environment" hidden>';
+      html += '<button type="button" class="photo-pick-btn" onclick="document.getElementById(\'photoInput\').click()">Choose / take photo</button>';
+      html += '<div id="photoPreview"></div>';
       html += '</div>';
       html += '<div class="save-row"><span id="saveIndicator" class="save-indicator">&nbsp;</span><span id="lineCount">0 lines</span></div>';
       if (t.allow_student_attachments) html += '<div class="attach-block"><div id="studentAttachmentsMount"></div></div>';
@@ -483,6 +504,8 @@
       document.getElementById('modeStructured').hidden = mode !== 'structured';
       document.getElementById('modeFreeform').hidden = mode !== 'freeform';
       document.getElementById('modeTalkthrough').hidden = mode !== 'talkthrough';
+      const photoPane = document.getElementById('modePhoto');
+      if (photoPane) photoPane.hidden = mode !== 'photo';
       refreshLineCount();
       // Wire up telemetry on freeform/talkthrough fields on first switch.
       if (mode === 'freeform') {
@@ -506,9 +529,50 @@
           });
           setTimeout(() => ta.focus(), 30);
         }
+      } else if (mode === 'photo') {
+        const inp = document.getElementById('photoInput');
+        if (inp && !inp.__wired) {
+          inp.__wired = true;
+          inp.addEventListener('change', onPhotoSelected);
+        }
       }
     }
     window.switchMode = switchMode;
+
+    function onPhotoSelected() {
+      const input = document.getElementById('photoInput');
+      const preview = document.getElementById('photoPreview');
+      if (!preview) return;
+      const file = input && input.files && input.files[0];
+      if (!file) { preview.innerHTML = ''; return; }
+      const url = URL.createObjectURL(file);
+      preview.innerHTML = '<img src="' + url + '" class="photo-thumb" alt="your working">' +
+        '<div class="photo-filename">' + e(file.name) + ' — tap "Get feedback" to read it</div>';
+    }
+
+    // Downscale to keep the upload small + under the function body limit. Canvas
+    // → JPEG. Returns { base64, media_type }.
+    function downscaleImage(file, maxEdge) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+          const scale = Math.min(1, maxEdge / Math.max(w, h));
+          w = Math.max(1, Math.round(w * scale)); h = Math.max(1, Math.round(h * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          try {
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            resolve({ base64: dataUrl.split(',')[1] || '', media_type: 'image/jpeg' });
+          } catch (err) { reject(err); }
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read that image.')); };
+        img.src = url;
+      });
+    }
 
     function collectLines() {
       const out = [];
@@ -638,6 +702,36 @@
         return;
       }
 
+      // Photo: downscale → vision transcription → confirmation → submit.
+      if (currentMode === 'photo') {
+        const input = document.getElementById('photoInput');
+        const file = input && input.files && input.files[0];
+        if (!file) { showToast('Choose or take a photo first.'); return; }
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        const orig = btn.textContent;
+        btn.textContent = 'Reading your photo…';
+        try {
+          const { base64, media_type } = await downscaleImage(file, 1600);
+          if (!base64) throw new Error('Could not process that image. Try another photo.');
+          const res = await authFetch('/api/transcribe-maths-working', {
+            method: 'POST',
+            body: JSON.stringify({ task_id: currentTask.id, image_base64: base64, media_type }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Could not read your photo.');
+          const lines = Array.isArray(data.working_lines) ? data.working_lines : [];
+          if (lines.length === 0) throw new Error('No working could be read. Try a clearer photo, or type it.');
+          showConfirmation(lines);
+        } catch (err) {
+          alert(err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = orig;
+        }
+        return;
+      }
+
       // Freeform / talk-through: Pass A first, then confirmation, then
       // postFinalFeedback on confirm.
       const raw = currentMode === 'freeform'
@@ -721,12 +815,13 @@
         window._confirmationCardId = null;
       }
       document.querySelectorAll('.mode-picker, .save-row').forEach(el => { el.style.display = ''; });
-      document.getElementById('modeStructured').style.display = currentMode === 'structured' ? '' : '';
-      document.getElementById('modeFreeform').style.display = currentMode === 'freeform' ? '' : '';
-      document.getElementById('modeTalkthrough').style.display = currentMode === 'talkthrough' ? '' : '';
-      document.getElementById('modeStructured').hidden = currentMode !== 'structured';
-      document.getElementById('modeFreeform').hidden = currentMode !== 'freeform';
-      document.getElementById('modeTalkthrough').hidden = currentMode !== 'talkthrough';
+      ['modeStructured', 'modeFreeform', 'modeTalkthrough', 'modePhoto'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const m = id.replace('mode', '').toLowerCase();
+        el.style.display = '';
+        el.hidden = currentMode !== m;
+      });
       document.getElementById('submitBtn').style.display = '';
     }
     window.cancelConfirmation = cancelConfirmation;
@@ -815,6 +910,200 @@
     function viewLatest() {
       window.location.href = 'feedback-maths.html?task=' + encodeURIComponent(currentTask.id);
     }
+
+    // ---- Multi-part maths (take-home feedback): per-part working areas ----
+    // v1 uses line-by-line per part (no freeform/talk-through per part). Telemetry
+    // + autosave are shared; the exam timer doesn't apply (feedback task only).
+    function renderMultipart(t, used, remaining) {
+      const container = document.getElementById('content');
+      const parts = t.parts;
+      let html = renderHeader(t);
+      html += '<div class="card"><div class="task-question-wrap"><h4>Task</h4>';
+      html += '<div class="task-question" id="taskQuestion">' + e(t.question || '') + '</div></div>';
+      if (Array.isArray(t.teacher_attachments) && t.teacher_attachments.length) html += '<div id="teacherMaterials"></div>';
+      html += '</div>';
+
+      html += '<div class="divider">Your working — ' + remaining + ' draft' + (remaining === 1 ? '' : 's') + ' remaining</div>';
+      html += '<div class="inline-hint" style="margin-bottom:14px">Work each part below. One step per line — show your working the way you would on paper. A later part may build on an earlier one.</div>';
+
+      parts.forEach((part, idx) => {
+        html += '<div class="card part-card" data-pid="' + e(part.id) + '">';
+        html += '<div class="part-head"><span class="part-label">' + e(part.label || ('(' + String.fromCharCode(97 + idx) + ')')) + '</span>';
+        if (part.marks) html += '<span class="part-marks">' + e(String(part.marks)) + ' mark' + (part.marks === 1 ? '' : 's') + '</span>';
+        html += '</div>';
+        if (part.text) html += '<div class="part-text">' + e(part.text) + '</div>';
+        html += '<div class="part-lines" id="partlines-' + e(part.id) + '"></div>';
+        html += '<button type="button" class="add-line-btn" onclick="addPartLine(\'' + e(part.id) + '\')">+ Add line</button>';
+        html += '</div>';
+      });
+
+      html += '<div class="save-row"><span id="saveIndicator" class="save-indicator">&nbsp;</span><span id="lineCount">0 lines</span></div>';
+      if (t.allow_student_attachments) html += '<div class="card attach-block"><div id="studentAttachmentsMount"></div></div>';
+      html += '<button class="submit-btn" id="submitBtn" onclick="submitMultipart()">Get feedback</button>';
+      html += '<div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div><div class="loading-text">Reading your working…</div><div class="loading-hint">An experienced marker would take about a minute on this.</div></div>';
+
+      container.innerHTML = html;
+
+      whenKatexReady(() => {
+        const opts = { delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$', right: '$', display: false },
+          { left: '\\(', right: '\\)', display: false },
+          { left: '\\[', right: '\\]', display: true },
+        ], throwOnError: false };
+        const q = document.getElementById('taskQuestion');
+        if (q) renderMathInElement(q, opts);
+        document.querySelectorAll('.part-text').forEach(el => renderMathInElement(el, opts));
+      });
+
+      renderTeacherMaterials();
+      const attachMount = document.getElementById('studentAttachmentsMount');
+      if (attachMount && window.Attachments) {
+        attachMount.appendChild(Attachments.createAttachmentUploader({ scope: 'submission', initial: studentAttachments, onChange: (arr) => { studentAttachments = arr; } }));
+      }
+      restoreMultipartOrSeed();
+    }
+
+    function addPartLine(partId, initial) {
+      const cont = document.getElementById('partlines-' + partId);
+      if (!cont) return;
+      const idx = cont.querySelectorAll('.line-card').length;
+      const wrap = document.createElement('div');
+      wrap.className = 'line-card';
+      wrap.innerHTML =
+        '<div class="line-label">Line ' + (idx + 1) + '</div>' +
+        '<button type="button" class="line-remove" title="Remove line" onclick="removePartLine(this)">×</button>' +
+        '<math-field class="math-field"></math-field>';
+      cont.appendChild(wrap);
+      const mf = wrap.querySelector('math-field');
+      if (initial && typeof initial.math === 'string' && mf) mf.value = initial.math;
+      if (mf) mf.addEventListener('input', () => {
+        telemetry.keystroke_count += 1;
+        if (telemetry.time_to_first_keystroke_ms === null) telemetry.time_to_first_keystroke_ms = Math.max(0, Date.now() - (window._pageOpenedAt || Date.now()));
+        if (!sessionStartedAt || (Date.now() - lastKeyAt) > 30000) { telemetry.typing_session_count += 1; sessionStartedAt = Date.now(); }
+        lastKeyAt = Date.now();
+        scheduleMultipartAutosave();
+        refreshMultipartCount();
+      });
+      if (mf && !initial) setTimeout(() => mf.focus(), 30);
+      refreshMultipartCount();
+    }
+    window.addPartLine = addPartLine;
+
+    function removePartLine(btn) {
+      const card = btn.closest('.line-card');
+      if (!card) return;
+      const cont = card.parentElement;
+      if (cont.querySelectorAll('.line-card').length <= 1) { showToast('Keep at least one line for this part.'); return; }
+      card.remove();
+      cont.querySelectorAll('.line-card').forEach((c, i) => { const l = c.querySelector('.line-label'); if (l) l.textContent = 'Line ' + (i + 1); });
+      scheduleMultipartAutosave();
+      refreshMultipartCount();
+    }
+    window.removePartLine = removePartLine;
+
+    function collectPartWorking() {
+      const out = [];
+      document.querySelectorAll('.part-card').forEach(card => {
+        const lines = [];
+        card.querySelectorAll('.line-card math-field').forEach(mf => {
+          const m = (mf.value || '').trim();
+          if (m) lines.push({ math: m });
+        });
+        out.push({ part_id: card.dataset.pid, working_lines: lines, input_mode: 'structured' });
+      });
+      return out;
+    }
+
+    function refreshMultipartCount() {
+      const n = collectPartWorking().reduce((a, p) => a + p.working_lines.length, 0);
+      const el = document.getElementById('lineCount');
+      if (el) el.textContent = n + ' line' + (n === 1 ? '' : 's');
+    }
+
+    function scheduleMultipartAutosave() {
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(doMultipartAutosave, 1500);
+    }
+    async function doMultipartAutosave() {
+      const pw = collectPartWorking();
+      const state = JSON.stringify(pw);
+      if (state === lastSavedState) return;
+      const ind = document.getElementById('saveIndicator');
+      if (ind) { ind.className = 'save-indicator saving'; ind.textContent = 'Saving…'; }
+      try {
+        const res = await authFetch('/api/draft-autosave', { method: 'PUT', body: JSON.stringify({
+          task_id: currentTask.id,
+          draft_text: pw.map(p => p.working_lines.map((l, i) => 'Line ' + (i + 1) + ': ' + l.math).join('\n')).join('\n\n'),
+          telemetry: { ...telemetry, part_working: pw },
+        })});
+        if (!res.ok) throw new Error('autosave failed');
+        lastSavedState = state;
+        if (ind) { ind.className = 'save-indicator saved'; ind.textContent = 'Saved'; }
+      } catch (err) {
+        if (ind) { ind.className = 'save-indicator failed'; ind.textContent = 'Save failed'; }
+      }
+    }
+
+    async function restoreMultipartOrSeed() {
+      let saved = null;
+      try {
+        const res = await authFetch('/api/draft-autosave?task_id=' + encodeURIComponent(currentTask.id));
+        const data = await res.json().catch(() => ({}));
+        if (data && data.telemetry && Array.isArray(data.telemetry.part_working)) saved = data.telemetry.part_working;
+      } catch {}
+      // Draft 2+: seed from the most recent submitted draft's part_working.
+      if (!saved && priorDrafts.length > 0) {
+        const prev = priorDrafts[priorDrafts.length - 1];
+        if (prev && Array.isArray(prev.part_working)) saved = prev.part_working;
+      }
+      const savedMap = {};
+      (saved || []).forEach(p => { if (p && p.part_id) savedMap[p.part_id] = Array.isArray(p.working_lines) ? p.working_lines : []; });
+      currentTask.parts.forEach(part => {
+        const lines = savedMap[part.id];
+        if (lines && lines.length) lines.forEach(l => addPartLine(part.id, l));
+        else addPartLine(part.id);
+      });
+      refreshMultipartCount();
+    }
+
+    async function submitMultipart() {
+      const pw = collectPartWorking();
+      const total = pw.reduce((a, p) => a + p.working_lines.length, 0);
+      if (total === 0) { showToast('Add some working before submitting.'); return; }
+      const btn = document.getElementById('submitBtn');
+      const overlay = document.getElementById('loadingOverlay');
+      if (btn) { btn.disabled = true; btn.style.display = 'none'; }
+      overlay.classList.add('visible');
+      try {
+        const res = await authFetch('/api/generate-maths-feedback', { method: 'POST', body: JSON.stringify({
+          task_id: currentTask.id,
+          part_working: pw,
+          keystroke_count: telemetry.keystroke_count,
+          paste_attempts_blocked: telemetry.paste_attempts_blocked,
+          typing_session_count: telemetry.typing_session_count,
+          total_typing_time_ms: lastKeyAt && sessionStartedAt ? (lastKeyAt - sessionStartedAt) : 0,
+          time_to_first_keystroke_ms: telemetry.time_to_first_keystroke_ms,
+          student_attachments: studentAttachments,
+        })});
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || ('Could not generate feedback (HTTP ' + res.status + ').'));
+        sessionStorage.setItem('proofready_maths_feedback', JSON.stringify(data));
+        sessionStorage.setItem('proofready_maths_task', JSON.stringify({
+          task_id: currentTask.id, title: currentTask.title, question: currentTask.question,
+          course: currentTask.course, total_marks: currentTask.total_marks || null, due_date: currentTask.due_date || null,
+          teacher_name: currentTask.class ? currentTask.class.teacher_name : null,
+          class_name: currentTask.class ? currentTask.class.name : null,
+          parts: currentTask.parts,
+        }));
+        window.location.href = 'feedback-maths.html';
+      } catch (err) {
+        overlay.classList.remove('visible');
+        if (btn) { btn.disabled = false; btn.style.display = ''; }
+        alert(err.message);
+      }
+    }
+    window.submitMultipart = submitMultipart;
 
     window._pageOpenedAt = Date.now();
   </script>
