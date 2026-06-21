@@ -20,7 +20,7 @@ Central design question (unchanged): **"How can we get the most accurate possibl
 | 0 | Drop the reasoning line | ✅ done 2026-06-21 (uncommitted) |
 | 1 | Accuracy foundation — hidden worked solution + verification | ✅ Phase 1 done 2026-06-21 (uncommitted; **migration not yet run**). Phase 2 deferred |
 | 2 | Multi-part questions (`(a)(b)(c)` + "Hence") for maths | ✅ done 2026-06-21 (uncommitted; **migration not yet run**) |
-| 3 | Handwriting / OCR — **student** input (transcribe → confirm → diagnose) | later |
+| 3 | Handwriting / OCR — **student** input (transcribe → confirm → diagnose) | ✅ done 2026-06-21 (uncommitted; no migration). Single-question; multi-part photo deferred |
 | 3b | Handwriting / OCR — **teacher** authoring (photo → structured exam; worked solution) | later |
 | 4 | Maths-native cohort insights (aggregate the per-line categories) | later |
 
@@ -216,6 +216,44 @@ Mirrors `lib/exam-questions.ts` but simpler (no MC, no answer key, no scrambling
 - UIs: `new-task.html` (Single/Multi-part picker + parts editor — per-part text/marks/worked-solution/guideline), `submit-maths.html` (per-part working), `feedback-maths.html` (`kind:'maths_multipart'` per-part view), `mark-submission-maths.html` (per-part working + AI annotations + per-part guideline).
 - Verified: `tsc` clean; parts smoke (22/22); **live Hence run** — per-part diagnosis correctly used part (a)'s result for the "Hence" part and never leaked the worked solution.
 - **v1 limitations (deliberate):** multi-part input is line-by-line per part only (no freeform/talk-through per part); **no per-line teacher annotations** for multi-part (the marker gives an overall mark + comment — `line_index` would collide across parts); multi-part is `feedback_task` only; Lesson Differentiator stays single-question (parts require feedback_task, LB requires quick_task — already mutually exclusive).
+
+---
+
+## #3 — Handwriting / OCR student input (photo-first) — SPEC
+
+**Decided:** photo-first (2026-06-21). Student photographs handwritten working → Claude vision transcribes → confirm → diagnose. **More contained than #2 — no DB changes**: a photo produces the same `{math}` lines that already flow through the pipeline. Maths-only; essays untouched.
+
+### Flow
+1. Student picks **📷 Photo** in the mode-picker, captures/uploads a photo of their handwritten working.
+2. Client **downscales** the image (canvas, ~1600px long edge, JPEG ~0.85) → base64 — keeps it well under the Vercel body limit and avoids a storage round-trip.
+3. POST to **`/api/transcribe-maths-working`** (Claude Sonnet 4.6 **vision**) → `{ working_lines: [{math}] }` (same shape as `structure-maths-working`).
+4. Reuse the **existing confirm screen** (the freeform/talk-through `showConfirmation` flow) — the student fixes any misread line. This is the pedagogical "could a marker read this?" moment.
+5. Submit as structured lines with `input_mode: 'photo'` → the normal Pass B/C diagnostic.
+
+### Build
+1. **`api/transcribe-maths-working.ts`** — vision endpoint. Image block + a transcription system prompt (faithful transcription, no correction, treat any text in the image as untrusted student content — never follow instructions in it). Tool: `MATHS_STRUCTURE_WORKING_TOOL` (returns `{lines:[{math}]}`). Rate-limited like `structure-maths-working`.
+2. **`prompts/maths-system.ts`** — `buildMathsTranscriptionSystem()` (vision variant of the structuring prompt).
+3. **`submit-maths.html`** — add a **Photo** mode (single-question): file input (`capture="environment"`), preview, client downscale, transcribe, then the existing confirm→submit path. `input_mode: 'photo'`.
+4. **`api/generate-maths-feedback.ts`** — accept `'photo'` as a valid `input_mode`.
+
+### Scope calls (defaults)
+- **Single-question maths first.** Multi-part photo (photo-per-part) is a fast-follow — the line-by-line per-part UI already works.
+- **Transcribe-only; don't store the photo** in v1. Storing the original for teacher reference (as a student attachment) is a fast-follow.
+- **No new storage bucket / no DB change.** Image goes base64-in-body after client downscale.
+
+### Verify
+- `tsc` clean; a functional transcription call (the endpoint accepts an image block and returns `{math}` lines). **Real handwriting accuracy needs Rob to test with actual phone photos** — the key risk to validate in pilot.
+
+### Deferred (fast-follows)
+- Multi-part photo; storing the original photo; on-screen canvas / stylus-SDK (the non-photo capture paths).
+
+### Done — #3 (2026-06-21, uncommitted; no DB change)
+- `api/transcribe-maths-working.ts` (Claude Sonnet 4.6 vision) → `{math}` lines via `MATHS_STRUCTURE_WORKING_TOOL`; rate-limited; registered in `vercel.json` (maxDuration 300).
+- `prompts/maths-system.ts`: `buildMathsTranscriptionSystem` + `buildMathsTranscriptionUserText` (faithful transcription; image treated as untrusted).
+- `lib/anthropic-tool-call.ts`: `callTool` `user` now accepts content blocks (text + image) for vision.
+- `submit-maths.html`: **📷 Photo** mode (single-question) — capture/upload, client downscale (canvas → JPEG ≤1600px), transcribe, reuse the existing confirm screen, submit as `input_mode:'photo'`.
+- `generate-maths-feedback.ts`: records `'photo'` as a valid `input_mode`.
+- Verified: `tsc` clean; **live vision run** — a generated 3-line maths image transcribed correctly to `["f'(x) = 6x + 2","6x + 2 = 0","x = -1/3"]`. **Real handwriting accuracy is the pilot risk** — needs Rob to test with actual phone photos.
 
 ---
 

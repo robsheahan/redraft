@@ -345,7 +345,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
       storedQuestion = question;
       storedWorkingLines = lines;
       storedPartWorking = null;
-      storedInputMode = input_mode === 'freeform' || input_mode === 'talkthrough' ? input_mode : 'structured';
+      storedInputMode = (input_mode === 'freeform' || input_mode === 'talkthrough' || input_mode === 'photo') ? input_mode : 'structured';
       draftText = lines.map((l, i) => `Line ${i + 1}: ${l.math}`).join('\n');
       successWorking = { working_lines: lines };
     }

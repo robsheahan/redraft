@@ -135,6 +135,10 @@
     .part-card .part-label { font-size: 16px; font-weight: 800; color: #111827; }
     .part-card .part-marks { font-size: 12px; font-weight: 600; color: #9ca3af; }
     .part-card .part-text { font-size: 14.5px; line-height: 1.6; color: #374151; margin-bottom: 12px; padding: 10px 12px; background: #fdf6ee; border: 1px solid #e8e0d4; border-radius: 8px; }
+    .photo-pick-btn { display: inline-block; padding: 12px 18px; border: 1.5px dashed #d1d5db; border-radius: 10px; background: transparent; color: #6b7280; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .photo-pick-btn:hover { border-color: #ed7615; color: #ed7615; background: #fef3e6; }
+    .photo-thumb { display: block; max-width: 100%; max-height: 320px; border-radius: 10px; border: 1px solid #e8e0d4; margin-top: 12px; }
+    .photo-filename { font-size: 12.5px; color: #6b7280; margin-top: 6px; }
   </style>
 </head>
 <body>
@@ -312,6 +316,7 @@
       html += '<button type="button" class="mode-btn is-selected" data-mode="structured" onclick="switchMode(\'structured\')">Line by line</button>';
       html += '<button type="button" class="mode-btn" data-mode="freeform" onclick="switchMode(\'freeform\')">Freeform</button>';
       html += '<button type="button" class="mode-btn" data-mode="talkthrough" onclick="switchMode(\'talkthrough\')">Talk-through</button>';
+      html += '<button type="button" class="mode-btn" data-mode="photo" onclick="switchMode(\'photo\')">📷 Photo</button>';
       html += '</div>';
       html += '<div id="modeStructured" class="mode-pane">';
       html += '<div class="inline-hint">' + (used > 0
@@ -327,6 +332,12 @@
       html += '<div id="modeTalkthrough" class="mode-pane" hidden>';
       html += '<div class="inline-hint">Type your working as prose, with the maths inline like $f(x) = 2x+3$. ProofReady splits it into per-step lines on submit — you\'ll confirm the split before feedback runs.</div>';
       html += '<textarea id="talkthroughInput" class="talkthrough-textarea" placeholder="e.g. I want to find the stationary points of $f(x) = 2x^3 - 3x^2 - 12x + 5$. Differentiating gives $f\'(x) = 6x^2 - 6x - 12$. Setting that to zero..."></textarea>';
+      html += '</div>';
+      html += '<div id="modePhoto" class="mode-pane" hidden>';
+      html += '<div class="inline-hint">Take or upload a clear, well-lit photo of your handwritten working. ProofReady reads it into lines — you check and fix them before feedback runs.</div>';
+      html += '<input type="file" id="photoInput" accept="image/*" capture="environment" hidden>';
+      html += '<button type="button" class="photo-pick-btn" onclick="document.getElementById(\'photoInput\').click()">Choose / take photo</button>';
+      html += '<div id="photoPreview"></div>';
       html += '</div>';
       html += '<div class="save-row"><span id="saveIndicator" class="save-indicator">&nbsp;</span><span id="lineCount">0 lines</span></div>';
       if (t.allow_student_attachments) html += '<div class="attach-block"><div id="studentAttachmentsMount"></div></div>';
@@ -493,6 +504,8 @@
       document.getElementById('modeStructured').hidden = mode !== 'structured';
       document.getElementById('modeFreeform').hidden = mode !== 'freeform';
       document.getElementById('modeTalkthrough').hidden = mode !== 'talkthrough';
+      const photoPane = document.getElementById('modePhoto');
+      if (photoPane) photoPane.hidden = mode !== 'photo';
       refreshLineCount();
       // Wire up telemetry on freeform/talkthrough fields on first switch.
       if (mode === 'freeform') {
@@ -516,9 +529,50 @@
           });
           setTimeout(() => ta.focus(), 30);
         }
+      } else if (mode === 'photo') {
+        const inp = document.getElementById('photoInput');
+        if (inp && !inp.__wired) {
+          inp.__wired = true;
+          inp.addEventListener('change', onPhotoSelected);
+        }
       }
     }
     window.switchMode = switchMode;
+
+    function onPhotoSelected() {
+      const input = document.getElementById('photoInput');
+      const preview = document.getElementById('photoPreview');
+      if (!preview) return;
+      const file = input && input.files && input.files[0];
+      if (!file) { preview.innerHTML = ''; return; }
+      const url = URL.createObjectURL(file);
+      preview.innerHTML = '<img src="' + url + '" class="photo-thumb" alt="your working">' +
+        '<div class="photo-filename">' + e(file.name) + ' — tap "Get feedback" to read it</div>';
+    }
+
+    // Downscale to keep the upload small + under the function body limit. Canvas
+    // → JPEG. Returns { base64, media_type }.
+    function downscaleImage(file, maxEdge) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+          const scale = Math.min(1, maxEdge / Math.max(w, h));
+          w = Math.max(1, Math.round(w * scale)); h = Math.max(1, Math.round(h * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          try {
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            resolve({ base64: dataUrl.split(',')[1] || '', media_type: 'image/jpeg' });
+          } catch (err) { reject(err); }
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read that image.')); };
+        img.src = url;
+      });
+    }
 
     function collectLines() {
       const out = [];
@@ -648,6 +702,36 @@
         return;
       }
 
+      // Photo: downscale → vision transcription → confirmation → submit.
+      if (currentMode === 'photo') {
+        const input = document.getElementById('photoInput');
+        const file = input && input.files && input.files[0];
+        if (!file) { showToast('Choose or take a photo first.'); return; }
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        const orig = btn.textContent;
+        btn.textContent = 'Reading your photo…';
+        try {
+          const { base64, media_type } = await downscaleImage(file, 1600);
+          if (!base64) throw new Error('Could not process that image. Try another photo.');
+          const res = await authFetch('/api/transcribe-maths-working', {
+            method: 'POST',
+            body: JSON.stringify({ task_id: currentTask.id, image_base64: base64, media_type }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Could not read your photo.');
+          const lines = Array.isArray(data.working_lines) ? data.working_lines : [];
+          if (lines.length === 0) throw new Error('No working could be read. Try a clearer photo, or type it.');
+          showConfirmation(lines);
+        } catch (err) {
+          alert(err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = orig;
+        }
+        return;
+      }
+
       // Freeform / talk-through: Pass A first, then confirmation, then
       // postFinalFeedback on confirm.
       const raw = currentMode === 'freeform'
@@ -731,12 +815,13 @@
         window._confirmationCardId = null;
       }
       document.querySelectorAll('.mode-picker, .save-row').forEach(el => { el.style.display = ''; });
-      document.getElementById('modeStructured').style.display = currentMode === 'structured' ? '' : '';
-      document.getElementById('modeFreeform').style.display = currentMode === 'freeform' ? '' : '';
-      document.getElementById('modeTalkthrough').style.display = currentMode === 'talkthrough' ? '' : '';
-      document.getElementById('modeStructured').hidden = currentMode !== 'structured';
-      document.getElementById('modeFreeform').hidden = currentMode !== 'freeform';
-      document.getElementById('modeTalkthrough').hidden = currentMode !== 'talkthrough';
+      ['modeStructured', 'modeFreeform', 'modeTalkthrough', 'modePhoto'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const m = id.replace('mode', '').toLowerCase();
+        el.style.display = '';
+        el.hidden = currentMode !== m;
+      });
       document.getElementById('submitBtn').style.display = '';
     }
     window.cancelConfirmation = cancelConfirmation;

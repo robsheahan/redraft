@@ -22,7 +22,8 @@ interface CallToolOptions {
   max_tokens: number;
   temperature?: number;
   system: string;
-  user: string;
+  /** Plain text, or content blocks (e.g. text + an image) for vision calls. */
+  user: string | Anthropic.Messages.ContentBlockParam[];
   tool: Anthropic.Messages.Tool;
   /** Number of additional attempts after the first (default 3 → 4 attempts total). */
   retries?: number;

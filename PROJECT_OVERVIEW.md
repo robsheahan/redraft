@@ -111,7 +111,7 @@ Three parallel Anthropic calls via `Promise.allSettled`. Wall-clock = max(pass1,
 Pass 1's holistic tool also returns a `skill_assessment` (pulled out server-side, never shown to the student — see **Skill taxonomy**). Rate-limited 10/hr per user, 5000/day global. Generation marks the student's `student_profile_synthesis` stale and folds skill signals into `student_skill_profile`.
 
 ### Maths feedback — subject_type `maths` (`api/generate-maths-feedback.ts`)
-Typed-only, line-by-line working (no paper/OCR). Students enter working as ordered `{math, reason}` lines on `submit-maths.html` (MathLive editors); three input modes — **structured** (per-line), **freeform**, **talk-through** (the latter two run a Haiku structuring pass, `api/structure-maths-working.ts`, to split prose into lines on submit). Two Sonnet passes (sequential — Pass C consumes Pass B):
+Students enter working as ordered `{math}` lines on `submit-maths.html` (MathLive editors). Input modes: **line-by-line** (per-line MathLive), **freeform**, **talk-through** (the latter two run a Haiku structuring pass, `api/structure-maths-working.ts`), and **📷 photo** (snap handwritten working → Claude Sonnet vision transcription, `api/transcribe-maths-working.ts`, client-downscaled → the same confirm screen → diagnose; single-question only in v1). Multi-part `(a)(b)(c)` questions (`tasks.parts`, "Hence"-aware) run the per-part flow — each part is diagnosed separately with earlier parts as context. Two Sonnet passes per question/part (sequential — Pass C consumes Pass B):
 - **Pass B — per-line diagnostic** (load-bearing): per-line typed status (ok / slip / error / following-through / reason-only) + `step_gaps` between lines.
 - **Pass C — holistic**: marker-voice `what_youve_done_well` / `top_priority` / `improvements`, plus the maths `skill_assessment`.
 
@@ -235,7 +235,8 @@ Rate limit: 5/hr per user per card kind for cohort; 8/hr per student per kind on
 ### Feedback + submissions
 - `POST /api/generate-feedback` — Essay three-pass Claude feedback. Auth-required. Rate-limited.
 - `POST /api/generate-maths-feedback` — Maths two-pass feedback (subject_type `maths`). Rate-limited.
-- `POST /api/structure-maths-working` — Haiku pass that splits freeform/talk-through maths input into `{math, reason}` lines.
+- `POST /api/structure-maths-working` — Haiku pass that splits freeform/talk-through maths input into `{math}` lines.
+- `POST /api/transcribe-maths-working` — Claude Sonnet **vision** pass that transcribes a photo of handwritten maths working into `{math}` lines (student confirms before diagnosis). Image sent base64 after client-side downscale.
 - `POST /api/generate-marking-guideline` — AI-generate a maths marking guideline (teacher, at task time).
 - `POST /api/generate-activity` — **Lesson Differentiator**: generate (or return the locked) per-student differentiated activity for a `lesson_builder` task. Student-triggered, lazy, auth-required; silent fallback to the main activity.
 - `POST /api/generate-criteria` — AI-generate marking criteria for a task (teacher).
