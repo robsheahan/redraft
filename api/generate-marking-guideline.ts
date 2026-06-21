@@ -49,12 +49,13 @@ export default withHandler({ methods: ['POST'], label: 'generate-marking-guideli
     return res.status(403).json({ error: 'Only teachers can generate marking guidelines.' });
   }
 
-  const { title, question, course, total_marks, outcomes } = (req.body || {}) as {
+  const { title, question, course, total_marks, outcomes, worked_solution } = (req.body || {}) as {
     title?: string;
     question?: string;
     course?: string;
     total_marks?: number | string;
     outcomes?: string[];
+    worked_solution?: string;
   };
 
   if (!title || !String(title).trim()) return res.status(400).json({ error: 'Title is required.' });
@@ -87,6 +88,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-marking-guideli
     course: course || null,
     totalMarks,
     outcomes: outcomesList,
+    workedSolution: typeof worked_solution === 'string' ? worked_solution.trim() : null,
   });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -112,54 +114,60 @@ export default withHandler({ methods: ['POST'], label: 'generate-marking-guideli
   }
 });
 
-function buildSystemPrompt(opts: { course: string | null; totalMarks: number; stage: Stage }): string {
+export function buildSystemPrompt(opts: { course: string | null; totalMarks: number; stage: Stage }): string {
   const isHsc = opts.stage === 6;
   const courseLine = opts.course ? `Course: ${opts.course}` : '';
   const stageLabel = opts.stage === 4 ? 'Stage 4 (Year 7–8)' : opts.stage === 5 ? 'Stage 5 (Year 9–10)' : 'Stage 6 (Year 11–12, HSC)';
+  const single = opts.totalMarks <= 1;
 
   return [
-    `You are an experienced NSW Mathematics teacher producing a marking guideline for a single classroom maths task.`,
+    `You are an experienced NSW Mathematics teacher producing a marking guideline for a single classroom maths task, in the authentic style of NESA's published HSC marking guidelines.`,
     courseLine,
     `Stage: ${stageLabel}`,
     `Total marks for this task: ${opts.totalMarks}`,
     ``,
-    isHsc
-      ? `For Stage 6 HSC Mathematics, produce a per-step marking guideline in the style of NESA's published HSC marking guidelines. Each line is one mark-bearing step the student must show. The total of all mark values across lines MUST equal ${opts.totalMarks}.`
-      : opts.stage === 5
-      ? `For Stage 5 (Year 9–10), produce a per-step marking guideline. Each line is one mark-bearing step the student must show. Use fewer, broader steps than HSC (typically 3–6 lines). The total of all mark values across lines MUST equal ${opts.totalMarks}.`
-      : `For Stage 4 (Year 7–8), produce a per-step marking guideline. Each line is one mark-bearing step the student must show. Use simple, holistic steps (typically 3–5 lines) — students at this stage are learning to show working, use the equals sign correctly, and answer in context. The total of all mark values across lines MUST equal ${opts.totalMarks}.`,
+    `A NESA marking guideline is a DESCENDING CRITERIA LADDER, not a list of additive steps. The TOP line is the full-mark achievement; each line below it describes a less-complete response worth one fewer mark, down to 1 mark. The mark on each line is the TOTAL marks a response reaching that depth earns — the marks do NOT sum to the task total.`,
     ``,
-    `Format requirements (STRICT):`,
-    `- One step per line.`,
-    `- Each line begins with "- " (hyphen space).`,
-    `- Each line ends with " (N mark)" or " (N marks)" — the mark value for that step in parentheses.`,
-    `- The mark values across all lines must sum to exactly ${opts.totalMarks}.`,
-    `- Plain text only. No headers. No bold. No backticks. No preamble. No closing remarks.`,
-    `- Steps must be specific to THIS task — drawn from the question, not generic placeholders.`,
+    `STRUCTURE (STRICT):`,
+    `- One criterion per line, ordered from full marks (top) down to 1 mark (bottom). No 0-mark line.`,
+    single
+      ? `- This is a ${opts.totalMarks}-mark task: output a single line — "Provides correct answer (1 mark)" — specialised to what the correct answer is.`
+      : `- The TOP line is the full-mark line ("(${opts.totalMarks} marks)") and MUST begin with one of: "Provides correct solution" (a worked calculation), "Provides correct proof" (a 'show'/'prove' question), "Provides correct graph" / "Provides correct sketch" (a graphing task), or "Provides correct answer with reasoning" (a justify/explain question). Specialise it lightly to the task.`,
+    `- Each line BELOW the top names a CONCRETE partial-achievement milestone drawn from THIS question, with its cumulative mark in parentheses, e.g. "(2 marks)" then "(1 mark)". Use NESA's milestone verbs: Finds, Calculates, Uses, Obtains, Applies, Identifies, Attempts, Establishes, Shows, Substitutes, Equates, Sets up, Recognises.`,
     isHsc
-      ? `- HSC marker voice. Reference specific NESA conventions where relevant: "show all working", "state in exact form", "with reasons", "with a labelled diagram", "in simplest form".`
-      : opts.stage === 5
-      ? `- Year 9–10 teacher voice. Emphasise showing working, correct notation, and answering in context.`
-      : `- Year 7–8 teacher voice. Emphasise showing each step, using "=" only between equal expressions, and writing the answer in a complete sentence where appropriate.`,
+      ? `- Append ", or equivalent merit" to every partial-credit line (every line except the top full-mark line). This is NESA's signal that any equally-advanced alternative method earns the mark.`
+      : `- Where a different valid method would earn the same mark, you may add ", or equivalent approach" to a partial line.`,
+    `- The bottom line is worth 1 mark and rewards the first meaningful step ("Attempts to…", "Finds…", "Sets up…").`,
+    `- Plain text only, one criterion per line. NO header row, NO "Criteria/Marks" labels, no bullets, no bold, no backticks, no preamble, no sample answer/worked solution, no closing remarks.`,
     ``,
-    `Example shape (do NOT copy verbatim — write specific steps for the task you are given):`,
-    `- Differentiates the function correctly using the chain rule (1 mark)`,
-    `- Sets derivative to zero and solves the resulting equation (1 mark)`,
-    `- Identifies and justifies the nature of each stationary point (1 mark)`,
-    `- Calculates the y-coordinate of each stationary point (1 mark)`,
-    `- States the absolute extrema with coordinates (1 mark)`,
+    `VERB-AWARE:`,
+    `- "Show that" / "Prove": the answer is given, so the top line is "Provides correct proof" and partial lines reward genuine progress TOWARD the given result ("Establishes …", "Begins by …"). A response that only restates the target earns nothing.`,
+    `- "Prove by induction": ladder as — establishes the base case (1 mark) → assumes and sets up the inductive step (2 marks) → completes a correct proof (full marks).`,
+    `- "Hence": a partial line should reference using the earlier result ("Uses part (a) to …${isHsc ? ', or equivalent merit' : ''}").`,
+    `- "Justify" / "Explain": the reasoning itself is mark-bearing; top line is "Provides correct answer with reasoning".`,
+    isHsc ? `- Reference HSC conventions where relevant: exact / simplest form, "+C", domain stated, units, with a labelled diagram.` : ``,
+    ``,
+    `EXAMPLE (a 3-mark task — write criteria SPECIFIC to your task, do not copy):`,
+    `Provides correct solution (3 marks)`,
+    `Finds the derivative and solves f'(x) = 0${isHsc ? ', or equivalent merit' : ''} (2 marks)`,
+    `Differentiates the function correctly${isHsc ? ', or equivalent merit' : ''} (1 mark)`,
   ].filter(Boolean).join('\n');
 }
 
-function buildUserPrompt(opts: {
+export function buildUserPrompt(opts: {
   title: string;
   question: string;
   course: string | null;
   totalMarks: number;
   outcomes: string[];
+  workedSolution?: string | null;
 }): string {
   const outcomesBlock = opts.outcomes.length > 0
     ? `Syllabus outcomes the task addresses:\n${opts.outcomes.map(o => `- ${o}`).join('\n')}`
+    : '';
+  // Anchor the criteria ladder to the teacher's actual solution steps when present.
+  const solutionBlock = opts.workedSolution
+    ? `\nThe teacher's worked solution (anchor each partial-credit milestone to a real step in THIS solution — its key transitions become the lower tiers; do NOT reproduce the solution in your output):\n${opts.workedSolution}\n`
     : '';
   return [
     `Task title: ${opts.title}`,
@@ -168,9 +176,9 @@ function buildUserPrompt(opts: {
     '',
     `Task question (what the student is asked to do):`,
     opts.question,
-    '',
+    solutionBlock,
     outcomesBlock,
     '',
-    `Generate the marking guideline now. One mark-bearing step per line. Mark values must sum to exactly ${opts.totalMarks}. Plain text only.`,
+    `Generate the marking guideline now as a DESCENDING criteria ladder — top line = full marks (${opts.totalMarks}), each line below worth one fewer mark, down to 1. Plain text, one criterion per line, no header.`,
   ].filter(Boolean).join('\n');
 }
