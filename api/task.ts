@@ -3,6 +3,7 @@ import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { parseRubricWithAI } from '../lib/parse-rubric-with-ai.js';
 import { withHandler } from '../lib/with-handler.js';
 import { validateExamQuestions, studentTaskView, type ExamQuestion } from '../lib/exam-questions.js';
+import { validateMathsParts, studentPartsView, type MathsPart } from '../lib/maths-parts.js';
 
 /**
  * Task CRUD under the classes redesign.
@@ -120,6 +121,11 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
     if (hasQuestions) {
       payload = studentTaskView(payload, user.id, { revealAnswerKey: isGraded });
     }
+    // Multi-part maths: strip each part's worked_solution (always) + marking
+    // guideline (pre-grade) — the per-part analogue of the single-question strip.
+    if (task.subject_type === 'maths' && Array.isArray(payload.parts)) {
+      payload.parts = studentPartsView(payload.parts, { isGraded });
+    }
   }
 
   return res.status(200).json({
@@ -135,7 +141,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
 
   const supabase = getSupabase();
   const {
-    class_id, course, title, instructions, question, questions, task_type, total_marks, due_date,
+    class_id, course, title, instructions, question, questions, parts, task_type, total_marks, due_date,
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
     hide_criteria_from_students, completion_only,
     subject_type, marking_guideline, worked_solution, lesson_builder, attachments, time_limit_minutes,
@@ -167,9 +173,25 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     examTotalMarks = v.totalMarks;
   }
 
+  // Multi-part maths (take-home feedback): a maths feedback_task may carry an
+  // ordered `parts` array (sub-questions (a)(b)(c) of one question) instead of a
+  // flat scalar question. tasks.question holds the shared stem (optional here).
+  let mathsParts: MathsPart[] | null = null;
+  let mathsPartsTotal: number | null = null;
+  if (parts !== undefined && parts !== null) {
+    if (subjectType !== 'maths' || taskMode !== 'feedback_task') {
+      return res.status(400).json({ error: 'Multi-part questions are only available on a take-home maths task.' });
+    }
+    const v = validateMathsParts(parts);
+    if ('error' in v) return res.status(400).json({ error: v.error });
+    mathsParts = v.parts;
+    mathsPartsTotal = v.totalMarks;
+  }
+
   // Single-question tasks still require a scalar question; multi-question exams
-  // carry their questions in the array instead.
-  if (!examQuestions && (!question || !String(question).trim())) {
+  // and multi-part maths carry their content in their arrays (the stem is
+  // optional once parts exist).
+  if (!examQuestions && !mathsParts && (!question || !String(question).trim())) {
     return res.status(400).json({ error: 'Task question is required.' });
   }
   const hasCriteria = !!(criteria_text && String(criteria_text).trim());
@@ -205,9 +227,11 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     instructions: instructions || null,
     question: examQuestions ? null : (question || null),
     questions: examQuestions,
+    parts: mathsParts,
     task_type: task_type || null,
     task_mode: taskMode,
-    total_marks: examQuestions ? examTotalMarks : (total_marks || null),
+    total_marks: examQuestions ? examTotalMarks
+      : (mathsParts && mathsPartsTotal != null ? mathsPartsTotal : (total_marks || null)),
     due_date: due_date || null,
     outcomes: outcomes || [],
     criteria: criteria || [],
@@ -241,7 +265,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   if (!user) return res.status(401).json({ error: 'Not authenticated' });
 
   const {
-    id, course, title, instructions, question, questions, task_type, total_marks, due_date,
+    id, course, title, instructions, question, questions, parts, task_type, total_marks, due_date,
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
     hide_criteria_from_students,
     task_mode: incomingTaskMode, completion_only,
@@ -281,6 +305,19 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     allow_student_attachments: typeof allow_student_attachments === 'boolean' ? allow_student_attachments : undefined,
   };
   Object.keys(patch).forEach(k => patch[k] === undefined && delete patch[k]);
+
+  // Multi-part maths: validate + set parts (and derive total_marks) when the
+  // client sends them. null clears them back to a single-question task.
+  if (parts !== undefined) {
+    if (parts === null) {
+      patch.parts = null;
+    } else {
+      const v = validateMathsParts(parts);
+      if ('error' in v) return res.status(400).json({ error: v.error });
+      patch.parts = v.parts;
+      if (v.totalMarks != null) patch.total_marks = v.totalMarks;
+    }
+  }
 
   // Re-run AI parse whenever criteria_text is part of the patch — a teacher
   // might have rewritten the rubric, so the cached structure is stale.

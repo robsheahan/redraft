@@ -19,7 +19,7 @@ Central design question (unchanged): **"How can we get the most accurate possibl
 |---|------|--------|
 | 0 | Drop the reasoning line | ✅ done 2026-06-21 (uncommitted) |
 | 1 | Accuracy foundation — hidden worked solution + verification | ✅ Phase 1 done 2026-06-21 (uncommitted; **migration not yet run**). Phase 2 deferred |
-| 2 | Multi-part questions (`(a)(b)(c)` + "Hence") for maths | later |
+| 2 | Multi-part questions (`(a)(b)(c)` + "Hence") for maths | ✅ done 2026-06-21 (uncommitted; **migration not yet run**) |
 | 3 | Handwriting / OCR — **student** input (transcribe → confirm → diagnose) | later |
 | 3b | Handwriting / OCR — **teacher** authoring (photo → structured exam; worked solution) | later |
 | 4 | Maths-native cohort insights (aggregate the per-line categories) | later |
@@ -148,6 +148,74 @@ A symbolic/numeric check (math.js inline, a small sympy service, or Claude tool-
 - `public/new-task.html`: "Worked solution (optional · hidden from students)" textarea in Step 3, maths-only, wired into the create payload.
 - Verified: `tsc` clean; prompt-render smoke (block present with a solution, absent without, no-leak + alt-method rules in the system prompt); leak audit — `worked_solution` appears in no student surface or read path.
 - **Not wired:** the silent Haiku insights pass (`submit-for-marking` → marked/quick maths) doesn't use the worked solution yet — only the `feedback_task` Pass B does. And `new-task.html` is create-only, so there's no edit-existing UI for the field yet (consistent with `marking_guideline`).
+
+---
+
+## #2 — Multi-part maths questions (take-home feedback) — SPEC
+
+**Scope (locked — option A):** a maths `feedback_task` whose question has parts `(a)(b)(c)`, each part worked separately and getting its own per-line diagnostic + holistic feedback. "Hence" parts see earlier parts. This is the *feedback* flow (where the moat is) — **not** the in-class exam `questions[]` infra (that's a later option B that would reuse this part model). Single-question maths tasks are unchanged; multi-part is purely additive (a task either has `parts` or it doesn't).
+
+### Core idea — reuse the single-part engine per part
+A multi-part question = **run the existing single-part Pass B + Pass C once per part**, in parallel, each part seeing the prior parts (their text + the student's working + their worked solutions) as context for "Hence"/cross-references. Minimal new engine logic; the per-part worked-solution anchor from #1 carries straight over.
+
+### Data model
+- **`tasks.question`** keeps holding the shared **stem** (common preamble; may be empty).
+- **New `tasks.parts` jsonb** (nullable) — ordered `[{ id, label, text, marks?, marking_guideline?, worked_solution? }]`. Null/absent = single-question task (current behaviour). `label` is free text (`"(a)"`, `"(b)(i)"`) — **flat list, no real nesting** (same pragmatic call the exam feature made). Per-part `marking_guideline` + `worked_solution` are optional and hidden (extend #1 per part).
+- **New `submissions.part_working` jsonb** (nullable) — `[{ part_id, working_lines: [{math}], input_mode }]`. Null = single-question (uses existing `working_lines`). Distinct name from the exam `submissions.answers` to avoid collision.
+- **`submissions.feedback`** for multi-part: `{ kind: 'maths_multipart', parts: [{ part_id, line_annotations, step_gaps, what_youve_done_well, top_priority, improvements }] }`. Renderers branch on `kind` (`'maths'` vs `'maths_multipart'`).
+- **`skill_assessment`**: concat each part's Pass-C `skill_assessment` into one array → `recordSkillSignals` (already takes an array; no new rollup logic).
+- Migration: `scripts/maths-multipart-migration.sql` (`tasks.parts`, `submissions.part_working`).
+
+### New lib — `lib/maths-parts.ts`
+Mirrors `lib/exam-questions.ts` but simpler (no MC, no answer key, no scrambling):
+- types (`MathsPart`), `validateMathsParts(raw)` → normalised parts + derived total (caps: ≤ ~12 parts, text length).
+- `studentPartsView(parts, { isGraded })` — the chokepoint for student reads: strips `worked_solution` from every part **always**, and `marking_guideline` **pre-grading** (revealed post-grade, mirroring the single-question marking-guideline reveal).
+
+### API
+- **`api/task.ts`**: accept `parts` only for `subject_type === 'maths' && task_mode === 'feedback_task'` (reject otherwise — policy, like the exam gate); validate via `validateMathsParts`; derive `total_marks` from per-part marks if present. For non-owners, apply `studentPartsView` (the per-part analogue of the single-question strip + the exam `studentTaskView`).
+- **`api/generate-maths-feedback.ts`**: if `task.parts?.length`, branch — for each part run Pass B then Pass C (per-part worked solution + guideline + prior-part context for "Hence"); `Promise.allSettled` across parts (all working is already submitted, so parts diagnose in parallel even with cross-refs). Assemble the `maths_multipart` feedback; concat skill assessments. Re-skin guard from #1 still applies per part (drop a part's worked solution if that part was re-skinned — N/A until Lesson Differentiator supports parts, so simply: parts + lesson_builder are mutually exclusive in v1).
+- **`api/submit-for-marking.ts`**: out of scope (multi-part is feedback-task only in v1; marked/quick stay single).
+
+### Prompts — `prompts/maths-system.ts`
+- `buildMathsPerLineUserPrompt` gains an optional `priorParts` block: for "Hence", inject earlier parts' `{ label, text, student working, worked solution }` as "EARLIER PARTS (context — the student's results from these may be used here)". Same never-reveal posture.
+- Stem (`tasks.question`) prepended to each part's question context so the model has the common setup.
+
+### UI
+- **`new-task.html`** (maths feedback authoring): a **stem** field + a **parts editor** (ordered list; per part: label, text, optional marks, optional hidden marking guideline, optional hidden worked solution). Mirrors the exam-questions editor pattern but maths-flavoured. A "single question" task is the zero-parts default; "+ Add part" switches it to multi-part.
+- **`submit-maths.html`**: stem at top, then per part: part label + text + its own working area (the Line-by-line / Freeform / Talk-through modes, namespaced per part). One submit → all parts. 3-draft model unchanged (a draft = the whole multi-part attempt; prior-draft seed restores all parts).
+- **`feedback-maths.html`**: per part — label + text, working + per-line annotations + step gaps, then that part's holistic (done well / top priority / improvements). Branch on `kind`.
+- **`mark-submission-maths.html`**: per part — working + AI annotations + teacher notes; overall total mark + comment (per-part marks optional, v1 keeps one overall mark like the single-question screen).
+
+### Scope calls (defaults — flag if any is wrong)
+- **Flat parts, free-text labels** (handles `(b)(i)` without a nested tree). ✅ default
+- **Per-part marks optional** (it's a feedback task, not an exam). ✅ default
+- **Per-part holistic only** (no separate whole-question holistic in v1 — simpler; can add later). ✅ default
+- **Multi-part is feedback-task only** in v1; marked/quick + Lesson Differentiator stay single-question. ✅ default
+- **Per-part worked solution + marking guideline**, both optional/hidden (extend #1). ✅ default
+
+### Build order
+1. Migration + `lib/maths-parts.ts` (types, validate, studentPartsView) + a smoke test.
+2. `api/task.ts` accept/validate/strip parts.
+3. Engine: `generate-maths-feedback.ts` per-part branch + prompt `priorParts` block.
+4. `new-task.html` stem + parts authoring.
+5. `submit-maths.html` per-part working.
+6. `feedback-maths.html` per-part feedback.
+7. `mark-submission-maths.html` per-part marking.
+8. PROJECT_OVERVIEW + plan update; verify (tsc, smoke, live per-part run, leak test on per-part worked solution).
+
+### Verify
+- `tsc` clean; `lib/maths-parts.ts` smoke (validation + studentPartsView strips worked_solution always, marking_guideline pre-grade).
+- Live per-part run: a 3-part question (with a "Hence" part) returns per-part diagnostics; the worked solution never leaks; a "Hence" part correctly uses the earlier part's result.
+- Leak test: per-part `worked_solution` / pre-grade `marking_guideline` never in a student payload.
+
+### Done — #2 (2026-06-21, uncommitted)
+- **Migration `scripts/maths-multipart-migration.sql` (tasks.parts, submissions.part_working) NOT yet run in Supabase.** ⚠️ Run before deploy.
+- `lib/maths-parts.ts` (types, `validateMathsParts`, `studentPartsView`); smoke `scripts/maths-parts-smoke-test.ts` (22 checks pass).
+- `api/task.ts`: accept/validate `parts` (maths feedback_task only), derive total, `studentPartsView` strip for non-owners. `api/me.ts` + `api/task-submissions.ts` carry `part_working`.
+- `api/generate-maths-feedback.ts`: per-part branch (Pass B+C per part, parallel, prior-part "Hence" context, concat skill_assessment); single-question path preserved. Prompt `priorParts` block in `maths-system.ts`.
+- UIs: `new-task.html` (Single/Multi-part picker + parts editor — per-part text/marks/worked-solution/guideline), `submit-maths.html` (per-part working), `feedback-maths.html` (`kind:'maths_multipart'` per-part view), `mark-submission-maths.html` (per-part working + AI annotations + per-part guideline).
+- Verified: `tsc` clean; parts smoke (22/22); **live Hence run** — per-part diagnosis correctly used part (a)'s result for the "Hence" part and never leaked the worked solution.
+- **v1 limitations (deliberate):** multi-part input is line-by-line per part only (no freeform/talk-through per part); **no per-line teacher annotations** for multi-part (the marker gives an overall mark + comment — `line_index` would collide across parts); multi-part is `feedback_task` only; Lesson Differentiator stays single-question (parts require feedback_task, LB requires quick_task — already mutually exclusive).
 
 ---
 
