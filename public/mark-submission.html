@@ -219,6 +219,16 @@
     .exam-mark-input { padding: 8px; border: 1px solid #ed7615; border-radius: 6px; font-size: 15px; font-family: inherit; text-align: center; font-weight: 700; width: 64px; }
     .exam-mark-auto { font-size: 13px; font-weight: 600; color: #059669; }
     .exam-mc-summary { font-size: 13px; color: #6b7280; margin-top: 10px; padding-top: 8px; border-top: 1px solid #f1ece2; }
+    /* Inline per-answer mark control (directly under each answer) */
+    .exam-inline-mark { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ece4d6; }
+    .exam-inline-mark-label { font-size: 13px; font-weight: 700; color: #111827; }
+    .exam-inline-mark-max { font-size: 14px; color: #6b7280; }
+    .exam-inline-auto-badge { font-size: 14px; font-weight: 700; padding: 3px 10px; border-radius: 6px; }
+    .exam-inline-auto-badge.is-correct { background: #d1fae5; color: #065f46; }
+    .exam-inline-auto-badge.is-wrong { background: #fee2e2; color: #991b1b; }
+    .exam-inline-auto-note { font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
+    .exam-total-card { position: sticky; top: 16px; }
+    .exam-total-hint { font-size: 12.5px; color: #9ca3af; margin: 0 0 10px; }
     /* Read-only MC display on the marking screen */
     .mc-readonly { margin-top: 8px; }
     .mc-opt { font-size: 14px; color: #374151; padding: 7px 10px; border-radius: 6px; margin-bottom: 5px; border: 1px solid #ece4d6; }
@@ -556,8 +566,18 @@
         }
         if (a.type === 'multiple_choice') {
           html += renderMcReadonly(a, q);
+          const autoRow = (submission.question_marks || []).find(m => m.question_id === a.question_id && m.source === 'auto');
+          const autoMark = autoRow ? autoRow.mark : 0;
+          const correct = autoMark > 0;
+          html += '<div class="exam-inline-mark exam-inline-mark-auto">';
+          html += '<span class="exam-inline-auto-badge ' + (correct ? 'is-correct' : 'is-wrong') + '">' + e(String(autoMark)) + ' / ' + e(String(a.marks)) + '</span>';
+          html += '<span class="exam-inline-auto-note">auto-marked · ' + (correct ? 'correct' : 'incorrect') + '</span></div>';
         } else {
           html += '<div class="draft-text exam-answer-draft" data-qid="' + e(a.question_id) + '" id="examDraft_' + e(a.question_id) + '">' + renderExamAnswerDraft(a) + '</div>';
+          html += '<div class="exam-inline-mark">';
+          html += '<label class="exam-inline-mark-label" for="examMark_' + e(a.question_id) + '">Mark</label>';
+          html += '<input type="number" id="examMark_' + e(a.question_id) + '" class="exam-mark-input" data-qid="' + e(a.question_id) + '" min="0" max="' + e(String(a.marks)) + '" step="0.5">';
+          html += '<span class="exam-inline-mark-max">/ ' + e(String(a.marks)) + '</span></div>';
         }
         html += '</div>';
       });
@@ -570,18 +590,8 @@
       html += '<div>';
       const mcCount = answers.filter(a => a.type === 'multiple_choice').length;
       const mcCorrect = (submission.question_marks || []).filter(m => m.source === 'auto' && m.mark > 0).length;
-      html += '<div class="card"><h3>Marks</h3>';
-      answers.forEach((a, i) => {
-        if (a.type === 'multiple_choice') {
-          const autoRow = (submission.question_marks || []).find(m => m.question_id === a.question_id && m.source === 'auto');
-          const autoMark = autoRow ? autoRow.mark : 0;
-          html += '<div class="exam-mark-row"><span class="exam-mark-label">Q' + (i + 1) + ' <span class="exam-mark-mc">multiple choice</span></span>';
-          html += '<span class="exam-mark-auto">' + e(String(autoMark)) + ' / ' + e(String(a.marks)) + ' · auto</span></div>';
-        } else {
-          html += '<div class="exam-mark-row"><span class="exam-mark-label">Q' + (i + 1) + '</span>';
-          html += '<span class="exam-mark-input-wrap"><input type="number" class="exam-mark-input" data-qid="' + e(a.question_id) + '" min="0" max="' + e(String(a.marks)) + '" step="0.5"> / ' + e(String(a.marks)) + '</span></div>';
-        }
-      });
+      html += '<div class="card exam-total-card"><h3>Total</h3>';
+      html += '<p class="exam-total-hint">Enter each mark directly beneath its answer on the left — the total updates here.</p>';
       if (mcCount) html += '<div class="exam-mc-summary">Multiple choice: ' + mcCorrect + ' / ' + mcCount + ' correct — automarked</div>';
       html += '<div class="total-row"><span class="total-label">Total</span><span class="total-value" id="totalDisplay">— / ' + e(String(task.total_marks || '—')) + '</span></div>';
       html += '</div>';
