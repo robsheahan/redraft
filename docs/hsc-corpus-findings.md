@@ -88,7 +88,7 @@ NESA scales the printed answer space to the marks (a 1-mark part ≈ 4 lines; a 
 ## 4. Prioritised recommendations (by ROI)
 
 1. **Load the marking-feedback corpus as maths marker-voice calibration.** The deferred §11 item, now unblocked — directly serves the central design question. Parse the 11 feedback PDFs into the `marker-voice-loader.ts` calibration block (common-error + better-response + voice patterns, per course). *Highest ROI; we have the data.*
-2. **Make `generate-marking-guideline` emit NESA's authentic criteria ladder** (§3a). Cheap, high-value, improves a feature teachers see immediately; generate it from the worked solution.
+2. ✅ **DONE — `generate-marking-guideline` now emits NESA's authentic descending criteria ladder** (§3a): top line `Provides correct solution/proof/…` at full marks, descending cumulative tiers, `, or equivalent merit` on partials, NESA verb vocabulary, verb-aware (show/prove/induction/hence/justify), and it anchors to the teacher's worked solution when present. Stage-aware (Stage 4/5 use a simpler ladder).
 3. **Extend the error-category enum + insights** with the validated additions (§2b) and the priority ordering (§2c).
 4. **Provided-figure (image/table) stimulus** rendered to students (§3d) — unblocks "read off the graph" questions and reuses the #3b pipeline.
 5. **Two-level part nesting + MC/extended container** (§3b, §3c) — for faithful Extension and full-paper authoring.

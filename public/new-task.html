@@ -820,9 +820,12 @@
 
       try {
         const endpoint = isMaths ? '/api/generate-marking-guideline' : '/api/generate-criteria';
+        // For maths, anchor the ladder to the worked solution if the teacher has entered one.
+        const wsEl = document.getElementById('workedSolutionText');
+        const worked_solution = isMaths && wsEl ? (wsEl.value || '').trim() : '';
         const res = await authFetch(endpoint, {
           method: 'POST',
-          body: JSON.stringify({ title, question, course, total_marks: totalMarks, outcomes }),
+          body: JSON.stringify({ title, question, course, total_marks: totalMarks, outcomes, worked_solution }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || ('Failed to generate ' + noun + '.'));
