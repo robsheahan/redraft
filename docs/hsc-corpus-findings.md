@@ -89,10 +89,26 @@ NESA scales the printed answer space to the marks (a 1-mark part ≈ 4 lines; a 
 
 1. **Load the marking-feedback corpus as maths marker-voice calibration.** The deferred §11 item, now unblocked — directly serves the central design question. Parse the 11 feedback PDFs into the `marker-voice-loader.ts` calibration block (common-error + better-response + voice patterns, per course). *Highest ROI; we have the data.*
 2. ✅ **DONE — `generate-marking-guideline` now emits NESA's authentic descending criteria ladder** (§3a): top line `Provides correct solution/proof/…` at full marks, descending cumulative tiers, `, or equivalent merit` on partials, NESA verb vocabulary, verb-aware (show/prove/induction/hence/justify), and it anchors to the teacher's worked solution when present. Stage-aware (Stage 4/5 use a simpler ladder).
-3. **Extend the error-category enum + insights** with the validated additions (§2b) and the priority ordering (§2c).
+3. ✅ **DONE — extended the error-category enum + insights** with the validated additions (§2b): `transcription_error`, `reference_sheet_misuse` (Stage 6), `incomplete_answer`, `statistical_interpretation`, plus a sig-fig-vs-decimal-place refinement of `precision_wrong`. Wired through the diagnostic tool, the stage-aware category guide, the feedback renderer, and the insights "errors by category" card. Also encoded the marker **priority ordering** (§2c) into the holistic `top_priority` selector.
 4. **Provided-figure (image/table) stimulus** rendered to students (§3d) — unblocks "read off the graph" questions and reuses the #3b pipeline.
 5. **Two-level part nesting + MC/extended container** (§3b, §3c) — for faithful Extension and full-paper authoring.
 6. **(Bigger bet) student graph/diagram/table input** — the structural ceiling on how much of a real HSC paper we can ever cover. Decide deliberately; biggest impact on Standard 1/2.
+
+---
+
+## Backlog — structural items to return to
+
+Recommendations #1–#3 are done (calibration, authentic guideline, error categories + priority ordering). What's left are the larger, structural builds the corpus exposed. In rough priority order:
+
+1. **Provided-figure / table stimulus rendered to students.** Most non-pure-algebra HSC questions ship a graph/diagram/table the student must read or annotate — and many "read off the graph" / "from the diagram" parts are *unauthorable* without it, even when the answer is line-only. **Why first:** unblocks the widest class of questions and is the prerequisite for everything visual. **Scope:** medium — authoring lets a teacher attach a figure/table to a question *or part* as first-class stimulus (reuse `teacher_attachments` + the #3b photo pipeline); the student submit/feedback/marking screens render it inline (today's attachments are auxiliary). No new input modality needed.
+
+2. **Two-level part nesting `(a) → (i)(ii)(iii)`.** Standard/Advanced are flat `(a)(b)(c)` (our `tasks.parts` already fits); **Extension routinely nests two levels** and can't be authored faithfully today. **Scope:** medium — extend the `parts` model + parts editor to one level of children; thread the nesting through submit / feedback (`maths_multipart`) / marking renderers. Value is Extension-specific.
+
+3. **MC + extended-response in one assessment container.** Every real HSC paper mixes Section I (10–15 MC) with Section II. We have MC mode (`questions[]` exam) and the maths extended flow as separate things. **Scope:** medium–large — let one assessment hold both an MC section and extended/maths questions; reconcile the two submission paths.
+
+4. **Student diagram / graph / table input (the ceiling).** ~10–30% of Section II marks require outputs we can't capture — graph/curve sketching, drawing/labelling diagrams, completing tables, region/number-line shading, annotating a provided figure. **Worst in Standard 1/2 (20–30%)**, lighter in Advanced/Extension (8–18%, mostly the algebra/proof core we already handle). **Why last:** biggest build (new input surfaces: a plotting canvas, a table grid, drawing-on-figure) and biggest open product question — decide deliberately. Until then, ProofReady is a strong fit for the Advanced/Extension algebra-proof spine and a partial fit for Standard.
+
+Smaller follow-ons: add 2023/2025 feedback years to the calibration corpus (more marker-voice material); give the silent Haiku insights pass a lightweight per-line category output so marked/quick maths also feed the "errors by category" card.
 
 ---
 
