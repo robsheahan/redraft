@@ -14,3 +14,6 @@ demo-screenshots/*.mp3
 demo-screenshots/*.m4a
 demo-screenshots/*.aiff
 demo-screenshots/*.gif
+
+# Local HSC past-paper PDFs (binaries, not for the repo)
+HSC Maths Resources/
