@@ -113,6 +113,21 @@
     #examSubmitCard { padding: 14px 26px; }
     #examSubmitCard .draft-meta-row { margin-top: 0; margin-bottom: 8px; }
     #examSubmitCard .submit-final-hint { margin-top: 10px; }
+    /* Booklet (one question per page) */
+    .booklet-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .booklet-progress { font-size: 14px; font-weight: 700; color: #111827; }
+    .booklet-dots { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .booklet-dot { width: 30px; height: 30px; border-radius: 8px; border: 1px solid #e8e0d4; background: #fff; color: #6b7280; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.12s; }
+    .booklet-dot:hover { border-color: #d1d5db; }
+    .booklet-dot.is-answered { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+    .booklet-dot.is-current { border-color: #ed7615; color: #ed7615; box-shadow: 0 0 0 2px rgba(237,118,21,0.15); }
+    .booklet-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 14px 0 4px; }
+    .booklet-btn { padding: 11px 20px; border-radius: 10px; border: 1px solid #e8e0d4; background: #fff; color: #374151; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .booklet-btn:hover:not(:disabled) { border-color: #ed7615; color: #ed7615; }
+    .booklet-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .booklet-btn.booklet-next { background: #ed7615; border-color: #ed7615; color: #fff; }
+    .booklet-btn.booklet-next:hover { background: #d4690f; color: #fff; }
+    .booklet-submit { margin-top: 12px; }
     .loading-overlay { display: none; text-align: center; padding: 48px 20px; }
     .loading-overlay.visible { display: block; }
     .spinner { width: 36px; height: 36px; border: 3px solid #e8e0d4; border-top-color: #ed7615; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
@@ -934,16 +949,26 @@
       }).join('\n\n');
     }
 
+    // Booklet layout: one question per page. Every question card is rendered up
+    // front (so answers, autosave, word counts and the over-time snapshot all
+    // keep working on the full DOM) — only the active page is shown.
     function renderExamAnswerBlocks() {
       var typedOnly = currentTask.typed_response_only !== false;
+      var questions = currentTask.questions || [];
       var html = '';
       if (typedOnly) {
         html += '<div class="typed-only-banner"><span class="pill">Typed only</span><span>Pasting is disabled for this task. ProofReady records your typing for your teacher.</span></div>';
       }
       html += '<div id="examTimer"></div>';
-      (currentTask.questions || []).forEach(function(q, i) {
-        html += '<div class="card exam-answer-block" data-qid="' + e(q.id) + '">';
-        html += '<div class="exam-answer-head"><span class="exam-answer-num">Question ' + (i + 1) + '</span>';
+
+      // Top bar: progress + save indicator, then a clickable question strip.
+      html += '<div class="booklet-bar"><span class="booklet-progress" id="bookletProgress"></span><span class="save-indicator" id="saveIndicator"></span></div>';
+      html += '<div class="booklet-dots" id="bookletDots"></div>';
+
+      html += '<div id="bookletPages">';
+      questions.forEach(function(q, i) {
+        html += '<div class="card exam-answer-block booklet-page" data-page="' + i + '" data-qid="' + e(q.id) + '"' + (i === 0 ? '' : ' hidden') + '>';
+        html += '<div class="exam-answer-head"><span class="exam-answer-num">Question ' + (i + 1) + ' of ' + questions.length + '</span>';
         if (q.marks) html += '<span class="exam-answer-marks">' + e(String(q.marks)) + ' mark' + (q.marks == 1 ? '' : 's') + '</span>';
         html += '</div>';
         html += '<div class="task-question">' + renderTaskDescription(q.text || '', e) + '</div>';
@@ -962,14 +987,68 @@
         }
         html += '</div>';
       });
-      html += '<div class="card" id="examSubmitCard">';
-      html += '<div class="draft-meta-row" style="justify-content:flex-end"><div class="save-indicator" id="saveIndicator"></div></div>';
+      html += '</div>'; // bookletPages
+
+      // Bottom navigation. "Next" becomes hidden on the last page, where the
+      // submit card appears instead.
+      html += '<div class="booklet-nav">';
+      html += '<button type="button" class="booklet-btn" id="bookletPrev" onclick="examPrev()">← Previous</button>';
+      html += '<button type="button" class="booklet-btn booklet-next" id="bookletNext" onclick="examNext()">Next →</button>';
+      html += '</div>';
+
+      html += '<div class="card booklet-submit" id="examSubmitCard" hidden>';
       if (currentTask.allow_student_attachments) html += '<div class="attach-block"><div id="studentAttachmentsMount"></div></div>';
-      html += '<div class="submit-row"><button class="submit-btn" onclick="submitForMarking()" style="max-width:340px">Submit</button></div>';
+      html += '<div class="submit-row"><button class="submit-btn" onclick="submitForMarking()" style="max-width:340px">Submit exam</button></div>';
       html += '<div class="submit-final-hint">Once submitted, you can\'t resubmit. Your teacher will mark this and you\'ll see your result when they\'re done.</div>';
       html += '</div>';
       return html;
     }
+
+    // ---- Booklet navigation ----
+    var examCurrentIndex = 0;
+    function examPageCount() { return (currentTask && currentTask.questions) ? currentTask.questions.length : 0; }
+    function showExamPage(i) {
+      var n = examPageCount();
+      if (n === 0) return;
+      examCurrentIndex = Math.max(0, Math.min(n - 1, i));
+      document.querySelectorAll('.booklet-page').forEach(function(p) {
+        p.hidden = parseInt(p.dataset.page, 10) !== examCurrentIndex;
+      });
+      var prog = document.getElementById('bookletProgress');
+      if (prog) prog.textContent = 'Question ' + (examCurrentIndex + 1) + ' of ' + n;
+      var isLast = examCurrentIndex === n - 1;
+      var prev = document.getElementById('bookletPrev');
+      var next = document.getElementById('bookletNext');
+      var submitCard = document.getElementById('examSubmitCard');
+      if (prev) prev.disabled = examCurrentIndex === 0;
+      if (next) next.style.display = isLast ? 'none' : '';
+      if (submitCard) submitCard.hidden = !isLast;
+      updateBookletDots();
+      var active = document.querySelector('.booklet-page[data-page="' + examCurrentIndex + '"]');
+      if (active) { var inp = active.querySelector('textarea, input'); if (inp) setTimeout(function() { try { inp.focus(); } catch (err) {} }, 30); }
+      window.scrollTo(0, 0);
+    }
+    function examNext() { showExamPage(examCurrentIndex + 1); }
+    function examPrev() { showExamPage(examCurrentIndex - 1); }
+    function gotoExamPage(i) { showExamPage(i); }
+    window.examNext = examNext; window.examPrev = examPrev; window.gotoExamPage = gotoExamPage;
+
+    function isExamQuestionAnswered(q) {
+      if (q.type === 'multiple_choice') return !!document.querySelector('.exam-mc-radio[name="examq_' + q.id + '"]:checked');
+      var ta = document.getElementById('examAns_' + q.id);
+      return !!(ta && ta.value.trim());
+    }
+    function updateBookletDots() {
+      var dots = document.getElementById('bookletDots');
+      if (!dots) return;
+      var questions = currentTask.questions || [];
+      dots.innerHTML = questions.map(function(q, i) {
+        var answered = isExamQuestionAnswered(q);
+        var cls = 'booklet-dot' + (i === examCurrentIndex ? ' is-current' : '') + (answered ? ' is-answered' : '');
+        return '<button type="button" class="' + cls + '" onclick="gotoExamPage(' + i + ')" title="Question ' + (i + 1) + (answered ? ' (answered)' : '') + '">' + (i + 1) + '</button>';
+      }).join('');
+    }
+    window.updateBookletDots = updateBookletDots;
 
     function renderExamQuestionMaterials() {
       if (!window.Attachments) return;
@@ -1053,12 +1132,14 @@
       var els = examQuestionEls();
       var radios = Array.prototype.slice.call(document.querySelectorAll('.exam-mc-radio'));
       if (!els.length && !radios.length) return;
+      showExamPage(0);
 
       // Restore autosaved answers + telemetry + exam clock + deadline snapshot.
       loadAutosave(currentTask.id).then(function(data) {
         if (!data) { if (!savedAt) setSaveIndicator('idle'); return; }
         if (data.answers && typeof data.answers === 'object') {
           applyExamAnswers(data.answers);
+          updateBookletDots();
           examLastSavedJSON = JSON.stringify(readExamAnswers());
           savedAt = data.updated_at ? new Date(data.updated_at).getTime() : Date.now();
           setSaveIndicator('saved');
@@ -1084,6 +1165,7 @@
       els.forEach(function(el) {
         el.addEventListener('input', function() {
           updateExamWordCount(el);
+          updateBookletDots();
           var now = Date.now();
           examOnActivity(now);
           telemetry.keystroke_count += 1;
@@ -1126,6 +1208,7 @@
       radios.forEach(function(r) {
         r.addEventListener('change', function() {
           examOnActivity(Date.now());
+          updateBookletDots();
           scheduleExamAutosave();
         });
       });
