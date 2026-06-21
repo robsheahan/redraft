@@ -692,6 +692,11 @@
             </div>
           </div>
         </div>
+        <div class="form-group" id="workedSolutionGroup" style="display:none">
+          <label>Worked solution <span style="font-weight:500;color:#9ca3af">(optional · hidden from students)</span></label>
+          <div class="hint">Paste your full worked solution. ProofReady uses it only to mark each line accurately — students never see it.</div>
+          <textarea class="criteria-textarea" id="workedSolutionText" placeholder="Your full step-by-step solution, ending in the final answer."></textarea>
+        </div>
       </div>
 
       <!-- In-class exam: time limit (shown only for in_class_exam) -->
@@ -867,6 +872,7 @@
       var typedOnlyHelp = document.querySelector('#typedOnlyCard .toggle-sub');
 
       var hideCritCard = document.getElementById('hideCriteriaCard');
+      var wsGroup = document.getElementById('workedSolutionGroup');
       if (subject === 'maths') {
         if (step3) step3.textContent = 'Marking guideline (optional)';
         if (step3Hint) step3Hint.textContent = 'Optional per-step mark allocation. Helps ProofReady flag steps the student has skipped. Skip this for in-class practice or Year 7–10 tasks where you\'d mark the working holistically. Students never see this.';
@@ -888,6 +894,7 @@
         // generate-maths-feedback API doesn't include them in any student
         // payload), so the essay-style hide-criteria toggle is irrelevant.
         if (hideCritCard) hideCritCard.parentElement.style.display = 'none';
+        if (wsGroup) wsGroup.style.display = '';
       } else {
         if (step3) step3.textContent = 'Marking criteria';
         if (step3Hint) step3Hint.textContent = 'Enter your marking criteria exactly as they appear on your task notification. ProofReady will detect the different criteria and marking levels automatically.';
@@ -903,6 +910,7 @@
         }
         if (typedOnlyHelp) typedOnlyHelp.textContent = 'Disables paste in the draft box. Teachers see typing telemetry (keystrokes, paste attempts, time on task). Recommended for assessment integrity.';
         if (hideCritCard) hideCritCard.parentElement.style.display = '';
+        if (wsGroup) wsGroup.style.display = 'none';
       }
     }
 
@@ -982,7 +990,7 @@
           '<button type="button" class="exam-opt-add">+ Add option</button>' +
           '<div class="exam-opt-hint">Select the radio beside the correct answer. Students see the options in a scrambled order.</div>' +
         '</div>' +
-        '<div class="exam-q-marks"><label>Marks</label><input type="number" min="1" step="1"></div>' +
+        '<div class="exam-q-marks"><label>Marks</label><input type="number" min="1" step="1" value="1"></div>' +
         '<div class="exam-q-attach"></div>';
       list.appendChild(row);
 
@@ -1203,6 +1211,9 @@
       // through verbatim.
       const criteria_text = (!isMaths && rawCriteria) ? formatCriteria(rawCriteria) : (isMaths ? null : null);
       const marking_guideline = isMaths ? rawCriteria : null;
+      // Maths-only hidden correctness anchor for the per-line diagnostic.
+      const workedSolutionEl = document.getElementById('workedSolutionText');
+      const worked_solution = isMaths ? ((workedSolutionEl && workedSolutionEl.value.trim()) || null) : null;
       // Quick task with no criteria → completion-only marking by default
       // (a single "Mark as complete" button). Quick task with criteria uses
       // criterion-based marking. Assessment task always uses criterion marking.
@@ -1235,6 +1246,7 @@
             task_mode, completion_only,
             subject_type: selectedSubjectType,
             marking_guideline,
+            worked_solution,
             lesson_builder: !!lessonBuilder,
             attachments: taskAttachments,
             time_limit_minutes,

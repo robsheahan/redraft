@@ -69,7 +69,7 @@ export default withHandler({ methods: ['POST'], label: 'structure-maths-working'
 
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
-    const result = await callTool<{ lines: Array<{ math: string; reason: string }> }>({
+    const result = await callTool<{ lines: Array<{ math: string }> }>({
       client,
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 2000,
@@ -86,9 +86,8 @@ export default withHandler({ methods: ['POST'], label: 'structure-maths-working'
     const lines = (result.value.lines || [])
       .map(l => ({
         math: typeof l?.math === 'string' ? l.math.trim() : '',
-        reason: typeof l?.reason === 'string' ? l.reason.trim() : '',
       }))
-      .filter(l => l.math || l.reason);
+      .filter(l => l.math);
 
     return res.status(200).json({ working_lines: lines });
   } catch (err: any) {

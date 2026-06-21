@@ -299,14 +299,14 @@
       html += '<div class="card">';
       if (!isFeedback && t.time_limit_minutes) html += '<div id="examTimer"></div>';
       html += '<div class="mode-picker">';
-      html += '<button type="button" class="mode-btn is-selected" data-mode="structured" onclick="switchMode(\'structured\')">Structured (line + reason)</button>';
+      html += '<button type="button" class="mode-btn is-selected" data-mode="structured" onclick="switchMode(\'structured\')">Line by line</button>';
       html += '<button type="button" class="mode-btn" data-mode="freeform" onclick="switchMode(\'freeform\')">Freeform</button>';
       html += '<button type="button" class="mode-btn" data-mode="talkthrough" onclick="switchMode(\'talkthrough\')">Talk-through</button>';
       html += '</div>';
       html += '<div id="modeStructured" class="mode-pane">';
       html += '<div class="inline-hint">' + (used > 0
-        ? 'Your previous working is loaded below — revise it in response to your feedback rather than re-entering every line. One step per line; a short reason underneath earns method marks.'
-        : 'One step per line. Maths in the top field, a short reason underneath — that\'s what earns method marks.') + '</div>';
+        ? 'Your previous working is loaded below — revise it in response to your feedback rather than re-entering every line. One step per line.'
+        : 'One step per line — show your working the way you would on paper.') + '</div>';
       html += '<div id="linesContainer"></div>';
       html += '<button type="button" class="add-line-btn" onclick="addLine()">+ Add line</button>';
       html += '</div>';
@@ -395,15 +395,12 @@
       wrap.innerHTML =
         '<div class="line-label">Line ' + (idx + 1) + '</div>' +
         '<button type="button" class="line-remove" title="Remove line" onclick="removeLine(this)">×</button>' +
-        '<math-field class="math-field" data-line-id="' + lineId + '"></math-field>' +
-        '<input type="text" class="reason-input" data-line-id="' + lineId + '" placeholder="Why this step? (e.g. differentiating using the power rule)">';
+        '<math-field class="math-field" data-line-id="' + lineId + '"></math-field>';
       document.getElementById('linesContainer').appendChild(wrap);
 
       const mf = wrap.querySelector('math-field');
-      const reason = wrap.querySelector('.reason-input');
       if (initial) {
         if (typeof initial.math === 'string' && mf) mf.value = initial.math;
-        if (typeof initial.reason === 'string') reason.value = initial.reason;
       }
       // Telemetry on both fields.
       const onInput = () => {
@@ -421,7 +418,7 @@
         // keystroke past the deadline locks it.
         if (examLimitMs() && examStartedAt != null) {
           if (Date.now() < examStartedAt + examLimitMs()) {
-            lastInTimeLineCount = collectLines().filter(l => l.math || l.reason).length;
+            lastInTimeLineCount = collectLines().filter(l => l.math).length;
           } else if (lineCountAtDeadline == null) {
             lineCountAtDeadline = lastInTimeLineCount;
             telemetry.line_count_at_deadline = lineCountAtDeadline;
@@ -436,16 +433,6 @@
         refreshLineCount();
       };
       if (mf) mf.addEventListener('input', onInput);
-      reason.addEventListener('input', onInput);
-      // Block paste on the reason field (and surface a toast). MathLive's
-      // own paste is left alone — its content is structured by the editor.
-      reason.addEventListener('paste', ev => {
-        if (currentTask && currentTask.typed_response_only !== false) {
-          ev.preventDefault();
-          telemetry.paste_attempts_blocked += 1;
-          showToast('Paste is disabled on this task — type your reason.');
-        }
-      });
       refreshLineCount();
       if (mf && !initial) setTimeout(() => mf.focus(), 30);
     }
@@ -473,7 +460,7 @@
 
     function refreshLineCount() {
       const lines = collectLines();
-      const filled = lines.filter(l => l.math.trim() || l.reason.trim()).length;
+      const filled = lines.filter(l => l.math.trim()).length;
       const el = document.getElementById('lineCount');
       if (!el) return;
       if (currentMode === 'structured') {
@@ -527,8 +514,7 @@
       const out = [];
       document.querySelectorAll('#linesContainer .line-card').forEach(card => {
         const mf = card.querySelector('math-field');
-        const reason = card.querySelector('.reason-input');
-        out.push({ math: (mf && mf.value || '').trim(), reason: (reason && reason.value || '').trim() });
+        out.push({ math: (mf && mf.value || '').trim() });
       });
       return out;
     }
@@ -539,7 +525,7 @@
     }
 
     async function doAutosave() {
-      const lines = collectLines().filter(l => l.math || l.reason);
+      const lines = collectLines().filter(l => l.math);
       const state = JSON.stringify(lines);
       if (state === lastSavedState) return;
       const ind = document.getElementById('saveIndicator');
@@ -550,7 +536,7 @@
           body: JSON.stringify({
             task_id: currentTask.id,
             // draft_text is the flattened representation; working_lines holds truth.
-            draft_text: lines.map((l, i) => `Line ${i + 1}: ${l.math}\n  Reason: ${l.reason}`).join('\n'),
+            draft_text: lines.map((l, i) => `Line ${i + 1}: ${l.math}`).join('\n'),
             telemetry: { ...telemetry, working_lines: lines },
           }),
         });
@@ -583,7 +569,7 @@
         } else {
           // Deadline passed — record how many lines existed at the cutoff.
           if (lineCountAtDeadline == null) {
-            lineCountAtDeadline = collectLines().filter(l => l.math || l.reason).length;
+            lineCountAtDeadline = collectLines().filter(l => l.math).length;
             telemetry.line_count_at_deadline = lineCountAtDeadline;
             scheduleAutosave();
           }
@@ -646,13 +632,8 @@
       }
 
       if (currentMode === 'structured') {
-        const lines = collectLines().filter(l => l.math || l.reason);
+        const lines = collectLines().filter(l => l.math);
         if (lines.length === 0) { showToast('Add at least one line of working.'); return; }
-        const missingReasons = lines.filter(l => !l.reason).length;
-        if (missingReasons > 0) {
-          const ok = confirm(missingReasons + ' line' + (missingReasons === 1 ? '' : 's') + ' have no reason. Your reasoning is what earns method marks — submit anyway?');
-          if (!ok) return;
-        }
         await postFinalFeedback(lines, 'structured');
         return;
       }
@@ -704,7 +685,6 @@
         } else {
           html += '<div class="preview-math preview-empty">(no math on this line)</div>';
         }
-        if (l.reason) html += '<div class="preview-reason">' + e(l.reason) + '</div>';
         html += '</div>';
       });
       html += '<div class="confirm-actions">';

@@ -84,6 +84,11 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
   // Scrub teacher notes for non-owners
   let payload: any = { ...task };
   if (!isOwner) delete payload.notes;
+  // The maths worked solution is the marker's correctness anchor — never sent to
+  // a student, even post-grading (reveal-after-grading is a deliberate future
+  // option). Strip unconditionally for non-owners: the hardest guarantee, not
+  // dependent on subject_type or graded-status resolution below.
+  if (!isOwner) delete payload.worked_solution;
 
   // Several student-facing reveals hinge on whether this student already has a
   // graded submission: criteria (hide_criteria_from_students), the maths marking
@@ -133,7 +138,7 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     class_id, course, title, instructions, question, questions, task_type, total_marks, due_date,
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
     hide_criteria_from_students, completion_only,
-    subject_type, marking_guideline, lesson_builder, attachments, time_limit_minutes,
+    subject_type, marking_guideline, worked_solution, lesson_builder, attachments, time_limit_minutes,
     allow_student_attachments,
   } = req.body || {};
 
@@ -215,6 +220,8 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     completion_only: resolvedCompletionOnly,
     subject_type: subjectType,
     marking_guideline: subjectType === 'maths' ? (marking_guideline || null) : null,
+    // Hidden correctness anchor for Pass B. Maths-only; stripped for students.
+    worked_solution: subjectType === 'maths' ? (worked_solution || null) : null,
     // Lesson Builder is offered for quick tasks only — assessments (feedback_task,
     // marked_task) must stay standardised. Coerce off for anything else so the
     // API enforces what the UI already restricts (no DB safety net otherwise).
@@ -238,7 +245,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     outcomes, criteria, criteria_text, notes, publish, typed_response_only,
     hide_criteria_from_students,
     task_mode: incomingTaskMode, completion_only,
-    subject_type, marking_guideline, lesson_builder, attachments, time_limit_minutes,
+    subject_type, marking_guideline, worked_solution, lesson_builder, attachments, time_limit_minutes,
     allow_student_attachments,
   } = req.body || {};
   if (!id) return res.status(400).json({ error: 'Task id is required.' });
@@ -266,6 +273,7 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     hide_criteria_from_students: typeof hide_criteria_from_students === 'boolean' ? hide_criteria_from_students : undefined,
     subject_type: subject_type === 'essay' || subject_type === 'maths' ? subject_type : undefined,
     marking_guideline: typeof marking_guideline === 'string' ? marking_guideline : undefined,
+    worked_solution: typeof worked_solution === 'string' ? worked_solution : undefined,
     lesson_builder: typeof lesson_builder === 'boolean' ? lesson_builder : undefined,
     teacher_attachments: Array.isArray(attachments) ? attachments.slice(0, 5) : undefined,
     time_limit_minutes: time_limit_minutes === undefined ? undefined
