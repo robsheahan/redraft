@@ -78,30 +78,34 @@ function categoryGuideForStage(stage: Stage): string {
 - method_choice: the method picked won't reach the answer.
 - justification_missing: a step that needs reasoning has none.
 - verb_mismatch: the line answers a different question to the one asked. E.g. computes a value when the question said "show that"; finds dx/dy when dy/dx was asked; states stationary points when absolute extrema were asked.
-- precision_wrong: rounding wrong, decimal when exact was asked or vice versa.
+- precision_wrong: rounding wrong (including confusing significant figures with decimal places), decimal when exact was asked or vice versa.
 - premature_rounding: rounded too early in a multi-step calculation and accumulated error in the final answer.
 - unit_missing: worded / applied problem with no units in the answer where they are required.
 - context_missing: the final answer is bare ("x = 12") when the question requires a sentence in context ("the box can hold 12 books").
 - variable_confusion: variables mixed up in a worded problem (e.g. distance vs time in motion questions).
+- transcription_error: copied a value, formula or number incorrectly (from the question, a table, or a previous line) — distinct from an arithmetic slip.
+- incomplete_answer: stopped one step short, or computed a value but never gave the answer the question actually asked (a terminal omission — distinct from a skipped intermediate step / step_gap).
+- statistical_interpretation: misreads a statistical quantity in context (e.g. treats a z-score as a probability, confuses gradient with correlation, or extrapolates beyond the data unreliably).
 - ok: the line is clean. Use sparingly — "ok" should mean truly nothing to flag.`;
 
   if (stage === 6) {
     return `CATEGORY GUIDE
 - missing_constant: integration result without +C, or without absolute value on ln.
 - algebra_index_law: index law misapplied (rare at this level but flag it).
-- domain_restriction_missing: inverse trig / ln answer with no domain stated.${universal}`;
+- domain_restriction_missing: inverse trig / ln answer with no domain stated.
+- reference_sheet_misuse: used or copied a NESA Reference Sheet formula incorrectly, or failed to use the provided formula.${universal}`;
   }
 
   if (stage === 5) {
     return `CATEGORY GUIDE${universal}
 - algebra_index_law: index law misapplied (Year 10 surds, indices).
 
-DO NOT USE: missing_constant, domain_restriction_missing — those are Stage 6 categories that don't apply at this stage.`;
+DO NOT USE: missing_constant, domain_restriction_missing, reference_sheet_misuse — those are Stage 6 categories that don't apply at this stage.`;
   }
 
   return `CATEGORY GUIDE${universal}
 
-DO NOT USE: missing_constant, algebra_index_law (light at Year 7–8), domain_restriction_missing — those are Stage 5/6 categories. Focus on the universal ones, especially notation_equals_abuse, justification_missing, unit_missing, and context_missing.`;
+DO NOT USE: missing_constant, algebra_index_law (light at Year 7–8), domain_restriction_missing, reference_sheet_misuse — those are Stage 5/6 categories. Focus on the universal ones, especially notation_equals_abuse, justification_missing, unit_missing, and context_missing.`;
 }
 
 export function buildMathsPerLineDiagnosticSystem(courseName?: string, yearLevel?: number | null): string {
@@ -182,7 +186,7 @@ export function buildMathsHolisticSystem(courseName?: string, yearLevel?: number
 ${UNTRUSTED_CONTENT_RULE}
 
   1. "what_youve_done_well" — 2–4 specific strengths. Real ones; not flattery. Reference specific lines when helpful.
-  2. "top_priority" — the SINGLE most important thing for the student to fix. One short paragraph. This is what an experienced teacher writes as the headline comment after marking.
+  2. "top_priority" — the SINGLE most important thing for the student to fix. One short paragraph. This is what an experienced teacher writes as the headline comment after marking. When choosing it, weight by what actually costs marks, in the order an HSC marker triages: (1) missing or unclear working, especially on "show"/"prove" questions; (2) a wrong method or tool choice; (3) precision/rounding (including significant figures vs decimal places, and rounding only at the final step); (4) missing units, or the answer not given in context; (5) notation/convention slips (missing +C, ln|x|, stated domain); (6) not answering the actual question asked. Pick the highest item that genuinely applies to this work.
   3. "improvements" — 2–4 actionable improvements. Numbered, specific, one sentence each. Reference line numbers.
 
 VOICE
