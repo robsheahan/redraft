@@ -239,6 +239,7 @@ Rate limit: 5/hr per user per card kind for cohort; 8/hr per student per kind on
 - `POST /api/generate-maths-feedback` — Maths two-pass feedback (subject_type `maths`). Rate-limited.
 - `POST /api/structure-maths-working` — Haiku pass that splits freeform/talk-through maths input into `{math}` lines.
 - `POST /api/transcribe-maths-working` — Claude Sonnet **vision** pass that transcribes a photo of handwritten maths working into `{math}` lines (student confirms before diagnosis). Image sent base64 after client-side downscale.
+- `POST /api/transcribe-maths-authoring` — **teacher-only** vision pass (#3b): photographs a question / worked solution / multi-part question while authoring → clean text (inline `$...$`) or `{stem, parts[]}`. Transcribe + structure only (never solves/invents); fills `new-task.html` fields in an editable state.
 - `POST /api/generate-marking-guideline` — AI-generate a maths marking guideline (teacher, at task time).
 - `POST /api/generate-activity` — **Lesson Differentiator**: generate (or return the locked) per-student differentiated activity for a `lesson_builder` task. Student-triggered, lazy, auth-required; silent fallback to the main activity.
 - `POST /api/generate-criteria` — AI-generate marking criteria for a task (teacher).
