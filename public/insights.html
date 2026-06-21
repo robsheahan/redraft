@@ -1870,6 +1870,16 @@
         render: renderListedItems,
       }) + '</div>';
 
+      // 7. Maths errors by category — objective per-line aggregation. Only for
+      // classes running maths feedback tasks (gated so non-maths teachers don't
+      // see an empty maths card). No LLM call — these counts write themselves.
+      if (cd.maths_error_categories && cd.maths_error_categories.total_maths_submissions > 0) {
+        html += '<div class="card card-span-12">'
+          + cardHeader('Maths errors by category', 'How many students show each per-line pattern — reteach the top one or two')
+          + renderMathsErrorCategories(cd.maths_error_categories)
+          + '</div>';
+      }
+
       html += '</div>';
       return html;
     }
@@ -1951,7 +1961,7 @@
       }) + '</div>';
 
       html += '<div class="card card-span-12">'
-        + cardHeader('Maths errors by category', 'Per-line annotations across maths submissions in scope')
+        + cardHeader('Maths errors by category', 'How many students show each per-line pattern, in scope')
         + renderMathsErrorCategories(cd.maths_error_categories)
         + '</div>';
 
@@ -2169,25 +2179,27 @@
 
     function renderMathsErrorCategories(d) {
       const subs = (d && d.total_maths_submissions) || 0;
+      const students = (d && d.total_maths_students) || 0;
       const cats = (d && d.categories) || [];
       if (subs === 0) {
-        return '<div class="card-empty"><strong>No maths submissions yet</strong>Once students submit maths drafts, the most common per-line errors (notation, justification, verb misreads, etc.) appear here.</div>';
+        return '<div class="card-empty"><strong>No maths submissions yet</strong>Once students submit maths drafts, the most common per-line errors (notation, justification, verb misreads, skipped steps) appear here.</div>';
       }
       if (subs < 3) {
         return '<div class="card-empty"><strong>Not enough data yet</strong>' + subs + ' maths submission' + (subs === 1 ? '' : 's') + ' so far. The error breakdown will populate once you have a few more.</div>';
       }
       if (cats.length === 0) {
-        return '<div class="card-empty"><strong>No errors flagged</strong>Across ' + subs + ' maths submissions, ProofReady didn\'t flag any non-OK line annotations. Either the cohort is flying, or the rubric is too permissive.</div>';
+        return '<div class="card-empty"><strong>No errors flagged</strong>Across ' + subs + ' maths submissions, ProofReady didn\'t flag any issues. Either the cohort is flying, or the tasks are too easy.</div>';
       }
-      let html = '<div style="font-size:12.5px;color:#6b7280;margin-bottom:10px">Across <strong>' + subs + '</strong> maths submission' + (subs === 1 ? '' : 's') + ' and <strong>' + (d.total_lines || 0) + '</strong> lines of working. Counts = how many lines fell into each category.</div>';
-      const max = Math.max(1, ...cats.map(r => r.count));
-      html += '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:8px">';
+      let html = '<div style="font-size:12.5px;color:#6b7280;margin-bottom:10px">Across <strong>' + students + '</strong> student' + (students === 1 ? '' : 's') + ' (' + subs + ' maths submission' + (subs === 1 ? '' : 's') + ', ' + (d.total_lines || 0) + ' lines). The bar is how many students showed each pattern — reteach the top one or two.</div>';
+      const max = Math.max(1, ...cats.map(r => r.students || 0));
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:8px">';
       cats.forEach(r => {
-        const pct = (r.count / max) * 100;
-        html += '<div class="bar-row" style="grid-template-columns:160px 1fr auto">'
+        const v = r.students || 0;
+        const pct = (v / max) * 100;
+        html += '<div class="bar-row" style="grid-template-columns:170px 1fr auto">'
           + '<div class="bar-label">' + e(r.label) + '</div>'
           + '<div class="bar-track"><div class="bar-fill" style="width:' + pct.toFixed(1) + '%"></div></div>'
-          + '<div class="bar-value">' + r.count + '</div>'
+          + '<div class="bar-value">' + v + ' student' + (v === 1 ? '' : 's') + '</div>'
           + '</div>';
       });
       html += '</div>';

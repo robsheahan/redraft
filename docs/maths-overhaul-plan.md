@@ -22,7 +22,7 @@ Central design question (unchanged): **"How can we get the most accurate possibl
 | 2 | Multi-part questions (`(a)(b)(c)` + "Hence") for maths | ✅ done 2026-06-21 (uncommitted; **migration not yet run**) |
 | 3 | Handwriting / OCR — **student** input (transcribe → confirm → diagnose) | ✅ done 2026-06-21 (uncommitted; no migration). Single-question; multi-part photo deferred |
 | 3b | Handwriting / OCR — **teacher** authoring (photo → structured exam; worked solution) | later |
-| 4 | Maths-native cohort insights (aggregate the per-line categories) | later |
+| 4 | Maths-native cohort insights (aggregate the per-line categories) | ✅ done 2026-06-21 (uncommitted; no migration) |
 
 #0 and #1 are independent of input modality — they operate on the `[{math}]` line substrate, which both typed and (future) handwriting input produce. So they can ship before the capture work and don't get rebuilt when it lands.
 
@@ -254,6 +254,17 @@ Mirrors `lib/exam-questions.ts` but simpler (no MC, no answer key, no scrambling
 - `submit-maths.html`: **📷 Photo** mode (single-question) — capture/upload, client downscale (canvas → JPEG ≤1600px), transcribe, reuse the existing confirm screen, submit as `input_mode:'photo'`.
 - `generate-maths-feedback.ts`: records `'photo'` as a valid `input_mode`.
 - Verified: `tsc` clean; **live vision run** — a generated 3-line maths image transcribed correctly to `["f'(x) = 6x + 2","6x + 2 = 0","x = -1/3"]`. **Real handwriting accuracy is the pilot risk** — needs Rob to test with actual phone photos.
+
+---
+
+## #4 — Maths-native cohort insights — DONE (2026-06-21, uncommitted; no DB change)
+
+The thesis from `maths-feedback-plan.md` §7: maths cohort cards write themselves because the categories are objective. A **"Maths errors by category"** card already existed (leader/admin only, single-question, occurrence counts). #4 finished it:
+- `computeMathsErrorCategories` (`insights-cards.ts`) now handles **multi-part** (`fb.parts[].line_annotations`/`step_gaps`), counts **distinct students** per category (the "8 students dropped +C" headline, not raw line counts), and folds **skipped mark-bearing steps** (`step_gaps`) in as a `step_skipped` bucket.
+- The renderer leads with student counts; the card is now **also shown in the teacher grid** (`renderTeacherCardsGrid`) — the individual maths teacher is the key audience — gated so non-maths teachers don't see an empty maths card.
+- **No LLM, no rate limit, no migration** — a deterministic count over data already captured. Respects the existing scope + time-window filters.
+- **Coverage caveat:** feedback-task maths only. Marked/quick maths run the Haiku insights pass, which doesn't emit per-line categories — so those submissions don't feed this card. (Giving the Haiku pass a lightweight category output is a possible follow-up.)
+- Verified: `tsc` clean; unit test of the aggregation (10 checks — single + multi-part, distinct-student counting across drafts, `step_skipped`, sort, label resolution, `ok`/essay excluded).
 
 ---
 

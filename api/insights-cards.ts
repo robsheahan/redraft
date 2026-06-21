@@ -550,35 +550,62 @@ const MATHS_CATEGORY_LABELS: Record<string, string> = {
   variable_confusion: 'Variables mixed up',
   domain_restriction_missing: 'Domain missing',
   reason_only_issue: 'Reasoning',
+  step_skipped: 'Skipped a required step',
   other: 'Other',
 };
 
-function computeMathsErrorCategories(submissions: any[]) {
+export function computeMathsErrorCategories(submissions: any[]) {
   const counts: Record<string, number> = {};
+  const studentsByCat: Record<string, Set<string>> = {};
+  const mathsStudents = new Set<string>();
   let totalLines = 0;
   let totalMathsSubs = 0;
+
+  const tally = (cat: string | null, sid: string) => {
+    if (!cat || cat === 'ok') return;
+    counts[cat] = (counts[cat] || 0) + 1;
+    (studentsByCat[cat] = studentsByCat[cat] || new Set()).add(sid);
+  };
+  // A skipped mark-bearing step (step_gaps) is an objective, high-signal error
+  // bucket of its own — count it alongside the per-line categories.
+  const ingest = (annots: any, gaps: any, sid: string) => {
+    (Array.isArray(annots) ? annots : []).forEach((a: any) => {
+      totalLines += 1;
+      tally(a && typeof a.category === 'string' ? a.category : null, sid);
+    });
+    (Array.isArray(gaps) ? gaps : []).forEach(() => tally('step_skipped', sid));
+  };
+
   submissions.forEach(s => {
     const fb = s && s.feedback;
-    if (!fb || fb.kind !== 'maths') return;
-    totalMathsSubs += 1;
-    const annots = Array.isArray(fb.line_annotations) ? fb.line_annotations : [];
-    annots.forEach((a: any) => {
-      totalLines += 1;
-      const cat = a && typeof a.category === 'string' ? a.category : null;
-      if (!cat || cat === 'ok') return;
-      counts[cat] = (counts[cat] || 0) + 1;
-    });
+    if (!fb) return;
+    const sid = s.student_id || '';
+    if (fb.kind === 'maths') {
+      totalMathsSubs += 1;
+      if (sid) mathsStudents.add(sid);
+      ingest(fb.line_annotations, fb.step_gaps, sid);
+    } else if (fb.kind === 'maths_multipart') {
+      totalMathsSubs += 1;
+      if (sid) mathsStudents.add(sid);
+      (Array.isArray(fb.parts) ? fb.parts : []).forEach((p: any) => ingest(p.line_annotations, p.step_gaps, sid));
+    }
   });
+
+  // Headline metric is DISTINCT STUDENTS per category ("8 students dropped +C"),
+  // not raw line counts — that's what tells a teacher what to reteach.
   const categories = Object.entries(counts)
     .map(([category, count]) => ({
       category,
       count,
+      students: (studentsByCat[category] || new Set()).size,
       label: MATHS_CATEGORY_LABELS[category] || category,
     }))
-    .sort((a, b) => b.count - a.count)
+    .sort((a, b) => b.students - a.students || b.count - a.count)
     .slice(0, 6);
+
   return {
     total_maths_submissions: totalMathsSubs,
+    total_maths_students: mathsStudents.size,
     total_lines: totalLines,
     categories,
   };

@@ -178,8 +178,10 @@ The largest subsystem outside the core feedback flow. Three-tier access (teacher
 ### Two views
 
 **Cohort view** — default when no `student_id` filter set. The cards depend on tier:
-- Teacher (class scope): **class profile summary** (LLM, aggregated from `student_profile_synthesis` rows of currently-enrolled students) + mark distribution + improvement velocity + keyword struggles (verb_depth LLM) + top 3 mistakes (common_gaps LLM) + stretch goals (top_decile LLM, quartile mode) + 3 things done well (things_done_well LLM)
-- Leader/admin (school scope): activity sparkline, faculty engagement, mark distribution, mark by faculty, marking progress, teacher activity, per-criterion lows, improvement velocity, keyword struggles, plus all five Tier-A LLM cards (bottom_decile, top_decile, verb_depth, common_gaps, things_done_well)
+- Teacher (class scope): **class profile summary** (LLM, aggregated from `student_profile_synthesis` rows of currently-enrolled students) + mark distribution + improvement velocity + keyword struggles (verb_depth LLM) + top 3 mistakes (common_gaps LLM) + stretch goals (top_decile LLM, quartile mode) + 3 things done well (things_done_well LLM) + **Maths errors by category** (shown only when the class has maths feedback submissions)
+- Leader/admin (school scope): activity sparkline, faculty engagement, mark distribution, mark by faculty, marking progress, teacher activity, per-criterion lows, improvement velocity, keyword struggles, **Maths errors by category**, plus all five Tier-A LLM cards (bottom_decile, top_decile, verb_depth, common_gaps, things_done_well)
+
+**Maths errors by category** (`computeMathsErrorCategories` in `insights-cards.ts`) is **not an LLM card** — it deterministically aggregates the per-line diagnostic categories (`missing_constant`, `notation_equals_abuse`, `verb_mismatch`, skipped mark-bearing steps, …) across in-scope maths feedback submissions (single-question + multi-part) and ranks them by **distinct students** ("8 students dropped +C"). Objective and free — no generation, no rate limit. Covers feedback-task maths only (marked/quick maths run the Haiku pass, which doesn't emit per-line categories).
 
 A **time-window filter** applies to all submissions queries via `getTimeWindowCutoff` in `lib/insights-filters.ts` — limits subs to a recent window so cards reflect current cohort behaviour rather than historical baselines.
 
