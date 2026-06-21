@@ -333,7 +333,6 @@
         html += '<div class="line-row' + (cutoff != null && i >= cutoff ? ' over-time' : '') + '">';
         html += '<div class="line-head"><span class="line-label">Line ' + (i + 1) + '</span></div>';
         html += '<div class="line-math" data-tex="' + e(line.math || '') + '">' + (line.math ? '<span class="ml" data-tex="' + e(line.math) + '">' + e(line.math) + '</span>' : '<span style="color:#9ca3af">(empty)</span>') + '</div>';
-        if (line.reason) html += '<div class="line-reason">' + e(line.reason) + '</div>';
         const a = annotsByLine[i];
         if (a) html += renderAiAnnot(a);
         html += renderTeacherAnnotsForLine(i);
@@ -363,12 +362,10 @@
 
     function renderAiAnnot(a) {
       const mathStatus = a.math_status || 'ok';
-      const reasonStatus = a.reason_status || 'ok';
       let cls = 'ok', icon = statusSvg('check');
       if (mathStatus === 'error') { cls = 'error'; icon = statusSvg('x'); }
       else if (mathStatus === 'slip') { cls = 'warn'; icon = statusSvg('warn'); }
       else if (mathStatus === 'ok_following_through') { cls = 'ok-ft'; icon = statusSvg('ft'); }
-      else if (reasonStatus !== 'ok') { cls = 'reason'; icon = statusSvg('help'); }
       return '<div class="annot ' + cls + '"><span class="annot-pref">' + icon + ' ProofReady:</span> ' + e(a.comment || '') + '</div>';
     }
 

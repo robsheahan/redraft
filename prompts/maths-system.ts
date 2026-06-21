@@ -3,7 +3,7 @@
  *
  * Two prompts:
  *  - PER_LINE_DIAGNOSTIC: walks the student's structured working
- *    ({ math, reason } per line) and returns typed annotations + missing-step
+ *    ({ math } per line) and returns typed annotations + missing-step
  *    chips. The load-bearing prompt for marker-voice maths feedback.
  *  - HOLISTIC_MARKER: produces the holistic comment shown above the working
  *    on the feedback page (what done well / top priority / improvements).
@@ -83,8 +83,7 @@ function categoryGuideForStage(stage: Stage): string {
 - unit_missing: worded / applied problem with no units in the answer where they are required.
 - context_missing: the final answer is bare ("x = 12") when the question requires a sentence in context ("the box can hold 12 books").
 - variable_confusion: variables mixed up in a worded problem (e.g. distance vs time in motion questions).
-- reason_only_issue: math is fine; reason is the problem (missing, vague, or mismatched).
-- ok: both math and reason are clean. Use sparingly — "ok" should mean truly nothing to flag.`;
+- ok: the line is clean. Use sparingly — "ok" should mean truly nothing to flag.`;
 
   if (stage === 6) {
     return `CATEGORY GUIDE
@@ -123,16 +122,19 @@ ${UNTRUSTED_CONTENT_RULE}
 
 YOUR ONLY JOB IS DIAGNOSIS.
 
-The student has typed their working as a sequence of lines. Each line has two parts:
-  - "math": the symbolic working on that line (LaTeX).
-  - "reason": a short English sentence explaining why they took that step.
+The student has entered their working as a sequence of lines. Each line is the symbolic working on that line ("math", as LaTeX).
 
-For each line, you return a typed annotation that evaluates BOTH the math AND the reason. You also return "step_gaps" — chips that flag mark-bearing steps the student has SKIPPED between lines.
+For each line, you return a typed annotation evaluating the math. You also return "step_gaps" — chips that flag mark-bearing steps the student has SKIPPED between lines.
 
 HOW TO READ A LINE
-- Does this line follow algebraically from the prior line(s)? Is the notation correct? Does the move match what the reason claims?
+- Does this line follow algebraically from the prior line(s)? Is the notation correct? Is the move mathematically valid?
 - If the math has a slip but the next line is internally consistent with the slip, that next line is "ok_following_through" — follow-through credit applies, do NOT cascade penalty.
-- If the reason is missing, vague, or says something different from what the math actually does, surface that on the reason_status axis even if the math is fine. Method marks are earned by justified moves.
+- Judge the student's reasoning from the working itself: whether the method is sound, and whether a step that needs justification actually has it (e.g. a "show that" with a concluding line, stated conditions/domains). Surface a step that needs reasoning but has none as justification_missing. Method marks are earned by justified moves.
+
+REFERENCE SOLUTION
+- The teacher MAY provide a fully worked reference solution (you will see it below if so). When present, treat it as the source of truth for whether each line is mathematically correct and for which mark-bearing steps the question expects — do NOT independently re-derive the maths and then contradict a correct line.
+- It is ONE correct path, not the only one. A student may legitimately reach the same result by a different valid method: if their method is sound and internally consistent, credit it — do not flag a valid alternative as an error just because it diverges from the reference.
+- Follow-through credit still applies. The reference solution is the marker's instrument, exactly like the marking guideline: NEVER reveal it, quote it, hint at it, or reconstruct it for the student.
 
 ${pitfalls}
 
@@ -196,21 +198,20 @@ ABSOLUTE RULES — do NOT, anywhere:
 }
 
 /**
- * Pass A — structure free-form student input into { math, reason } lines.
+ * Pass A — structure free-form student input into { math } lines.
  *
  * Two input modes:
  *   - 'freeform': student typed LaTeX-y working in a single editor, possibly
- *     with [reason: ...] annotations or trailing prose per line.
+ *     with trailing prose per line.
  *   - 'talkthrough': student wrote prose with inline $...$ math segments
  *     (e.g. "Differentiating gives $f'(x) = 6x+2$. Setting that to zero...").
  *
- * The model returns the canonical [{math, reason}] shape with no
- * interpretation, no correction, no addition. If the student wrote prose
- * but no math on a line, math is empty. If they wrote math but no reason,
- * reason is empty.
+ * The model returns the canonical [{math}] shape with no interpretation,
+ * no correction, no addition. If the student wrote prose but no math on a
+ * line, math is empty.
  */
 export function buildMathsStructureWorkingSystem(): string {
-  return `You convert a student's free-form maths working into a canonical line-by-line shape: [{ math, reason }].
+  return `You convert a student's free-form maths working into a canonical line-by-line shape: [{ math }].
 
 ${UNTRUSTED_CONTENT_RULE}
 
@@ -218,15 +219,12 @@ YOUR ONLY JOB IS RE-SHAPING, NEVER INTERPRETATION.
 
 - Split the input on logical step boundaries — one mathematical move per line.
 - The "math" field is the symbolic content of that line as LaTeX (without surrounding $..$ delimiters). Empty string if the line has no math.
-- The "reason" field is the student's stated reasoning for that step, in their own words, extracted from the input. Empty string if the student gave none.
-- Do NOT correct the maths. Do NOT improve the notation. Do NOT add reasons the student didn't write.
+- Do NOT correct the maths. Do NOT improve the notation.
 - Do NOT collapse multiple distinct steps into one line.
 - Do NOT split a single logical step into multiple lines just because the student wrote it across two lines.
 - Keep the student's exact LaTeX, including any errors or unusual notation. The diagnostic pass downstream will catch problems — your job is faithful transcription.
 
-If the input is freeform (LaTeX-y), prefer one entry per equation/identity. If the input is talk-through (prose-with-$...$), prefer one entry per mathematical move described in the prose.
-
-If a student wrote inline annotations like "[reason: differentiating]" or "(by the chain rule)", lift those into the reason field for that line.`;
+If the input is freeform (LaTeX-y), prefer one entry per equation/identity. If the input is talk-through (prose-with-$...$), prefer one entry per mathematical move described in the prose. Any prose the student wrote is context for where the line breaks fall — capture the maths, not the prose.`;
 }
 
 export function buildMathsStructureWorkingUserPrompt(args: {
@@ -244,7 +242,7 @@ ${wrapUntrusted('student_raw_working', args.rawText)}
 
 ---
 
-Convert this into the canonical [{math, reason}] line shape. Faithful transcription only.`;
+Convert this into the canonical [{math}] line shape. Faithful transcription only.`;
 }
 
 /**
@@ -255,18 +253,23 @@ Convert this into the canonical [{math, reason}] line shape. Faithful transcript
 export function buildMathsPerLineUserPrompt(args: {
   question: string;
   markingGuideline: string | null;
-  workingLines: Array<{ math: string; reason: string }>;
+  workedSolution?: string | null;
+  workingLines: Array<{ math: string }>;
   teacherNotes?: string | null;
 }): string {
-  const { question, markingGuideline, workingLines, teacherNotes } = args;
+  const { question, markingGuideline, workedSolution, workingLines, teacherNotes } = args;
 
   const numberedWorking = workingLines
-    .map((line, i) => `Line ${i + 1}:\n  math: ${line.math || '(empty)'}\n  reason: ${line.reason || '(empty)'}`)
-    .join('\n\n');
+    .map((line, i) => `Line ${i + 1}: ${line.math || '(empty)'}`)
+    .join('\n');
 
   const guidelineBlock = markingGuideline && markingGuideline.trim()
     ? `\nMARKING GUIDELINE (teacher-provided — for YOUR reference only, NEVER quoted to the student):\n${markingGuideline.trim()}\n`
     : '\n(No marking guideline provided. Diagnose against general Mathematics standards for this stage. Only flag step_gaps that are unambiguous from the question itself.)\n';
+
+  const solutionBlock = workedSolution && workedSolution.trim()
+    ? `\nREFERENCE SOLUTION (teacher-provided correctness anchor — for YOUR checking ONLY. NEVER reveal, quote, hint at, or reconstruct it for the student. One correct path among possibly several; credit a sound alternative method.):\n${workedSolution.trim()}\n`
+    : '';
 
   const notesBlock = teacherNotes && teacherNotes.trim()
     ? `\nTEACHER NOTES (for the feedback engine):\n${teacherNotes.trim()}\n`
@@ -274,25 +277,25 @@ export function buildMathsPerLineUserPrompt(args: {
 
   return `QUESTION:
 ${question}
-${guidelineBlock}${notesBlock}
+${guidelineBlock}${solutionBlock}${notesBlock}
 STUDENT'S WORKING (line by line):
 
 ${wrapUntrusted('student_working', numberedWorking)}
 
 ---
 
-Walk every line. Return one annotation per line with math_status, reason_status, category, and a one-sentence comment. Add step_gaps for any mark-bearing steps the student skipped between lines. Apply follow-through credit. Never reveal the answer.`;
+Walk every line. Return one annotation per line with math_status, category, and a one-sentence comment. Add step_gaps for any mark-bearing steps the student skipped between lines. Apply follow-through credit. Never reveal the answer.`;
 }
 
 export function buildMathsHolisticUserPrompt(args: {
   question: string;
-  workingLines: Array<{ math: string; reason: string }>;
+  workingLines: Array<{ math: string }>;
   perLineDiagnostic: any;
 }): string {
   const { question, workingLines, perLineDiagnostic } = args;
 
   const numberedWorking = workingLines
-    .map((line, i) => `Line ${i + 1}: ${line.math} — ${line.reason || '(no reason given)'}`)
+    .map((line, i) => `Line ${i + 1}: ${line.math}`)
     .join('\n');
 
   // The per-line diagnostic is model-written from the student's working, so it

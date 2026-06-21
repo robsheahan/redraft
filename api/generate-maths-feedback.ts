@@ -2,7 +2,7 @@
  * Maths feedback endpoint — typed-input v0.
  *
  * Branches off generate-feedback.ts for the maths path. Inputs are the
- * student's structured working: an ordered array of { math, reason } lines.
+ * student's structured working: an ordered array of { math } lines.
  *
  * Two passes (in parallel, like the essay flow):
  *   Pass B — per-line diagnostic (Sonnet, load-bearing). Returns typed chips
@@ -43,7 +43,7 @@ import { recordSkillSignals } from '../lib/skill-profile.js';
 
 const MAX_DRAFTS = 3;
 
-type WorkingLine = { math: string; reason: string };
+type WorkingLine = { math: string };
 
 function sanitiseLines(input: any): WorkingLine[] {
   if (!Array.isArray(input)) return [];
@@ -51,9 +51,8 @@ function sanitiseLines(input: any): WorkingLine[] {
     .map((raw): WorkingLine | null => {
       if (!raw || typeof raw !== 'object') return null;
       const math = typeof raw.math === 'string' ? raw.math.trim() : '';
-      const reason = typeof raw.reason === 'string' ? raw.reason.trim() : '';
-      if (!math && !reason) return null;
-      return { math, reason };
+      if (!math) return null;
+      return { math };
     })
     .filter((l): l is WorkingLine => l !== null);
 }
@@ -140,14 +139,22 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
   // Lesson Builder (maths): a no-guideline maths task may carry a re-skinned
   // question per student — evaluate against the version they actually answered.
   let question = String(task.question || '').trim();
+  let questionWasReskinned = false;
   if (task.lesson_builder) {
     const { data: act } = await supabase
       .from('task_activities').select('activity')
       .eq('task_id', task_id).eq('student_id', user.id).maybeSingle();
     const vq = act && act.activity && typeof act.activity.question === 'string' ? act.activity.question.trim() : '';
-    if (vq) question = vq;
+    if (vq) { question = vq; questionWasReskinned = true; }
   }
   const markingGuideline = typeof task.marking_guideline === 'string' ? task.marking_guideline : null;
+  // The teacher's worked solution anchors Pass B's correctness judgements. It is
+  // written for the BASE question, so if Lesson Differentiator re-skinned the
+  // question for this student it no longer matches — drop it rather than mislead
+  // the diagnostic. (Per-variant solutions are a later option; see the plan.)
+  const workedSolution = (!questionWasReskinned && typeof task.worked_solution === 'string' && task.worked_solution.trim())
+    ? task.worked_solution
+    : null;
   const courseName = task.course || undefined;
   const teacherNotes = task.notes || null;
   // Year level drives stage-appropriate voice + category filter in the
@@ -175,6 +182,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
       user: buildMathsPerLineUserPrompt({
         question,
         markingGuideline,
+        workedSolution,
         workingLines: lines,
         teacherNotes,
       }),
@@ -247,7 +255,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
       // teaching them about working_lines. The structured truth is in
       // working_lines.
       draft_text: lines
-        .map((l, i) => `Line ${i + 1}: ${l.math}\n  Reason: ${l.reason || '(blank)'}`)
+        .map((l, i) => `Line ${i + 1}: ${l.math}`)
         .join('\n'),
       working_lines: lines,
       input_mode: input_mode === 'freeform' || input_mode === 'talkthrough' ? input_mode : 'structured',

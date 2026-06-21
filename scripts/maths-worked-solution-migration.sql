@@ -1,0 +1,11 @@
+-- Maths accuracy foundation: a hidden teacher worked solution.
+--
+-- The worked solution is the correctness ANCHOR for the per-line diagnostic
+-- (Pass B in api/generate-maths-feedback.ts). The model checks each student
+-- line against a known-correct path instead of re-deriving correctness from
+-- scratch — the latter is exactly where LLM maths feedback goes wrong.
+--
+-- Posture: maths-only, NEVER sent to a student (stripped for all non-owners in
+-- api/task.ts, even post-grading — reveal-after-grading is a deliberate future
+-- option, default off). Highest-severity leak surface — treat like an answer key.
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS worked_solution text;

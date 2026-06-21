@@ -308,7 +308,6 @@
         html += '<div class="line-left">';
         html += '<div class="line-label">Line ' + (i + 1) + '</div>';
         html += '<div class="line-math" data-math="' + e(line.math || '') + '">' + renderLatex(line.math || '') + '</div>';
-        if (line.reason) html += '<div class="line-reason">' + e(line.reason) + '</div>';
         html += '</div>';
         html += '<div class="line-right">';
         html += renderAnnotation(a);
@@ -381,19 +380,12 @@
     function renderAnnotation(a) {
       if (!a) return '<div class="annot ok"><span class="annot-icon">·</span><span class="annot-text">No comment.</span></div>';
       const mathStatus = a.math_status || 'ok';
-      const reasonStatus = a.reason_status || 'ok';
-      const isOk = mathStatus === 'ok' && reasonStatus === 'ok';
-      const isFollowThrough = mathStatus === 'ok_following_through';
-      const isReasonOnly = mathStatus === 'ok' && reasonStatus !== 'ok';
-      const isError = mathStatus === 'error';
 
       let cls = 'ok';
       let icon = statusSvg('check');
-      if (isError) { cls = 'error'; icon = statusSvg('x'); }
+      if (mathStatus === 'error') { cls = 'error'; icon = statusSvg('x'); }
       else if (mathStatus === 'slip') { cls = 'warn'; icon = statusSvg('warn'); }
-      else if (isFollowThrough) { cls = 'ok-ft'; icon = statusSvg('ft'); }
-      else if (isReasonOnly) { cls = 'reason'; icon = statusSvg('help'); }
-      else if (isOk) { cls = 'ok'; icon = statusSvg('check'); }
+      else if (mathStatus === 'ok_following_through') { cls = 'ok-ft'; icon = statusSvg('ft'); }
 
       const catLabel = (a.category && a.category !== 'ok') ? '<span class="annot-cat">' + e(prettyCategory(a.category)) + '</span>' : '';
       return '<div class="annot ' + cls + '"><span class="annot-icon">' + icon + '</span><span class="annot-text">' + catLabel + e(a.comment || '') + '</span></div>';
@@ -414,7 +406,6 @@
         case 'precision_wrong': return 'Precision';
         case 'unit_missing': return 'Units missing';
         case 'domain_restriction_missing': return 'Domain missing';
-        case 'reason_only_issue': return 'Reasoning';
         default: return '';
       }
     }

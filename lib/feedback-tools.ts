@@ -153,7 +153,7 @@ export const INLINE_SUGGESTIONS_TOOL: Tool = {
 // Maths feedback tools — used by /api/generate-maths-feedback.
 //
 // MATHS_PER_LINE_DIAGNOSTIC_TOOL is Pass B: walks each line of the
-// student's structured working ({ math, reason }) and returns a typed
+// student's structured working ({ math }) and returns a typed
 // chip per line PLUS a list of "step_missing" chips that surface
 // between lines where the marking guideline expects a step the
 // student skipped.
@@ -187,12 +187,6 @@ export const MATHS_PER_LINE_DIAGNOSTIC_TOOL: Tool = {
               description:
                 "'ok' = line follows correctly from prior lines and notation is sound. 'ok_following_through' = line is internally consistent with a wrong earlier line (apply follow-through credit). 'slip' = small notation/arithmetic issue. 'error' = substantive math error originating on this line.",
             },
-            reason_status: {
-              type: 'string',
-              enum: ['ok', 'reason_missing', 'reason_imprecise', 'reason_mismatch'],
-              description:
-                "'ok' = reason matches the move. 'reason_missing' = student left it blank. 'reason_imprecise' = vague ('simplify', 'work it out'). 'reason_mismatch' = the stated reason doesn't match what the math actually does.",
-            },
             category: {
               type: 'string',
               enum: [
@@ -213,17 +207,16 @@ export const MATHS_PER_LINE_DIAGNOSTIC_TOOL: Tool = {
                 'context_missing',
                 'variable_confusion',
                 'domain_restriction_missing',
-                'reason_only_issue',
                 'other',
               ],
-              description: 'Primary error category. Use "ok" only when both math_status and reason_status are ok. Stage 4/5 vs Stage 6 calibration is in the system prompt — pick from the categories the prompt tells you are in-scope for the student\'s stage.',
+              description: 'Primary error category. Use "ok" only when math_status is ok and there is nothing to flag. Stage 4/5 vs Stage 6 calibration is in the system prompt — pick from the categories the prompt tells you are in-scope for the student\'s stage.',
             },
             comment: {
               type: 'string',
               description: 'One or two sentences explaining the diagnosis. Address the student directly ("you", "your"). NEVER reveal the correct answer or the next step.',
             },
           },
-          required: ['line_index', 'math_status', 'reason_status', 'category', 'comment'],
+          required: ['line_index', 'math_status', 'category', 'comment'],
         },
       },
       step_gaps: {
@@ -252,7 +245,7 @@ export const MATHS_PER_LINE_DIAGNOSTIC_TOOL: Tool = {
 
 export const MATHS_STRUCTURE_WORKING_TOOL: Tool = {
   name: 'structure_maths_working',
-  description: "Convert a free-form student input (raw LaTeX-y working or prose-with-inline-math) into the canonical { math, reason } per-line shape used by the maths feedback pipeline. Split on logical step boundaries. Do NOT correct or improve the student's work — capture exactly what they wrote.",
+  description: "Convert a free-form student input (raw LaTeX-y working or prose-with-inline-math) into the canonical { math } per-line shape used by the maths feedback pipeline. Split on logical step boundaries. Do NOT correct or improve the student's work — capture exactly what they wrote.",
   input_schema: {
     type: 'object',
     properties: {
@@ -266,12 +259,8 @@ export const MATHS_STRUCTURE_WORKING_TOOL: Tool = {
               type: 'string',
               description: 'The mathematical content of this line as LaTeX. If the student wrote prose around the math, extract just the math here. Empty string if this line has no math.',
             },
-            reason: {
-              type: 'string',
-              description: 'The student\'s reasoning for this step, extracted from their input. Prefer their own words when available. Empty string if the student gave no reason.',
-            },
           },
-          required: ['math', 'reason'],
+          required: ['math'],
         },
       },
     },

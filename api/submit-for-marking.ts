@@ -33,7 +33,7 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
 
   // Three submission shapes:
   //   - essay draft (text),
-  //   - maths working (ordered {math, reason} lines), or
+  //   - maths working (ordered {math} lines), or
   //   - a multi-question exam (answers[], one per task question).
   // All serialise into draft_text so the rest of the pipeline (silent insights
   // pass, marking screen, CSV) stays shape-agnostic. The exam case is finished
@@ -41,17 +41,17 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
   const isMathsSubmission = Array.isArray(working_lines);
   const isExamSubmission = !isMathsSubmission && Array.isArray(answers);
   let draftText = '';
-  let mathLines: Array<{ math: string; reason: string }> | null = null;
+  let mathLines: Array<{ math: string }> | null = null;
   let processedExam: ProcessedExam | null = null;
   if (isMathsSubmission) {
     mathLines = (working_lines as any[])
-      .map((l) => ({ math: String(l?.math || '').trim(), reason: String(l?.reason || '').trim() }))
-      .filter((l) => l.math || l.reason);
+      .map((l) => ({ math: String(l?.math || '').trim() }))
+      .filter((l) => l.math);
     if (mathLines.length === 0) {
       return res.status(400).json({ error: 'Add at least one line of working before submitting.' });
     }
     draftText = mathLines
-      .map((l, i) => `Line ${i + 1}: ${l.math}\n  Reason: ${l.reason || '(blank)'}`)
+      .map((l, i) => `Line ${i + 1}: ${l.math}`)
       .join('\n');
   } else if (isExamSubmission) {
     // draftText + per-question marks are built after the task is loaded (we need
