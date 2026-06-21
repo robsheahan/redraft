@@ -229,6 +229,12 @@
     .exam-inline-auto-note { font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
     .exam-total-card { position: sticky; top: 16px; }
     .exam-total-hint { font-size: 12.5px; color: #9ca3af; margin: 0 0 10px; }
+    /* Per-question annotation section inside each answer card */
+    .exam-ann-section { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ece4d6; }
+    .exam-ann-head { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #9ca3af; margin-bottom: 8px; }
+    .exam-ann-section .annotation-cards { gap: 8px; }
+    .exam-ann-empty { font-size: 12.5px; color: #b8b0a2; font-style: italic; }
+    .annotation-card .ac-num { display: inline-block; min-width: 18px; height: 18px; line-height: 18px; text-align: center; background: #ed7615; color: #fff; font-size: 11px; font-weight: 700; border-radius: 50%; margin-right: 6px; }
     /* Read-only MC display on the marking screen */
     .mc-readonly { margin-top: 8px; }
     .mc-opt { font-size: 14px; color: #374151; padding: 7px 10px; border-radius: 6px; margin-bottom: 5px; border: 1px solid #ece4d6; }
@@ -574,6 +580,8 @@
           html += '<span class="exam-inline-auto-note">auto-marked · ' + (correct ? 'correct' : 'incorrect') + '</span></div>';
         } else {
           html += '<div class="draft-text exam-answer-draft" data-qid="' + e(a.question_id) + '" id="examDraft_' + e(a.question_id) + '">' + renderExamAnswerDraft(a) + '</div>';
+          html += '<div class="exam-ann-section"><div class="exam-ann-head">Annotations</div>';
+          html += '<div class="annotation-cards" id="examAnn_' + e(a.question_id) + '">' + renderExamQuestionAnnotations(a.question_id) + '</div></div>';
           html += '<div class="exam-inline-mark">';
           html += '<label class="exam-inline-mark-label" for="examMark_' + e(a.question_id) + '">Mark</label>';
           html += '<input type="number" id="examMark_' + e(a.question_id) + '" class="exam-mark-input" data-qid="' + e(a.question_id) + '" min="0" max="' + e(String(a.marks)) + '" step="0.5">';
@@ -598,10 +606,6 @@
 
       html += '<div class="card"><h3>Overall comment</h3>';
       html += '<textarea class="comment-area" id="teacherComment" placeholder="Write your overall feedback for this exam..."></textarea></div>';
-
-      html += '<div class="card"><h3>Inline annotations</h3>';
-      html += '<div class="annotation-cards" id="annotationCards">' + renderAnnotationCards() + '</div>';
-      html += '<p style="margin-top:10px;font-size:12.5px;color:#9ca3af">Select text in any written answer to add an annotation.</p></div>';
 
       const allSubs = window.__allSubmissions || [];
       const currentIdx = allSubs.findIndex(s => s.id === submission.id);
@@ -863,13 +867,13 @@
       pendingSelection = null;
       closeAnnotateDialog();
       rerenderDrafts();
-      document.getElementById('annotationCards').innerHTML = renderAnnotationCards();
+      rerenderAnnotationCards();
     }
 
     function removeAnnotation(idx) {
       teacherAnnotations.splice(idx, 1);
       rerenderDrafts();
-      document.getElementById('annotationCards').innerHTML = renderAnnotationCards();
+      rerenderAnnotationCards();
     }
     window.removeAnnotation = removeAnnotation;
 
@@ -952,6 +956,43 @@
           '<div class="ac-comment">' + e(ann.comment) + '</div>' +
         '</div>';
       }).join('');
+    }
+
+    // Annotation cards for one exam question, numbered to match the superscripts
+    // in that answer's text. Carries each annotation's global index for removal.
+    function renderExamQuestionAnnotations(questionId) {
+      const items = teacherAnnotations
+        .map((ann, gi) => ({ ann, gi }))
+        .filter(x => x.ann.question_id === questionId)
+        .sort((a, b) => a.ann.start - b.ann.start);
+      if (items.length === 0) {
+        return '<div class="empty-annotations exam-ann-empty">Select text in the answer above to add an annotation.</div>';
+      }
+      return items.map((x, i) => {
+        const ann = x.ann;
+        return '<div class="annotation-card">' +
+          '<button type="button" class="ac-remove" onclick="removeAnnotation(' + x.gi + ')" aria-label="Remove">×</button>' +
+          '<span class="ac-num">' + (i + 1) + '</span>' +
+          '<span class="ac-category ac-category--' + e(ann.category || 'note') + '">' + e((ann.category || 'note').toUpperCase()) + '</span>' +
+          '<div class="ac-quote">' + e(ann.quote) + '</div>' +
+          '<div class="ac-comment">' + e(ann.comment) + '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    // Re-render annotation cards after a change: per-question containers for an
+    // exam, the single right-column list otherwise.
+    function rerenderAnnotationCards() {
+      if (isExamSubmission()) {
+        (submission.answers || []).forEach(a => {
+          if (a.type === 'multiple_choice') return;
+          const el = document.getElementById('examAnn_' + a.question_id);
+          if (el) el.innerHTML = renderExamQuestionAnnotations(a.question_id);
+        });
+      } else {
+        const el = document.getElementById('annotationCards');
+        if (el) el.innerHTML = renderAnnotationCards();
+      }
     }
 
     // ---- Save ----
