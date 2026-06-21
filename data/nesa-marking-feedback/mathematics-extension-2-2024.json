@@ -1,0 +1,505 @@
+{
+  "subject": "Mathematics Extension 2",
+  "slug": "mathematics-extension-2",
+  "year": 2024,
+  "sourceUrl": "NESA 2024 HSC Mathematics Extension 2 — Notes from the Marking Centre (local PDF)",
+  "scrapedAt": "2026-06-21",
+  "generalFeedback": [
+    "show relevant mathematical reasoning and/or calculations",
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements such as show, solve, evaluate, hence, calculate, derive",
+    "use the Reference Sheet where appropriate",
+    "ensure the solution is legible and follows a clear sequence",
+    "engage with any stimulus material provided and refer to it in their response when required by the question",
+    "check their solution answers the question",
+    "round off numerical solutions only at the final step of the solution",
+    "construct graphs neatly, with precision and display all relevant information as required by the question",
+    "interpret information presented in graphs across a range of contexts",
+    "understand when to use relevant calculator functions",
+    "carefully note any information in the questions which supplies units of measurement."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "Question 11 (a)",
+          "betterResponses": [
+            "identity the need to use integration by parts",
+            "establish a correct anti-derivative with a constant."
+          ],
+          "areasToImprove": [
+            "choosing the correct expressions of 𝑢 = 𝑥 and 𝑑𝑣 = 𝑒 𝑥 ."
+          ]
+        },
+        {
+          "questionNumber": "Question 11 (b) (i)",
+          "betterResponses": [
+            "use the definition of a conjugate to correctly add the 2 complex numbers."
+          ],
+          "areasToImprove": [
+            "checking their expressions to avoid transcription errors."
+          ]
+        },
+        {
+          "questionNumber": "Question 11 (b) (ii)",
+          "betterResponses": [
+            "efficiently square a complex number",
+            "choose an appropriate form of a complex number before applying a power."
+          ],
+          "areasToImprove": [
+            "using the correct value of 𝑖 2 = −1."
+          ]
+        },
+        {
+          "questionNumber": "Question 11 (c)",
+          "betterResponses": [
+            "apply the formula for the angle between 2 vectors",
+            "correctly calculate the dot product and modulus",
+            "use radians mode when prompted."
+          ],
+          "areasToImprove": [
+            "differentiating between radians and degrees",
+            "understanding the effect of the negative sign on a trigonometric ratio."
+          ]
+        },
+        {
+          "questionNumber": "Question 11 (d)",
+          "betterResponses": [
+            "use an appropriate substitution to simplify the integral",
+            "apply t-result formulae to the integrand and related boundaries",
+            "convert the integral into a simple algebraic form."
+          ],
+          "areasToImprove": [
+            "understanding the appropriate forms for 𝑡-result substitutions",
+            "correctly applying boundary values with differentials."
+          ]
+        },
+        {
+          "questionNumber": "Question 11 (e) (i)",
+          "betterResponses": [
+            "efficiently determine the modulus and argument of a complex number."
+          ],
+          "areasToImprove": [
+            "applying square roots as part of the modulus formula."
+          ]
+        },
+        {
+          "questionNumber": "Question 11 (e) (ii)",
+          "betterResponses": [
+            "raise a complex number to a high power using polar form",
+            "convert between polar and cartesian form."
+          ],
+          "areasToImprove": [
+            "demonstrating understanding of appropriate quadrants for differing arguments."
+          ]
+        },
+        {
+          "questionNumber": "Question 11 (f)",
+          "betterResponses": [
+            "graph the region described by a modulus inequality and an argument inequation",
+            "carefully deal with boundary values in particular points where the argument is undefined."
+          ],
+          "areasToImprove": [
+            "using dotted lines and open circles to highlight points excluded from regions",
+            "using argument inequations",
+            "subtracting vectors related to complex numbers."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 (a) (i)",
+          "betterResponses": [
+            "follow the dot product procedure properly",
+            "multiply a vector by a scalar."
+          ],
+          "areasToImprove": [
+            "finding the dot product of a vector with itself."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 (a) (ii)",
+          "betterResponses": [
+            "recognise the algebraic expression for the projection of 𝑎 onto 𝑏, and/or draw the associated vector diagram."
+          ],
+          "areasToImprove": [
+            "reviewing their calculations to avoid basic errors involving addition or multiplication by 0",
+            "communicating simple calculations in working in response to the requirement to ‘show that’",
+            "subtracting negative numbers."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 (b)",
+          "betterResponses": [
+            "break the expression into the required format for partial fractions",
+            "use methodical progress to determine the unknown quantities",
+            "check that the result of the partial fraction breakdown satisfies the original expression."
+          ],
+          "areasToImprove": [
+            "using absolute values for the natural logarithm anti-derivative",
+            "checking the results of the simultaneous equations",
+            "using the reference sheet to identify basic anti-derivatives."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 (c) (i)",
+          "betterResponses": [
+            "clearly communicate understanding of the modulus of a complex number."
+          ],
+          "areasToImprove": [
+            "explaining why 𝑏 + 12 = 0 satisfies the imaginary part for this example",
+            "equating real and Imaginary parts of an equation involving complex numbers."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 (c) (ii)",
+          "betterResponses": [
+            "clearly communicate understanding of the modulus of a complex number 𝑧 = 𝑎 + 𝑖𝑏."
+          ],
+          "areasToImprove": [
+            "completing the response by supplying an answer for 𝑧 after calculating 𝑎."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 (d)",
+          "betterResponses": [
+            "recognise that considering 𝑛 odd/even is the most appropriate approach",
+            "clearly communicate solutions for both cases."
+          ],
+          "areasToImprove": [
+            "supporting statements and ideas with mathematical calculations or proof",
+            "ensuring that the response adds information to what is supplied in the question."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 (e) (i)",
+          "betterResponses": [
+            "identify the direction of a vector",
+            "complete the subtraction of the relevant vectors given in the question."
+          ],
+          "areasToImprove": [
+            "carefully subtracting vector components",
+            "understanding the format for the vector equation of a line."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 (e) (ii)",
+          "betterResponses": [
+            "maintain consistent methods when calculating the parameters for different vector components",
+            "carefully test and compare results."
+          ],
+          "areasToImprove": [
+            "calculating multiple parameters to reduce the possibility of an error in calculation."
+          ]
+        },
+        {
+          "questionNumber": "Question 13 (a) (i)",
+          "betterResponses": [
+            "find the vector 𝐴𝐵 in component form, then find |𝐴𝐵|2 showing all working."
+          ],
+          "areasToImprove": [
+            "finding the difference of two vectors or expanding perfect squares."
+          ]
+        },
+        {
+          "questionNumber": "Question 13 (a) (ii)",
+          "betterResponses": [
+            "use the formula for the axis of symmetry and the concavity of the parabola to show that |𝐴𝐵|2 has a minimum value when 𝑝 = 2, then substitute into the expression in (a) to find the minimum value of |𝐴𝐵|2 , then take its square root to find the minimum distance",
+            "use calculus to find the minimum turning point of |𝐴𝐵|2 , or use the dot product of 𝐴𝐵 and ℓ, the vector projection of 𝐴𝐵 onto ℓ or 𝑂𝐴 onto ℓ, the scalar projection of 𝐴𝐵 onto ℓ or 𝑂𝐴 onto ℓ, or complete the square on |𝐴𝐵|2 ."
+          ],
+          "areasToImprove": [
+            "explaining why a value found using the axis of symmetry or by letting the first derivative equal zero or by completing the square gives a minimum value."
+          ]
+        },
+        {
+          "questionNumber": "Question 13 (b)",
+          "betterResponses": [
+            "find 𝑛 = 2 and 𝑐 = −1 from the equation of motion, then find 𝑎 = √5 by either: (1) finding an expression for 𝑣 2 using definite integration using 𝑑/𝑑𝑥 (1/2 𝑣 2 ) = −4(𝑥 + 1) (2) finding an expression for 𝑣 2 using indefinite integration using 𝑑/𝑑𝑥 (1/2 𝑣 2 ) = −4(𝑥 + 1) then rearranging into the form 𝑣 2 = 𝑛2 (𝑎2 − (𝑥 − 𝑐)2 ) (3) using their equation for 𝑣 2 to find the extremities of motion (4) finding expressions for displacement and velocity as functions of sine and cosine",
+            "find that the distance travelled in a full period of motion is 4𝑎 = 4√5, or twice the distance between the extremities of motion."
+          ],
+          "areasToImprove": [
+            "taking more care when solving simple equations within a longer solution",
+            "understanding when and how to correctly use the formula 𝑣 2 = 𝑛2 (𝑎2 − (𝑥 − 𝑐)2 )",
+            "knowing that the distance travelled in one full period of motion is four times the amplitude or twice the distance between the extremities of motion, and that no further calculus is required."
+          ]
+        },
+        {
+          "questionNumber": "Question 13 (c) (i)",
+          "betterResponses": [
+            "integrate 𝑣 𝑑𝑣/𝑑𝑥 = −𝑘𝑣 2 or 𝑑/𝑑𝑥 (1/2 𝑣 2 ) = −𝑘𝑣 2 to find an equation linking 𝑥 and 𝑣, then correctly rearrange to make 𝑣 the subject, clearly explaining why only the positive solution was required."
+          ],
+          "areasToImprove": [
+            "recognising that 𝑥̈ = 𝑣 𝑑𝑣/𝑑𝑥 gives a simpler solution than 𝑥̈ = 𝑑/𝑑𝑥 (1/2 𝑣 2 ) in this case since we are trying to find a function of 𝑣 rather than 𝑣 2",
+            "removing constant factors from integrals before integration to reduce the complexity of the algebra and reduce simple errors",
+            "manipulating equations including logarithms or exponentials with a minus sign correctly, showing all steps clearly especially when using indefinite integrals",
+            "using definite integrals to obtain the solution more efficiently."
+          ]
+        },
+        {
+          "questionNumber": "Question 13 (c) (ii)",
+          "betterResponses": [
+            "substitute correctly into 𝑣 = 40𝑒 −𝑘𝑥 and rearrange the equation one step at a time to reach the given result."
+          ],
+          "areasToImprove": [
+            "showing all steps when proving a given result, especially the last steps to reach the result."
+          ]
+        },
+        {
+          "questionNumber": "Question 13 (c) (iii)",
+          "betterResponses": [
+            "integrate 𝑑𝑣/𝑑𝑡 = −𝑘𝑣 2 or 𝑑𝑥/𝑑𝑡 = 40𝑒 −𝑘𝑥 to find an expression involving 𝑣 and 𝑡 or 𝑥 and 𝑡 respectively, then correctly substitute to find 𝑡."
+          ],
+          "areasToImprove": [
+            "recognising that 𝑥̈ = 𝑑𝑣/𝑑𝑡 gives a simpler solution than using the expression for 𝑑𝑥/𝑑𝑡 since we need to link 𝑣 and 𝑡 in the question",
+            "leaving all expressions in terms of 𝑘 then substituting 𝑘 = ln 4/15 at the end to find a numerical expression for 𝑡",
+            "using definite integrals to obtain the solution more efficiently."
+          ]
+        },
+        {
+          "questionNumber": "Question 13 (d)",
+          "betterResponses": [
+            "start with an expression equal to either the left-hand side, the right-hand side or the difference between the sides, of 1/𝑎 + 1/𝑏 + 1/𝑐 = 1 or 𝑎√𝑏𝑐 + 𝑏√𝑎𝑐 + 𝑐√𝑎𝑏 = 𝑎𝑏𝑐, then use the arithmetic mean – geometric mean (AM-GM) three times to prove the result",
+            "start with three AM-GM inequalities using appropriate variables and add them, then rearrange to prove the result",
+            "use three separate inequalities and add them appropriately."
+          ],
+          "areasToImprove": [
+            "using more than one application of the AM-GM and using the variables required in pairs",
+            "using the most complicated of the expression to be proved, in this case 𝑎√𝑏𝑐 + 𝑏√𝑎𝑐 + 𝑐√𝑎𝑏, as a hint to guide the choice of variables to be used in the AM-GM."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 (a)",
+          "betterResponses": [
+            "use a direct proof by letting 𝑎 = 2𝑘 + 1 for 𝑘 ∈ ℤ to show that 𝑎2 − 1 = 4𝑘(𝑘 + 1), then noting that 𝑘 and 𝑘 + 1 are consecutive numbers where one is even and the other odd and so their product must be even, then lastly let 𝑘(𝑘 + 1) = 2𝑝 for 𝑝 ∈ ℤ, to conclude that 𝑎2 − 1 is divisible by 8.",
+            "use cases to prove that 𝑘(𝑘 + 1) is even",
+            "use 𝑎 = 4𝑘 + 1 and 𝑎 = 4𝑘 + 3 (or 𝑎 = 4𝑘 − 1) and prove that in both cases 𝑎2 − 1 is divisible by 8",
+            "use different methods of proof, for example, mathematical induction, proof by contrapositive and proof by contradiction can all be used to prove the result."
+          ],
+          "areasToImprove": [
+            "understanding that proving the result is true for only one of 𝑎 = 4𝑘 + 1 or 𝑎 = 4𝑘 + 3 or 𝑎 = 4𝑘 − 1 only proves the result is true for some odd values of 𝑎, not all odd values of 𝑎 as required",
+            "using mathematical induction appropriately. The base case must be the lowest number, in this case 𝑎 = 1, and the step value must be 2",
+            "setting up the proof properly to be able to prove the required result when using proof by contrapositive or proof by contradiction, rather than trying to prove the converse or inverse."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 (b)",
+          "betterResponses": [
+            "prove 𝑃(5) by showing that 252 < 256, then correctly state 𝑃(𝑘) as 2𝑘𝐶𝑘 < 22𝑘−2 and 𝑃(𝑘 + 1) as 2𝑘+2𝐶𝑘+1 < 22𝑘 , then start with the LHS of 𝑃(𝑘 + 1), convert from 𝐶 notation to factorial notation, rearrange the expression to be (2𝑘+2)(2𝑘+1)/(𝑘+1)(𝑘+1) × (2𝑘)!/𝑘!𝑘! , replace (2𝑘)!/𝑘!𝑘! with 2𝑘𝐶𝑘 , use 𝑃(𝑘) to replace 2𝑘𝐶𝑘 with 22𝑘−2 and introduce the correct inequality sign, then show that (2𝑘+2)(2𝑘+1)/(𝑘+1)(𝑘+1) < 22 in a clear and logical manner to complete the proof",
+            "start with the RHS of 𝑃(𝑘 + 1), LHS - RHS of 𝑃(𝑘 + 1) or both sides of 𝑃(𝑘)."
+          ],
+          "areasToImprove": [
+            "substituting 𝑛 = 5 and 𝑛 = 𝑘 + 1 correctly into both sides of 2𝑛𝐶𝑛 < 22𝑛−2 to prove the base case and to find 𝑃(𝑘 + 1)",
+            "converting from 𝐶 notation to factorial notation, and operating with factorial notation",
+            "manipulating simple algebraic terms correctly within a longer solution",
+            "using factorisation, and replacing smaller terms with larger terms, to prove that (2𝑘+2)(2𝑘+1)/(𝑘+1)(𝑘+1) < 22 for all values of 𝑘 ≥ 5."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 (c)",
+          "betterResponses": [
+            "use a diagram to show that 𝑧 − 𝑤 and 𝑧 + 𝑤 are the diagonals of a rectangle, and since they are equal |(𝑧−𝑤)/(𝑧+𝑤)| = |𝑧−𝑤|/|𝑧+𝑤| = 1",
+            "let 𝑧 = 𝑘𝑖𝑤 and by dividing the numerator and denominator of |(𝑧−𝑤)/(𝑧+𝑤)| by 𝑤 show that |(𝑧/𝑤 −1)/(𝑧/𝑤 +1)| = |𝑘𝑖−1|/|𝑘𝑖+1| = √(𝑘 2 +1)/√(𝑘 2 +1) = 1",
+            "use Pythagoras theorem with |𝑤| and |𝑧|."
+          ],
+          "areasToImprove": [
+            "recognising the relationship between the moduli of 𝑧 and 𝑤 is not given in the question then we cannot assume that they are equal",
+            "drawing a clear diagram to help identify a more efficient approach."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 (d)",
+          "betterResponses": [
+            "clearly state that the two instances of ∫ 1/𝑥 𝑑𝑥 in the question each involve a constant of integration which may be different, or clearly state that 1/𝑥 × 𝑥 should be 1/𝑥 × 𝑥 + 𝑐 as there is a constant of integration that is not normally shown",
+            "identify that in solving ∫ 1/𝑥 𝑑𝑥 = 1 + ∫ 1/𝑥 𝑑𝑥 we arrive at ln|𝑥| + 𝐶1 = 1 + ln|𝑥| + 𝐶2 , where the two constants differ by 1, is a successful solution."
+          ],
+          "areasToImprove": [
+            "understanding that indefinite integrals refer to a function whose gradient function is equal to the integrand, not to areas underneath curves",
+            "understanding that an integral is only defined where the integrand is defined, so in this case the fact that 𝑥 could not be equal to zero was not relevant",
+            "understanding that integration by parts works for all integrals, even those that can be solved more easily using standard integrals."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 (e) (i)",
+          "betterResponses": [
+            "use arrow vector notation to show that 𝑂𝑅 = 𝑂𝑃 + 𝑃𝑅, then use given information to show that 𝑂𝑃 = 3/5 𝑂𝐴 and 𝑃𝑅 = 𝑘𝑃𝑄 = 𝑘(𝑂𝑄 − 𝑂𝑃) then substitute 𝑂𝐴 = 𝑎 and 𝑂𝐵 = 𝑏 and rearrange to prove the result",
+            "use 𝑂𝑅 = 𝑂𝑄 + 𝑄𝑅 to prove the result."
+          ],
+          "areasToImprove": [
+            "recognising that if the question states an expression for 𝑃𝑅, then it is more efficient to use 𝑂𝑅 = 𝑂𝑃 + 𝑃𝑅 than break 𝑂𝑅 into the sum of any other vectors",
+            "using operations with vector algebra correctly."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 (e) (ii)",
+          "betterResponses": [
+            "create two simultaneous equations involving ℎ and 𝑘 to equate the coefficients of 𝑎 and 𝑏, then solve to show 𝑘 = 1/6",
+            "subtract vectors to reach the zero vector."
+          ],
+          "areasToImprove": [
+            "understanding that when a vector can be represented by two expressions using scalar multiples of the sum of two non-parallel vectors, then the scalar multiples of each vector must be equal",
+            "solving simultaneous equations within a longer solution."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 (e) (iii)",
+          "betterResponses": [
+            "find an expression for 𝑂𝑇 in terms of 𝑎 and 𝑏 by introducing a scalar, and using the result from part (ii) find 𝑂𝑅 in terms of 𝑎 and 𝑏, find the value of the scalar, and find 𝑂𝑇 in terms of 𝑎 and 𝑏."
+          ],
+          "areasToImprove": [
+            "solving simultaneous equations with letters from the Greek alphabet."
+          ]
+        },
+        {
+          "questionNumber": "Question 15 (a) (i)",
+          "betterResponses": [
+            "set up the equation of the vector from A to B",
+            "compare the equation to the position vector for M",
+            "draw a diagram illustrating the parallelogram formed by the vectors in the question",
+            "express OM in terms of OA and AB",
+            "show AM and MB are equal",
+            "show AM is a multiple of AB."
+          ],
+          "areasToImprove": [
+            "identifying the difference between 𝑏 − 𝑎 and 𝑎 + 𝑏",
+            "providing clear and logical working",
+            "avoiding proof of AM + MB = AB to prove M is a point on the line AB",
+            "attempting to equate vector AB with OM to show point of intersection",
+            "using proper vector notation."
+          ]
+        },
+        {
+          "questionNumber": "Question 15 (a) (ii)",
+          "betterResponses": [
+            "understand the difference between a point and a vector",
+            "understand the difference between vector 𝑀𝐶 and ‘the line passing through M and C’.",
+            "understand that the parameter of an equation is a quantity that determines if a point is in between two points."
+          ],
+          "areasToImprove": [
+            "identifying that the point of difference between parts (i) and (ii) implies an extra component to this response",
+            "addressing the expression, ‘lies between M and C’ with evidence",
+            "drawing a diagram so the response can focus on the relevant vectors instead of using guesswork",
+            "understanding the difference between a vector between two points and a position vector."
+          ]
+        },
+        {
+          "questionNumber": "Question 15 (a) (iii)",
+          "betterResponses": [
+            "relate part (iii) to the previous parts of question 15",
+            "relate complex numbers as vectors to those on an Argand diagram",
+            "refer to the modulus information given",
+            "refer to the cube root of 𝑥𝑤𝑧 as well as the value 𝑥𝑤𝑧",
+            "relate the geometrical aspect of roots of complex numbers and the geometry of the point G in relation to the unit circle."
+          ],
+          "areasToImprove": [
+            "communicating all aspects of the problem-solving process."
+          ]
+        },
+        {
+          "questionNumber": "Question 15 (b)",
+          "betterResponses": [
+            "separate appropriate factors and follow the procedure of integration by parts",
+            "include all relevant steps to communicate the procedure to satisfy the requirement to ‘show that’",
+            "manipulate the integrand into the required form."
+          ],
+          "areasToImprove": [
+            "choosing the correct factors to differentiate and integrate",
+            "setting out responses so they are easily followed and minimise errors in processes",
+            "using the index laws correctly",
+            "understanding that questions involving this form of recurrence relation most likely involve integration by parts."
+          ]
+        },
+        {
+          "questionNumber": "Question 15 (c) (i)",
+          "betterResponses": [
+            "respond to the requirement to ‘show that’ by finding an anti-derivative expression as well as the calculation for the desired constant of integration",
+            "illustrate separate steps in the process to clarify the correct method used."
+          ],
+          "areasToImprove": [
+            "setting out responses so they are easily followed and minimise errors in processes",
+            "differentiating algebraic terms with negative powers."
+          ]
+        },
+        {
+          "questionNumber": "Question 15 (c) (ii)",
+          "betterResponses": [
+            "create a cubic equation and solve it",
+            "notice that the object was ‘at rest at 𝑥 = 6’ gives one solution to the cubic, and hence find the required quadratic factor by using an appropriate method",
+            "select the appropriate solution that relates to the movement of the object."
+          ],
+          "areasToImprove": [
+            "applying methods to solve a cubic equation",
+            "reading the question carefully to extract information about the movement of the object."
+          ]
+        },
+        {
+          "questionNumber": "Question 15 (d)",
+          "betterResponses": [
+            "‘complete the square’ in the integrand’s denominator",
+            "use an appropriate trigonometric substitution",
+            "apply relevant trigonometric identities in their responses",
+            "use a right-angle triangle diagram to convert the substituted variable back to 𝑥."
+          ],
+          "areasToImprove": [
+            "recognising the forms of integrand that are best solved with trigonometric substitution",
+            "using a substitution that will simplify the original expression",
+            "carefully organising substitutions and derivatives on the page for clarity of communication",
+            "identifying their most appropriate response when there have been multiple responses made."
+          ]
+        },
+        {
+          "questionNumber": "Question 16 (a)",
+          "betterResponses": [
+            "use derivatives to establish a relationship between orthogonal vectors",
+            "find a set of equations relating the 3 variables 𝑎, 𝑏 and 𝑘",
+            "simplify the trigonometric relationship between the variables to establish that 𝑘 > 1."
+          ],
+          "areasToImprove": [
+            "understanding that two tangential curves share a common point and a common tangent This would have given 𝑏 = cos 𝑘𝑎 and 𝑎 = 𝑘𝑏 sin 𝑘𝑎 from which the relationship 2𝑎 = 𝑘 sin 2𝑘𝑎 would have been potentially achieved",
+            "using contradiction methods as part of show and prove questions",
+            "using functional connections between variables when trigonometric and linear functions are related."
+          ]
+        },
+        {
+          "questionNumber": "Question 16 (b) (i)",
+          "betterResponses": [
+            "use the binomial expansion involving complex numbers",
+            "show that the sum of conjugate complex numbers 𝛾 + 𝛾̅ = 2𝑅𝑒(𝛾)",
+            "show, without a calculator, the root of a polynomial equation",
+            "use the triple angle formula for cos to simplify their trigonometric expression",
+            "draw a connection between the cube roots of the cube roots of unity."
+          ],
+          "areasToImprove": [
+            "understanding conjugate properties of complex numbers",
+            "understanding that a cubic polynomial will have at most 3 complex roots",
+            "understanding that De Moivre’s theorem applies to complex numbers, not real numbers, that is (cos 𝑥)3 ≠ cos 3𝑥."
+          ]
+        },
+        {
+          "questionNumber": "Question 16 (b) (ii)",
+          "betterResponses": [
+            "understand that the roots to the polynomial 𝑧 3 − 3𝑧 + 1 = 0 were 2cos 2𝜋/9 , 2cos 4𝜋/9 , 2cos 8𝜋/9",
+            "apply the product of the roots relationship to show that cos 2𝜋/9 cos 4𝜋/9 cos 8𝜋/9 = −1/8",
+            "deduce with appropriate reasoning, that the product given by cos 2𝑛 𝜋/9 cos 2𝑛+1 𝜋/9 cos 2𝑛+2 𝜋/9 also takes the value −1/8 ."
+          ],
+          "areasToImprove": [
+            "ensuring they respond to references to other question parts, for example, ‘by using part (i) to find a value …’",
+            "attempting to establish a general relationship between variables in a relationship",
+            "showing case values for 𝑛 = 1,2,3 … to establish a pattern."
+          ]
+        },
+        {
+          "questionNumber": "Question 16 (c)",
+          "betterResponses": [
+            "correctly use force equations for both variables with the appropriate directions",
+            "make use of the starting conditions for each projectile",
+            "work effectively with definite integrals to establish velocity and displacement equations in terms of time",
+            "work through the algebra to seek a correct expression for time of impact."
+          ],
+          "areasToImprove": [
+            "differentiating between correct expressions for acceleration to meet the requirements of a question",
+            "establishing an appropriate direction for positive motion and then altering variables to suit these conditions."
+          ]
+        }
+      ]
+    }
+  ]
+}

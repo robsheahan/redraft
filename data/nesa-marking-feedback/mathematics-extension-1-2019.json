@@ -1,0 +1,353 @@
+{
+  "subject": "Mathematics Extension 1",
+  "slug": "mathematics-extension-1",
+  "year": 2019,
+  "sourceUrl": "NESA 2019 HSC Mathematics Extension 1 — Notes from the Marking Centre (local PDF)",
+  "scrapedAt": "2026-06-21",
+  "generalFeedback": [
+    "use the mark value of a question as a guide to the complexity of solution required.",
+    "reading the question carefully in order to answer the question that is asked.",
+    "reading the question accurately to determine the relationships between variables",
+    "interpreting the wording of a question",
+    "giving sufficient information in explanations.",
+    "fulfilling the requirements of the question",
+    "understand the interrelatedness of the parts of a question",
+    "developing an understanding of how the various parts of a question are related",
+    "take time to plan their approach to a proof, considering the facts needed and how to most easily obtain them.",
+    "using the Reference Sheet to help check their integration of standard expressions",
+    "using the calculator accurately",
+    "showing all working out.",
+    "balancing time throughout the exam to allow more time to focus on difficult last questions."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "Question 11 Part (a)",
+          "betterResponses": [
+            "gradients of the given lines and used the formula 𝜃 = tan−1 |𝑚1− 𝑚2 / 1+𝑚1 𝑚2| correctly to find the acute angle between the lines",
+            "angle that each line makes with the horizontal and, by subtraction, found the correct angle between the lines."
+          ],
+          "areasToImprove": [
+            "making the variable 𝑦 the subject so that the gradient can be read off from the equation",
+            "ensuring the formula 𝜃 = tan−1 |𝑚1− 𝑚2 / 1+𝑚1 𝑚2| is correctly written and used with particular attention to the signs in the numerator and denominator",
+            "understanding the purpose and correct use of the absolute value",
+            "understanding finding the point of intersection of the two lines has no bearing on the answer."
+          ]
+        },
+        {
+          "questionNumber": "Question 11 Part (b)",
+          "betterResponses": [
+            "use the method of multiplying by the square of the denominator",
+            "find the critical points and tested points on either side to reach the correct solution",
+            "consider options to satisfy the given condition: 𝑥 + 1 > 0 or 𝑥 + 1 < 0",
+            "use the graph of the hyperbola and the straight line 𝑦 = 2 and the point of intersection to solve the inequality."
+          ],
+          "areasToImprove": [
+            "understanding the sign implications if there is a variable in the denominator of an inequality",
+            "working on algebraic skills when attempting to multiply by the square of the denominator",
+            "practising solving quadratic inequalities",
+            "avoiding writing that −1 < 𝑥 < −2 on the number line when testing points or solving the quadratic inequality."
+          ]
+        },
+        {
+          "questionNumber": "Question 11 Part (c)",
+          "betterResponses": [
+            "present a proof that used appropriate theorems supported by reasons that were clear and concise",
+            "provide proofs that were well structured and easy to follow",
+            "use conventional symbols and abbreviations correctly."
+          ],
+          "areasToImprove": [
+            "exercising caution in labelling angles correctly",
+            "supporting each claim in a proof with a valid reason that is expressed clearly and concisely",
+            "developing the proof in a logical manner",
+            "distinguishing between similar and congruent triangles."
+          ]
+        },
+        {
+          "questionNumber": "Question 11 Part (d)",
+          "betterResponses": [
+            "execute the long division of the polynomial to correctly find the quotient 𝑄(𝑥)",
+            "establish that the quotient 𝑄(𝑥) is a quadratic and then correctly found the coefficients of this quadratic either by equating coefficients or by inspection."
+          ],
+          "areasToImprove": [
+            "understanding the remainder theorem and how to apply it",
+            "accurately performing long division of a polynomial",
+            "recognising that in this question the quotient 𝑄(𝑥) needs to be a quadratic."
+          ]
+        },
+        {
+          "questionNumber": "Question 11 Part (e)",
+          "betterResponses": [
+            "start with the double angle formula and logically worked towards the reduced form that needed to be integrated",
+            "perform the integration with the proper treatment of the constants involved in the integrand."
+          ],
+          "areasToImprove": [
+            "recognising the need to reduce the given trigonometric function so that it can be integrated",
+            "using a method to express sin2 4𝑥 in terms of cos 8𝑥 rather than relying on memorisation of a formula",
+            "using the Reference Sheet to help check their integration of standard expressions",
+            "paying attention to the constants associated with standard integrals."
+          ]
+        },
+        {
+          "questionNumber": "Question 11 Part (f) (i)",
+          "betterResponses": [
+            "recognise that binomial probability modelling was needed and used the appropriate values in the relevant binomial term."
+          ],
+          "areasToImprove": [
+            "recognising when a problem involves a binomial probability term",
+            "determining the correct values for 𝑝, 𝑞 and 𝑛."
+          ]
+        },
+        {
+          "questionNumber": "Question 11 Part (f) (ii)",
+          "betterResponses": [
+            "make effective use of the complementary event to determine the probability."
+          ],
+          "areasToImprove": [
+            "understanding what ‘at least’ means in the context of probability problems",
+            "clearly articulating that 𝑃(at least 2 wins) = 1 − 𝑃(0 wins) − 𝑃(1 win)",
+            "understanding that it is more efficient to present the probability using sigma notation rather than writing out all the terms in expanded form",
+            "paying particular attention to use the correct values for 𝑝, 𝑞 and 𝑛, and for the coefficient (𝑛/𝑟)."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 Part (a)",
+          "betterResponses": [
+            "show the use of the chain rule",
+            "show their result for 𝑑𝐵/𝑑𝐴",
+            "evaluate 𝐵 correctly and substituted it correctly into the chain rule."
+          ],
+          "areasToImprove": [
+            "using the calculator correctly",
+            "differentiating to find 𝑑𝐵/𝑑𝐴."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 Part (b) (i)",
+          "betterResponses": [
+            "find the values for 𝑅 and 𝛼 (in exact form) efficiently."
+          ],
+          "areasToImprove": [
+            "applying the auxilliary angle/transformation method skillfully",
+            "knowing and using exact radian values."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 Part (b) (ii)",
+          "betterResponses": [
+            "realise that the particle would be at rest at the end points of its motion and that this equated to the amplitude of their expression from part (i)"
+          ],
+          "areasToImprove": [
+            "understanding the features of Simple Harmonic Motion",
+            "reading the question carefully in order to answer the question that is asked."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 Part (b) (iii)",
+          "betterResponses": [
+            "realise that maximum velocity would be the amplitude of their expression for velocity",
+            "understand that speed would be a positive value",
+            "deduce that a 4th quadrant result to their trigonometric equation would still yield a positive value for time."
+          ],
+          "areasToImprove": [
+            "understanding the difference between speed and velocity",
+            "developing their ability to solve trigonometric equations and working with exact trigonometric values."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 Part (c)",
+          "betterResponses": [
+            "use the definition of a parabola to determine that 𝑃𝑆 = 𝑃𝑀",
+            "find the length of 𝑃𝑀 using the fact that it was a vertical line and avoided using the distance formula",
+            "use the formula for the equation of the tangent from the Reference Sheet to find the coordinates of 𝑅",
+            "determine the length of 𝑆𝑅 without the use of the distance formula",
+            "show that 𝑆𝑅 = 𝑃𝑆 and used this to clearly justify why ∠𝑆𝑃𝑅 = ∠𝑆𝑅𝑃",
+            "use other methods such as the reflective property of the parabola to achieve the required result."
+          ],
+          "areasToImprove": [
+            "enhancing algebraic skills to avoid complicating algebraic manipulations."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 Part (d) (i)",
+          "betterResponses": [
+            "to quickly and efficiently obtain this result."
+          ],
+          "areasToImprove": [
+            "knowing the method and the requirements of the question."
+          ]
+        },
+        {
+          "questionNumber": "Question 12 Part (d) (ii)",
+          "betterResponses": [
+            "connect the right times and temperatures and work carefully through finding 𝐴, 𝑘 and then 𝑑𝑇/𝑑𝑡",
+            "use exact values or calculator memories to maintain accuracy as they move through the stages of finding 𝐴, 𝑘 and then 𝑑𝑇/𝑑𝑡."
+          ],
+          "areasToImprove": [
+            "reading the question accurately to determine the relationships between variables",
+            "using the calculator accurately",
+            "showing all working out."
+          ]
+        },
+        {
+          "questionNumber": "Question 13 Part (a)",
+          "betterResponses": [
+            "differentiate 𝑢 = cos2 𝑥 correctly",
+            "substitute correctly for 𝑢",
+            "change the bounding limits and place them in the correct positions",
+            "integrate and substitute correctly to arrive at the solution."
+          ],
+          "areasToImprove": [
+            "avoiding common errors such as",
+            "providing the correct integrand,",
+            "using the original limits",
+            "providing the correct integrand but placing the limits incorrectly",
+            "differentiating incorrectly",
+            "making errors with negative signs",
+            "avoiding careless substitution errors."
+          ]
+        },
+        {
+          "questionNumber": "Question 13 Part (b)",
+          "betterResponses": [
+            "equate the coefficients in terms of 𝑘 and 𝑘 + 1, expand and solve the resulting equation",
+            "manipulate the expansion of the binomial coefficient and the indices successfully",
+            "use guess, check and refine to arrive at the solution, provide the substitution line and supporting evidence."
+          ],
+          "areasToImprove": [
+            "using brackets carefully when writing out an expansion",
+            "correctly recalling and using of the formula for (𝑛/𝑘)",
+            "accurately applying algebraic skills when manipulating indices."
+          ]
+        },
+        {
+          "questionNumber": "Question 13 Part (c) (i)",
+          "betterResponses": [
+            "manipulate the fractional indices and integrate successfully",
+            "include and find the constant of integration",
+            "show specific use of given conditions to order to arrive at the correct positive solution."
+          ],
+          "areasToImprove": [
+            "practising integration involving exponents with fractional indices",
+            "ensuring the inclusion of the constant of integration",
+            "including all reasoning in a ‘show’ question."
+          ]
+        },
+        {
+          "questionNumber": "Question 13 Part (c) (ii)",
+          "betterResponses": [
+            "use the reciprocal of 𝑣 = 𝑑𝑥/𝑑𝑡 to integrate to find an expression for 𝑡, use the given conditions to find the constant of integration",
+            "use separation of variables and then integrated to find an expression for 𝑡 and use the given conditions to find the constant of integration",
+            "manipulate exponential equations into logarithmic format in order to provide an expression of 𝑥 as a function of 𝑡."
+          ],
+          "areasToImprove": [
+            "fulfilling the requirements of the question",
+            "providing an expression of 𝑥 as a function of 𝑡",
+            "practising the method of finding the reciprocal of 𝑣 = 𝑑𝑥/𝑑𝑡 to integrate to find an expression for 𝑡",
+            "remembering to include the constant of integration."
+          ]
+        },
+        {
+          "questionNumber": "Question 13 Part (d) (i)",
+          "betterResponses": [
+            "solve for 𝑡 and hence 𝑥, and use either Pythagoras’ theorem or trigonometry to find the required distance",
+            "find the Cartesian equation of motion and solved for 𝑥, and used either Pythagoras’ theorem or trigonometry to find the required distance."
+          ],
+          "areasToImprove": [
+            "interpreting the requirements of the question correctly in order to find either 𝑥 or 𝑡 according to the given conditions.",
+            "working carefully through multiple steps to arrive at the solution without making errors."
+          ]
+        },
+        {
+          "questionNumber": "Question 13 Part (d) (ii)",
+          "betterResponses": [
+            "substitute the correct value of 𝑥 from part (i) into the Cartesian equation to get the gradient of the tangent at 𝐴",
+            "use the respective gradients in the formula tan 𝜃 = [𝑚1−𝑚2 / 1−𝑚1 ×𝑚2] to arrive at the angle",
+            "use the components of velocity to solve tan 𝛼 = [𝑦̇/𝑥̇] to obtain the angle of impact and then calculated the angle with the plane by appropriate subtraction."
+          ],
+          "areasToImprove": [
+            "avoiding errors when substituting values into the Cartesian equation, when substituting into tan 𝛼 = [𝑦̇/𝑥̇], or when substituting into tan 𝜃 = [𝑚1−𝑚2 / 1−𝑚1 ×𝑚2]."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 Part (a)",
+          "betterResponses": [
+            "clearly show the inductive step using the correct assumption in the 𝑛 = 𝑘 + 1 case",
+            "show their knowledge of algebra using factorial terms",
+            "display sufficient working to indicate a correct proof and obtain full marks."
+          ],
+          "areasToImprove": [
+            "understanding how to manipulate expressions that involve factorials,",
+            "recognising that (𝑘 + 1)! = (𝑘 + 1)𝑘! ."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 Part (b) (i)",
+          "betterResponses": [
+            "equate functions to find points of intersection",
+            "understand the connection between the points of intersection of two graphs, the roots of an equation and the zeros of a function."
+          ],
+          "areasToImprove": [
+            "interpreting the wording of a question",
+            "understanding and obeying the instruction ‘By considering graphs, explain…’.",
+            "giving sufficient information in explanations."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 Part (b) (ii)",
+          "betterResponses": [
+            "use the Reference Sheet and Newton’s method to fully show the required result."
+          ],
+          "areasToImprove": [
+            "developing accurate and efficient differentiation and algebraic skills."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 Part (b) (iii)",
+          "betterResponses": [
+            "realise that showing that the function values 𝑓(𝑥1 ) < 0 and 𝑓(𝑥2 ) > 0 were integral to achieving the required result",
+            "use algebra and inequality arguments to show that 𝑓(𝑥2 ) > 0",
+            "use a graphical approach arguing their solution from the shape of the cubic polynomial and the position of the stationary points and zeroes."
+          ],
+          "areasToImprove": [
+            "knowing how to manipulate inequalities",
+            "solving, expanding and factorising algebraic expressions involving multiple terms and cubics."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 Part (c) (i)",
+          "betterResponses": [
+            "use the connection between common tangents, gradients and equal derivative values."
+          ],
+          "areasToImprove": [
+            "understanding the difference between a function and a function value."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 Part (c) (ii)",
+          "betterResponses": [
+            "use an appropriate identity or concavity argument to show the required result",
+            "understand the boundary conditions on the variables 𝑘 and 𝛼 and the connection between 𝑥0 and 𝑥0 − 𝛼."
+          ],
+          "areasToImprove": [
+            "understanding the evenness or oddness of sine and cosine functions",
+            "knowing the general results of trigonometric equations."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 Part (c) (iii)",
+          "betterResponses": [
+            "use part (ii) to forge a correct expression for 𝑘",
+            "interpret the question to find 𝑘 in terms of 𝛼 only and realise that 𝑥0 = 𝛼 − 𝑥0 ."
+          ],
+          "areasToImprove": [
+            "developing an understanding of how the various parts of a question are related",
+            "balancing time throughout the exam to allow more time to focus on difficult last questions."
+          ]
+        }
+      ]
+    }
+  ]
+}

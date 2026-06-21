@@ -1,0 +1,393 @@
+{
+  "subject": "Mathematics Standard 2",
+  "slug": "mathematics-standard-2",
+  "year": 2024,
+  "sourceUrl": "NESA 2024 HSC Mathematics Standard 2 — Notes from the Marking Centre (local PDF)",
+  "scrapedAt": "2026-06-21",
+  "generalFeedback": [
+    "show relevant mathematical reasoning and/or calculations",
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements, such as show, solve, evaluate, hence, calculate",
+    "use the Reference Sheet where appropriate",
+    "ensure the solution is legible and follows a clear sequence",
+    "engage with any stimulus material provided and refer to it in their response when required by the question",
+    "check their solution answers the question",
+    "round off numerical solutions only at the final step of the solution",
+    "construct graphs neatly, with precision and display all relevant information as required by the question",
+    "interpret information presented in graphs across a range of contexts",
+    "understand when to use relevant calculator functions",
+    "carefully note any information in the questions which supplies units of measurement."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "Question 16",
+          "betterResponses": [
+            "identify the correct path and its weight",
+            "correctly label a path using letters",
+            "understand the difference between identifying a path and calculating its length",
+            "find the 2 paths and then clearly showed the vertices which related to the shortest path."
+          ],
+          "areasToImprove": [
+            "following the path they are trying to state and ensuring vertices are not missed",
+            "including the start and end points when labelling a path",
+            "understanding that diagrams are not to scale and a shorter path may appear longer on the network diagram."
+          ]
+        },
+        {
+          "questionNumber": "Question 17",
+          "betterResponses": [
+            "correctly convert both the electricity usage and cents to dollars",
+            "round to 2 decimal places."
+          ],
+          "areasToImprove": [
+            "knowing the correct conversion, for example, 1 kW = 1000 W",
+            "converting cents to dollars",
+            "understanding that this question involves two conversions."
+          ]
+        },
+        {
+          "questionNumber": "Question 18",
+          "betterResponses": [
+            "draw the correct minimum spanning tree (using a ruler) with weighted edges in their diagram",
+            "calculate the correct weight of their spanning tree",
+            "identify either 𝐹𝐶 and 𝐵𝐶 in the correct minimum spanning tree as having the same weight."
+          ],
+          "areasToImprove": [
+            "writing down the weighted edges, for example, weights on each edge of their tree",
+            "identify two edges with the same weight that could be swapped."
+          ]
+        },
+        {
+          "questionNumber": "Question 19",
+          "betterResponses": [
+            "calculate the gradient and 𝑦-intercept from graph",
+            "express the equation in terms of 𝑥 and 𝑦",
+            "understand the least-squares regression line in the context of the question."
+          ],
+          "areasToImprove": [
+            "using the graph rather than calculator function to produce the equation of the line",
+            "finding two clear points to calculate gradient accurately",
+            "ensuring there is a subject to the equation of the least-squares regression line",
+            "if using the calculator in statistics mode, identify that B is the gradient and A is the 𝑦-intercept in their equation leading to 𝑦 = 𝐴 + 𝐵𝑥."
+          ]
+        },
+        {
+          "questionNumber": "Question 20",
+          "betterResponses": [
+            "correctly identify the value of 10.0266 from the table and use it to calculate the future value of Ken’s investment",
+            "correctly identify the table value of 5% and 8 periods as 10.0266 and multiplied this decimal by the $200 annuity to calculate the correct future value",
+            "note the ‘compounded 6 monthly’ and adjusted interest rates and time periods accordingly (b)."
+          ],
+          "areasToImprove": [
+            "understanding when to divide by the interest factor and when to multiply",
+            "realising that if a question has a table provided, the solution requires the table to be used to calculate the solution and not a formula."
+          ]
+        },
+        {
+          "questionNumber": "Question 21",
+          "betterResponses": [
+            "fill in the table correctly and ensuring correct rounding",
+            "link the higher interest charge to an increasing balance",
+            "calculate the monthly interest rate",
+            "explain the impact of a greater interest charge (or lower repayment) on the balance of a loan."
+          ],
+          "areasToImprove": [
+            "interpreting the first row of the table to determine when to add or subtract cells from each other",
+            "understanding what impact a repayment lower than the interest being charged will have on the balance of a loan."
+          ]
+        },
+        {
+          "questionNumber": "Question 22",
+          "betterResponses": [
+            "correctly read the initial value of population B from the graph",
+            "determine the population when 𝑥 = 50",
+            "understand that 1.055 meant a growth of 5.5% and 0.97 was a decrease of 3%",
+            "interpret the exponential growth, base > 1, relate to a standard annualised percentage increase as (1 + 𝑟) compound growth per time-period, and interpret the exponential decay, base < 1, relate to a standard annualised percentage decrease as (1 − 𝑟) compound growth per time-period."
+          ],
+          "areasToImprove": [
+            "distinguishing between the percentage change and the factor (1 ± 𝑟)",
+            "identifying which line in the diagram was W and which was K by interpreting the information given",
+            "understanding that 5.5% increase is not 105.5% and understanding that 3% decrease is not 97%."
+          ]
+        },
+        {
+          "questionNumber": "Question 23",
+          "betterResponses": [
+            "calculate the time-and-a-half rate of $67.50",
+            "understand that overtime hours are different to equivalent normal hours",
+            "calculate the amount paid for overtime",
+            "total earnings for the week."
+          ],
+          "areasToImprove": [
+            "understanding the difference between overtime rates and normal hourly rates."
+          ]
+        },
+        {
+          "questionNumber": "Question 24",
+          "betterResponses": [
+            "convert 1.2 standard drinks in one glass of wine to (1.2 × 3) standard drinks in three glasses of wine",
+            "substitute the given values into the blood alcohol content (BAC) formula correctly",
+            "utilise the degree/minutes button on the calculator and correctly interpret the answer to the nearest minute."
+          ],
+          "areasToImprove": [
+            "converting a decimal to time in hours and minutes",
+            "using the calculator and the rounding to 3 decimal places",
+            "ensuring all values are correctly substituted into the formula, recognising there are some mathematical calculations required prior to substituting."
+          ]
+        },
+        {
+          "questionNumber": "Question 25",
+          "betterResponses": [
+            "know the difference between simple interest and compound interest",
+            "compare Alex and Jun’s future values or compare their interest values from the simple interest and compound interest calculations",
+            "write a concluding statement",
+            "recognise that they were calculating different values for each person and then make the appropriate adjustment."
+          ],
+          "areasToImprove": [
+            "converting the rate and periods into the compounding periods stated in the question, particularly for interest compounding quarterly",
+            "understanding that interest or future values should be compared to see the difference in interest earnt for questions with two different interest type questions",
+            "identifying the compound interest formula gives the future value, not the interest",
+            "identifying the simple interest formula gives the interest not the future value."
+          ]
+        },
+        {
+          "questionNumber": "Question 26",
+          "betterResponses": [
+            "view the parabola as symmetrical to find the value halfway between 0 and 40",
+            "substitute 𝑥 = 20 into the equation to find the maximum area",
+            "use the area formula for a rectangle to find the height."
+          ],
+          "areasToImprove": [
+            "making markings in the middle of the parabola on the horizontal axis",
+            "linking values on the horizontal axis (variable) to the formula and substituting values into the given quadratic equation",
+            "understanding the symmetry of a parabola."
+          ]
+        },
+        {
+          "questionNumber": "Question 27",
+          "betterResponses": [
+            "calculate the 5, 7 and 10 year repayment totals showing all relevant working out",
+            "compare the 5 and 7 year total from the 10 year total",
+            "use the original loan with the 5 and 7 year total and then again with the 10 year total to calculate the interest accrued in each scenario and then finally compare the differences."
+          ],
+          "areasToImprove": [
+            "finding annual totals by multiplying by 12",
+            "calculating total repayments for different periods of time."
+          ]
+        },
+        {
+          "questionNumber": "Question 28",
+          "betterResponses": [
+            "explicitly compare the skewness, central tendency, and spread of the data from each garden",
+            "interpret the boxplots to use specific values for median, range or inter-quartile range to support their comparisons",
+            "use specific language to describe the shape of a distribution, for example, ‘positively skewed’ or ‘negatively skewed’."
+          ],
+          "areasToImprove": [
+            "ensuring that the three areas of skewness, central tendency, and spread were addressed in their response",
+            "recognising that the median is the only measure of central tendency that can be deduced from a box-plot",
+            "identifying positive and negative skew in data and understanding the difference between the two."
+          ]
+        },
+        {
+          "questionNumber": "Question 29",
+          "betterResponses": [
+            "calculate the salvage value for the straight-line depreciation component",
+            "substitute the salvage value from the straight-line method at the end of the 4 years into the declining-balance formula as the initial value",
+            "subtract the final salvage value from the original value to calculate the total depreciation."
+          ],
+          "areasToImprove": [
+            "knowing the difference between straight line and declining balance depreciation",
+            "selecting the correct formula from the reference sheet and using it correctly",
+            "understanding the salvage value at the end of the 4 years is the initial value of the next part of the calculation",
+            "understanding that ‘depreciation’ is the loss in value."
+          ]
+        },
+        {
+          "questionNumber": "Question 30",
+          "betterResponses": [
+            "successfully list at least three unique observations about anacondas",
+            "interpret the scatterplot to make observations about lengths, growth rates, and trends before and after maturity",
+            "use clear mathematical language in their response – for example, increasing at a decreasing rate."
+          ],
+          "areasToImprove": [
+            "recognising that the data cannot be used to make predictions about the length of anacondas after 10 years",
+            "understanding that the data represents the lengths of many different anacondas, and not a single anaconda over time",
+            "ensuring that they provide observations that were unique from one another",
+            "understanding how to take an observation from a scatterplot about the subject of the data rather than the data itself."
+          ]
+        },
+        {
+          "questionNumber": "Question 31",
+          "betterResponses": [
+            "use the correct formula for complimentary events",
+            "understand that a biased coin changes the probability of obtaining a head",
+            "create tree diagrams to support their finding."
+          ],
+          "areasToImprove": [
+            "constructing a correct tree diagram",
+            "simplifying probability values",
+            "understanding the probability scale and that the range of probability is 0 ≤ 𝑝𝑟𝑜𝑏𝑎𝑏𝑖𝑙𝑖𝑡𝑦 ≤ 1",
+            "understanding the difference between ‘calculating’ and ‘describing’ probabilities and when to use them to represent a solution."
+          ]
+        },
+        {
+          "questionNumber": "Question 32",
+          "betterResponses": [
+            "use correct formulas for circle and area of triangle",
+            "round correctly to 2 significant figures",
+            "use the area to find the shaded region of the circle."
+          ],
+          "areasToImprove": [
+            "creating a clear sequence of mathematical calculations",
+            "understanding the difference between rounding significant figures compared to decimal places."
+          ]
+        },
+        {
+          "questionNumber": "Question 33",
+          "betterResponses": [
+            "convert between different units",
+            "recognise that units need to be the same to calculate time",
+            "apply the unitary method with correct conversions."
+          ],
+          "areasToImprove": [
+            "understanding the relationship between speed, distance and time and knowing the formula correctly",
+            "making sure that the units for distance, speed and time are connected, for example, distance in 𝑘𝑚, speed in 𝑘𝑚/ℎ and time in ℎ, or distance in 𝑚, speed in 𝑚/𝑠 and time in 𝑠."
+          ]
+        },
+        {
+          "questionNumber": "Question 34",
+          "betterResponses": [
+            "convert the original measurements into metres before calculating the surface area",
+            "convert measurements to metres prior to calculating their surface area",
+            "recognise the open cylinder, rather than closed and understand that two hemispheres are equal to a sphere."
+          ],
+          "areasToImprove": [
+            "converting 𝑐𝑚2 to 𝑚2",
+            "using the most efficient methods and calculations to communicate their responses."
+          ]
+        },
+        {
+          "questionNumber": "Question 35 (a)",
+          "betterResponses": [
+            "calculate the correct 𝑧‑score using the formula provided",
+            "use the table to obtain the correct probability",
+            "recognise that 50% of the scores lie below the mean."
+          ],
+          "areasToImprove": [
+            "understanding that a 𝑧‑score does not represent a probability",
+            "recognising the relevance of the score of 58 in relation to the score 70",
+            "understanding that the empirical rule cannot be used to solve problems with non-integer 𝑧‑scores."
+          ]
+        },
+        {
+          "questionNumber": "Question 35 (b)",
+          "betterResponses": [
+            "compare data points in relation to the symmetry of a normal distribution",
+            "use mathematical terminology, such as ‘symmetry’ or ‘even function’ in their response",
+            "use diagrams to demonstrate their understanding."
+          ],
+          "areasToImprove": [
+            "incorporating appropriate calculations with worded responses",
+            "understanding the meaning of a negative 𝑧‑score in relation to a normal distribution",
+            "recognising the symmetrical nature of the normal distribution, and how it relates to the proportion of scores on either side of the mean",
+            "understanding 𝑧‑score are not only integer values and probabilities are not just the empirical values."
+          ]
+        },
+        {
+          "questionNumber": "Question 35 (c)",
+          "betterResponses": [
+            "identify a 𝑧‑score with a cumulative probability of approximately 90%",
+            "substitute into the 𝑧‑score formula to calculate a score."
+          ],
+          "areasToImprove": [
+            "applying complementary probabilities",
+            "understanding that a probability is not a 𝑧‑score, and vice versa."
+          ]
+        },
+        {
+          "questionNumber": "Question 36",
+          "betterResponses": [
+            "apply the sine rule to calculate the length of 𝐵𝐸 and round their answer to one decimal place",
+            "find the length of 𝐵𝑋 using trigonometric ratios and subtract this answer from their answer from (a) and correctly rounded their answer to one decimal place",
+            "substitute into the sine rule",
+            "label angles in triangle 𝐶𝐵𝑋 correctly",
+            "use geometrical properties to find angles in triangle 𝐵𝐶𝑋."
+          ],
+          "areasToImprove": [
+            "working with shapes with multiple triangles that require both right angled and non-right-angled trigonometry",
+            "understanding what values/lengths they have found",
+            "recognising that only the sine rule can be used to calculate the length 𝐸𝐵",
+            "recognising that to calculate the length in a right-angled triangle, when only given one side they will need to use trigonometric ratios."
+          ]
+        },
+        {
+          "questionNumber": "Question 37",
+          "betterResponses": [
+            "demonstrate a 20-hour flight time equates to a −20 or 13-hour time difference as +13",
+            "demonstrate that −3 [Coordinated Universal Time (UTC)] and +10 (UTC) result in a 13-hour difference",
+            "keep track of days when adding and subtracting time."
+          ],
+          "areasToImprove": [
+            "knowing how to calculate the time change",
+            "converting each time zone step-by-step breaking up the problem."
+          ]
+        },
+        {
+          "questionNumber": "Question 38",
+          "betterResponses": [
+            "select and apply the correct formula for volume of cylinder",
+            "use the ratio correctly to obtain the total volume."
+          ],
+          "areasToImprove": [
+            "selecting and applying the correct formula for volume of cylinder and cone",
+            "applying unitary method for ratios",
+            "interpreting worded questions to perform the correct calculation."
+          ]
+        },
+        {
+          "questionNumber": "Question 39",
+          "betterResponses": [
+            "correctly identify the path either written or on the diagram",
+            "make the allowance for float times when working out a critical path",
+            "determine the earliest starting time (EST) and latest starting time (LST) for each activity and use boxes on the network to clearly show this."
+          ],
+          "areasToImprove": [
+            "writing their final response in the space provided, not just drawing on the diagram",
+            "taking into consideration EST and LST",
+            "knowing and understanding forward and backward scanning."
+          ]
+        },
+        {
+          "questionNumber": "Question 40",
+          "betterResponses": [
+            "recognise they need to use the cosine rule first to then work out the other angles",
+            "use radial survey bearings to find the remaining angles and how to calculate bearing",
+            "work towards a final answer with the little scaffold given in the question."
+          ],
+          "areasToImprove": [
+            "knowing how to read the bearings given on the radial survey",
+            "recognising they should use cosine rule to help find unknown angle first",
+            "knowing what angles on a straight-line amount to."
+          ]
+        },
+        {
+          "questionNumber": "Question 41",
+          "betterResponses": [
+            "convert the time periods and interest rate to monthly values",
+            "identify the appropriate interest factors from the table",
+            "break down the calculations for the different withdrawals using values from the table",
+            "use geometric series to model the two different withdrawals."
+          ],
+          "areasToImprove": [
+            "understanding that the table was provided to assist with calculations",
+            "understanding the concept of present value",
+            "completing more practice in solving financial problems using tables."
+          ]
+        }
+      ]
+    }
+  ]
+}
