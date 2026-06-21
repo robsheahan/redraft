@@ -227,7 +227,8 @@
     .exam-inline-auto-badge.is-correct { background: #d1fae5; color: #065f46; }
     .exam-inline-auto-badge.is-wrong { background: #fee2e2; color: #991b1b; }
     .exam-inline-auto-note { font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
-    .exam-total-card { position: sticky; top: 16px; }
+    .exam-marking { display: flex; flex-direction: column; gap: 18px; }
+    .exam-total-card { border-color: #f6d9bb; background: #fffaf3; }
     .exam-total-hint { font-size: 12.5px; color: #9ca3af; margin: 0 0 10px; }
     /* Per-question annotation section inside each answer card */
     .exam-ann-section { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ece4d6; }
@@ -557,10 +558,9 @@
         html += '<div class="exam-note">⏱ Timed exam · ' + e(String(task.time_limit_minutes)) + ' min — any work added after the limit is highlighted within each answer.</div>';
       }
 
-      html += '<div class="layout">';
+      html += '<div class="exam-marking">';
 
-      // Left: one card per answer
-      html += '<div>';
+      // One full-width card per answer
       answers.forEach((a, i) => {
         const q = examQuestionById(a.question_id);
         html += '<div class="card exam-mark-block">';
@@ -592,14 +592,12 @@
       if (Array.isArray(submission.student_attachments) && submission.student_attachments.length) {
         html += '<div class="card"><div id="studentAttachments"></div></div>';
       }
-      html += '</div>';
 
-      // Right: marks + comment + annotations + save
-      html += '<div>';
+      // Total + overall comment + save, stacked after the questions
       const mcCount = answers.filter(a => a.type === 'multiple_choice').length;
       const mcCorrect = (submission.question_marks || []).filter(m => m.source === 'auto' && m.mark > 0).length;
       html += '<div class="card exam-total-card"><h3>Total</h3>';
-      html += '<p class="exam-total-hint">Enter each mark directly beneath its answer on the left — the total updates here.</p>';
+      html += '<p class="exam-total-hint">Enter each mark beneath its answer above — the total updates here.</p>';
       if (mcCount) html += '<div class="exam-mc-summary">Multiple choice: ' + mcCorrect + ' / ' + mcCount + ' correct — automarked</div>';
       html += '<div class="total-row"><span class="total-label">Total</span><span class="total-value" id="totalDisplay">— / ' + e(String(task.total_marks || '—')) + '</span></div>';
       html += '</div>';
@@ -617,8 +615,7 @@
       html += '<button type="button" class="btn btn-primary" id="saveGradeBtn" onclick="saveGrade()">Save grade</button>';
       if (nextUnmarked) html += '<button type="button" class="btn btn-primary" id="saveNextBtn" onclick="saveGrade(\'' + e(nextUnmarked.id) + '\')" style="margin-left:8px">Save and next</button>';
       html += '</div>';
-      html += '</div>'; // right
-      html += '</div>'; // layout
+      html += '</div>'; // exam-marking
 
       container.innerHTML = html;
 
