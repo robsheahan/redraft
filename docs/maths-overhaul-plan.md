@@ -18,7 +18,7 @@ Central design question (unchanged): **"How can we get the most accurate possibl
 | # | Item | Status |
 |---|------|--------|
 | 0 | Drop the reasoning line | ✅ done 2026-06-21 (uncommitted) |
-| 1 | Accuracy foundation — hidden worked solution + verification | ✅ Phase 1 done 2026-06-21 (uncommitted; **migration not yet run**). Phase 2 deferred |
+| 1 | Accuracy foundation — hidden worked solution (Phase 1) + deterministic verifier (Phase 2) | ✅ both done 2026-06-21 |
 | 2 | Multi-part questions (`(a)(b)(c)` + "Hence") for maths | ✅ done 2026-06-21 (uncommitted; **migration not yet run**) |
 | 3 | Handwriting / OCR — **student** input (transcribe → confirm → diagnose) | ✅ done 2026-06-21 (uncommitted; no migration). Single-question; multi-part photo deferred |
 | 3b | Handwriting / OCR — **teacher** authoring (photo → question / parts / worked solution) | ✅ done 2026-06-21 (uncommitted; no migration) |
@@ -132,8 +132,13 @@ Maths-only in practice; null for everything else.
 
 Effect: `math_status` is judged against a known-correct path instead of re-derived — the single biggest accuracy gain, for a small change.
 
-### Phase 2 — deterministic verifier (decision pending; sketch only)
-A symbolic/numeric check (math.js inline, a small sympy service, or Claude tool-use compute) that verifies line-to-line consistency + final-answer correctness and feeds Pass B as ground truth. Phase 1 ships first; the approach is an open question below.
+### Phase 2 — deterministic verifier — DONE (2026-06-21, uncommitted; no DB change)
+A `check_equivalence` tool the model calls mid-reasoning during Pass B, backed by a deterministic numeric engine. **The model directs *what* to check (it knows intent — simplification vs equation-to-solve); the engine gives the deterministic answer.**
+- `lib/maths-verify.ts` — self-contained (no CAS dependency). Converts a SAFE subset of LaTeX (polynomial/rational: `+ - * / ^`, `\frac`, `\cdot`, single-letter vars, implicit mult) to infix, evaluates both expressions at a fixed spread of points, compares. **Safety contract: returns `unknown` for ANYTHING outside that grammar** (trig, surds, logs, calculus results, subscripts, `=`) — never a wrong guess. Smoke `scripts/maths-verify-smoke-test.ts` (20 checks incl. the must-be-unknown safety cases).
+- `MATHS_CHECK_EQUIVALENCE_TOOL` + a bounded **tool-use loop** in `generate-maths-feedback.ts` (`runPassBWithVerifier`): Pass B can call `check_equivalence` up to ~5×, then the final turn forces the diagnostic. Runs for every maths feedback question/part (single + multi-part); Pass C unchanged.
+- Prompt (`buildMathsPerLineDiagnosticSystem`): "verify algebra with the tool before judging; trust its verdict over mental arithmetic; on `unknown`, use your own judgement."
+- Verified: `tsc` clean; engine smoke 20/20; **live loop run** — on `(x+3)^2 → x^2+9` the model called `check_equivalence` (`not_equivalent`) and flagged the line with a precise missing-cross-term comment.
+- **Scope:** the engine handles polynomial/rational algebra (the highest-frequency slip class). Trig/surd/log/calculus equalities return `unknown` and fall back to the worked-solution anchor + LLM judgement — a sympy service could widen this later.
 
 ### Verify (#1)
 - **Leak test:** grep/smoke that `worked_solution` never appears in any student-facing payload (`/api/task` as a student member; the feedback object; `feedback-maths.html`). Highest-severity surface — verify like the exam answer key.
@@ -277,7 +282,7 @@ The thesis from `maths-feedback-plan.md` §7: maths cohort cards write themselve
 
 ## Open questions
 
-1. **Phase-2 verification approach** — prompt-anchor only (Phase 1) may be enough; if not, which deterministic engine (math.js / sympy service / tool-use compute)?
+1. ~~**Phase-2 verification approach**~~ — **RESOLVED 2026-06-21:** self-contained numeric engine (`lib/maths-verify.ts`, no dep) exposed as a `check_equivalence` tool-use loop in Pass B. Polynomial/rational scope, `unknown`-safe. A sympy service could widen the scope later.
 2. **Device reality at pilots** — **DECIDED 2026-06-21: photo-first.** #3 capture builds on photo upload + Claude vision (universal across phones/laptops/tablets); on-screen canvas / stylus-SDK is a later v2 if pilot device reality warrants it.
 3. **Reveal the worked solution to students post-grading?** Default off in v1; genuinely useful as a "model solution after marking" — separate product call.
 4. **Keep all three typed modes, or collapse to Type-only at #3** once handwriting is primary?

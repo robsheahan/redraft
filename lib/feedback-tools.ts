@@ -243,6 +243,23 @@ export const MATHS_PER_LINE_DIAGNOSTIC_TOOL: Tool = {
   },
 };
 
+// Phase 2 verifier: a deterministic equivalence check the diagnostic can call
+// mid-reasoning. The model supplies the two expressions (it knows intent — is
+// this a simplification? an expansion?); lib/maths-verify.ts gives the answer.
+export const MATHS_CHECK_EQUIVALENCE_TOOL: Tool = {
+  name: 'check_equivalence',
+  description:
+    "Deterministically check whether two mathematical expressions are EQUAL. Use this to verify a simplification, expansion, factorisation, or arithmetic step BEFORE you judge a line — e.g. confirm whether the student's line really equals what the previous line should become. Pass each side as a single LaTeX expression (no equals sign). Returns 'equivalent', 'not_equivalent', or 'unknown'. Trust 'equivalent'/'not_equivalent' over your own mental arithmetic. On 'unknown' (the checker only handles polynomial/rational expressions — not trig, surds, logs, or calculus results), use your own judgement.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      expr_a: { type: 'string', description: 'First expression as LaTeX — a single expression, NO equals sign.' },
+      expr_b: { type: 'string', description: 'Second expression as LaTeX — a single expression, NO equals sign.' },
+    },
+    required: ['expr_a', 'expr_b'],
+  },
+};
+
 export const MATHS_STRUCTURE_WORKING_TOOL: Tool = {
   name: 'structure_maths_working',
   description: "Convert a free-form student input (raw LaTeX-y working or prose-with-inline-math) into the canonical { math } per-line shape used by the maths feedback pipeline. Split on logical step boundaries. Do NOT correct or improve the student's work — capture exactly what they wrote.",

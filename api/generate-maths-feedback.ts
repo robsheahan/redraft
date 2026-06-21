@@ -25,7 +25,9 @@ import { callTool } from '../lib/anthropic-tool-call.js';
 import {
   MATHS_PER_LINE_DIAGNOSTIC_TOOL,
   MATHS_HOLISTIC_TOOL,
+  MATHS_CHECK_EQUIVALENCE_TOOL,
 } from '../lib/feedback-tools.js';
+import { checkEquivalence } from '../lib/maths-verify.js';
 import {
   buildMathsPerLineDiagnosticSystem,
   buildMathsHolisticSystem,
@@ -71,6 +73,63 @@ function sanitisePartWorking(input: any): PartWorking[] {
 function composePartQuestion(stem: string, part: { label: string; text: string }): string {
   const head = stem ? stem.trim() + '\n\n' : '';
   return `${head}${part.label} ${part.text}`.trim();
+}
+
+// Pass B as a bounded tool-use loop. The model may call check_equivalence (the
+// deterministic algebra check in lib/maths-verify.ts) any number of times before
+// it emits the per-line diagnostic; the final turn forces the diagnostic. Throws
+// if no usable diagnostic is produced (load-bearing → top-level catch → 500, the
+// student's draft isn't consumed).
+async function runPassBWithVerifier(args: {
+  client: Anthropic;
+  systemB: string;
+  user: string;
+}): Promise<{ line_annotations: any[]; step_gaps: any[] }> {
+  const { client, systemB, user } = args;
+  const MAX_ITERS = 6;
+  const tools = [MATHS_CHECK_EQUIVALENCE_TOOL, MATHS_PER_LINE_DIAGNOSTIC_TOOL];
+  const messages: any[] = [{ role: 'user', content: user }];
+  let checksRun = 0;
+
+  for (let iter = 0; iter < MAX_ITERS; iter++) {
+    const lastIter = iter === MAX_ITERS - 1;
+    const resp = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4000,
+      temperature: 0.2,
+      system: [{ type: 'text', text: systemB, cache_control: { type: 'ephemeral' } }] as any,
+      tools: tools as any,
+      tool_choice: (lastIter ? { type: 'tool', name: MATHS_PER_LINE_DIAGNOSTIC_TOOL.name } : { type: 'auto' }) as any,
+      messages,
+    }, { maxRetries: 2 });
+
+    const blocks: any[] = (resp.content as any[]) || [];
+    const diagnostic = blocks.find(b => b.type === 'tool_use' && b.name === MATHS_PER_LINE_DIAGNOSTIC_TOOL.name);
+    if (diagnostic) {
+      const val: any = diagnostic.input || {};
+      if (!Array.isArray(val.line_annotations) || val.line_annotations.length === 0) {
+        throw new Error('Pass B returned no line_annotations (possible truncation).');
+      }
+      console.log('[maths:perline] diagnostic after', iter + 1, 'turn(s),', checksRun, 'equivalence check(s)');
+      return { line_annotations: val.line_annotations, step_gaps: Array.isArray(val.step_gaps) ? val.step_gaps : [] };
+    }
+
+    const checks = blocks.filter(b => b.type === 'tool_use' && b.name === MATHS_CHECK_EQUIVALENCE_TOOL.name);
+    messages.push({ role: 'assistant', content: resp.content });
+    if (checks.length === 0) {
+      messages.push({ role: 'user', content: 'Use the provide_maths_diagnostic tool to return the per-line diagnostic now.' });
+      continue;
+    }
+    const results = checks.map((c: any) => {
+      checksRun += 1;
+      const a = c.input && typeof c.input.expr_a === 'string' ? c.input.expr_a : '';
+      const b = c.input && typeof c.input.expr_b === 'string' ? c.input.expr_b : '';
+      const r = checkEquivalence(a, b);
+      return { type: 'tool_result', tool_use_id: c.id, content: 'verdict: ' + r.verdict + (r.detail ? ' — ' + r.detail : '') };
+    });
+    messages.push({ role: 'user', content: results });
+  }
+  throw new Error('Pass B verifier loop exhausted without a diagnostic.');
 }
 
 export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback' }, async (req, res, ctx) => {
@@ -184,9 +243,11 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
       workingLines: WorkingLine[];
       priorParts?: Array<{ label: string; text: string; workingLines: WorkingLine[]; workedSolution: string | null }>;
     }): Promise<{ line_annotations: any[]; step_gaps: any[]; holistic: any | null }> {
-      const passB = await callTool<{ line_annotations: any[]; step_gaps: any[] }>({
-        client, model: 'claude-sonnet-4-6', max_tokens: 4000, temperature: 0.2,
-        system: systemB,
+      // Pass B runs as a tool-use loop: the model can call check_equivalence
+      // (deterministic, lib/maths-verify.ts) to verify algebra before judging a
+      // line, then emits the diagnostic.
+      const passB = await runPassBWithVerifier({
+        client, systemB,
         user: buildMathsPerLineUserPrompt({
           question: qArgs.question,
           markingGuideline: qArgs.markingGuideline,
@@ -195,8 +256,6 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
           teacherNotes,
           priorParts: qArgs.priorParts,
         }),
-        tool: MATHS_PER_LINE_DIAGNOSTIC_TOOL, cacheSystem: true, label: 'maths:perline',
-        requiredKeys: ['line_annotations'],
       });
       let holistic: any = null;
       try {
@@ -205,7 +264,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
         }>({
           client, model: 'claude-sonnet-4-6', max_tokens: 2200, temperature: 0.3,
           system: systemC,
-          user: buildMathsHolisticUserPrompt({ question: qArgs.question, workingLines: qArgs.workingLines, perLineDiagnostic: passB.value }),
+          user: buildMathsHolisticUserPrompt({ question: qArgs.question, workingLines: qArgs.workingLines, perLineDiagnostic: passB }),
           tool: MATHS_HOLISTIC_TOOL, cacheSystem: true, label: 'maths:holistic',
           requiredKeys: ['what_youve_done_well', 'top_priority', 'improvements'],
         });
@@ -214,8 +273,8 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
         captureError(err, { stage: 'pass-c-maths', task_id, user_id: user.id });
       }
       return {
-        line_annotations: passB.value.line_annotations || [],
-        step_gaps: passB.value.step_gaps || [],
+        line_annotations: passB.line_annotations || [],
+        step_gaps: passB.step_gaps || [],
         holistic,
       };
     }
