@@ -1,0 +1,529 @@
+{
+  "subject": "Mathematics Advanced",
+  "slug": "mathematics-advanced",
+  "year": 2024,
+  "sourceUrl": "NESA 2024 HSC Mathematics Advanced — Notes from the Marking Centre (local PDF)",
+  "scrapedAt": "2026-06-21",
+  "generalFeedback": [
+    "show relevant mathematical reasoning and/or calculations",
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements, such as show, solve, evaluate, hence, calculate, derive",
+    "use the Reference Sheet where appropriate",
+    "ensure the solution is legible and follows a clear sequence",
+    "engage with any stimulus material provided and refer to it in their response when required by the question",
+    "check their solution answers the question",
+    "round off numerical solutions only at the final step of the solution",
+    "construct graphs neatly, with precision and display all relevant information as required by the question",
+    "interpret information presented in graphs across a range of contexts",
+    "understand when to use relevant calculator functions",
+    "carefully note any information in the questions which supplies units of measurement."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "Question 11",
+          "betterResponses": [
+            "relate the gradient of the curve to the first derivative and the concavity of the curve to the second derivative",
+            "recognise that if the curve is increasing, the first derivative is positive and if the curve is decreasing, the first derivative is negative",
+            "use the correct words from the given list to describe the sign of the first and the second derivative at each point",
+            "understand the concepts of concavity and points of inflection and their relationship with the second derivative."
+          ],
+          "areasToImprove": [
+            "recognising the relationships between the graph of the original function with the signs of the first and second derivative without having to sketch the first and second derivative functions",
+            "understanding the relationship between the signs of the first and second derivatives and the function's gradient (slope of the tangent) and concavity",
+            "improving their understanding of the difference between gradient and concavity",
+            "understanding the second derivative at a point as concave up or concave down."
+          ]
+        },
+        {
+          "questionNumber": "Question 12",
+          "betterResponses": [
+            "identify the series as an arithmetic series",
+            "correctly find the number for the last term",
+            "use an appropriate sum formula to evaluate the series."
+          ],
+          "areasToImprove": [
+            "using the reference sheet to apply the correct sum formula",
+            "refining their algebraic skills in solving simple equations."
+          ]
+        },
+        {
+          "questionNumber": "Question 13",
+          "betterResponses": [
+            "correctly read the initial value of population B from the graph",
+            "determine the population when 𝑥 = 50",
+            "understand that 1.055 meant a growth of 5.5% and 0.97 was a decrease of 3%",
+            "interpret the exponential growth, base > 1, relate to a standard annualised percentage increase as (1 + 𝑟) compound growth per time-period, and interpret the exponential decay, base < 1, relate to a standard annualised percentage decrease as (1 − 𝑟) compound growth per time-period."
+          ],
+          "areasToImprove": [
+            "distinguishing between the percentage change and the factor (1 ± 𝑟)",
+            "identifying which line in the diagram was W and which was K by interpreting the information given",
+            "understanding that 5.5% increase is not 105.5% and understanding that 3% decrease is not 97%."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 (a)",
+          "betterResponses": [
+            "interpret the question and establish simultaneous equations",
+            "find the 𝑥-coordinates by factorising the quadratic equation."
+          ],
+          "areasToImprove": [
+            "simplifying algebraic equations",
+            "correctly factorising a quadratic equation",
+            "checking their solutions."
+          ]
+        },
+        {
+          "questionNumber": "Question 14 (b)",
+          "betterResponses": [
+            "write an integrand for the area between two curves",
+            "integrate the resulting expression either as a simplified expression or two separate integrals",
+            "substitute correct values into the integral and perform the necessary calculations accurately."
+          ],
+          "areasToImprove": [
+            "identifying which function was the top curve and which was the bottom curve within the integral",
+            "simplifying the algebraic expression before integrating",
+            "explicitly showing substitutions into the anti-derivative with the use of brackets",
+            "evaluating their working if their answer is negative."
+          ]
+        },
+        {
+          "questionNumber": "Question 15",
+          "betterResponses": [
+            "solve for time when the rate was zero",
+            "demonstrate their understanding by finding the anti-derivative function from the given derivative",
+            "substitute 𝑡 into the anti-derivative function to calculate the required volume",
+            "show clear logical working out to reflect their thinking process."
+          ],
+          "areasToImprove": [
+            "ensuring their solution follows a clear sequence",
+            "understanding they are integrating with respect to 𝑡 rather than 𝑥",
+            "evaluating the constant of integration",
+            "substituting values correctly into their volume expression."
+          ]
+        },
+        {
+          "questionNumber": "Question 16",
+          "betterResponses": [
+            "explicitly compare the skewness, central tendency, and spread of the data from each garden",
+            "interpret the boxplots to use specific values for median, range or inter-quartile range to support their comparisons",
+            "use specific language to describe the shape of a distribution, for example, 'positively skewed' or 'negatively skewed'."
+          ],
+          "areasToImprove": [
+            "ensuring that the three areas of skewness, central tendency, and spread were addressed in their response",
+            "recognising that the median is the only measure of central tendency that can be deduced from a box-plot",
+            "identifying positive and negative skew in data and understanding the difference between the two."
+          ]
+        },
+        {
+          "questionNumber": "Question 17 (a)",
+          "betterResponses": [
+            "correctly draw an increasing, concave down curve starting from the origin and approaching the asymptote at 𝑉 = 6.5",
+            "show an asymptote at 𝑉 = 6.5",
+            "label the 𝑉 and 𝑡 axes."
+          ],
+          "areasToImprove": [
+            "recognising that an exponential curve is a smooth curve with no straight-line sections",
+            "understanding that time is positive and should go on the horizontal axis",
+            "understanding that an exponential function has an asymptote",
+            "recognising the transformations that have taken place to the 𝑉 = 𝑒 𝑡 curve."
+          ]
+        },
+        {
+          "questionNumber": "Question 17 (b)",
+          "betterResponses": [
+            "correctly substitute 𝑉 = 2.6 and 𝑡 = 1 into the given formula",
+            "isolate 𝑒 −𝑘 and then use logarithms to solve the resulting equation",
+            "give the value of 𝑘 to the requested number of decimal places."
+          ],
+          "areasToImprove": [
+            "showing every step in their solution to making 𝑘 the subject",
+            "applying logarithm rules to solve exponential equations, particularly with those involving negative indices."
+          ]
+        },
+        {
+          "questionNumber": "Question 17 (c)",
+          "betterResponses": [
+            "expand the function before differentiating",
+            "correctly differentiate the exponential function",
+            "show the substitution of 𝑘 and 𝑡 = 2 before calculating the value of the derivative."
+          ],
+          "areasToImprove": [
+            "identifying that finding a rate at a given time means to differentiate",
+            "using the reference sheet to help them differentiate exponential functions",
+            "knowing the difference between instantaneous rate of change and average rate of change",
+            "finding the derivative before any substitutions of variables takes place."
+          ]
+        },
+        {
+          "questionNumber": "Question 18 (a)",
+          "betterResponses": [
+            "use probability of complimentary events to answer the question",
+            "demonstrate their understanding of product rule for multi-stage events."
+          ],
+          "areasToImprove": [
+            "using the concept of complimentary events",
+            "using the product rule correctly",
+            "recognising the difference between 1 − 0.152 and (1 − 0.15)2 ."
+          ]
+        },
+        {
+          "questionNumber": "Question 18 (b)",
+          "betterResponses": [
+            "generate the correct inequality 1 − 0.85𝑛 > 0.8 from the question",
+            "use algebra skills when solving inequalities",
+            "use logarithms to solve the equation",
+            "conclude the solution by answering the question after showing their inequality or by trial and error."
+          ],
+          "areasToImprove": [
+            "understanding probability calculations for multistage events",
+            "manipulating their inequality to make 𝑛 the subject by using logarithms",
+            "concluding the solution through answering the question after showing their inequality."
+          ]
+        },
+        {
+          "questionNumber": "Question 19",
+          "betterResponses": [
+            "find the first and second derivatives correctly",
+            "determine the nature of the stationary points using either the first or second derivative test",
+            "identify the difference between a horizontal point of inflection and a vertical point of inflection",
+            "justify a change in concavity",
+            "clearly provide a sketch of the function."
+          ],
+          "areasToImprove": [
+            "correctly solving equations using the null factor",
+            "justifying the nature of a stationary point",
+            "justifying a change in concavity",
+            "clearly sketching graphs using calculus."
+          ]
+        },
+        {
+          "questionNumber": "Question 20 (a)",
+          "betterResponses": [
+            "recognise that ∆𝑇𝐶𝐴 is a right-angled triangle and choose the appropriate trigonometric ratio to find the required side",
+            "correctly apply the sine rule to find the required side."
+          ],
+          "areasToImprove": [
+            "choosing the most appropriate trigonometric rule for a problem",
+            "realising that if the unknown is in the denominator, then division is needed to complete the solution",
+            "realising the most efficient way to answer right angle triangle questions is through using trigonometric ratios found on the reference sheet."
+          ]
+        },
+        {
+          "questionNumber": "Question 20 (b)",
+          "betterResponses": [
+            "show all working out in answering the question",
+            "identify that the length of BC needed to be calculated",
+            "recognise that the cosine rule for angles needed to be used, showing all relevant substitutions",
+            "add 90° to their calculated angle for ACB to find the required bearing."
+          ],
+          "areasToImprove": [
+            "accurately copying the formulae to be used from the reference sheet and ensuring values are substituted correctly",
+            "ensuring the question is fully completed, including finding the required bearing",
+            "using the number of marks allocated to the question as a guide for the number of separate steps involved in the solution."
+          ]
+        },
+        {
+          "questionNumber": "Question 21",
+          "betterResponses": [
+            "successfully list at least three unique observations about anacondas",
+            "interpret the scatterplot to make observations about lengths, growth rates, and trends before and after maturity",
+            "use clear mathematical language in their response – for example, increasing at a decreasing rate."
+          ],
+          "areasToImprove": [
+            "recognising that the data cannot be used to make predictions about the length of anacondas after 10 years",
+            "understanding that the data represents the lengths of many different anacondas, and not a single anaconda over time",
+            "ensuring that they provide observations that were unique from one another",
+            "understanding how to take an observation from a scatterplot about the subject of the data rather than the data itself."
+          ]
+        },
+        {
+          "questionNumber": "Question 22 (a)",
+          "betterResponses": [
+            "correctly find the first and second derivative",
+            "use the second derivative to prove the function was concave up",
+            "solve the inequality using an appropriate graph or equivalent justification."
+          ],
+          "areasToImprove": [
+            "using the reference sheet to correctly differentiate a logarithmic function or use the quotient rule",
+            "recognising that the second derivative is needed to prove concavity",
+            "correctly solving inequalities using a graph",
+            "ensuring their solution is legible and follows a clear sequence."
+          ]
+        },
+        {
+          "questionNumber": "Question 22 (b)",
+          "betterResponses": [
+            "use the trapezoidal rule correctly from the reference sheet",
+            "realise that the final answer needed to be doubled",
+            "show their substitution and carefully use the numbers from the given table."
+          ],
+          "areasToImprove": [
+            "knowing how to use the formula on the reference sheet",
+            "transcribing values from the table accurately."
+          ]
+        },
+        {
+          "questionNumber": "Question 22 (c)",
+          "betterResponses": [
+            "relate the concavity of a given function to the trapezoidal rule",
+            "articulate their responses clearly with mathematical terms."
+          ],
+          "areasToImprove": [
+            "understanding how the trapezia are drawn on the curve to decide if is an under or over estimation of area",
+            "writing clearly using correct mathematical terms."
+          ]
+        },
+        {
+          "questionNumber": "Question 23 (a)",
+          "betterResponses": [
+            "calculate the correct 𝑧‑score using the formula provided",
+            "use the table to obtain the correct probability",
+            "recognise that 50% of the scores lie below the mean."
+          ],
+          "areasToImprove": [
+            "understanding that a 𝑧‑score does not represent a probability",
+            "recognising the relevance of the score of 58 in relation to the score 70",
+            "understanding that the empirical rule cannot be used to solve problems with non-integer 𝑧‑scores."
+          ]
+        },
+        {
+          "questionNumber": "Question 23 (b)",
+          "betterResponses": [
+            "compare data points in relation to the symmetry of a normal distribution",
+            "use mathematical terminology, such as 'symmetry' or 'even function' in their response",
+            "use diagrams to demonstrate their understanding."
+          ],
+          "areasToImprove": [
+            "incorporating appropriate calculations with worded responses",
+            "understanding the meaning of a negative 𝑧‑score in relation to a normal distribution",
+            "recognising the symmetrical nature of the normal distribution, and how it relates to the proportion of scores on either side of the mean",
+            "understanding 𝑧‑score are not only integer values and probabilities are not just the empirical values."
+          ]
+        },
+        {
+          "questionNumber": "Question 23 (c)",
+          "betterResponses": [
+            "identify a 𝑧‑score with a cumulative probability of approximately 90%",
+            "substitute into the 𝑧‑score formula to calculate a score."
+          ],
+          "areasToImprove": [
+            "applying complementary probabilities",
+            "understanding that a probability is not a 𝑧‑score, and vice versa."
+          ]
+        },
+        {
+          "questionNumber": "Question 24 (a)",
+          "betterResponses": [
+            "demonstrate how to model the problem by establishing a series",
+            "demonstrate three terms in the series to determine the common ratio",
+            "establish a general series to model the situation",
+            "apply their understanding of geometric progressions to find the sum of the series."
+          ],
+          "areasToImprove": [
+            "demonstrating understanding of how financial series are built term by term",
+            "understanding the difference between money being deposited at the start and the end of a month",
+            "displaying enough terms in the series to prove the existence of a geometric series",
+            "correctly applying the sum of geometric series formula."
+          ]
+        },
+        {
+          "questionNumber": "Question 24 (b)",
+          "betterResponses": [
+            "establish the connection between Q24a and the future value table shown in Q24b",
+            "divide the annuity by the principal amount."
+          ],
+          "areasToImprove": [
+            "understanding how the values in annuity tables are calculated",
+            "understanding the connection between future value tables and the sum of geometric series."
+          ]
+        },
+        {
+          "questionNumber": "Question 25 (a)",
+          "betterResponses": [
+            "identify that the area enclosed by 𝑓(𝑥) = 1 − 𝑥/ℎ was equal to 1",
+            "find an expression for the area by recognising that it represented a right-angled triangle or through integration",
+            "solve their expression efficiently to find the value of ℎ",
+            "recognise that the area under the probability density function represents the probability",
+            "integrate a probability density function and equate it to 1 to determine the upper limit of a function."
+          ],
+          "areasToImprove": [
+            "improving manipulation of algebraic equations and not making errors with pronumerals or multiplying by 2",
+            "knowing that the area under the curve of a probability density function is 1𝑢2",
+            "understanding that the probability as the area under the graph of the probability density function using the notation 𝑃(𝑋 ≤ ℎ) = ∫𝑎 ℎ 𝑓(𝑥)𝑑𝑥 = 1 to determine the upper limit ℎ",
+            "recognising the probability density function given was a straight line and determine the upper limit by applying area of a triangle."
+          ]
+        },
+        {
+          "questionNumber": "Question 25 (b)",
+          "betterResponses": [
+            "identify the cumulative distribution function as a piecewise function",
+            "find the correct cumulative distribution function and correctly graph it across the whole domain of the function",
+            "understand that for 𝑥 > ℎ, the graph continues as a straight line of 𝑦 = 1."
+          ],
+          "areasToImprove": [
+            "recognising the limits of the integral (cumulative distribution function) needs to go from the lowest value of the domain to an arbitrary value of 𝑥",
+            "sketching correctly all 3 parts of the cumulative distribution function",
+            "substituting the value of ℎ found in part 1 into 𝑓(𝑥)",
+            "identifying that the value of h in part (a) is used in this question to find a formula for the cumulative distribution function."
+          ]
+        },
+        {
+          "questionNumber": "Question 25 (c)",
+          "betterResponses": [
+            "solve a quadratic equation by using the quadratic formula or completing the square",
+            "identify that the median occurs when the cumulative distribution function is equal to 0.5",
+            "distinguish between the two answers obtained from solving the quadratic equation and reject the answer that did not fit into the given domain",
+            "identify the need to make their quadratic equation from part (b) equal to 0.5 to solve this question."
+          ],
+          "areasToImprove": [
+            "using of the quadratic formula to solve the problem",
+            "understanding that at the median, the value of the cumulative distribution function is equal to 0.5 and not the value of 𝑥",
+            "not substituting 𝑥 = 0.5 into the cumulative distribution function to find the median",
+            "checking the validity of their solution within the condition 0 ≤ 𝑥 ≤ 2",
+            "taking care in solving the quadratic equation and checking to make sure the solution fits the given domain of 𝑥."
+          ]
+        },
+        {
+          "questionNumber": "Question 26",
+          "betterResponses": [
+            "convert the time periods and interest rate to monthly values",
+            "identify the appropriate interest factors from the table",
+            "break down the calculations for the different withdrawals using values from the table",
+            "use geometric series to model the two different withdrawals."
+          ],
+          "areasToImprove": [
+            "understanding that the table was provided to assist with calculations",
+            "understanding the concept of present value",
+            "completing more practice in solving financial problems using tables."
+          ]
+        },
+        {
+          "questionNumber": "Question 27 (a)",
+          "betterResponses": [
+            "identify the use of product rule",
+            "differentiate 𝑥 2 and tan 𝑥."
+          ],
+          "areasToImprove": [
+            "making use of the reference sheet to correctly apply the product rule",
+            "understanding the difference between the product rule and quotient rule",
+            "using the correct notation for trigonometric functions, particularly the difference between sec 2 𝑥 and sec 𝑥 2 ."
+          ]
+        },
+        {
+          "questionNumber": "Question 27 (b)",
+          "betterResponses": [
+            "use algebra to expand the integrand correctly",
+            "substitute 𝑡𝑎𝑛2 𝑥 = 𝑠𝑒𝑐 2 𝑥 − 1 correctly",
+            "establish the common components between the differentiation of Q27a and the integration of Q27b",
+            "integrate correctly, showing all relevant steps."
+          ],
+          "areasToImprove": [
+            "employing binomial expansion techniques involving trigonometric terms",
+            "learning the trigonometric identities not provided on the reference sheet",
+            "understanding the difference between 𝑥 2 tan2 𝑥 + 1 and 𝑥 2 (tan2 𝑥 + 1)",
+            "recording their solution sequentially."
+          ]
+        },
+        {
+          "questionNumber": "Question 28 (a)",
+          "betterResponses": [
+            "correctly find the amplitude of a cosine curve",
+            "correctly find the vertical shift of a cosine curve"
+          ],
+          "areasToImprove": [
+            "knowing the difference between a vertical shift and the amplitude of a cosine curve",
+            "clearly defining the variables required in their solutions."
+          ]
+        },
+        {
+          "questionNumber": "Question 28 (b)",
+          "betterResponses": [
+            "use the appropriate method to find the period of a cosine curve"
+          ],
+          "areasToImprove": [
+            "recognising that time taken for one complete oscillation is equivalent to the period of the function."
+          ]
+        },
+        {
+          "questionNumber": "Question 28 (c)",
+          "betterResponses": [
+            "apply their knowledge of transformations of trigonometric curves to solve practical problems",
+            "apply their knowledge of angles of any magnitude in trigonometry to solve practical problems",
+            "recognise the solutions for 𝑡 were in other quadrants",
+            "provide accurate cosine curves to find the points of intersection for the times when the heights were equal."
+          ],
+          "areasToImprove": [
+            "allowing for alternate quadrant solutions in practical trigonometric problems",
+            "sketching trigonometric curves to solve practical trigonometric problems."
+          ]
+        },
+        {
+          "questionNumber": "Question 29",
+          "betterResponses": [
+            "differentiate the equation of the curve to get an expression for the gradient of the tangent, identify the gradient of the tangent from its equation and link this to their expression",
+            "use the stationary points and the tangent/normal gradients to form 2 equations in terms of a and b and then solve them simultaneously",
+            "solve equation of the normal and tangent simultaneous to find the point of intersection as (−2,1)",
+            "use the gradient of the derived function at 𝑥 = −2 equals 2 to show that −4𝑎 + 𝑏 = 2",
+            "solve −8𝑎 + 𝑏 = 0 and −4𝑎 + 𝑏 = 2 simultaneously to find 𝑎 = 1/2 and 𝑏 = 4."
+          ],
+          "areasToImprove": [
+            "finding solutions of simultaneous equations",
+            "equating the derivative equal to zero after substituting in 𝑥 = −4",
+            "checking their solution after finding 𝑎, 𝑏 and 𝑐",
+            "understanding that at a minimum turning point, the first derivative is equal to zero",
+            "understanding that the tangent and normal intersect at the point where the tangent touches the curve."
+          ]
+        },
+        {
+          "questionNumber": "Question 30",
+          "betterResponses": [
+            "find the limiting sum and interpret the restriction on the common ratio",
+            "show the equivalence of equations involving fractions with different denominators",
+            "correctly translate and sketch a function, labelling the asymptotes",
+            "determine the correct solution by interpreting the link between the limiting sum and the function."
+          ],
+          "areasToImprove": [
+            "using the reference sheet to find the limiting sum and understand the restriction.",
+            "drawing neat sketches including labelled asymptotes",
+            "looking for prompts in the question to try an establish a link between the key parts of the question."
+          ]
+        },
+        {
+          "questionNumber": "Question 31 (a)",
+          "betterResponses": [
+            "find an equation for the perimeter in terms of 𝜃 and 𝑥, where 𝜃 is in radians",
+            "find an equation for the area in terms of 𝜃 and 𝑥, where 𝜃 is in radians",
+            "rearrange the area equation to make 𝜃 the subject",
+            "substitute 𝜃 into the perimeter equation",
+            "apply simple factorisation and simplification to show the required equation."
+          ],
+          "areasToImprove": [
+            "making sure that every step is neatly written in the solution to a show question",
+            "using the arc length and area formulae in terms of radians (given on the reference sheet) to form equations for area and perimeter",
+            "crossing out errors and starting again in the available working space at the end of the exam",
+            "manipulating complex algebraic expressions, particularly those involving algebraic fractions."
+          ]
+        },
+        {
+          "questionNumber": "Question 31 (b)",
+          "betterResponses": [
+            "differentiate the perimeter with respect to x",
+            "find the value of 𝑥 = √𝐴 for the stationary point",
+            "find and use the second derivative to show that a minimum occurs at 𝑥 = √𝐴",
+            "write 𝜃 in terms of 𝐴 or 𝑥 and show why 𝜃 < 2."
+          ],
+          "areasToImprove": [
+            "noting information given in the question, including 𝐴 as a constant and 𝐴 > 0",
+            "differentiating expressions with respect to 𝑥 that involve other pronumerals",
+            "using a second derivative test on a stationary point to test for a minimum",
+            "recognising that the equation for area from part (a) needed to be used to write 𝜃 in terms of 𝐴 or 𝑥",
+            "finding the limiting value of an algebraic fraction."
+          ]
+        }
+      ]
+    }
+  ]
+}

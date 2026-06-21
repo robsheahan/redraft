@@ -1,0 +1,305 @@
+{
+  "subject": "Mathematics Standard 1",
+  "slug": "mathematics-standard-1",
+  "year": 2024,
+  "sourceUrl": "NESA 2024 HSC Mathematics Standard 1 — Notes from the Marking Centre (local PDF)",
+  "scrapedAt": "2026-06-21",
+  "generalFeedback": [
+    "show relevant mathematical reasoning and/or calculations",
+    "read the question carefully to ensure that they do not miss important components of the question",
+    "have a clear understanding of key words in the question and recognise the intent of the question and its requirements, such as show, solve, evaluate, hence, calculate",
+    "use the Reference Sheet where appropriate",
+    "ensure the solution is legible and follows a clear sequence",
+    "engage with any stimulus material provided and refer to it in their response when required by the question",
+    "check their solution answers the question",
+    "round off numerical solutions only at the final step of the solution",
+    "construct graphs neatly, with precision and display all relevant information as required by the question",
+    "interpret information presented in graphs across a range of contexts",
+    "understand when to use relevant calculator functions",
+    "carefully note any information in the questions which supplies units of measurement."
+  ],
+  "sections": [
+    {
+      "name": "Section II",
+      "questions": [
+        {
+          "questionNumber": "Question 11",
+          "betterResponses": [
+            "recognise 1:50 means that there is 1 unit for every 50 units in real life",
+            "correct multiplication (8 x 50)",
+            "correctly convert cm to m",
+            "recognise how to use a ratio",
+            "make appropriate use of the scale to calculate the actual height of the tree, in metres."
+          ],
+          "areasToImprove": [
+            "understanding how scale works to calculate the actual height of the tree, in metres",
+            "identifying the 8 cm related to the 1 in the scale",
+            "knowing what units to convert to when using a scale",
+            "understanding that scale is in the same units for the 1 and 50."
+          ]
+        },
+        {
+          "questionNumber": "Question 12",
+          "betterResponses": [
+            "use two words to describe the bivariate dataset in terms of strength and direction – strong and negative",
+            "identify scatter plot points from left to right in a negative direction",
+            "interpret a strong correlation by the closeness of the points in forming a straight line."
+          ],
+          "areasToImprove": [
+            "using the word negative rather than decreasing or declining or going down to describe the bivariate dataset in terms of strength and direction."
+          ]
+        },
+        {
+          "questionNumber": "Question 13",
+          "betterResponses": [
+            "use the interquartile range (IQR) and outlier formula correctly and make an appropriate comparison",
+            "clearly label or identify the lower quartile (Q1) and the upper quartile (Q3)."
+          ],
+          "areasToImprove": [
+            "knowing the difference between median and mean",
+            "comparing their answer for what constitutes an outlier to their calculation."
+          ]
+        },
+        {
+          "questionNumber": "Question 14",
+          "betterResponses": [
+            "link the right-angled triangle with Pythagoras’ Theorem (a)",
+            "use trigonometric ratios (tan) to calculate an angle and use this angle to calculate the hypotenuse",
+            "draw a compass at the train station and then draw in the bearing to be calculated (b)",
+            "write the bearing as a compass bearing."
+          ],
+          "areasToImprove": [
+            "using right-angled triangles with Pythagoras’ Theorem, especially when two lengths are given",
+            "reading the question carefully and drawing a compass from the train station",
+            "using trigonometric ratios with calculating angles in right-angled triangles when given lengths."
+          ]
+        },
+        {
+          "questionNumber": "Question 15",
+          "betterResponses": [
+            "identify the correct path and its weight",
+            "correctly label a path using letters",
+            "understand the difference between identifying a path and calculating its length",
+            "find the 2 paths and then clearly showed the vertices which related to the shortest path."
+          ],
+          "areasToImprove": [
+            "following the path they are trying to state and ensuring vertices are not missed",
+            "including the start and end points when labelling a path",
+            "understanding that diagrams are not to scale and a shorter path may appear longer on the network diagram."
+          ]
+        },
+        {
+          "questionNumber": "Question 16",
+          "betterResponses": [
+            "correctly convert both the electricity usage and cents to dollars",
+            "round to 2 decimal places."
+          ],
+          "areasToImprove": [
+            "knowing the correct conversion, for example 1 kW = 1000 W",
+            "converting cents to dollars",
+            "understanding that this question involves two conversions."
+          ]
+        },
+        {
+          "questionNumber": "Question 17",
+          "betterResponses": [
+            "recognise even numbers greater than a given value",
+            "identify there are 20 numbers between 0 and 19, inclusive",
+            "use the complementary event to solve the question."
+          ],
+          "areasToImprove": [
+            "identifying odd and even numbers",
+            "understanding what the term ‘not’ means in probability",
+            "understanding how to calculate complementary events."
+          ]
+        },
+        {
+          "questionNumber": "Question 18",
+          "betterResponses": [
+            "correctly apply the formula for the area of a semicircle",
+            "correctly apply the formula for the area of a triangle",
+            "correctly adds areas for composite shapes."
+          ],
+          "areasToImprove": [
+            "understanding which sides of a triangle are important when finding area",
+            "calculating the area of the composite shapes separately",
+            "understanding the difference between perimeter, circumference and area."
+          ]
+        },
+        {
+          "questionNumber": "Question 19",
+          "betterResponses": [
+            "substitute into the given formula",
+            "show the opposite operation for each step when solving a 2-step equation."
+          ],
+          "areasToImprove": [
+            "solving 2 step equations",
+            "solving and showing the opposite operations for each step."
+          ]
+        },
+        {
+          "questionNumber": "Question 20",
+          "betterResponses": [
+            "draw the correct minimum spanning tree (using a ruler) with weighted edges in their diagram",
+            "calculate the correct weight of their spanning tree",
+            "identify either 𝐹𝐶 and 𝐵𝐶 in the correct minimum spanning tree as having the same weight."
+          ],
+          "areasToImprove": [
+            "writing down the weighted edges, for example, weights on each edge of their tree",
+            "identify two edges with the same weight that could be swapped."
+          ]
+        },
+        {
+          "questionNumber": "Question 21",
+          "betterResponses": [
+            "elect and use the correct formula with all correct values for 𝑃, 𝑟 and 𝑛.",
+            "interpret that the period needed to be a fraction over 12."
+          ],
+          "areasToImprove": [
+            "identifying when simple interest or compound interest is required",
+            "being able to convert periods into the correct time frame."
+          ]
+        },
+        {
+          "questionNumber": "Question 22",
+          "betterResponses": [
+            "calculate the time difference between Towns A and B",
+            "calculate the length of the flight taking into consideration time differences",
+            "use time diagrams to set out their work."
+          ],
+          "areasToImprove": [
+            "converting 24-hour time to 12-hour time",
+            "understanding when to add or subtract time differences",
+            "using the degrees, minutes and seconds button on a calculator to calculate time difference."
+          ]
+        },
+        {
+          "questionNumber": "Question 23",
+          "betterResponses": [
+            "use a table of values to plot points and draw a straight line with a ruler",
+            "identify the difference between cost and revenue and break-even",
+            "work out the revenue, the cost and show a subtraction of these values to find the profit made."
+          ],
+          "areasToImprove": [
+            "using a ruler to draw a straight-line graph",
+            "reading a graph for a point of intersection",
+            "knowing break-even point is the point of intersection."
+          ]
+        },
+        {
+          "questionNumber": "Question 24",
+          "betterResponses": [
+            "recognise that the Class A scores were negatively skewed and the scores from Class B were positively skewed",
+            "compare skewness, median and spread (range or IQR) correctly in Class A and Class B",
+            "display their answers in a table."
+          ],
+          "areasToImprove": [
+            "having a better understanding of the key terms used in data, especially skewness",
+            "identifying what is required for skewness, measures of location and spread."
+          ]
+        },
+        {
+          "questionNumber": "Question 25",
+          "betterResponses": [
+            "identify the correct trigonometric ratio",
+            "apply the ratio correctly to find the denominator."
+          ],
+          "areasToImprove": [
+            "recognising which trigonometric ratio to use",
+            "labelling the sides of the triangle based on the position of an angle."
+          ]
+        },
+        {
+          "questionNumber": "Question 26",
+          "betterResponses": [
+            "recognise that the question requires the student to find the future value using the compound interest formula and then subtracting the original $600 from the solution to calculate the interest charged."
+          ],
+          "areasToImprove": [
+            "understanding the difference between simple and compound interest",
+            "subtracting $600 to correctly calculate interest."
+          ]
+        },
+        {
+          "questionNumber": "Question 27",
+          "betterResponses": [
+            "calculate the time-and-a-half rate of $67.50",
+            "understand that overtime hours are different to equivalent normal hours",
+            "calculate the amount paid for overtime",
+            "total earnings for the week."
+          ],
+          "areasToImprove": [
+            "understanding the difference between overtime rates and normal hourly rates."
+          ]
+        },
+        {
+          "questionNumber": "Question 28",
+          "betterResponses": [
+            "know the difference between simple interest and compound interest",
+            "compare Alex and Jun’s future values or compare their interest values from the simple interest and compound interest calculations",
+            "write a concluding statement",
+            "recognise that they were calculating different values for each person and then make the appropriate adjustment."
+          ],
+          "areasToImprove": [
+            "converting the rate and periods into the compounding periods stated in the question, particularly for interest compounding quarterly",
+            "understanding that interest or future values should be compared to see the difference in interest earnt for questions with two different interest type questions",
+            "identifying the compound interest formula gives the future value, not the interest",
+            "identifying the simple interest formula gives the interest not the future value."
+          ]
+        },
+        {
+          "questionNumber": "Question 29",
+          "betterResponses": [
+            "convert between millimetres and metres rather than between units of area",
+            "find the area of the composite shape in square metres using either subtraction or addition",
+            "find the number of boxes by dividing area by 15 and then rounding this number before multiplying by 100 to find the total cost."
+          ],
+          "areasToImprove": [
+            "converting between units of length before calculating area",
+            "identifying simple shapes and calculate their areas",
+            "breaking down questions into smaller manageable steps."
+          ]
+        },
+        {
+          "questionNumber": "Question 30",
+          "betterResponses": [
+            "calculate the salvage value for the straight-line depreciation component",
+            "substitute the salvage value from the straight-line method at the end of the 4 years into the declining-balance formula as the initial value",
+            "subtract the final salvage value from the original value to calculate the total depreciation."
+          ],
+          "areasToImprove": [
+            "knowing the difference between straight line and declining balance depreciation",
+            "selecting the correct formula from the reference sheet and using it correctly",
+            "understanding the salvage value at the end of the 4 years is the initial value of the next part of the calculation",
+            "understanding that ‘depreciation’ is the loss in value."
+          ]
+        },
+        {
+          "questionNumber": "Question 31",
+          "betterResponses": [
+            "convert between different units",
+            "recognise that units need to be the same to calculate time",
+            "apply the unitary method with correct conversions."
+          ],
+          "areasToImprove": [
+            "understanding the relationship between speed, distance and time and knowing the formula correctly",
+            "making sure that the units for distance, speed and time are connected, for example, distance in km, speed in km/h and time in h, or distance in m, speed in m/s and time in s."
+          ]
+        },
+        {
+          "questionNumber": "Question 32",
+          "betterResponses": [
+            "apply the speed, distance, time formula to calculate the correct distance",
+            "correctly convert between units",
+            "write a scale in the form 1:a",
+            "apply their scale to find the real distance of another side."
+          ],
+          "areasToImprove": [
+            "correctly using the speed, distance, time formula converting from km to m to cm",
+            "converting from minutes to hours",
+            "knowing a scale must be in the same units."
+          ]
+        }
+      ]
+    }
+  ]
+}
