@@ -268,6 +268,51 @@ export const MATHS_STRUCTURE_WORKING_TOOL: Tool = {
   },
 };
 
+// Teacher authoring (#3b): transcribe a photo of a question / worked solution
+// into editable task content. TEXT_TOOL for a single question or worked
+// solution; PARTS_TOOL for a multi-part question (stem + ordered parts).
+export const MATHS_AUTHORING_TEXT_TOOL: Tool = {
+  name: 'transcribe_maths_text',
+  description: "Transcribe a photo of a maths question OR a worked solution into clean text. Keep all mathematics as inline LaTeX delimited by $...$. Faithful transcription of what is written — do NOT solve the question, add steps, or invent content.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      text: {
+        type: 'string',
+        description: 'The transcribed content as plain text with inline $...$ LaTeX for any mathematics. Preserve the wording and any part labels like (a), (b). Empty string if nothing is legible.',
+      },
+    },
+    required: ['text'],
+  },
+};
+
+export const MATHS_AUTHORING_PARTS_TOOL: Tool = {
+  name: 'transcribe_maths_parts',
+  description: "Transcribe a photo of a MULTI-PART maths question into a shared stem plus an ordered list of parts. Keep mathematics as inline LaTeX ($...$). Faithful transcription — do NOT solve, and do NOT invent parts that aren't on the page.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      stem: {
+        type: 'string',
+        description: 'The shared introduction/context that appears BEFORE the parts (e.g. "The function f(x)=…"). Empty string if the question goes straight into (a).',
+      },
+      parts: {
+        type: 'array',
+        description: 'The parts, in order.',
+        items: {
+          type: 'object',
+          properties: {
+            label: { type: 'string', description: 'The part label as written, e.g. "(a)", "(b)(i)". Empty if unlabelled.' },
+            text: { type: 'string', description: 'The text of this part, with inline $...$ LaTeX for any mathematics.' },
+          },
+          required: ['text'],
+        },
+      },
+    },
+    required: ['parts'],
+  },
+};
+
 export const MATHS_HOLISTIC_TOOL: Tool = {
   name: 'provide_maths_holistic_feedback',
   description: 'Return holistic marker-voice feedback in three sections: what the student has done well, the single top priority, and a short list of improvements. No verb-check section — verb misreads are caught at the per-line level by the diagnostic tool.',

@@ -502,6 +502,10 @@
       font-family: inherit;
     }
     .exam-add-btn:hover { background: #000; border-color: #000; }
+    .photo-author-btn { background: transparent; border: 1.5px dashed #d1d5db; color: #6b7280; border-radius: 8px; padding: 7px 13px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .photo-author-btn:hover { border-color: #ed7615; color: #ed7615; background: #fef3e6; }
+    .photo-author-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .photo-author-hint { font-size: 12px; color: #9ca3af; margin-left: 8px; }
     .exam-total { font-size: 14px; font-weight: 600; color: #111827; }
     .exam-total span { color: #111827; }
     /* Compact — overrides the full-width .form-group select rule so the answer-type
@@ -601,6 +605,12 @@
         <div class="form-group" id="instructionsGroup">
           <label>Task instructions</label>
           <textarea id="instructionsInput"></textarea>
+          <!-- Maths only (#3b): transcribe a photographed question into the field. -->
+          <div id="instructionsPhotoRow" style="display:none;margin-top:6px">
+            <input type="file" id="questionPhotoInput" accept="image/*" capture="environment" hidden>
+            <button type="button" class="photo-author-btn" id="questionPhotoBtn" onclick="document.getElementById('questionPhotoInput').click()">📷 From a photo</button>
+            <span class="photo-author-hint">Snap a printed or handwritten question — you can edit it after.</span>
+          </div>
           <!-- Task-level file attachments live here so they're available in every
                format, including the instructions-only quick + maths tasks. -->
           <div id="taskAttachmentsMount" style="margin-top:8px"></div>
@@ -637,6 +647,8 @@
           <div id="mathsPartsList"></div>
           <div class="exam-add-row">
             <button type="button" class="exam-add-btn" id="mathsAddPartBtn">+ Add part</button>
+            <input type="file" id="partsPhotoInput" accept="image/*" capture="environment" hidden>
+            <button type="button" class="exam-add-btn" id="partsPhotoBtn" onclick="document.getElementById('partsPhotoInput').click()">📷 Build parts from a photo</button>
             <div class="exam-total">Total: <span id="mathsPartsTotalMarks">0</span> marks</div>
           </div>
         </div>
@@ -715,6 +727,8 @@
           <label>Worked solution <span style="font-weight:500;color:#9ca3af">(optional · hidden from students)</span></label>
           <div class="hint">Paste your full worked solution. ProofReady uses it only to mark each line accurately — students never see it.</div>
           <textarea class="criteria-textarea" id="workedSolutionText" placeholder="Your full step-by-step solution, ending in the final answer."></textarea>
+          <input type="file" id="workedSolutionPhotoInput" accept="image/*" capture="environment" hidden>
+          <button type="button" class="photo-author-btn" id="workedSolutionPhotoBtn" style="margin-top:6px" onclick="document.getElementById('workedSolutionPhotoInput').click()">📷 From a photo</button>
         </div>
       </div>
 
@@ -892,6 +906,7 @@
 
       var hideCritCard = document.getElementById('hideCriteriaCard');
       var wsGroup = document.getElementById('workedSolutionGroup');
+      var photoRow = document.getElementById('instructionsPhotoRow');
       if (subject === 'maths') {
         if (step3) step3.textContent = 'Marking guideline (optional)';
         if (step3Hint) step3Hint.textContent = 'Optional per-step mark allocation. Helps ProofReady flag steps the student has skipped. Skip this for in-class practice or Year 7–10 tasks where you\'d mark the working holistically. Students never see this.';
@@ -914,6 +929,7 @@
         // payload), so the essay-style hide-criteria toggle is irrelevant.
         if (hideCritCard) hideCritCard.parentElement.style.display = 'none';
         if (wsGroup) wsGroup.style.display = '';
+        if (photoRow) photoRow.style.display = '';
       } else {
         if (step3) step3.textContent = 'Marking criteria';
         if (step3Hint) step3Hint.textContent = 'Enter your marking criteria exactly as they appear on your task notification. ProofReady will detect the different criteria and marking levels automatically.';
@@ -930,6 +946,7 @@
         if (typedOnlyHelp) typedOnlyHelp.textContent = 'Disables paste in the draft box. Teachers see typing telemetry (keystrokes, paste attempts, time on task). Recommended for assessment integrity.';
         if (hideCritCard) hideCritCard.parentElement.style.display = '';
         if (wsGroup) wsGroup.style.display = 'none';
+        if (photoRow) photoRow.style.display = 'none';
       }
     }
 
@@ -1160,6 +1177,60 @@
         parts.push(part);
       });
       return parts;
+    }
+
+    // ---- #3b: teacher photo authoring (transcribe a photo into a field) ----
+    function downscaleImageFile(file, maxEdge) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+          const scale = Math.min(1, maxEdge / Math.max(w, h));
+          w = Math.max(1, Math.round(w * scale)); h = Math.max(1, Math.round(h * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          try { const u = canvas.toDataURL('image/jpeg', 0.85); resolve({ base64: u.split(',')[1] || '', media_type: 'image/jpeg' }); }
+          catch (err) { reject(err); }
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read that image.')); };
+        img.src = url;
+      });
+    }
+
+    async function authoringPhotoTranscribe(file, target, btn, onResult) {
+      if (!file || !btn) return;
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Reading photo…';
+      try {
+        const { base64, media_type } = await downscaleImageFile(file, 1800);
+        if (!base64) throw new Error('Could not process that image. Try another photo.');
+        const course = document.getElementById('courseInput').value.trim();
+        const res = await authFetch('/api/transcribe-maths-authoring', {
+          method: 'POST',
+          body: JSON.stringify({ image_base64: base64, media_type, target, course }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Could not read your photo.');
+        onResult(data);
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+      }
+    }
+
+    function wireAuthoringPhoto(inputId, btnId, target, onResult) {
+      const input = document.getElementById(inputId);
+      const btn = document.getElementById(btnId);
+      if (!input || !btn) return;
+      input.addEventListener('change', () => {
+        const f = input.files && input.files[0];
+        if (!f) return;
+        authoringPhotoTranscribe(f, target, btn, (data) => { onResult(data); input.value = ''; });
+      });
     }
 
     // The multi-question editor is for WRITTEN in-class exams only. Maths and
@@ -1461,6 +1532,23 @@
       if (examAddBtn) examAddBtn.addEventListener('click', () => addExamQuestion());
       const mathsAddBtn = document.getElementById('mathsAddPartBtn');
       if (mathsAddBtn) mathsAddBtn.addEventListener('click', () => addMathsPart());
+
+      // #3b: wire the teacher photo-authoring buttons (transcribe → fill, editable).
+      wireAuthoringPhoto('questionPhotoInput', 'questionPhotoBtn', 'question', (d) => {
+        if (d.text) document.getElementById('instructionsInput').value = d.text;
+      });
+      wireAuthoringPhoto('workedSolutionPhotoInput', 'workedSolutionPhotoBtn', 'worked_solution', (d) => {
+        if (d.text) document.getElementById('workedSolutionText').value = d.text;
+      });
+      wireAuthoringPhoto('partsPhotoInput', 'partsPhotoBtn', 'parts', (d) => {
+        if (typeof d.stem === 'string' && d.stem) document.getElementById('instructionsInput').value = d.stem;
+        if (Array.isArray(d.parts) && d.parts.length) {
+          const list = document.getElementById('mathsPartsList');
+          if (list) list.innerHTML = '';
+          d.parts.forEach(p => addMathsPart({ label: p.label, text: p.text }));
+          renumberMathsParts();
+        }
+      });
 
       // Subject-type buttons (Essay / Maths) at the top of Step 1. Drives the
       // labels and placeholders on Step 3 (Marking criteria vs Marking guideline).

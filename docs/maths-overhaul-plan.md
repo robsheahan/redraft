@@ -21,7 +21,7 @@ Central design question (unchanged): **"How can we get the most accurate possibl
 | 1 | Accuracy foundation — hidden worked solution + verification | ✅ Phase 1 done 2026-06-21 (uncommitted; **migration not yet run**). Phase 2 deferred |
 | 2 | Multi-part questions (`(a)(b)(c)` + "Hence") for maths | ✅ done 2026-06-21 (uncommitted; **migration not yet run**) |
 | 3 | Handwriting / OCR — **student** input (transcribe → confirm → diagnose) | ✅ done 2026-06-21 (uncommitted; no migration). Single-question; multi-part photo deferred |
-| 3b | Handwriting / OCR — **teacher** authoring (photo → structured exam; worked solution) | later |
+| 3b | Handwriting / OCR — **teacher** authoring (photo → question / parts / worked solution) | ✅ done 2026-06-21 (uncommitted; no migration) |
 | 4 | Maths-native cohort insights (aggregate the per-line categories) | ✅ done 2026-06-21 (uncommitted; no migration) |
 
 #0 and #1 are independent of input modality — they operate on the `[{math}]` line substrate, which both typed and (future) handwriting input produce. So they can ship before the capture work and don't get rebuilt when it lands.
@@ -245,7 +245,14 @@ Mirrors `lib/exam-questions.ts` but simpler (no MC, no answer key, no scrambling
 - `tsc` clean; a functional transcription call (the endpoint accepts an image block and returns `{math}` lines). **Real handwriting accuracy needs Rob to test with actual phone photos** — the key risk to validate in pilot.
 
 ### Deferred (fast-follows)
-- Multi-part photo; storing the original photo; on-screen canvas / stylus-SDK (the non-photo capture paths).
+- Multi-part photo (student side); storing the original photo; on-screen canvas / stylus-SDK (the non-photo capture paths).
+
+### Done — #3b teacher photo authoring (2026-06-21, uncommitted; no DB change)
+Teachers can snap a photo while setting a maths task — same vision pipeline as the student side, pointed at authoring.
+- `api/transcribe-maths-authoring.ts` (teacher-only, vision; rate-limited; `vercel.json` maxDuration). One `target` param: `question` / `worked_solution` → `{text}` (clean text, inline `$...$`); `parts` → `{stem, parts:[{label,text}]}`.
+- Tools `MATHS_AUTHORING_TEXT_TOOL` / `MATHS_AUTHORING_PARTS_TOOL`; prompts `buildMathsAuthoringTranscriptionSystem`/`...UserText` (faithful transcription, never solves/invents, ignores diagrams — teacher keeps the figure as an attachment).
+- `new-task.html`: **📷 From a photo** on the question field + the worked-solution field, and **📷 Build parts from a photo** in the parts editor → fills the fields/rows, **always landing in an editable state** (no auto-publish). Client downscale, teacher-gated.
+- Verified: `tsc` clean; live runs — a question image → `"…$f(x)=3x^2+2x$…"`; a multi-part image → correct stem + 3 labelled parts.
 
 ### Done — #3 (2026-06-21, uncommitted; no DB change)
 - `api/transcribe-maths-working.ts` (Claude Sonnet 4.6 vision) → `{math}` lines via `MATHS_STRUCTURE_WORKING_TOOL`; rate-limited; registered in `vercel.json` (maxDuration 300).

@@ -11,6 +11,7 @@
     "api/insights-synthesis.ts": { "maxDuration": 300 },
     "api/structure-maths-working.ts": { "maxDuration": 300 },
     "api/transcribe-maths-working.ts": { "maxDuration": 300 },
+    "api/transcribe-maths-authoring.ts": { "maxDuration": 300 },
     "api/student-profile.ts": { "maxDuration": 300 },
     "api/submit-for-marking.ts": { "maxDuration": 300 },
     "api/task.ts": { "maxDuration": 300 }
