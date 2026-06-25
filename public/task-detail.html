@@ -57,6 +57,17 @@
       margin-top: 16px; padding: 16px 18px; background: #f9fafb;
       border-radius: 8px; font-size: 14px; line-height: 1.65; color: #374151;
     }
+    /* Multi-question task display (read-only, view + edit modes) */
+    .mq-questions { display: flex; flex-direction: column; gap: 10px; }
+    .mq-q { padding: 12px 14px; background: #fff; border: 1px solid #e8e0d4; border-radius: 8px; }
+    .mq-q-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .mq-q-num { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280; }
+    .mq-q-marks { font-size: 12px; font-weight: 600; color: #ed7615; background: #fef3e6; border-radius: 6px; padding: 2px 8px; }
+    .mq-q-type { font-size: 12px; font-weight: 600; color: #6366f1; background: #eef2ff; border-radius: 6px; padding: 2px 8px; }
+    .mq-q-text { font-size: 14px; line-height: 1.6; color: #1f2937; white-space: pre-wrap; }
+    .mq-q-crit { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e8e0d4; font-size: 13px; color: #4b5563; white-space: pre-wrap; line-height: 1.55; }
+    .mq-q-crit-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #9ca3af; margin-bottom: 3px; }
+    .mq-note { margin-top: 10px; font-size: 12px; color: #6b7280; font-style: italic; }
     /* Structured task-description rendering (see public/js/task-meta.js) */
     .task-desc > *:first-child { margin-top: 0; }
     .task-desc > *:last-child { margin-bottom: 0; }
@@ -543,6 +554,7 @@
       }
       html += '</div></div>';
       if (task.question) html += '<div class="task-question">' + renderTaskDescription(task.question, e) + '</div>';
+      else if (Array.isArray(task.questions) && task.questions.length) html += '<div class="task-question">' + renderQuestionsListHtml(task) + '</div>';
       html += '<div id="taskMaterials"></div>';
       // Mark-progress counts: a student counts as "marked" if any of their drafts is graded.
       const markedStudents = students.filter(s => s.drafts.some(d => d.graded_at));
@@ -807,8 +819,31 @@
       return html;
     }
 
+    // Read-only display of a multi-question task's questions (exam or take-home
+    // feedback). Questions are authored at creation and locked once published,
+    // so there's no in-place question editor — this just shows them.
+    function renderQuestionsListHtml(task) {
+      var qs = Array.isArray(task.questions) ? task.questions : [];
+      if (!qs.length) return '';
+      var html = '<div class="mq-questions">';
+      qs.forEach(function(q, i) {
+        html += '<div class="mq-q"><div class="mq-q-head"><span class="mq-q-num">Question ' + (i + 1) + '</span>';
+        if (q.marks != null) html += '<span class="mq-q-marks">' + e(String(q.marks)) + ' mark' + (q.marks == 1 ? '' : 's') + '</span>';
+        if (q.type === 'multiple_choice') html += '<span class="mq-q-type">Multiple choice</span>';
+        html += '</div>';
+        html += '<div class="mq-q-text">' + e(q.text || '') + '</div>';
+        if (q.criteria_text && String(q.criteria_text).trim()) {
+          html += '<div class="mq-q-crit"><span class="mq-q-crit-label">Marking criteria</span>' + e(q.criteria_text) + '</div>';
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+      return html;
+    }
+
     function renderEditView(task) {
       let html = '';
+      var mqEdit = Array.isArray(task.questions) && task.questions.length > 0;
 
       html += '<div class="detail-row"><div class="detail-label">Title</div>';
       html += '<input class="edit-field" id="editTitle" value="' + e(task.title || '') + '"></div>';
@@ -816,8 +851,15 @@
       html += '<div class="detail-row"><div class="detail-label">Course</div>';
       html += '<input class="edit-field" id="editCourse" value="' + e(task.course || '') + '"></div>';
 
-      html += '<div class="detail-row"><div class="detail-label">Task question</div>';
-      html += '<textarea class="edit-field" id="editQuestion">' + e(task.question || '') + '</textarea></div>';
+      if (mqEdit) {
+        html += '<div class="detail-row"><div class="detail-label">Questions</div><div>';
+        html += renderQuestionsListHtml(task);
+        html += '<div class="mq-note">Questions and per-question criteria are set when the task is created' + (task.published_at ? ', and are locked now that it\'s published' : '') + '. To change them, recreate the task.</div>';
+        html += '</div></div>';
+      } else {
+        html += '<div class="detail-row"><div class="detail-label">Task question</div>';
+        html += '<textarea class="edit-field" id="editQuestion">' + e(task.question || '') + '</textarea></div>';
+      }
 
       html += '<div class="detail-row"><div class="detail-label">Task type</div>';
       html += '<div class="task-types" id="editTypePills">';
@@ -830,7 +872,7 @@
       html += '</div></div>';
 
       html += '<div class="detail-row"><div class="detail-label">Total marks</div>';
-      html += '<input class="edit-field" id="editMarks" type="number" value="' + e(String(task.total_marks || '')) + '"></div>';
+      html += '<input class="edit-field" id="editMarks" type="number" value="' + e(String(task.total_marks || '')) + '"' + (mqEdit ? ' readonly title="Auto-summed from the question marks"' : '') + '></div>';
 
       html += '<div class="detail-row"><div class="detail-label">Due date</div>';
       html += '<input class="edit-field" id="editDue" type="date" value="' + e(task.due_date || '') + '"></div>';
@@ -841,9 +883,14 @@
         html += '<input class="edit-field" id="editTimeLimit" type="number" min="1" placeholder="No limit" value="' + e(String(task.time_limit_minutes || '')) + '"></div>';
       }
 
-      html += '<div class="detail-row"><div class="detail-label">Marking criteria</div>';
-      const criteriaVal = task.criteria_text || (task.criteria || []).map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n');
-      html += '<textarea class="edit-field" id="editCriteria" style="min-height:120px">' + e(criteriaVal) + '</textarea></div>';
+      // Multi-question take-home authors criteria PER QUESTION (shown in the
+      // Questions block above); exams have none. Only single-question tasks have
+      // a task-level criteria field.
+      if (!mqEdit) {
+        html += '<div class="detail-row"><div class="detail-label">Marking criteria</div>';
+        const criteriaVal = task.criteria_text || (task.criteria || []).map(c => c.name + (c.marks ? ' (' + c.marks + ' marks)' : '')).join('\n');
+        html += '<textarea class="edit-field" id="editCriteria" style="min-height:120px">' + e(criteriaVal) + '</textarea></div>';
+      }
 
       html += '<div class="detail-row"><div class="detail-label">Notes for feedback engine</div>';
       html += '<textarea class="edit-field" id="editNotes">' + e(task.notes || '') + '</textarea></div>';
@@ -1051,15 +1098,20 @@
       const selectedTypeEl = document.querySelector('#editTypePills .task-type.selected');
       const typedToggleEl = document.getElementById('editTypedOnlyToggle');
       const hideCriteriaToggleEl = document.getElementById('editHideCriteriaToggle');
+      // Multi-question tasks render no scalar question / task-level criteria /
+      // editable total fields — read every field defensively so their absence
+      // can't crash the save, and never send those keys (which would clobber the
+      // questions[] state or override the auto-summed total).
+      const mqSave = Array.isArray(currentTask.questions) && currentTask.questions.length > 0;
+      const qEl = document.getElementById('editQuestion');
+      const critEl = document.getElementById('editCriteria');
+      const marksEl = document.getElementById('editMarks');
       const updated = {
         id: currentTask.id,
         title: document.getElementById('editTitle').value.trim(),
         course: document.getElementById('editCourse').value.trim(),
-        question: document.getElementById('editQuestion').value.trim(),
         task_type: selectedTypeEl ? selectedTypeEl.textContent.trim() : null,
-        total_marks: document.getElementById('editMarks').value || null,
         due_date: document.getElementById('editDue').value || null,
-        criteria_text: document.getElementById('editCriteria').value.trim(),
         notes: document.getElementById('editNotes').value.trim(),
         outcomes: currentTask.outcomes || [],
         criteria: [],
@@ -1067,6 +1119,9 @@
         hide_criteria_from_students: hideCriteriaToggleEl ? hideCriteriaToggleEl.checked : false,
         attachments: editAttachments,
       };
+      if (qEl) updated.question = qEl.value.trim();
+      if (critEl) updated.criteria_text = critEl.value.trim();
+      if (marksEl && !mqSave) updated.total_marks = marksEl.value || null;
       const allowAttachToggleEl = document.getElementById('editAllowAttachToggle');
       if (allowAttachToggleEl) updated.allow_student_attachments = allowAttachToggleEl.checked;
       // Time limit is editable for in-class exams only; send it (null clears).
@@ -1100,7 +1155,9 @@
         if (courseEl) courseEl.textContent = updated.course || '';
 
         const questionEl = headerEl.querySelector('.task-question');
-        if (questionEl) questionEl.innerHTML = renderTaskDescription(updated.question || '', e);
+        if (questionEl) questionEl.innerHTML = mqSave
+          ? renderQuestionsListHtml(currentTask)
+          : renderTaskDescription(updated.question || '', e);
 
         cancelEdit();
       } catch (err) {
