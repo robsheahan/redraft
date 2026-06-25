@@ -545,6 +545,9 @@
       sessionStorage.setItem('proofready_feedback', JSON.stringify({
         feedback: latest.feedback,
         draft_text: latest.draft_text || '',
+        // Multi-question: pass the answer snapshot so the per-question view paints
+        // fully on first render (before the background drafts/task refetch).
+        answers: Array.isArray(latest.answers) ? latest.answers : null,
         meta: {
           taskVerb: detectedVerb,
           question: latest.question || currentTask.question,
@@ -564,6 +567,7 @@
         task_id: currentTask.id,
         title: currentTask.title,
         question: currentTask.question,
+        questions: currentTask.questions || null,
         course: currentTask.course,
         total_marks: currentTask.total_marks || null,
         due_date: currentTask.due_date || null,
