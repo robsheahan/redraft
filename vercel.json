@@ -4,6 +4,7 @@
     "api/generate-feedback.ts": { "maxDuration": 300 },
     "api/generate-class-feedback.ts": { "maxDuration": 300 },
     "api/generate-maths-feedback.ts": { "maxDuration": 300 },
+    "api/generate-multi-feedback.ts": { "maxDuration": 300 },
     "api/generate-activity.ts": { "maxDuration": 300 },
     "api/generate-criteria.ts": { "maxDuration": 300 },
     "api/generate-marking-guideline.ts": { "maxDuration": 300 },

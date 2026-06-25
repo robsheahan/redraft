@@ -93,6 +93,11 @@
       margin-right: auto;
     }
     .draft-nav-btns { display: flex; gap: 6px; }
+    /* Multi-question take-home: per-question feedback blocks */
+    .mq-block { margin-bottom: 18px; }
+    .mq-answer-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280; margin: 12px 0 6px; }
+    .mq-answer { white-space: pre-wrap; background: #fafaf7; border: 1px solid #e8e0d4; border-radius: 8px; padding: 12px 14px; font-size: 15px; line-height: 1.6; color: #1f2937; }
+    .mq-answer.mq-empty { color: #9ca3af; font-style: italic; }
     .draft-btn {
       padding: 6px 12px; background: #fff; border: 1px solid #e8e0d4;
       border-radius: 6px; font-size: 13px; font-weight: 600;
@@ -559,6 +564,7 @@
     var allDrafts = null;  // Array of { draft_text, feedback, draft_version } if multi-draft
     var currentMeta = null;
     var currentTask = null;
+    var initialAnswers = null;  // multi-question: the just-submitted answer snapshot
 
     var CATEGORY_LABELS = {
       strength: 'Strength',
@@ -587,6 +593,7 @@
       const fb = parsed.feedback;
       const meta = parsed.meta;
       const draftText = parsed.draft_text || '';
+      initialAnswers = parsed.answers || null;
       const task = currentTask;
 
       // If this was submitted against a task, load all drafts + the full
@@ -625,6 +632,10 @@
 
     function renderFeedback(fb, meta, drafts, currentVersion, draftText) {
       var task = currentTask || {};
+      // Multi-question take-home feedback has its own per-question renderer.
+      if (fb && fb.kind === 'multi_question') {
+        return renderMultiQuestionFeedback(fb, meta, drafts, currentVersion);
+      }
       const MAX_DRAFTS = meta.maxDrafts || 3;
       const annotations = (Array.isArray(fb && fb.inline_suggestions) ? fb.inline_suggestions : [])
         .filter(function(a) { return a && typeof a === 'object' && typeof a.quote === 'string' && typeof a.category === 'string'; });
@@ -931,6 +942,127 @@
           heading: 'Your attachments',
         });
       }
+    }
+
+    // Multi-question take-home: per-question AI feedback (+ a teacher-marked
+    // block once graded). `fb` is the current draft's feedback ({kind, questions});
+    // answers come from the current draft row (re-render) or the just-submitted
+    // payload (initialAnswers).
+    function renderMultiQuestionFeedback(fb, meta, drafts, currentVersion) {
+      var task = currentTask || {};
+      var draftList = Array.isArray(drafts) ? drafts : (allDrafts || []);
+      var currentDraft = draftList.find(function(d) { return d && d.draft_version === currentVersion; }) || null;
+      var answers = (currentDraft && Array.isArray(currentDraft.answers)) ? currentDraft.answers
+                  : (Array.isArray(initialAnswers) ? initialAnswers : []);
+      var ansByQid = {}; answers.forEach(function(a) { if (a && a.question_id) ansByQid[a.question_id] = a; });
+      var qfbList = (fb && Array.isArray(fb.questions)) ? fb.questions : [];
+      var qfbByQid = {}; qfbList.forEach(function(q) { if (q && q.question_id) qfbByQid[q.question_id] = q; });
+      var taskQById = {}; (task.questions || []).forEach(function(q) { taskQById[q.id] = q; });
+
+      var order = (task.questions && task.questions.length)
+        ? task.questions.map(function(q) { return q.id; })
+        : (answers.length ? answers.map(function(a) { return a.question_id; })
+                          : qfbList.map(function(q) { return q.question_id; }));
+
+      var teacherGrade = (currentDraft && currentDraft.graded_at) ? currentDraft : null;
+      var teacherAnns = (teacherGrade && Array.isArray(teacherGrade.teacher_annotations)) ? teacherGrade.teacher_annotations : [];
+      var MAX_DRAFTS = (meta && meta.maxDrafts) || 3;
+
+      var html = '';
+      html += '<div class="feedback-header"><h1>' + e(task.title || (meta && meta.title) || 'Feedback') + '</h1>';
+      var bits = [];
+      var className = task.class_name || (task.class && task.class.name);
+      if (className) bits.push(e(className));
+      if (task.course || (meta && meta.course)) bits.push(e(task.course || meta.course));
+      bits.push('Draft ' + (currentVersion || 1) + ' of ' + MAX_DRAFTS);
+      html += '<div class="task-meta">' + bits.join(' · ') + '</div></div>';
+
+      if (draftList.length > 1) {
+        html += '<div class="draft-nav"><div class="draft-nav-label">You have ' + draftList.length + ' drafts:</div><div class="draft-nav-btns">';
+        draftList.slice().sort(function(a, b) { return a.draft_version - b.draft_version; }).forEach(function(d) {
+          html += '<button class="draft-btn' + (d.draft_version === currentVersion ? ' active' : '') + '" onclick="switchDraft(' + d.draft_version + ')">Draft ' + d.draft_version + '</button>';
+        });
+        html += '</div></div>';
+      }
+
+      if (teacherGrade) {
+        // renderExamTeacherMarkHtml renders its own "Marked by your teacher" hero.
+        html += renderExamTeacherMarkHtml(teacherGrade, task, teacherAnns);
+      }
+
+      order.forEach(function(qid, idx) {
+        var q = taskQById[qid] || {};
+        var qfb = qfbByQid[qid] || null;
+        var ans = ansByQid[qid] || null;
+        var qText = q.text || (ans && ans.question_text) || '';
+        var marks = (q.marks != null) ? q.marks : (ans ? ans.marks : null);
+
+        html += '<div class="card mq-block">';
+        html += '<div class="exam-answer-head"><span class="exam-answer-num">Question ' + (idx + 1) + '</span>';
+        if (marks != null) html += '<span class="exam-answer-marks">' + e(String(marks)) + ' mark' + (marks == 1 ? '' : 's') + '</span>';
+        html += '</div>';
+        if (qText) html += '<div class="task-question" style="white-space:pre-wrap">' + e(qText) + '</div>';
+
+        var answerText = (ans && typeof ans.text === 'string') ? ans.text : '';
+        var inline = (qfb && Array.isArray(qfb.inline_suggestions))
+          ? qfb.inline_suggestions.filter(function(a) { return a && typeof a.quote === 'string' && typeof a.category === 'string'; })
+          : [];
+        html += '<div class="mq-answer-label">Your answer</div>';
+        if (answerText && inline.length) {
+          html += '<div class="annotated-layout"><div class="annotated-draft-text">' + renderAnnotatedDraftHtml(answerText, inline) + '</div>';
+          html += '<div class="annotated-sidebar">' + renderAnnotationCardsHtml(inline) + '</div></div>';
+        } else if (answerText) {
+          html += '<div class="mq-answer">' + e(answerText) + '</div>';
+        } else {
+          html += '<div class="mq-answer mq-empty">No answer submitted for this question.</div>';
+        }
+
+        if (!qfb || qfb.ok === false) {
+          html += '<p class="section-text" style="color:#b45309">We couldn\'t generate feedback for this question this time. Try resubmitting.</p>';
+          html += '</div>';
+          return;
+        }
+
+        var well = qfb.what_youve_done_well || {};
+        if (Array.isArray(well.summary) && well.summary.length) {
+          html += '<div class="section done-well"><div class="section-title">What you\'ve done well</div><ul class="summary-list">';
+          well.summary.forEach(function(p) { html += '<li>' + e(p) + '</li>'; });
+          html += '</ul></div>';
+        }
+        var pr = qfb.top_priority || {};
+        if (pr.summary) {
+          html += '<div class="section top-priority"><div class="section-title">Top priority</div><p class="summary-text">' + e(pr.summary) + '</p></div>';
+        }
+        var impr = qfb.improvements || {};
+        if (Array.isArray(impr.summary) && impr.summary.length) {
+          html += '<div class="section improvements"><div class="section-title">Things to improve</div><ul class="summary-list">';
+          impr.summary.forEach(function(p) { html += '<li>' + e(p) + '</li>'; });
+          html += '</ul>';
+          if (Array.isArray(impr.detail) && impr.detail.length) {
+            html += '<ul class="feedback-list">';
+            impr.detail.forEach(function(p, i) { html += '<li><span class="improvement-number">' + (i + 1) + '</span>' + e(p) + '</li>'; });
+            html += '</ul>';
+          }
+          html += '</div>';
+        }
+        if (Array.isArray(qfb.criteria_feedback) && qfb.criteria_feedback.length) {
+          var ch = qfb.is_band_rubric ? 'Feedback by quality dimension' : 'Feedback by marking criterion';
+          html += '<div class="section criteria-section"><div class="section-title">' + ch + '</div>';
+          qfb.criteria_feedback.forEach(function(cf) {
+            html += '<div class="criterion-card"><div class="criterion-name">' + e(cf.criterion || '') + '</div>';
+            if (cf.strengths) html += '<div class="criterion-label">Strengths</div><div class="criterion-text">' + e(cf.strengths) + '</div>';
+            if (cf.improvements) html += '<div class="criterion-label">To improve</div><div class="criterion-text">' + e(cf.improvements) + '</div>';
+            html += '</div>';
+          });
+          html += '</div>';
+        }
+        html += '</div>'; // mq-block
+      });
+
+      var backId = task.task_id || (meta && meta.task_id) || '';
+      html += '<div style="margin-top:18px"><a href="submit.html?task=' + encodeURIComponent(backId) + '" class="back-link">← Back to the task</a></div>';
+
+      container.innerHTML = html;
     }
 
     function renderTeacherMarkHtml(grade, task, anns, draftText) {
