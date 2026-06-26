@@ -3,6 +3,7 @@ import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { parseRubricWithAI } from '../lib/parse-rubric-with-ai.js';
 import { withHandler } from '../lib/with-handler.js';
 import { validateExamQuestions, studentTaskView, type ExamQuestion } from '../lib/exam-questions.js';
+import { validateFeedbackQuestions, type FeedbackQuestion } from '../lib/feedback-questions.js';
 import { validateMathsParts, studentPartsView, type MathsPart } from '../lib/maths-parts.js';
 
 /**
@@ -157,21 +158,35 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
   const taskMode = resolveTaskMode(req.body);
   const subjectType = subject_type === 'maths' ? 'maths' : 'essay';
 
-  // Multi-question exams: a marked_task (essay) may carry a `questions` array
-  // instead of a single scalar `question`. Policy gate — multi-question is only
-  // available on a written in-class exam for now (see plan §1). The restriction
-  // lives here, not in the schema, so widening it later is a validation change.
+  // Multi-question assessments share the tasks.questions jsonb column; which
+  // validator runs is decided by task_mode. Exams (marked_task) get the flat
+  // text+MC variant with a hidden answer key (lib/exam-questions); take-home
+  // assessments (feedback_task) get the text-only, per-question-criteria variant
+  // (lib/feedback-questions) where every question gets its own AI feedback. Both
+  // are essay-subject only. The restriction lives here, not in the schema, so
+  // widening it later is a validation change.
   let examQuestions: ExamQuestion[] | null = null;
-  let examTotalMarks: number | null = null;
+  let feedbackQuestions: FeedbackQuestion[] | null = null;
+  let questionsTotalMarks: number | null = null;
   if (questions !== undefined && questions !== null) {
-    if (taskMode !== 'marked_task' || subjectType !== 'essay') {
-      return res.status(400).json({ error: 'Multiple questions are only available on a written in-class exam.' });
+    if (subjectType !== 'essay') {
+      return res.status(400).json({ error: 'Multiple questions are only available on written tasks.' });
     }
-    const v = validateExamQuestions(questions);
-    if ('error' in v) return res.status(400).json({ error: v.error });
-    examQuestions = v.questions;
-    examTotalMarks = v.totalMarks;
+    if (taskMode === 'marked_task') {
+      const v = validateExamQuestions(questions);
+      if ('error' in v) return res.status(400).json({ error: v.error });
+      examQuestions = v.questions;
+      questionsTotalMarks = v.totalMarks;
+    } else if (taskMode === 'feedback_task') {
+      const v = validateFeedbackQuestions(questions);
+      if ('error' in v) return res.status(400).json({ error: v.error });
+      feedbackQuestions = v.questions;
+      questionsTotalMarks = v.totalMarks;
+    } else {
+      return res.status(400).json({ error: 'Multiple questions are only available on an assessment or in-class exam.' });
+    }
   }
+  const storedQuestions = examQuestions ?? feedbackQuestions;
 
   // Multi-part maths (take-home feedback): a maths feedback_task may carry an
   // ordered `parts` array (sub-questions (a)(b)(c) of one question) instead of a
@@ -188,17 +203,19 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     mathsPartsTotal = v.totalMarks;
   }
 
-  // Single-question tasks still require a scalar question; multi-question exams
-  // and multi-part maths carry their content in their arrays (the stem is
-  // optional once parts exist).
-  if (!examQuestions && !mathsParts && (!question || !String(question).trim())) {
+  // Single-question tasks still require a scalar question; multi-question
+  // assessments/exams and multi-part maths carry their content in their arrays
+  // (the stem is optional once parts/questions exist).
+  if (!storedQuestions && !mathsParts && (!question || !String(question).trim())) {
     return res.status(400).json({ error: 'Task question is required.' });
   }
   const hasCriteria = !!(criteria_text && String(criteria_text).trim());
   const hasMarkingGuideline = !!(marking_guideline && String(marking_guideline).trim());
-  // Maths assessment tasks need a marking guideline; essay assessment tasks
-  // need marking criteria. Quick tasks of either kind may skip.
-  if (subjectType === 'essay' && taskMode === 'feedback_task' && !hasCriteria) {
+  // Maths assessment tasks need a marking guideline; single-question essay
+  // assessment tasks need task-level marking criteria. Multi-question take-home
+  // assessments carry criteria PER QUESTION (each optional), so the task-level
+  // requirement doesn't apply. Quick tasks of either kind may skip.
+  if (subjectType === 'essay' && taskMode === 'feedback_task' && !feedbackQuestions && !hasCriteria) {
     return res.status(400).json({ error: 'Assessment tasks need marking criteria. Either add criteria or switch to a quick task.' });
   }
   // Maths marking guidelines are OPTIONAL. They sharpen the per-line
@@ -225,12 +242,12 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
     course: course || null,
     title: title || null,
     instructions: instructions || null,
-    question: examQuestions ? null : (question || null),
-    questions: examQuestions,
+    question: storedQuestions ? null : (question || null),
+    questions: storedQuestions,
     parts: mathsParts,
     task_type: task_type || null,
     task_mode: taskMode,
-    total_marks: examQuestions ? examTotalMarks
+    total_marks: questionsTotalMarks != null ? questionsTotalMarks
       : (mathsParts && mathsPartsTotal != null ? mathsPartsTotal : (total_marks || null)),
     due_date: due_date || null,
     outcomes: outcomes || [],
@@ -334,7 +351,13 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   const newMode = modeInBody ? resolveTaskMode(req.body) : (existing.task_mode as TaskMode);
   const effectiveCriteria = criteriaInPatch ? patch.criteria_text : (existing as any).criteria_text;
   const hasCriteriaNow = !!(effectiveCriteria && String(effectiveCriteria).trim());
-  if (modeInBody && newMode === 'feedback_task' && !hasCriteriaNow) {
+  // Will the post-update task be multi-question? Multi-question take-home
+  // assessments carry criteria per question, so the task-level criteria
+  // requirement doesn't apply to them.
+  const settingMultiQuestions = questions !== undefined
+    ? questions !== null
+    : (Array.isArray((existing as any).questions) && (existing as any).questions.length > 0);
+  if (modeInBody && newMode === 'feedback_task' && !hasCriteriaNow && !settingMultiQuestions) {
     return res.status(400).json({ error: 'Assessment tasks need marking criteria. Either add criteria or switch to a quick task.' });
   }
   if (modeInBody) patch.task_mode = newMode;
@@ -346,31 +369,39 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
     patch.lesson_builder = false;
   }
 
-  // Multi-question exams. `questions` present (non-null) → validate + store the
-  // array, drop the scalar question, recompute total_marks. Multi-question is
-  // marked_task (essay) only. Questions LOCK on publish: the array can't change
-  // once published_at is set, because submitted answers anchor to question ids.
+  // Multi-question assessments share the tasks.questions column. `questions`
+  // present (non-null) → validate by mode (exam vs take-home feedback), store
+  // the array, drop the scalar question, recompute total_marks. Multi-question
+  // is essay only. Questions LOCK on publish: the array can't change once
+  // published_at is set, because submitted answers anchor to question ids.
   if (questions !== undefined) {
     const effSubject = (subject_type === 'essay' || subject_type === 'maths')
       ? subject_type : ((existing as any).subject_type || 'essay');
     if (questions === null) {
       if (existing.published_at) {
-        return res.status(400).json({ error: "A published exam's questions can't be changed." });
+        return res.status(400).json({ error: "A published assessment's questions can't be changed." });
       }
       patch.questions = null;
     } else {
-      if (newMode !== 'marked_task' || effSubject !== 'essay') {
-        return res.status(400).json({ error: 'Multiple questions are only available on a written in-class exam.' });
+      if (effSubject !== 'essay') {
+        return res.status(400).json({ error: 'Multiple questions are only available on written tasks.' });
       }
-      const v = validateExamQuestions(questions);
-      if ('error' in v) return res.status(400).json({ error: v.error });
+      let validated: { error: string } | { questions: any[]; totalMarks: number };
+      if (newMode === 'marked_task') {
+        validated = validateExamQuestions(questions);
+      } else if (newMode === 'feedback_task') {
+        validated = validateFeedbackQuestions(questions);
+      } else {
+        return res.status(400).json({ error: 'Multiple questions are only available on an assessment or in-class exam.' });
+      }
+      if ('error' in validated) return res.status(400).json({ error: validated.error });
       if (existing.published_at &&
-          JSON.stringify((existing as any).questions ?? null) !== JSON.stringify(v.questions)) {
-        return res.status(400).json({ error: "A published exam's questions can't be changed." });
+          JSON.stringify((existing as any).questions ?? null) !== JSON.stringify(validated.questions)) {
+        return res.status(400).json({ error: "A published assessment's questions can't be changed." });
       }
-      patch.questions = v.questions;
+      patch.questions = validated.questions;
       patch.question = null;
-      patch.total_marks = v.totalMarks;
+      patch.total_marks = validated.totalMarks;
     }
   }
 

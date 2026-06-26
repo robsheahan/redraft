@@ -628,6 +628,15 @@
           <div class="hint">The full question students need to respond to</div>
           <textarea></textarea>
         </div>
+        <!-- Essay take-home only: single question vs multiple questions. Multiple
+             questions → each gets its own AI feedback (scaled to its marks). -->
+        <div class="form-group" id="essayFormatGroup" style="display:none">
+          <label>Question format</label>
+          <div class="task-type-picker">
+            <button type="button" class="task-type-btn is-selected" data-eformat="single" onclick="selectEssayFormat('single')">Single question</button>
+            <button type="button" class="task-type-btn" data-eformat="multiple" onclick="selectEssayFormat('multiple')">Multiple questions</button>
+          </div>
+        </div>
         <!-- Multi-question exam editor (in-class exam only). Replaces the single
              Task question field. One question → saved as a single-question task
              (legacy path); two or more → saved as a questions[] exam. -->
@@ -650,6 +659,19 @@
             <input type="file" id="partsPhotoInput" accept="image/*" capture="environment" hidden>
             <button type="button" class="exam-add-btn" id="partsPhotoBtn" onclick="document.getElementById('partsPhotoInput').click()">📷 Build parts from a photo</button>
             <div class="exam-total">Total: <span id="mathsPartsTotalMarks">0</span> marks</div>
+          </div>
+        </div>
+        <!-- Essay take-home, multiple questions: each question students answer,
+             with optional per-question marking criteria. The instructions above
+             are an optional shared stem. Students get feedback on each question,
+             scaled to its marks. -->
+        <div class="form-group" id="feedbackQuestionsGroup" style="display:none">
+          <label>Questions</label>
+          <div class="hint">The instructions above are an optional shared stem (e.g. a source or scenario). Add each question students answer — they get feedback on each one. Add marking criteria for a question to get criterion-by-criterion feedback on it (optional). Bigger-mark questions get fuller feedback.</div>
+          <div id="feedbackQuestionsList"></div>
+          <div class="exam-add-row">
+            <button type="button" class="exam-add-btn" id="feedbackAddQuestionBtn">+ Add question</button>
+            <div class="exam-total">Total: <span id="feedbackTotalMarks">0</span> marks</div>
           </div>
         </div>
         <div class="form-row" id="marksDateRow">
@@ -1182,6 +1204,127 @@
       return parts;
     }
 
+    // ---- Essay take-home: multiple-question editor ----
+    // Mirrors the maths multi-part editor, but text-only with an optional
+    // per-question criteria field (no MC, no hidden worked solution). One
+    // question saves as a single-question task; two or more as a questions[]
+    // feedback task where each question gets its own AI feedback.
+    let selectedEssayFormat = 'single';
+    function selectEssayFormat(fmt) {
+      selectedEssayFormat = fmt === 'multiple' ? 'multiple' : 'single';
+      applyEssayFormatVisibility();
+    }
+    window.selectEssayFormat = selectEssayFormat;
+
+    function applyEssayFormatVisibility() {
+      const multi = selectedEssayFormat === 'multiple';
+      const group = document.getElementById('feedbackQuestionsGroup');
+      const stepCriteria = document.getElementById('stepCriteria');
+      const totalMarks = document.getElementById('totalMarksGroup');
+      if (group) group.style.display = multi ? '' : 'none';
+      // Multi-question authors criteria PER QUESTION, so hide the task-level
+      // Step 3 (criteria) and the manual total (questions auto-sum).
+      if (stepCriteria) stepCriteria.style.display = multi ? 'none' : '';
+      if (totalMarks) totalMarks.style.display = multi ? 'none' : '';
+      document.querySelectorAll('#essayFormatGroup .task-type-btn').forEach(b =>
+        b.classList.toggle('is-selected', b.dataset.eformat === selectedEssayFormat));
+      if (multi && document.querySelectorAll('#feedbackQuestionsList .feedback-q').length === 0) addFeedbackQuestion();
+    }
+
+    function renumberFeedbackQuestions() {
+      const rows = Array.from(document.querySelectorAll('#feedbackQuestionsList .feedback-q'));
+      let total = 0;
+      rows.forEach((row, i) => {
+        const num = row.querySelector('.exam-q-num');
+        if (num) num.textContent = 'Question ' + (i + 1);
+        const up = row.querySelector('.exam-q-ctrl.up');
+        const down = row.querySelector('.exam-q-ctrl.down');
+        const remove = row.querySelector('.exam-q-ctrl.remove');
+        if (up) up.disabled = (i === 0);
+        if (down) down.disabled = (i === rows.length - 1);
+        if (remove) remove.disabled = (rows.length <= 1);
+        const m = parseFloat(row.querySelector('.feedback-q-marks input').value);
+        if (Number.isFinite(m) && m > 0) total += m;
+      });
+      const totalEl = document.getElementById('feedbackTotalMarks');
+      if (totalEl) totalEl.textContent = String(total);
+    }
+
+    function addFeedbackQuestion(prefill) {
+      const list = document.getElementById('feedbackQuestionsList');
+      if (!list) return null;
+      const row = document.createElement('div');
+      row.className = 'exam-q feedback-q';
+      row.dataset.qid = makeQuestionId();
+      row._attachments = [];
+      row.innerHTML =
+        '<div class="exam-q-head">' +
+          '<span class="exam-q-num">Question</span>' +
+          '<span class="spacer"></span>' +
+          '<button type="button" class="exam-q-ctrl up" title="Move up">&#8593;</button>' +
+          '<button type="button" class="exam-q-ctrl down" title="Move down">&#8595;</button>' +
+          '<button type="button" class="exam-q-ctrl remove" title="Remove question">&#215;</button>' +
+        '</div>' +
+        '<textarea class="exam-q-text feedback-q-text" placeholder="The question students respond to"></textarea>' +
+        '<textarea class="exam-q-text feedback-q-criteria" placeholder="Marking criteria for this question — optional. Add them for criterion-by-criterion feedback."></textarea>' +
+        '<div class="exam-q-marks feedback-q-marks"><label>Marks</label><input type="number" min="1" step="1" value="1"></div>' +
+        '<div class="exam-q-attach"></div>';
+      list.appendChild(row);
+      if (prefill) {
+        if (prefill.text) row.querySelector('.feedback-q-text').value = prefill.text;
+        if (prefill.marks) row.querySelector('.feedback-q-marks input').value = prefill.marks;
+        if (prefill.criteria_text) row.querySelector('.feedback-q-criteria').value = prefill.criteria_text;
+      }
+      const attachMount = row.querySelector('.exam-q-attach');
+      if (attachMount && window.Attachments) {
+        attachMount.appendChild(Attachments.createAttachmentUploader({
+          scope: 'task',
+          initial: row._attachments,
+          onChange: (arr) => { row._attachments = arr; },
+        }));
+      }
+      row.querySelector('.feedback-q-marks input').addEventListener('input', renumberFeedbackQuestions);
+      row.querySelector('.exam-q-ctrl.up').addEventListener('click', () => {
+        const prev = row.previousElementSibling;
+        if (prev) list.insertBefore(row, prev);
+        renumberFeedbackQuestions();
+      });
+      row.querySelector('.exam-q-ctrl.down').addEventListener('click', () => {
+        const next = row.nextElementSibling;
+        if (next) list.insertBefore(next, row);
+        renumberFeedbackQuestions();
+      });
+      row.querySelector('.exam-q-ctrl.remove').addEventListener('click', () => {
+        if (list.children.length <= 1) return;
+        row.remove();
+        renumberFeedbackQuestions();
+      });
+      renumberFeedbackQuestions();
+      return row;
+    }
+    window.addFeedbackQuestion = addFeedbackQuestion;
+
+    function readFeedbackQuestions() {
+      const out = [];
+      document.querySelectorAll('#feedbackQuestionsList .feedback-q').forEach((row) => {
+        const text = (row.querySelector('.feedback-q-text').value || '').trim();
+        if (!text) return; // skip empty rows
+        const marksRaw = row.querySelector('.feedback-q-marks input').value;
+        const marks = marksRaw ? parseFloat(marksRaw) : NaN;
+        const criteria = (row.querySelector('.feedback-q-criteria').value || '').trim();
+        const q = {
+          id: row.dataset.qid,
+          type: 'text',
+          text,
+          marks: Number.isFinite(marks) ? marks : NaN,
+          attachments: row._attachments || [],
+        };
+        if (criteria) q.criteria_text = criteria;
+        out.push(q);
+      });
+      return out;
+    }
+
     // ---- #3b: teacher photo authoring (transcribe a photo into a field) ----
     function downscaleImageFile(file, maxEdge) {
       return new Promise((resolve, reject) => {
@@ -1282,6 +1425,19 @@
       } else {
         applyMathsFormatVisibility();
       }
+
+      // Essay take-home can be single or multi-question; the format picker (and,
+      // when multiple, the questions editor) only applies there.
+      const isEssayTakeHome = !isMaths && selectedTaskMode === 'feedback_task';
+      const essayFormatGroup = document.getElementById('essayFormatGroup');
+      if (essayFormatGroup) essayFormatGroup.style.display = isEssayTakeHome ? '' : 'none';
+      if (!isEssayTakeHome) {
+        selectedEssayFormat = 'single';
+        const fg = document.getElementById('feedbackQuestionsGroup');
+        if (fg) fg.style.display = 'none';
+      } else {
+        applyEssayFormatVisibility();
+      }
     }
 
     // Read the editor into a questions[] array (one entry per row).
@@ -1350,6 +1506,7 @@
       const isExamEssay = selectedTaskMode === 'marked_task' && selectedSubjectType === 'essay';
       const isQuick = selectedTaskMode === 'quick_task';
       const isMaths = selectedSubjectType === 'maths';
+      const isEssayTakeHomeMulti = !isMaths && selectedTaskMode === 'feedback_task' && selectedEssayFormat === 'multiple';
       let question = null;
       let total_marks = null;
       let questionsPayload = null;
@@ -1374,11 +1531,25 @@
         } else {
           questionsPayload = qs;
         }
+      } else if (isEssayTakeHomeMulti) {
+        // Essay take-home, multiple questions → a questions[] feedback task.
+        // Each question gets its own AI feedback; the instructions stay as the
+        // optional shared stem (preserved, not folded into a scalar question).
+        const qs = readFeedbackQuestions();
+        if (qs.length === 0) { alert('Add at least one question with question text.'); restoreButtons(); return; }
+        for (let i = 0; i < qs.length; i++) {
+          if (!qs[i].text) { alert('Question ' + (i + 1) + ' needs question text.'); restoreButtons(); return; }
+          if (!(qs[i].marks > 0)) { alert('Question ' + (i + 1) + ' needs a mark value greater than zero.'); restoreButtons(); return; }
+        }
+        questionsPayload = qs;
+        question = null;
+        instructionsToSend = instructions;
+        total_marks = null; // server derives from the per-question marks
       } else {
-        // Every non-exam format (quick, maths, essay take-home) uses the
-        // instructions as the prompt: store them as the question (so the student
-        // sees them and the insights pass has context) and don't send a separate
-        // instructions block (avoids showing the same text twice).
+        // Every other non-exam format (quick, maths, essay take-home single)
+        // uses the instructions as the prompt: store them as the question (so the
+        // student sees them and the insights pass has context) and don't send a
+        // separate instructions block (avoids showing the same text twice).
         question = instructions;
         // For multi-part maths the stem (instructions) is optional — the parts
         // carry the content.
@@ -1408,15 +1579,19 @@
       // Essays: criteria required for assessment. Maths: marking guideline
       // is optional even on assessment tasks — the feedback engine works
       // without one and they're rare at Stage 4/5.
-      if (!isMaths && task_mode === 'feedback_task' && !rawCriteria) {
+      // Multi-question take-home authors criteria PER QUESTION, so the
+      // task-level criteria field is not required (and is ignored below).
+      if (!isMaths && task_mode === 'feedback_task' && !rawCriteria && !isEssayTakeHomeMulti) {
         alert('Assessment tasks need marking criteria. Either enter them now, or switch the task type to "Quick task" if you want to mark without criteria.');
         restoreButtons();
         return;
       }
       // For essays we run the format-criteria reflow (band/criterion table
       // rescue). For maths the field is already line-per-step so we pass
-      // through verbatim.
-      const criteria_text = (!isMaths && rawCriteria) ? formatCriteria(rawCriteria) : (isMaths ? null : null);
+      // through verbatim. Multi-question take-home carries criteria per question,
+      // so the task-level field is dropped.
+      const criteria_text = isEssayTakeHomeMulti ? null
+        : (!isMaths && rawCriteria) ? formatCriteria(rawCriteria) : null;
       const marking_guideline = isMaths ? rawCriteria : null;
       // Maths-only hidden correctness anchor for the per-line diagnostic.
       const workedSolutionEl = document.getElementById('workedSolutionText');
@@ -1535,6 +1710,8 @@
       if (examAddBtn) examAddBtn.addEventListener('click', () => addExamQuestion());
       const mathsAddBtn = document.getElementById('mathsAddPartBtn');
       if (mathsAddBtn) mathsAddBtn.addEventListener('click', () => addMathsPart());
+      const feedbackAddBtn = document.getElementById('feedbackAddQuestionBtn');
+      if (feedbackAddBtn) feedbackAddBtn.addEventListener('click', () => addFeedbackQuestion());
 
       // #3b: wire the teacher photo-authoring buttons (transcribe → fill, editable).
       wireAuthoringPhoto('questionPhotoInput', 'questionPhotoBtn', 'question', (d) => {
@@ -1619,6 +1796,10 @@
         if (stepCriteria) stepCriteria.style.display = isExam ? 'none' : '';
         if (stepNotes) stepNotes.style.display = isExam ? 'none' : '';
         if (stepTimeLimit) stepTimeLimit.style.display = isExam ? '' : 'none';
+        // Essay take-home: the single/multiple format decides whether the
+        // task-level criteria step shows (multi-question authors criteria per
+        // question). Re-apply after the stepCriteria reset above so multi wins.
+        if (!isExam && selectedSubjectType === 'essay') applyEssayFormatVisibility();
         if (assessmentSteps) {
           assessmentSteps.style.display = '';
           if (assessmentSteps.dataset.revealed !== 'yes') assessmentSteps.dataset.revealed = 'yes';

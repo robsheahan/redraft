@@ -30,7 +30,7 @@ async function returnSubmissions(_req: VercelRequest, res: VercelResponse, userI
   // read) must never reach students — mirror returnTaskDrafts below.
   const { data, error } = await supabase
     .from('submissions')
-    .select('id, task_id, own_task_id, own_task_title, own_task_class_id, draft_text, feedback, draft_version, created_at, question, course, criterion_marks, total_mark, teacher_comment, teacher_annotations, graded_at, graded_by, submitted_for_marking, working_lines, part_working, input_mode, student_attachments')
+    .select('id, task_id, own_task_id, own_task_title, own_task_class_id, draft_text, feedback, draft_version, created_at, question, course, criterion_marks, total_mark, teacher_comment, teacher_annotations, graded_at, graded_by, submitted_for_marking, working_lines, part_working, input_mode, student_attachments, answers, question_marks')
     .eq('student_id', userId)
     .order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });

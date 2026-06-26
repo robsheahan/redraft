@@ -68,7 +68,7 @@ There are two independent role systems:
 
 Every task is one of three modes (stored in `tasks.task_mode`). The new-task UI exposes **Quick task** and **Assessment task**; choosing Assessment task reveals two sub-types — **Take-home assessment** (→ `feedback_task`) and **In-class exam** (→ `marked_task`).
 
-- **`feedback_task`** — "Take-home assessment". Three-pass Sonnet feedback shown to the student. Requires criteria. Up to 3 drafts per student. Counts toward mark distribution once graded.
+- **`feedback_task`** — "Take-home assessment". Three-pass Sonnet feedback shown to the student. Requires criteria. Up to 3 drafts per student. Counts toward mark distribution once graded. May be **single-question** (the default — instructions-as-question + task-level criteria) or **multi-question** (a `questions` array, each with its own marks + optional criteria, per-question feedback scaled to marks — see **Multi-question take-home feedback**).
 - **`marked_task`** — "In-class exam". Silent Haiku insights pass at submit time; student sees no feedback. Single submission (submit-for-marking only). No criteria by default. Goes into the mark distribution. Supports an optional `time_limit_minutes` (shown to students, not enforced). **Over-time marking:** the student's timer starts on first keystroke (persisted in autosave telemetry so it survives a reopen); a live countdown shows on the submit page, and the draft/working state at the deadline is captured. At submit, the client computes `over_time_cutoff_index` (essay: common-prefix char index of the deadline snapshot vs final draft; maths: line count at the deadline) — the marking screens (`mark-submission.html` / `mark-submission-maths.html`) render everything past it in a distinct format with a "time limit reached" divider. Now produced by `task.ts` again (via the In-class exam sub-type).
 - **`quick_task`** — silent Haiku insights pass at submit time; student sees no feedback. Single submission. No criteria. **Does NOT contribute to mark distribution** (cohort mark cards ignore it by design). Feeds the LLM cohort cards and student profiles. Teacher can mark it with a number, or "mark as complete" (`completion_only` task flag → `submissions.completion_status = 'completed'`).
 
@@ -109,6 +109,15 @@ Three parallel Anthropic calls via `Promise.allSettled`. Wall-clock = max(pass1,
 - **Pass 3 — Inline annotations** (`lib/generate-inline-suggestions.ts`): returns annotations anchored to verbatim quote substrings of the draft (the model is told to mark up like a teacher's pen). Each annotation's quote is validated to exist in the draft.
 
 Pass 1's holistic tool also returns a `skill_assessment` (pulled out server-side, never shown to the student — see **Skill taxonomy**). Rate-limited 10/hr per user, 5000/day global. Generation marks the student's `student_profile_synthesis` stale and folds skill signals into `student_skill_profile`.
+
+### Multi-question take-home feedback — feedback_task, essay (`api/generate-multi-feedback.ts`)
+A take-home assessment (`feedback_task`, `subject_type='essay'`) may carry a `questions` array (the same `tasks.questions` jsonb column the exam flow uses, but the **take-home text-only variant** validated by `lib/feedback-questions.ts` — `validateFeedbackQuestions`, 1–8 questions, each `{id, type:'text', text, marks, criteria_text?, attachments}`). The take-home variant is text-only (no MC) and carries nothing hidden — per-question criteria are meant to be shown to the student. `api/task.ts` routes `questions` to the exam vs feedback validator by `task_mode`; per-question criteria relax the task-level criteria requirement; the array locks on publish. **No migration** — reuses `tasks.questions`, `submissions.answers` + `question_marks`, `draft_autosaves.answers`.
+
+The student answers each question (scrolling cards on `submit.html`, reusing the exam answer/autosave plumbing) and gets **per-question feedback whose depth scales to the question's marks** (`lib/multi-question-feedback.ts`):
+- **Short answer** (marks < `EXTENDED_RESPONSE_MIN_MARKS`, default 7): one concise **Haiku** pass — warm + student-facing (`prompts/multi-question-feedback-system.ts`), reusing the insights-signals tool *shape* but not its silent-analytics voice. No inline annotations.
+- **Extended response** (marks ≥ threshold): the full **Sonnet three-pass** (holistic + criterion-by-criterion *if* the question carries criteria + inline), scoped to that answer.
+
+Questions run in parallel (`Promise.all`); a per-question failure soft-fails (`ok:false`) without sinking the submission. Feedback is stored as `submissions.feedback = { kind:'multi_question', questions:[…] }` (mirroring `maths_multipart`). The per-question `skill_assessment`s are **aggregated per dimension** into one signal before a single `recordSkillSignals` call — `aggregateSkillAssessments` (avoids the duplicate-`(student,dimension)` upsert the maths raw-concat risks). One rate-limit charge + one 3-draft cap per submission; the usual side-effects (profile-stale, autosave-clear, AGS). v1: questions are independent (no cross-question "Hence" context), outcomes are task-level, and authoring is create-only (`new-task.html`; `task-detail.html` shows the questions read-only — they're set at creation/locked on publish). "Submit for marking" routes `answers[]` through `submit-for-marking` (stores + locks, **no** Haiku pass — that's gated to marked/quick); the exam marking + graded screens are reused via `submission.answers`. Student feedback renders per-question on `feedback.html` (`renderMultiQuestionFeedback`).
 
 ### Maths feedback — subject_type `maths` (`api/generate-maths-feedback.ts`)
 Students enter working as ordered `{math}` lines on `submit-maths.html` (MathLive editors). Input modes: **line-by-line** (per-line MathLive), **freeform**, **talk-through** (the latter two run a Haiku structuring pass, `api/structure-maths-working.ts`), and **📷 photo** (snap handwritten working → Claude Sonnet vision transcription, `api/transcribe-maths-working.ts`, client-downscaled → the same confirm screen → diagnose; single-question only in v1). Multi-part `(a)(b)(c)` questions (`tasks.parts`, "Hence"-aware) run the per-part flow — each part is diagnosed separately with earlier parts as context. Two Sonnet passes per question/part (sequential — Pass C consumes Pass B):
@@ -235,7 +244,8 @@ Rate limit: 5/hr per user per card kind for cohort; 8/hr per student per kind on
 ## API endpoints
 
 ### Feedback + submissions
-- `POST /api/generate-feedback` — Essay three-pass Claude feedback. Auth-required. Rate-limited.
+- `POST /api/generate-feedback` — Essay three-pass Claude feedback (single-question). Auth-required. Rate-limited.
+- `POST /api/generate-multi-feedback` — Per-question feedback for a multi-question take-home assessment (feedback_task essay with a `questions` array). Marks-scaled depth (Haiku short / Sonnet three-pass extended). Rate-limited.
 - `POST /api/generate-maths-feedback` — Maths two-pass feedback (subject_type `maths`). Rate-limited.
 - `POST /api/structure-maths-working` — Haiku pass that splits freeform/talk-through maths input into `{math}` lines.
 - `POST /api/transcribe-maths-working` — Claude Sonnet **vision** pass that transcribes a photo of handwritten maths working into `{math}` lines (student confirms before diagnosis). Image sent base64 after client-side downscale.
@@ -284,7 +294,7 @@ Rate limit: 5/hr per user per card kind for cohort; 8/hr per student per kind on
 ## File overview
 
 ### `api/`
-Feedback (essay): `generate-feedback.ts`, `generate-class-feedback.ts`
+Feedback (essay): `generate-feedback.ts`, `generate-multi-feedback.ts` (multi-question take-home), `generate-class-feedback.ts`
 Feedback (maths): `generate-maths-feedback.ts`, `structure-maths-working.ts`, `generate-marking-guideline.ts`
 Task authoring: `generate-criteria.ts`
 Lesson Differentiator: `generate-activity.ts` (per-student differentiated activity)
@@ -302,6 +312,8 @@ LTI: `api/lti/*` — `jwks.ts`, `login.ts`, `launch.ts`, `deep-link.ts`
 - `cors.ts` — `applyCors()` for api.proofready.app
 - `generate-inline-suggestions.ts` — Pass 3 implementation
 - `insights-signals-feedback.ts` — silent Haiku pass for marked/quick task submissions
+- `feedback-questions.ts` — `validateFeedbackQuestions` (multi-question take-home text questions + per-question criteria) + `isFeedbackQuestionsTask`
+- `multi-question-feedback.ts` — `generateQuestionFeedback` (marks-scaled short/extended per-question feedback) + `aggregateSkillAssessments` (one skill signal per dimension per submission)
 - `skill-profile.ts` — `recordSkillSignals()` (validate `skill_assessment` against the taxonomy + EWMA rollup into `student_skill_profile`) and `readSkillProfile()` (read side, used by Lesson Differentiator)
 - `parse-rubric-with-ai.ts` — Sonnet rubric → structured criteria at task create/edit
 - `rubric-detect.ts` — `looksLikeBandRubric()` / `stripBandLabels()` heuristics
@@ -322,6 +334,8 @@ LTI: `api/lti/*` — `jwks.ts`, `login.ts`, `launch.ts`, `deep-link.ts`
 - `inline-suggestions-system.ts` / `inline-suggestions-user.ts` — Pass 3
 - `insights-signals-system.ts` — Haiku silent-pass system + user prompt
 - `maths-system.ts` — maths per-line diagnostic + holistic system/user prompts (stage-aware)
+- `multi-question-feedback-system.ts` — warm, student-facing short-answer prompt for the multi-question take-home light pass (Haiku)
+- `feedback-system.ts` also exports `buildCriteriaCheckPrompt` (the criterion-pass system prompt), shared by single- and multi-question essay feedback
 - `lesson-builder-system.ts` — Lesson Differentiator differentiation prompts (writing support-layer + maths question re-skin)
 
 ### `data/`

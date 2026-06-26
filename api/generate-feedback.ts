@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { buildSystemPrompt, buildUserPrompt } from '../prompts/feedback-system.js';
+import { buildSystemPrompt, buildUserPrompt, buildCriteriaCheckPrompt } from '../prompts/feedback-system.js';
 import { getSupabase } from '../lib/auth.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { currentYearLevelFromGraduationYear } from '../data/nesa-reference.js';
@@ -13,87 +13,8 @@ import { HOLISTIC_FEEDBACK_TOOL, CRITERIA_CHECK_TOOL } from '../lib/feedback-too
 import { looksLikeBandRubric, stripBandLabels } from '../lib/rubric-detect.js';
 import { postCompletionIfLinked } from '../lib/lti/ags.js';
 import { recordSkillSignals, readSkillProfile } from '../lib/skill-profile.js';
-import { wrapUntrusted, capLen, sanitizeLabel, UNTRUSTED_CONTENT_RULE } from '../lib/prompt-safety.js';
+import { wrapUntrusted, capLen, sanitizeLabel } from '../lib/prompt-safety.js';
 import { withHandler } from '../lib/with-handler.js';
-
-function buildCriteriaCheckPrompt(courseName?: string, isBandRubric?: boolean): string {
-  const subjectLabel = courseName || "this HSC subject";
-
-  if (isBandRubric) {
-    // Band-style rubrics describe quality levels of the overall response, not
-    // separable criteria. Asking the model to assess "per criterion" against a
-    // band rubric produces incoherent "strengths/improvements at Band 5"
-    // output. Instead, have the model SYNTHESISE the distinct quality
-    // dimensions described across the bands (e.g. "depth of analysis", "use
-    // of evidence") and give feedback per dimension — no band labels, no
-    // mark predictions.
-    return `You are a senior ${subjectLabel} marker. The teacher has provided a band-style rubric — descriptors at different performance levels rather than separate criteria. You are independently assessing a student's draft. You have NOT seen any other feedback — you are making a fresh assessment.
-
-${UNTRUSTED_CONTENT_RULE}
-
-YOUR TASK:
-Identify 3–5 distinct QUALITY DIMENSIONS embedded in the band descriptors (e.g. "Depth of analysis", "Use of evidence", "Communication and structure", "Integration across the question"). For EACH dimension, give the student specific feedback on their draft.
-
-For each dimension, provide:
-- "criterion": The dimension name in your own plain-English words (e.g. "Depth of analysis"). Do NOT quote the rubric's wording verbatim. Do NOT include any band/grade label or mark range in this field.
-- "strengths": What the student does well on this dimension. Genuine and specific — reference their actual text.
-- "improvements": What needs to change on this dimension. Reference their actual text, give an actionable step.
-
-VOICE: Write directly to the student using "you/your". Be warm but honest. Australian English spelling.
-
-Keep each point tight — one sentence for the observation, one for the action. No padding.
-
-ABSOLUTE RULES — do NOT do any of the following anywhere in your response:
-- Reference any band, grade label, mark range, mark count, or quality level by name (e.g. "Band 5", "Grade A", "high-band", "21-25 range", "this would sit at the top band").
-- Quote band descriptors verbatim. Synthesise the dimension yourself in plain language.
-- Predict where the student would land in the rubric, or which level they're "currently at".
-- Make any mark or band prediction whatsoever.
-
-The band descriptors are reference material for YOUR judgement of quality — they are not something to share with the student. Describe what is working and what would strengthen the response in plain language.
-
-OUTPUT FORMAT:
-Respond in JSON:
-{
-  "criteria_feedback": [
-    {
-      "criterion": "Dimension name",
-      "strengths": "what's working on this dimension",
-      "improvements": "specific actions to strengthen the response on this dimension"
-    }
-  ]
-}`;
-  }
-
-  return `You are a senior ${subjectLabel} marker. You are independently assessing a student's draft response against the marking criteria provided by their teacher. You have NOT seen any other feedback — you are making a fresh assessment.
-
-${UNTRUSTED_CONTENT_RULE}
-
-YOUR TASK:
-For EACH marking criterion the teacher has provided, assess the student's draft and produce specific feedback. You must address every criterion individually — do not skip any.
-
-For each criterion, provide:
-- "criterion": The criterion name/description (as the teacher wrote it)
-- "strengths": What the student has done well against this specific criterion (be genuine — only list real strengths)
-- "improvements": What needs to change to strengthen the response against this criterion. Be specific — reference their actual text and give actionable steps.
-
-VOICE: Write directly to the student using "you/your". Be warm but honest. Use Australian English spelling.
-
-Keep each point tight — one sentence for the observation, one for the action. No padding.
-
-DO NOT make band or mark judgements. This is absolute. You must NOT reference any band, band range, mark count, or mark range in any field, ever. Forbidden: "this is at Band 4", "currently a 10-mark answer", "this will push you into the 13–15 range", "this will get you another mark", "around the B range". Describe what is working and what would strengthen the response in plain language. Say "push deeper into analysis" not "lift this to Band 5". Your internal knowledge of band descriptors is for calibrating your expectations — it is NOT something to share with the student.
-
-OUTPUT FORMAT:
-Respond in JSON:
-{
-  "criteria_feedback": [
-    {
-      "criterion": "the criterion text",
-      "strengths": "what's working for this criterion",
-      "improvements": "specific actions to strengthen the response against this criterion"
-    }
-  ]
-}`;
-}
 
 export default withHandler({ methods: ['POST'], label: 'generate-feedback' }, async (req, res, ctx) => {
   const user = ctx.user!;
