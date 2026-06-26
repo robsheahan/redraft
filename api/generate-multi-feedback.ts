@@ -140,6 +140,8 @@ export default withHandler({ methods: ['POST'], label: 'generate-multi-feedback'
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
 
     const t0 = Date.now();
+    // Collect per-question errors so an all-fail can report WHY (not just 502).
+    const qErrors: string[] = [];
     const results = await Promise.all(questions.map((q) =>
       generateQuestionFeedback({
         client,
@@ -153,16 +155,24 @@ export default withHandler({ methods: ['POST'], label: 'generate-multi-feedback'
         taskType: task.task_type || null,
         holisticSystem,
         readiness,
-        onError: (err, stage) => captureError(err, { stage, task_id, user_id: user.id, question_id: q.id }),
+        onError: (err, stage) => {
+          qErrors.push(`${stage}: ${(err as any)?.message || String(err)}`);
+          captureError(err, { stage, task_id, user_id: user.id, question_id: q.id });
+        },
       })
     ));
     console.log('[generate-multi-feedback] (', questions.length, 'questions) in', Date.now() - t0, 'ms');
 
     // If no question that the student actually attempted produced feedback, the
-    // whole thing failed — surface a retry without consuming a draft.
+    // whole thing failed — surface a retry without consuming a draft, and log
+    // the underlying reason(s) so this isn't an opaque 502.
     const anyRealFeedback = results.some((r) => r.ok && hasContent(r.question_id));
     if (!anyRealFeedback) {
-      return res.status(502).json({ error: 'Could not generate feedback. Please try again — your work was not lost.' });
+      console.error('[generate-multi-feedback] all questions failed:', qErrors.join(' | ') || '(no error captured)');
+      return res.status(502).json({
+        error: 'Could not generate feedback. Please try again — your work was not lost.',
+        detail: qErrors[0] || undefined,
+      });
     }
 
     // Per-question student-facing feedback (skill_assessment stripped — system-only).
