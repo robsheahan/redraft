@@ -298,6 +298,16 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   const teacherId = (existing.classes as any)?.teacher_id;
   if (teacherId !== user.id) return res.status(403).json({ error: 'You can only update your own tasks.' });
 
+  // A task is "started" once any student has begun working on it — a submission
+  // OR an in-progress autosaved draft. Before that it's fully editable; once a
+  // student has started, only title / due date / teacher notes can change
+  // (everything they answer against is locked to protect their work).
+  const [{ count: subCount }, { count: autoCount }] = await Promise.all([
+    supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('task_id', id),
+    supabase.from('draft_autosaves').select('task_id', { count: 'exact', head: true }).eq('task_id', id),
+  ]);
+  const started = (subCount || 0) > 0 || (autoCount || 0) > 0;
+
   const patch: any = {
     course: course ?? undefined,
     title: title ?? undefined,
@@ -374,25 +384,15 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   // the array, drop the scalar question, recompute total_marks. Multi-question
   // is essay only.
   //
-  // LOCKING differs by mode — both protect submitted answers, which anchor to
-  // question ids:
-  //   - marked_task (exam): locked once published — you don't change a live exam.
-  //   - feedback_task (take-home): editable until the FIRST student submits; once
-  //     anyone has answered, the question set is locked.
+  // The question set is locked once a student has started (see `started` above),
+  // because their answers anchor to question ids. Before that it's editable.
   if (questions !== undefined) {
     const effSubject = (subject_type === 'essay' || subject_type === 'maths')
       ? subject_type : ((existing as any).subject_type || 'essay');
-    const examLocked = newMode === 'marked_task' && !!existing.published_at;
-    const feedbackHasSubmissions = async (): Promise<boolean> => {
-      if (newMode !== 'feedback_task') return false;
-      const { count } = await supabase
-        .from('submissions').select('id', { count: 'exact', head: true }).eq('task_id', id);
-      return (count || 0) > 0;
-    };
 
     if (questions === null) {
-      if (examLocked || await feedbackHasSubmissions()) {
-        return res.status(400).json({ error: "This assessment's questions can't be changed once it's published or a student has submitted." });
+      if (started) {
+        return res.status(400).json({ error: 'A student has started this task, so the questions can\'t be changed.' });
       }
       patch.questions = null;
     } else {
@@ -409,12 +409,8 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
       }
       if ('error' in validated) return res.status(400).json({ error: validated.error });
       const changed = JSON.stringify((existing as any).questions ?? null) !== JSON.stringify(validated.questions);
-      if (changed && (examLocked || await feedbackHasSubmissions())) {
-        return res.status(400).json({
-          error: newMode === 'marked_task'
-            ? "A published exam's questions can't be changed."
-            : "A student has already submitted, so the questions can't be changed.",
-        });
+      if (changed && started) {
+        return res.status(400).json({ error: 'A student has started this task, so the questions can\'t be changed.' });
       }
       patch.questions = validated.questions;
       patch.question = null;
@@ -437,6 +433,14 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
 
   if (typeof publish === 'boolean') {
     patch.published_at = publish ? (existing.published_at || new Date().toISOString()) : null;
+  }
+
+  // Enforce the lock uniformly: once a student has started, drop any change to a
+  // field they answer against — only title / due date / notes survive. The edit
+  // UI already shows those fields read-only, so this is the server-side backstop.
+  if (started) {
+    const ALLOWED_AFTER_START = new Set(['title', 'due_date', 'notes']);
+    Object.keys(patch).forEach((k) => { if (!ALLOWED_AFTER_START.has(k)) delete patch[k]; });
   }
 
   if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'Nothing to update.' });

@@ -68,6 +68,7 @@
     .mq-q-crit { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e8e0d4; font-size: 13px; color: #4b5563; white-space: pre-wrap; line-height: 1.55; }
     .mq-q-crit-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #9ca3af; margin-bottom: 3px; }
     .mq-note { margin-top: 10px; font-size: 12px; color: #6b7280; font-style: italic; }
+    .locked-edit-note { margin-bottom: 16px; font-size: 13px; color: #b45309; background: #fef9f5; border: 1px solid #f6d9bb; border-radius: 8px; padding: 12px 14px; line-height: 1.5; }
     /* In-place question editor (ported from new-task) */
     .exam-q { border: 1px solid #e8e0d4; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; background: #fffdf9; }
     .exam-q-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: nowrap; }
@@ -527,7 +528,7 @@
   <script>
     const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     let currentTask = null;
-    let taskSubmissionCount = 0; // gates in-place question editing (lock on first submit)
+    let taskStarted = false; // a student has begun (submitted or autosaved) → content locks
 
     (async () => {
       const user = await requireAuth('teacher');
@@ -548,9 +549,9 @@
         return;
       }
 
-      const { task, submissions } = await res.json();
+      const { task, submissions, started } = await res.json();
       currentTask = task;
-      taskSubmissionCount = Array.isArray(submissions) ? submissions.length : 0;
+      taskStarted = !!started;
       document.title = (task.title || 'Task') + ' — ProofReady';
 
       // Group submissions by student
@@ -1024,7 +1025,51 @@
       return html;
     }
 
+    // Limited edit panel for a task a student has started: only the fields that
+    // don't change what students answer against (title, due date, notes).
+    function renderLockedEditView(task) {
+      var html = '';
+      html += '<div class="locked-edit-note">A student has started this task, so its content is locked to protect their work. You can still change the title, due date and your feedback notes.</div>';
+      html += '<div class="detail-row"><div class="detail-label">Title</div>';
+      html += '<input class="edit-field" id="editTitle" value="' + e(task.title || '') + '"></div>';
+      html += '<div class="detail-row"><div class="detail-label">Due date</div>';
+      html += '<input class="edit-field" id="editDue" type="date" value="' + e(task.due_date || '') + '"></div>';
+      html += '<div class="detail-row"><div class="detail-label">Notes for feedback engine</div>';
+      html += '<textarea class="edit-field" id="editNotes">' + e(task.notes || '') + '</textarea></div>';
+      html += '<div class="edit-actions"><button class="btn-save" id="saveBtn" onclick="saveTaskLimited()">Save changes</button> <button class="btn-cancel" onclick="cancelEdit()">Cancel</button></div>';
+      return html;
+    }
+    async function saveTaskLimited() {
+      const btn = document.getElementById('saveBtn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+      const titleEl = document.getElementById('editTitle');
+      const dueEl = document.getElementById('editDue');
+      const notesEl = document.getElementById('editNotes');
+      const updated = {
+        id: currentTask.id,
+        title: titleEl ? titleEl.value.trim() : (currentTask.title || ''),
+        due_date: dueEl ? (dueEl.value || null) : (currentTask.due_date || null),
+        notes: notesEl ? notesEl.value.trim() : (currentTask.notes || ''),
+      };
+      try {
+        const res = await authFetch('/api/task', { method: 'PUT', body: JSON.stringify(updated) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to save');
+        Object.assign(currentTask, updated);
+        const h1 = document.querySelector('#taskHeader h1');
+        if (h1) h1.textContent = updated.title || 'Untitled task';
+        cancelEdit();
+      } catch (err) {
+        alert(err.message);
+        if (btn) { btn.disabled = false; btn.textContent = 'Save changes'; }
+      }
+    }
+    window.saveTaskLimited = saveTaskLimited;
+
     function renderEditView(task) {
+      // Once a student has started, the task's content is locked — show a
+      // limited panel (title / due date / notes only).
+      if (taskStarted) return renderLockedEditView(task);
       let html = '';
       var mqEdit = Array.isArray(task.questions) && task.questions.length > 0;
 
@@ -1038,7 +1083,9 @@
         // Take-home questions are editable in place until the first student
         // submits; once anyone has answered (or for in-class exams once
         // published), the set is locked and shown read-only.
-        var canEditQuestions = task.task_mode === 'feedback_task' && taskSubmissionCount === 0;
+        // The full edit form only renders before the task has started, so the
+        // in-place question editor applies to take-home feedback tasks here.
+        var canEditQuestions = task.task_mode === 'feedback_task';
         html += '<div class="detail-row"><div class="detail-label">Questions</div><div>';
         if (canEditQuestions) {
           html += '<div id="editQuestionsList"></div>';
@@ -1046,10 +1093,7 @@
           html += '<div class="mq-note">Editable until the first student submits. The instructions above are the optional shared stem.</div>';
         } else {
           html += renderQuestionsListHtml(task);
-          var lockReason = task.task_mode !== 'feedback_task'
-            ? 'In-class exam questions are locked once published.'
-            : 'A student has already submitted, so the questions are locked to protect their answers.';
-          html += '<div class="mq-note">' + lockReason + '</div>';
+          html += '<div class="mq-note">Exam questions are set when you create the task.</div>';
         }
         html += '</div></div>';
       } else {

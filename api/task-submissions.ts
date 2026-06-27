@@ -54,5 +54,14 @@ export default withHandler({ methods: ['GET'], label: 'task-submissions' }, asyn
       }).sort((x, y) => x.student_name.localeCompare(y.student_name))
     : null;
 
-  return res.status(200).json({ task, submissions: enriched, activities });
+  // "started" gates in-place task editing: a student has begun working (a
+  // submission OR an in-progress autosaved draft) → the task's content locks.
+  let started = (submissions || []).length > 0;
+  if (!started) {
+    const { count } = await supabase
+      .from('draft_autosaves').select('task_id', { count: 'exact', head: true }).eq('task_id', taskId);
+    started = (count || 0) > 0;
+  }
+
+  return res.status(200).json({ task, submissions: enriched, activities, started });
 });
