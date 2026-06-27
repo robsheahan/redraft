@@ -63,5 +63,10 @@ export default withHandler({ methods: ['GET'], label: 'task-submissions' }, asyn
     started = (count || 0) > 0;
   }
 
-  return res.status(200).json({ task, submissions: enriched, activities, started });
+  // Class size — how many students are enrolled in the task's class (for the
+  // teacher stats strip; distinct from how many have submitted).
+  const { count: classSize } = await supabase
+    .from('class_members').select('student_id', { count: 'exact', head: true }).eq('class_id', task.class_id);
+
+  return res.status(200).json({ task, submissions: enriched, activities, started, classSize: classSize || 0 });
 });
