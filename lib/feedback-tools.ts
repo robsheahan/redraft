@@ -934,6 +934,50 @@ export function buildInsightsSignalsTool(family: SkillFamily): Tool {
 // Back-compat default (writing). Prefer buildInsightsSignalsTool(family).
 export const INSIGHTS_SIGNALS_TOOL: Tool = buildInsightsSignalsTool('writing');
 
+/**
+ * Lightweight, STUDENT-FACING tool for the short-answer pass of a multi-question
+ * take-home assessment (lib/multi-question-feedback.ts). Deliberately omits the
+ * 7-dimension `skill_assessment` that buildInsightsSignalsTool carries: on Haiku
+ * that heavy field made the model intermittently drop the simple required
+ * student fields (improvements / top_priority), failing the call. With only the
+ * four small fields the model fills it reliably. Short-answer questions don't
+ * feed the skill database (their signal is thin anyway); the extended-response
+ * questions carry the skill read for the submission.
+ */
+export const SHORT_ANSWER_FEEDBACK_TOOL: Tool = {
+  name: 'provide_short_answer_feedback',
+  description: 'Return brief, warm, student-facing feedback on ONE short-answer question.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      what_youve_done_well: {
+        type: 'object',
+        properties: {
+          summary: { type: 'array', items: { type: 'string' }, description: '1–2 specific, genuine strengths.' },
+        },
+        required: ['summary'],
+      },
+      task_verb_check: {
+        type: 'object',
+        properties: {
+          summary: { type: 'string', description: 'One sentence on whether the answer operates at the depth the question\'s directive verb requires.' },
+        },
+        required: ['summary'],
+      },
+      improvements: {
+        type: 'object',
+        properties: {
+          summary: { type: 'array', items: { type: 'string' }, description: '1–2 short tags for what to fix.' },
+          detail: { type: 'array', items: { type: 'string' }, description: 'One concrete sentence per tag on what to do differently.' },
+        },
+        required: ['summary', 'detail'],
+      },
+      top_priority: { type: 'string', description: 'The single most useful next step for this question, one sentence.' },
+    },
+    required: ['what_youve_done_well', 'task_verb_check', 'improvements', 'top_priority'],
+  },
+};
+
 export const CLASS_PROFILE_SUMMARY_TOOL: Tool = {
   name: 'synthesise_class_profile_summary',
   description:
