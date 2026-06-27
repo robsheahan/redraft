@@ -23,7 +23,7 @@
 
 import type Anthropic from '@anthropic-ai/sdk';
 import { callTool } from './anthropic-tool-call.js';
-import { HOLISTIC_FEEDBACK_TOOL, CRITERIA_CHECK_TOOL, buildInsightsSignalsTool } from './feedback-tools.js';
+import { HOLISTIC_FEEDBACK_TOOL, CRITERIA_CHECK_TOOL, SHORT_ANSWER_FEEDBACK_TOOL } from './feedback-tools.js';
 import { buildUserPrompt, buildCriteriaCheckPrompt } from '../prompts/feedback-system.js';
 import { buildShortAnswerSystem, buildShortAnswerUser } from '../prompts/multi-question-feedback-system.js';
 import { generateInlineSuggestions } from './generate-inline-suggestions.js';
@@ -116,50 +116,57 @@ export async function generateQuestionFeedback(opts: GenerateQuestionFeedbackOpt
   }
 
   if (depth === 'short') {
-    try {
-      const r = await callTool<{
-        what_youve_done_well?: { summary?: string[] };
-        task_verb_check?: { summary?: string };
-        improvements?: { summary?: string[]; detail?: string[] };
-        top_priority?: string;
-        skill_assessment?: any[];
-      }>({
-        client,
-        model: HAIKU,
-        // Headroom for the 7-dimension skill_assessment + feedback fields — the
-        // proven silent-insights Haiku pass uses 1400; a tighter cap truncated.
-        max_tokens: 1600,
-        temperature: 0.3,
-        system: buildShortAnswerSystem(opts.course || undefined, opts.yearLevel || undefined),
-        user: buildShortAnswerUser({
-          question: question.text,
-          marks: question.marks,
-          criteriaText: question.criteria_text,
-          answer: answerText,
-        }),
-        tool: buildInsightsSignalsTool('writing'),
-        // No prompt-cache on the short pass: the per-question prompt is tiny and
-        // near-unique, so caching saves ~nothing — and it matches the proven
-        // (un-cached) silent-insights Haiku call exactly.
-        label: 'multi:short',
-        requiredKeys: ['what_youve_done_well', 'improvements', 'top_priority'],
-      });
-      const v = r.value || {};
-      return {
-        question_id: question.id,
+    // Lightweight, student-facing tool (no heavy skill_assessment — that field
+    // made Haiku intermittently drop the required student fields). Try Haiku
+    // first (cheap); if it still flakes on the structured output, fall back to
+    // Sonnet (more reliable) so the student always gets feedback. Short-answer
+    // questions don't feed the skill database (thin signal) → skill_assessment [].
+    const runShort = (model: string) => callTool<{
+      what_youve_done_well?: { summary?: string[] };
+      task_verb_check?: { summary?: string };
+      improvements?: { summary?: string[]; detail?: string[] };
+      top_priority?: string;
+    }>({
+      client,
+      model,
+      max_tokens: 1200,
+      temperature: 0.2,
+      system: buildShortAnswerSystem(opts.course || undefined, opts.yearLevel || undefined),
+      user: buildShortAnswerUser({
+        question: question.text,
         marks: question.marks,
-        depth,
-        ok: true,
-        what_youve_done_well: { summary: v.what_youve_done_well?.summary || [] },
-        improvements: { summary: v.improvements?.summary || [], detail: v.improvements?.detail || [] },
-        top_priority: { summary: typeof v.top_priority === 'string' ? v.top_priority : '' },
-        task_verb_check: v.task_verb_check?.summary ? { summary: v.task_verb_check.summary } : undefined,
-        skill_assessment: Array.isArray(v.skill_assessment) ? v.skill_assessment : [],
-      };
-    } catch (err) {
-      log(err, 'multi-short');
-      return emptyResult(question, depth, false);
+        criteriaText: question.criteria_text,
+        answer: answerText,
+      }),
+      tool: SHORT_ANSWER_FEEDBACK_TOOL,
+      label: model === HAIKU ? 'multi:short' : 'multi:short:sonnet',
+      requiredKeys: ['what_youve_done_well', 'improvements', 'top_priority'],
+    });
+
+    let v: any;
+    try {
+      v = (await runShort(HAIKU)).value;
+    } catch (errH) {
+      log(errH, 'multi-short-haiku');
+      try {
+        v = (await runShort(SONNET)).value;
+      } catch (errS) {
+        log(errS, 'multi-short-sonnet');
+        return emptyResult(question, depth, false);
+      }
     }
+    v = v || {};
+    return {
+      question_id: question.id,
+      marks: question.marks,
+      depth,
+      ok: true,
+      what_youve_done_well: { summary: v.what_youve_done_well?.summary || [] },
+      improvements: { summary: v.improvements?.summary || [], detail: v.improvements?.detail || [] },
+      top_priority: { summary: typeof v.top_priority === 'string' ? v.top_priority : '' },
+      task_verb_check: v.task_verb_check?.summary ? { summary: v.task_verb_check.summary } : undefined,
+      skill_assessment: [],
+    };
   }
 
   // ---- Extended-response path: the full Sonnet three-pass, scoped to one Q ----
