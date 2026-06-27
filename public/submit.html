@@ -630,6 +630,19 @@
       t._hideTimer = setTimeout(function() { t.classList.remove('visible'); }, 2500);
     }
 
+    // "Saved" relative time: just now → seconds → minutes → hours → days,
+    // instead of an ever-growing seconds count.
+    function formatSavedAgo(ms) {
+      var s = Math.round(ms / 1000);
+      if (s <= 2) return 'just now';
+      if (s < 60) return s + 's ago';
+      var m = Math.floor(s / 60);
+      if (m < 60) return m + (m === 1 ? ' min ago' : ' mins ago');
+      var h = Math.floor(m / 60);
+      if (h < 24) return h + (h === 1 ? ' hour ago' : ' hours ago');
+      var d = Math.floor(h / 24);
+      return d + (d === 1 ? ' day ago' : ' days ago');
+    }
     function setSaveIndicator(state) {
       var el = document.getElementById('saveIndicator');
       if (!el) return;
@@ -637,10 +650,13 @@
       el.className = 'save-indicator ' + state;
       if (state === 'saving') el.textContent = 'Saving…';
       else if (state === 'saved') {
-        var secs = Math.round((Date.now() - (savedAt || Date.now())) / 1000);
-        el.textContent = 'Saved' + (secs <= 1 ? ' just now' : ' ' + secs + 's ago');
-        // Refresh "Xs ago" once
-        saveIndicatorTimer = setTimeout(function() { if (savedAt) setSaveIndicator('saved'); }, 20000);
+        var ago = formatSavedAgo(Date.now() - (savedAt || Date.now()));
+        el.textContent = ago === 'just now' ? 'Saved just now' : 'Saved ' + ago;
+        // Re-render to keep the label fresh — quickly while it reads in seconds,
+        // then slowly once it rolls over to minutes/hours.
+        var elapsed = Date.now() - (savedAt || Date.now());
+        var next = elapsed < 60000 ? 15000 : (elapsed < 3600000 ? 60000 : 600000);
+        saveIndicatorTimer = setTimeout(function() { if (savedAt) setSaveIndicator('saved'); }, next);
       } else if (state === 'failed') {
         el.textContent = 'Save failed — your work is still in this tab';
       } else {
