@@ -68,6 +68,36 @@
     .mq-q-crit { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e8e0d4; font-size: 13px; color: #4b5563; white-space: pre-wrap; line-height: 1.55; }
     .mq-q-crit-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #9ca3af; margin-bottom: 3px; }
     .mq-note { margin-top: 10px; font-size: 12px; color: #6b7280; font-style: italic; }
+    .locked-edit-note { margin-bottom: 16px; font-size: 13px; color: #b45309; background: #fef9f5; border: 1px solid #f6d9bb; border-radius: 8px; padding: 12px 14px; line-height: 1.5; }
+    /* In-place question editor (ported from new-task) */
+    .exam-q { border: 1px solid #e8e0d4; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; background: #fffdf9; }
+    .exam-q-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: nowrap; }
+    .exam-q-num { font-weight: 700; color: #111827; font-size: 15px; flex-shrink: 0; }
+    .exam-q-head .spacer { flex: 1; }
+    .exam-q-ctrl { border: 1px solid #e8e0d4; background: #fff; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; color: #6b7280; font-size: 14px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+    .exam-q-ctrl:hover:not(:disabled) { border-color: #d1d5db; color: #111827; }
+    .exam-q-ctrl:disabled { opacity: 0.4; cursor: default; }
+    .exam-q-ctrl.remove:hover { border-color: #fca5a5; color: #dc2626; }
+    .exam-q textarea { width: 100%; min-height: 70px; box-sizing: border-box; padding: 10px 12px; border: 1px solid #e8e0d4; border-radius: 8px; font-family: inherit; font-size: 14px; line-height: 1.6; }
+    .exam-q-marks { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .exam-q-marks label { font-size: 13px; color: #6b7280; font-weight: 600; }
+    .exam-q-marks input { max-width: 72px; padding: 8px 10px; border: 1px solid #e8e0d4; border-radius: 6px; font-family: inherit; }
+    .exam-q-attach { margin-top: 10px; }
+    .exam-add-row { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+    .exam-add-btn { background: #111827; border: 1px solid #111827; color: #fff; border-radius: 8px; padding: 9px 14px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .exam-add-btn:hover { background: #000; border-color: #000; }
+    .exam-total { font-size: 14px; font-weight: 600; color: #111827; }
+    .exam-q-type { width: auto; max-width: 180px; font-size: 13px; padding: 5px 8px; border: 1px solid #e8e0d4; border-radius: 6px; background: #fff; font-family: inherit; color: #374151; cursor: pointer; }
+    .exam-q-options { margin-top: 10px; }
+    .exam-q-options-list { display: flex; flex-direction: column; gap: 6px; }
+    .exam-opt { display: flex; align-items: center; gap: 8px; }
+    .exam-opt-correct { width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; }
+    .exam-opt-text { flex: 1; padding: 8px 10px; border: 1px solid #e8e0d4; border-radius: 6px; font-size: 14px; font-family: inherit; }
+    .exam-opt-remove { border: 1px solid #e8e0d4; background: #fff; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; color: #6b7280; font-size: 14px; flex-shrink: 0; }
+    .exam-opt-remove:hover { border-color: #fca5a5; color: #dc2626; }
+    .exam-opt-add { margin-top: 8px; background: #fff; border: 1px dashed #d1bfa3; color: #b45309; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .exam-opt-add:hover { border-color: #b45309; }
+    .exam-opt-hint { font-size: 12px; color: #9ca3af; margin-top: 8px; }
     /* Structured task-description rendering (see public/js/task-meta.js) */
     .task-desc > *:first-child { margin-top: 0; }
     .task-desc > *:last-child { margin-bottom: 0; }
@@ -498,6 +528,7 @@
   <script>
     const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     let currentTask = null;
+    let taskStarted = false; // a student has begun (submitted or autosaved) → content locks
 
     (async () => {
       const user = await requireAuth('teacher');
@@ -518,8 +549,9 @@
         return;
       }
 
-      const { task, submissions } = await res.json();
+      const { task, submissions, started } = await res.json();
       currentTask = task;
+      taskStarted = !!started;
       document.title = (task.title || 'Task') + ' — ProofReady';
 
       // Group submissions by student
@@ -819,9 +851,161 @@
       return html;
     }
 
-    // Read-only display of a multi-question task's questions (exam or take-home
-    // feedback). Questions are authored at creation and locked once published,
-    // so there's no in-place question editor — this just shows them.
+    // ---- In-place question editor (take-home feedback, pre-first-submission) ----
+    function makeQuestionId() {
+      return (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : 'q-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    }
+    function addEditOption(optList, qid, prefillText) {
+      const opt = document.createElement('div');
+      opt.className = 'exam-opt';
+      opt.dataset.oid = makeQuestionId();
+      opt.innerHTML =
+        '<input type="radio" name="editcorrect_' + qid + '" class="exam-opt-correct" title="Mark as the correct answer">' +
+        '<input type="text" class="exam-opt-text" placeholder="Answer option">' +
+        '<button type="button" class="exam-opt-remove" title="Remove option">&#215;</button>';
+      optList.appendChild(opt);
+      if (prefillText) opt.querySelector('.exam-opt-text').value = prefillText;
+      opt.querySelector('.exam-opt-remove').addEventListener('click', () => {
+        if (optList.children.length <= 2) return;
+        opt.remove();
+      });
+      return opt;
+    }
+    function renumberEditQuestions() {
+      const list = document.getElementById('editQuestionsList');
+      if (!list) return;
+      const rows = Array.from(list.children);
+      let total = 0;
+      rows.forEach((row, i) => {
+        const num = row.querySelector('.exam-q-num');
+        if (num) num.textContent = 'Question ' + (i + 1);
+        const up = row.querySelector('.exam-q-ctrl.up');
+        const down = row.querySelector('.exam-q-ctrl.down');
+        const remove = row.querySelector('.exam-q-ctrl.remove');
+        if (up) up.disabled = (i === 0);
+        if (down) down.disabled = (i === rows.length - 1);
+        if (remove) remove.disabled = (rows.length <= 1);
+        const m = parseFloat(row.querySelector('.exam-q-marks input').value);
+        if (Number.isFinite(m) && m > 0) total += m;
+      });
+      const totalEl = document.getElementById('editTotalMarks');
+      if (totalEl) totalEl.textContent = String(total);
+    }
+    function addEditQuestion(prefill) {
+      const list = document.getElementById('editQuestionsList');
+      if (!list) return null;
+      const row = document.createElement('div');
+      row.className = 'exam-q edit-q';
+      const qid = (prefill && prefill.id) ? prefill.id : makeQuestionId();
+      row.dataset.qid = qid;
+      row._attachments = (prefill && Array.isArray(prefill.attachments)) ? prefill.attachments.slice() : [];
+      row.innerHTML =
+        '<div class="exam-q-head">' +
+          '<span class="exam-q-num">Question</span>' +
+          '<select class="exam-q-type edit-q-type" title="Answer type">' +
+            '<option value="text">Written answer</option>' +
+            '<option value="multiple_choice">Multiple choice</option>' +
+          '</select>' +
+          '<span class="spacer"></span>' +
+          '<button type="button" class="exam-q-ctrl up" title="Move up">&#8593;</button>' +
+          '<button type="button" class="exam-q-ctrl down" title="Move down">&#8595;</button>' +
+          '<button type="button" class="exam-q-ctrl remove" title="Remove question">&#215;</button>' +
+        '</div>' +
+        '<textarea class="exam-q-text edit-q-text" placeholder="The question students respond to"></textarea>' +
+        '<textarea class="exam-q-text edit-q-criteria" placeholder="Marking criteria for this question — optional. Add them for criterion-by-criterion feedback."></textarea>' +
+        '<div class="exam-q-options edit-q-options" style="display:none">' +
+          '<div class="exam-q-options-list"></div>' +
+          '<button type="button" class="exam-opt-add">+ Add option</button>' +
+          '<div class="exam-opt-hint">Select the radio beside the correct answer.</div>' +
+        '</div>' +
+        '<div class="exam-q-marks edit-q-marks"><label>Marks</label><input type="number" min="1" step="1" value="1"></div>' +
+        '<div class="exam-q-attach"></div>';
+      list.appendChild(row);
+      if (prefill) {
+        if (prefill.text) row.querySelector('.edit-q-text').value = prefill.text;
+        if (prefill.marks) row.querySelector('.edit-q-marks input').value = prefill.marks;
+        if (prefill.criteria_text) row.querySelector('.edit-q-criteria').value = prefill.criteria_text;
+      }
+      const attachMount = row.querySelector('.exam-q-attach');
+      if (attachMount && window.Attachments) {
+        attachMount.appendChild(Attachments.createAttachmentUploader({
+          scope: 'task', initial: row._attachments,
+          onChange: (arr) => { row._attachments = arr; },
+        }));
+      }
+      const typeSel = row.querySelector('.edit-q-type');
+      const optsWrap = row.querySelector('.edit-q-options');
+      const optList = row.querySelector('.exam-q-options-list');
+      const critEl = row.querySelector('.edit-q-criteria');
+      function applyType() {
+        const isMc = typeSel.value === 'multiple_choice';
+        optsWrap.style.display = isMc ? '' : 'none';
+        critEl.style.display = isMc ? 'none' : '';
+        if (isMc && optList.children.length === 0) {
+          for (let i = 0; i < 4; i++) addEditOption(optList, qid);
+        }
+      }
+      typeSel.addEventListener('change', applyType);
+      row.querySelector('.exam-opt-add').addEventListener('click', () => {
+        if (optList.children.length >= 6) return;
+        addEditOption(optList, qid);
+      });
+      if (prefill && prefill.type === 'multiple_choice') {
+        typeSel.value = 'multiple_choice';
+        applyType();
+        optList.innerHTML = '';
+        (prefill.options || []).forEach((o) => {
+          const opt = addEditOption(optList, qid, o.text);
+          opt.dataset.oid = o.id;
+          if (o.id === prefill.correct_option_id) opt.querySelector('.exam-opt-correct').checked = true;
+        });
+      }
+      row.querySelector('.edit-q-marks input').addEventListener('input', renumberEditQuestions);
+      row.querySelector('.exam-q-ctrl.up').addEventListener('click', () => {
+        const prev = row.previousElementSibling;
+        if (prev) list.insertBefore(row, prev);
+        renumberEditQuestions();
+      });
+      row.querySelector('.exam-q-ctrl.down').addEventListener('click', () => {
+        const next = row.nextElementSibling;
+        if (next) list.insertBefore(next, row);
+        renumberEditQuestions();
+      });
+      row.querySelector('.exam-q-ctrl.remove').addEventListener('click', () => {
+        if (list.children.length <= 1) return;
+        row.remove();
+        renumberEditQuestions();
+      });
+      renumberEditQuestions();
+      return row;
+    }
+    function readEditQuestions() {
+      const out = [];
+      document.querySelectorAll('#editQuestionsList .edit-q').forEach((row) => {
+        const text = (row.querySelector('.edit-q-text').value || '').trim();
+        if (!text) return;
+        const marksRaw = row.querySelector('.edit-q-marks input').value;
+        const marks = marksRaw ? parseFloat(marksRaw) : NaN;
+        const type = row.querySelector('.edit-q-type').value === 'multiple_choice' ? 'multiple_choice' : 'text';
+        const q = { id: row.dataset.qid, type, text, marks: Number.isFinite(marks) ? marks : NaN, attachments: row._attachments || [] };
+        if (type === 'multiple_choice') {
+          const optEls = Array.from(row.querySelectorAll('.exam-q-options-list .exam-opt'));
+          q.options = optEls.map((o) => ({ id: o.dataset.oid, text: (o.querySelector('.exam-opt-text').value || '').trim() })).filter((o) => o.text);
+          const checked = optEls.find((o) => o.querySelector('.exam-opt-correct').checked);
+          q.correct_option_id = checked ? checked.dataset.oid : null;
+        } else {
+          const criteria = (row.querySelector('.edit-q-criteria').value || '').trim();
+          if (criteria) q.criteria_text = criteria;
+        }
+        out.push(q);
+      });
+      return out;
+    }
+
+    // Read-only display of a multi-question task's questions (exam, or a take-home
+    // task that's locked because a student has already submitted).
     function renderQuestionsListHtml(task) {
       var qs = Array.isArray(task.questions) ? task.questions : [];
       if (!qs.length) return '';
@@ -841,7 +1025,51 @@
       return html;
     }
 
+    // Limited edit panel for a task a student has started: only the fields that
+    // don't change what students answer against (title, due date, notes).
+    function renderLockedEditView(task) {
+      var html = '';
+      html += '<div class="locked-edit-note">A student has started this task, so its content is locked to protect their work. You can still change the title, due date and your feedback notes.</div>';
+      html += '<div class="detail-row"><div class="detail-label">Title</div>';
+      html += '<input class="edit-field" id="editTitle" value="' + e(task.title || '') + '"></div>';
+      html += '<div class="detail-row"><div class="detail-label">Due date</div>';
+      html += '<input class="edit-field" id="editDue" type="date" value="' + e(task.due_date || '') + '"></div>';
+      html += '<div class="detail-row"><div class="detail-label">Notes for feedback engine</div>';
+      html += '<textarea class="edit-field" id="editNotes">' + e(task.notes || '') + '</textarea></div>';
+      html += '<div class="edit-actions"><button class="btn-save" id="saveBtn" onclick="saveTaskLimited()">Save changes</button> <button class="btn-cancel" onclick="cancelEdit()">Cancel</button></div>';
+      return html;
+    }
+    async function saveTaskLimited() {
+      const btn = document.getElementById('saveBtn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+      const titleEl = document.getElementById('editTitle');
+      const dueEl = document.getElementById('editDue');
+      const notesEl = document.getElementById('editNotes');
+      const updated = {
+        id: currentTask.id,
+        title: titleEl ? titleEl.value.trim() : (currentTask.title || ''),
+        due_date: dueEl ? (dueEl.value || null) : (currentTask.due_date || null),
+        notes: notesEl ? notesEl.value.trim() : (currentTask.notes || ''),
+      };
+      try {
+        const res = await authFetch('/api/task', { method: 'PUT', body: JSON.stringify(updated) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to save');
+        Object.assign(currentTask, updated);
+        const h1 = document.querySelector('#taskHeader h1');
+        if (h1) h1.textContent = updated.title || 'Untitled task';
+        cancelEdit();
+      } catch (err) {
+        alert(err.message);
+        if (btn) { btn.disabled = false; btn.textContent = 'Save changes'; }
+      }
+    }
+    window.saveTaskLimited = saveTaskLimited;
+
     function renderEditView(task) {
+      // Once a student has started, the task's content is locked — show a
+      // limited panel (title / due date / notes only).
+      if (taskStarted) return renderLockedEditView(task);
       let html = '';
       var mqEdit = Array.isArray(task.questions) && task.questions.length > 0;
 
@@ -852,9 +1080,21 @@
       html += '<input class="edit-field" id="editCourse" value="' + e(task.course || '') + '"></div>';
 
       if (mqEdit) {
+        // Take-home questions are editable in place until the first student
+        // submits; once anyone has answered (or for in-class exams once
+        // published), the set is locked and shown read-only.
+        // The full edit form only renders before the task has started, so the
+        // in-place question editor applies to take-home feedback tasks here.
+        var canEditQuestions = task.task_mode === 'feedback_task';
         html += '<div class="detail-row"><div class="detail-label">Questions</div><div>';
-        html += renderQuestionsListHtml(task);
-        html += '<div class="mq-note">Questions and per-question criteria are set when the task is created' + (task.published_at ? ', and are locked now that it\'s published' : '') + '. To change them, recreate the task.</div>';
+        if (canEditQuestions) {
+          html += '<div id="editQuestionsList"></div>';
+          html += '<div class="exam-add-row"><button type="button" class="exam-add-btn" id="editAddQuestionBtn">+ Add question</button><div class="exam-total">Total: <span id="editTotalMarks">0</span> marks</div></div>';
+          html += '<div class="mq-note">Editable until the first student submits. The instructions above are the optional shared stem.</div>';
+        } else {
+          html += renderQuestionsListHtml(task);
+          html += '<div class="mq-note">Exam questions are set when you create the task.</div>';
+        }
         html += '</div></div>';
       } else {
         html += '<div class="detail-row"><div class="detail-label">Task question</div>';
@@ -967,6 +1207,15 @@
           initial: editAttachments,
           onChange: (arr) => { editAttachments = arr; },
         }));
+      }
+      // Seed the in-place question editor (when present) from the task's questions.
+      const editQList = document.getElementById('editQuestionsList');
+      if (editQList) {
+        (currentTask.questions || []).forEach((q) => addEditQuestion(q));
+        if (editQList.children.length === 0) addEditQuestion();
+        renumberEditQuestions();
+        const addBtn = document.getElementById('editAddQuestionBtn');
+        if (addBtn) addBtn.addEventListener('click', () => addEditQuestion());
       }
     }
 
@@ -1128,6 +1377,21 @@
       const editTimeLimitEl = document.getElementById('editTimeLimit');
       if (editTimeLimitEl) {
         updated.time_limit_minutes = parseInt(editTimeLimitEl.value, 10) || null;
+      }
+
+      // In-place question editor present → collect + validate + send questions[].
+      if (document.getElementById('editQuestionsList')) {
+        const qs = readEditQuestions();
+        const fail = (msg) => { alert(msg); btn.disabled = false; btn.textContent = 'Save changes'; };
+        if (qs.length === 0) { fail('Add at least one question with question text.'); return; }
+        for (let i = 0; i < qs.length; i++) {
+          if (!(qs[i].marks > 0)) { fail('Question ' + (i + 1) + ' needs a mark value greater than zero.'); return; }
+          if (qs[i].type === 'multiple_choice') {
+            if (!qs[i].options || qs[i].options.length < 2) { fail('Question ' + (i + 1) + ' needs at least two answer options.'); return; }
+            if (!qs[i].correct_option_id) { fail('Question ' + (i + 1) + ' needs the correct answer selected.'); return; }
+          }
+        }
+        updated.questions = qs;
       }
 
       try {

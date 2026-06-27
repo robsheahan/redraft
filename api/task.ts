@@ -298,6 +298,16 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   const teacherId = (existing.classes as any)?.teacher_id;
   if (teacherId !== user.id) return res.status(403).json({ error: 'You can only update your own tasks.' });
 
+  // A task is "started" once any student has begun working on it — a submission
+  // OR an in-progress autosaved draft. Before that it's fully editable; once a
+  // student has started, only title / due date / teacher notes can change
+  // (everything they answer against is locked to protect their work).
+  const [{ count: subCount }, { count: autoCount }] = await Promise.all([
+    supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('task_id', id),
+    supabase.from('draft_autosaves').select('task_id', { count: 'exact', head: true }).eq('task_id', id),
+  ]);
+  const started = (subCount || 0) > 0 || (autoCount || 0) > 0;
+
   const patch: any = {
     course: course ?? undefined,
     title: title ?? undefined,
@@ -372,14 +382,17 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   // Multi-question assessments share the tasks.questions column. `questions`
   // present (non-null) → validate by mode (exam vs take-home feedback), store
   // the array, drop the scalar question, recompute total_marks. Multi-question
-  // is essay only. Questions LOCK on publish: the array can't change once
-  // published_at is set, because submitted answers anchor to question ids.
+  // is essay only.
+  //
+  // The question set is locked once a student has started (see `started` above),
+  // because their answers anchor to question ids. Before that it's editable.
   if (questions !== undefined) {
     const effSubject = (subject_type === 'essay' || subject_type === 'maths')
       ? subject_type : ((existing as any).subject_type || 'essay');
+
     if (questions === null) {
-      if (existing.published_at) {
-        return res.status(400).json({ error: "A published assessment's questions can't be changed." });
+      if (started) {
+        return res.status(400).json({ error: 'A student has started this task, so the questions can\'t be changed.' });
       }
       patch.questions = null;
     } else {
@@ -395,9 +408,9 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Multiple questions are only available on an assessment or in-class exam.' });
       }
       if ('error' in validated) return res.status(400).json({ error: validated.error });
-      if (existing.published_at &&
-          JSON.stringify((existing as any).questions ?? null) !== JSON.stringify(validated.questions)) {
-        return res.status(400).json({ error: "A published assessment's questions can't be changed." });
+      const changed = JSON.stringify((existing as any).questions ?? null) !== JSON.stringify(validated.questions);
+      if (changed && started) {
+        return res.status(400).json({ error: 'A student has started this task, so the questions can\'t be changed.' });
       }
       patch.questions = validated.questions;
       patch.question = null;
@@ -420,6 +433,14 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
 
   if (typeof publish === 'boolean') {
     patch.published_at = publish ? (existing.published_at || new Date().toISOString()) : null;
+  }
+
+  // Enforce the lock uniformly: once a student has started, drop any change to a
+  // field they answer against — only title / due date / notes survive. The edit
+  // UI already shows those fields read-only, so this is the server-side backstop.
+  if (started) {
+    const ALLOWED_AFTER_START = new Set(['title', 'due_date', 'notes']);
+    Object.keys(patch).forEach((k) => { if (!ALLOWED_AFTER_START.has(k)) delete patch[k]; });
   }
 
   if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'Nothing to update.' });

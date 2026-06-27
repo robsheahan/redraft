@@ -7,34 +7,38 @@
  * OWN optional marking criteria, and the student gets per-question AI feedback
  * whose depth scales to the question's marks (see lib/multi-question-feedback.ts).
  *
- * Distinct from lib/exam-questions.ts (which owns the marked_task exam variant:
- * a flat list of text + multiple-choice questions with a hidden answer key). The
- * two share the `tasks.questions` jsonb column and the `submissions.answers`
+ * Distinct from lib/exam-questions.ts (which owns the marked_task exam variant).
+ * The two share the `tasks.questions` jsonb column and the `submissions.answers`
  * shape; which validator runs is decided by `task_mode` in api/task.ts. Feedback
- * questions are text-only (no MC) and carry NOTHING hidden — the per-question
- * criteria are meant to be shown to the student (live criterion feedback is the
- * whole point), so there is no student-facing strip the way exams need one.
+ * questions are either:
+ *   - `text`: a written response with its own optional marking criteria → gets
+ *     AI feedback (criteria are shown to the student); or
+ *   - `multiple_choice`: options + a hidden `correct_option_id` (the answer key,
+ *     stripped from students pre-grading by studentTaskView, then revealed in the
+ *     per-question feedback) → auto-marked, no LLM call.
  *
  * See PROJECT_OVERVIEW.md (multi-question take-home) + the maths multi-part
  * precedent in lib/maths-parts.ts.
  */
 
-import type { ExamAttachment } from './exam-questions.js';
+import type { ExamAttachment, ExamOption } from './exam-questions.js';
 
 export interface FeedbackQuestion {
   id: string;
-  /** Text only in v1 (MC has no formative-feedback meaning — deferred). */
-  type: 'text';
+  type: 'text' | 'multiple_choice';
   text: string;
-  /** Required — shown to students, drives teacher marking + AGS, and selects
-   *  the per-question feedback depth (short-answer vs extended response). */
+  /** Required — shown to students, drives teacher marking + AGS, and (text only)
+   *  selects the per-question feedback depth (short-answer vs extended). */
   marks: number;
-  /** Optional per-question rubric. When present, that question runs the
-   *  criterion-by-criterion pass against it; when absent, holistic + inline
-   *  only. Raw text — the renderer parses it client-side, like task criteria. */
+  /** text only — optional per-question rubric. When present, that question runs
+   *  the criterion-by-criterion pass against it. Raw text, parsed client-side. */
   criteria_text?: string;
   /** Optional per-question stimulus files (sources, data tables). */
   attachments: ExamAttachment[];
+  /** multiple_choice only — 2–6 answer options (stable ids). */
+  options?: ExamOption[];
+  /** multiple_choice only — the answer key. Never sent to students pre-grading. */
+  correct_option_id?: string;
 }
 
 export const MAX_FEEDBACK_QUESTIONS = 8;
@@ -42,6 +46,9 @@ const MAX_QUESTION_TEXT = 5000;
 const MAX_CRITERIA_TEXT = 5000;
 const MAX_ATTACHMENTS = 3;
 const MAX_MARKS = 1000;
+const MIN_OPTIONS = 2;
+const MAX_OPTIONS = 6;
+const MAX_OPTION_TEXT = 1000;
 
 /** Coerce a client attachment list to the stored shape (mirrors exam-questions). */
 function cleanAttachments(raw: unknown): ExamAttachment[] {
@@ -101,21 +108,41 @@ export function validateFeedbackQuestions(raw: unknown): { error: string } | Val
       return { error: `Question ${n} needs a mark value greater than zero.` };
     }
 
-    const question: FeedbackQuestion = {
-      id,
-      type: 'text',
-      text,
-      marks,
-      attachments: cleanAttachments(q?.attachments),
-    };
+    const type: 'text' | 'multiple_choice' = q?.type === 'multiple_choice' ? 'multiple_choice' : 'text';
+    const attachments = cleanAttachments(q?.attachments);
 
-    const criteria = typeof q?.criteria_text === 'string' ? q.criteria_text.trim() : '';
-    if (criteria) {
-      if (criteria.length > MAX_CRITERIA_TEXT) return { error: `Question ${n} criteria are too long.` };
-      question.criteria_text = criteria;
+    if (type === 'multiple_choice') {
+      const rawOptions = Array.isArray(q?.options) ? q.options : [];
+      if (rawOptions.length < MIN_OPTIONS || rawOptions.length > MAX_OPTIONS) {
+        return { error: `Question ${n} needs between ${MIN_OPTIONS} and ${MAX_OPTIONS} options.` };
+      }
+      const seenOptionIds = new Set<string>();
+      const options: ExamOption[] = [];
+      for (const o of rawOptions) {
+        const oid = typeof o?.id === 'string' ? o.id.trim() : '';
+        const otext = typeof o?.text === 'string' ? o.text.trim() : '';
+        if (!oid) return { error: `Question ${n} has an option missing an id.` };
+        if (seenOptionIds.has(oid)) return { error: `Question ${n} has a duplicate option id.` };
+        if (!otext) return { error: `Question ${n} has an empty option.` };
+        if (otext.length > MAX_OPTION_TEXT) return { error: `Question ${n} has an option that is too long.` };
+        seenOptionIds.add(oid);
+        options.push({ id: oid, text: otext });
+      }
+      const correct = typeof q?.correct_option_id === 'string' ? q.correct_option_id.trim() : '';
+      if (!correct || !seenOptionIds.has(correct)) {
+        return { error: `Question ${n} needs a correct answer selected.` };
+      }
+      out.push({ id, type, text, marks, attachments, options, correct_option_id: correct });
+    } else {
+      const question: FeedbackQuestion = { id, type: 'text', text, marks, attachments };
+      const criteria = typeof q?.criteria_text === 'string' ? q.criteria_text.trim() : '';
+      if (criteria) {
+        if (criteria.length > MAX_CRITERIA_TEXT) return { error: `Question ${n} criteria are too long.` };
+        question.criteria_text = criteria;
+      }
+      out.push(question);
     }
 
-    out.push(question);
     totalMarks += marks;
   }
 
