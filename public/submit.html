@@ -945,14 +945,22 @@
         if (Array.isArray(q.attachments) && q.attachments.length) {
           html += '<div class="exam-q-materials" id="examQMat_' + e(q.id) + '"></div>';
         }
-        if (q.criteria_text && q.criteria_text.trim()) {
-          var rub = (typeof renderRubric === 'function')
-            ? renderRubric(q.criteria_text, e, null)
-            : '<pre style="white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.55">' + e(q.criteria_text) + '</pre>';
-          html += '<div class="criteria-display"><h4>Marking criteria</h4>' + rub + '</div>';
+        if (q.type === 'multiple_choice') {
+          html += '<div class="exam-mc-group">';
+          (q.options || []).forEach(function(o) {
+            html += '<label class="exam-mc-opt"><input type="radio" class="exam-mc-radio" name="examq_' + e(q.id) + '" value="' + e(o.id) + '"><span>' + e(o.text) + '</span></label>';
+          });
+          html += '</div>';
+        } else {
+          if (q.criteria_text && q.criteria_text.trim()) {
+            var rub = (typeof renderRubric === 'function')
+              ? renderRubric(q.criteria_text, e, null)
+              : '<pre style="white-space:pre-wrap;font-family:inherit;font-size:14px;line-height:1.55">' + e(q.criteria_text) + '</pre>';
+            html += '<div class="criteria-display"><h4>Marking criteria</h4>' + rub + '</div>';
+          }
+          html += '<textarea class="draft-textarea exam-answer-text" id="examAns_' + e(q.id) + '" data-qid="' + e(q.id) + '" placeholder="Write your answer here..."></textarea>';
+          html += '<div class="draft-meta-row"><div class="word-count" id="examWc_' + e(q.id) + '">0 words</div></div>';
         }
-        html += '<textarea class="draft-textarea exam-answer-text" id="examAns_' + e(q.id) + '" data-qid="' + e(q.id) + '" placeholder="Write your answer here..."></textarea>';
-        html += '<div class="draft-meta-row"><div class="word-count" id="examWc_' + e(q.id) + '">0 words</div></div>';
         html += '</div>';
       });
       html += '<div class="card" id="feedbackSubmitCard">';
@@ -970,7 +978,8 @@
     function wireFeedbackBehaviour() {
       var typedOnly = currentTask.typed_response_only !== false;
       var els = examQuestionEls();
-      if (!els.length) return;
+      var radios = Array.prototype.slice.call(document.querySelectorAll('.exam-mc-radio'));
+      if (!els.length && !radios.length) return;
 
       // Draft 2+: seed each answer box from the most recent submitted draft's
       // answers (their own paste-blocked work). The autosave restore overrides
@@ -1021,18 +1030,35 @@
           el.addEventListener('dragover', function(ev) { ev.preventDefault(); });
         }
       });
+      // MC selections autosave on change (and count as first interaction).
+      radios.forEach(function(r) {
+        r.addEventListener('change', function() {
+          if (telemetry.time_to_first_keystroke_ms == null) {
+            telemetry.time_to_first_keystroke_ms = Date.now() - pageLoadedAt;
+            telemetry.typing_session_count = Math.max(1, telemetry.typing_session_count);
+          }
+          scheduleExamAutosave();
+        });
+      });
       if (!savedAt) setSaveIndicator('idle');
     }
 
     function collectFeedbackAnswers() {
       var ans = readExamAnswers();
-      return (currentTask.questions || []).map(function(q) { return { question_id: q.id, text: ans[q.id] || '' }; });
+      return (currentTask.questions || []).map(function(q) {
+        if (q.type === 'multiple_choice') return { question_id: q.id, selected_option_id: ans[q.id] || '' };
+        return { question_id: q.id, text: ans[q.id] || '' };
+      });
+    }
+    // True if a collected answer has content (text typed OR an MC option chosen).
+    function feedbackAnswerHasContent(a) {
+      return !!((a.text && a.text.trim()) || a.selected_option_id);
     }
 
     async function submitMulti() {
       if (submissionInFlight) return;
       var payload = collectFeedbackAnswers();
-      if (!payload.some(function(a) { return a.text.trim(); })) { alert('Write at least one answer first.'); return; }
+      if (!payload.some(feedbackAnswerHasContent)) { alert('Answer at least one question first.'); return; }
 
       submissionInFlight = true;
       var card = document.getElementById('feedbackSubmitCard');
@@ -1097,7 +1123,7 @@
     async function submitMultiForMarking() {
       if (submissionInFlight) return;
       var payload = collectFeedbackAnswers();
-      if (!payload.some(function(a) { return a.text.trim(); })) { alert('Write at least one answer before submitting.'); return; }
+      if (!payload.some(feedbackAnswerHasContent)) { alert('Answer at least one question before submitting.'); return; }
       if (!confirm('Submit this for marking?\n\nYour teacher will mark it as your final response. You will not be able to submit any more drafts for this task, and ProofReady will not generate feedback on this submission.')) return;
       submissionInFlight = true;
       var card = document.getElementById('feedbackSubmitCard');

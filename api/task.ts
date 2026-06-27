@@ -372,14 +372,27 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   // Multi-question assessments share the tasks.questions column. `questions`
   // present (non-null) → validate by mode (exam vs take-home feedback), store
   // the array, drop the scalar question, recompute total_marks. Multi-question
-  // is essay only. Questions LOCK on publish: the array can't change once
-  // published_at is set, because submitted answers anchor to question ids.
+  // is essay only.
+  //
+  // LOCKING differs by mode — both protect submitted answers, which anchor to
+  // question ids:
+  //   - marked_task (exam): locked once published — you don't change a live exam.
+  //   - feedback_task (take-home): editable until the FIRST student submits; once
+  //     anyone has answered, the question set is locked.
   if (questions !== undefined) {
     const effSubject = (subject_type === 'essay' || subject_type === 'maths')
       ? subject_type : ((existing as any).subject_type || 'essay');
+    const examLocked = newMode === 'marked_task' && !!existing.published_at;
+    const feedbackHasSubmissions = async (): Promise<boolean> => {
+      if (newMode !== 'feedback_task') return false;
+      const { count } = await supabase
+        .from('submissions').select('id', { count: 'exact', head: true }).eq('task_id', id);
+      return (count || 0) > 0;
+    };
+
     if (questions === null) {
-      if (existing.published_at) {
-        return res.status(400).json({ error: "A published assessment's questions can't be changed." });
+      if (examLocked || await feedbackHasSubmissions()) {
+        return res.status(400).json({ error: "This assessment's questions can't be changed once it's published or a student has submitted." });
       }
       patch.questions = null;
     } else {
@@ -395,9 +408,13 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Multiple questions are only available on an assessment or in-class exam.' });
       }
       if ('error' in validated) return res.status(400).json({ error: validated.error });
-      if (existing.published_at &&
-          JSON.stringify((existing as any).questions ?? null) !== JSON.stringify(validated.questions)) {
-        return res.status(400).json({ error: "A published assessment's questions can't be changed." });
+      const changed = JSON.stringify((existing as any).questions ?? null) !== JSON.stringify(validated.questions);
+      if (changed && (examLocked || await feedbackHasSubmissions())) {
+        return res.status(400).json({
+          error: newMode === 'marked_task'
+            ? "A published exam's questions can't be changed."
+            : "A student has already submitted, so the questions can't be changed.",
+        });
       }
       patch.questions = validated.questions;
       patch.question = null;

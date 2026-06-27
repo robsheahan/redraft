@@ -1257,9 +1257,14 @@
       row.className = 'exam-q feedback-q';
       row.dataset.qid = makeQuestionId();
       row._attachments = [];
+      const qid = row.dataset.qid;
       row.innerHTML =
         '<div class="exam-q-head">' +
           '<span class="exam-q-num">Question</span>' +
+          '<select class="exam-q-type feedback-q-type" title="Answer type">' +
+            '<option value="text">Written answer</option>' +
+            '<option value="multiple_choice">Multiple choice</option>' +
+          '</select>' +
           '<span class="spacer"></span>' +
           '<button type="button" class="exam-q-ctrl up" title="Move up">&#8593;</button>' +
           '<button type="button" class="exam-q-ctrl down" title="Move down">&#8595;</button>' +
@@ -1267,6 +1272,11 @@
         '</div>' +
         '<textarea class="exam-q-text feedback-q-text" placeholder="The question students respond to"></textarea>' +
         '<textarea class="exam-q-text feedback-q-criteria" placeholder="Marking criteria for this question — optional. Add them for criterion-by-criterion feedback."></textarea>' +
+        '<div class="exam-q-options feedback-q-options" style="display:none">' +
+          '<div class="exam-q-options-list"></div>' +
+          '<button type="button" class="exam-opt-add">+ Add option</button>' +
+          '<div class="exam-opt-hint">Select the radio beside the correct answer. Students are told if they got it right and shown the correct answer in their feedback.</div>' +
+        '</div>' +
         '<div class="exam-q-marks feedback-q-marks"><label>Marks</label><input type="number" min="1" step="1" value="1"></div>' +
         '<div class="exam-q-attach"></div>';
       list.appendChild(row);
@@ -1283,6 +1293,38 @@
           onChange: (arr) => { row._attachments = arr; },
         }));
       }
+
+      // Written vs multiple-choice. MC swaps the criteria field for an options
+      // editor (objective questions are auto-marked, no written criteria).
+      const typeSel = row.querySelector('.feedback-q-type');
+      const optsWrap = row.querySelector('.feedback-q-options');
+      const optList = row.querySelector('.exam-q-options-list');
+      const critEl = row.querySelector('.feedback-q-criteria');
+      function applyFeedbackQType() {
+        const isMc = typeSel.value === 'multiple_choice';
+        optsWrap.style.display = isMc ? '' : 'none';
+        critEl.style.display = isMc ? 'none' : '';
+        if (isMc && optList.children.length === 0) {
+          for (let i = 0; i < 4; i++) addExamOption(optList, qid);
+        }
+      }
+      typeSel.addEventListener('change', applyFeedbackQType);
+      row.querySelector('.exam-opt-add').addEventListener('click', () => {
+        if (optList.children.length >= 6) return; // maximum six options
+        addExamOption(optList, qid);
+      });
+      // Prefill a multiple-choice question (used by the in-place editor).
+      if (prefill && prefill.type === 'multiple_choice') {
+        typeSel.value = 'multiple_choice';
+        applyFeedbackQType();
+        optList.innerHTML = '';
+        (prefill.options || []).forEach((o) => {
+          const opt = addExamOption(optList, qid, o.text);
+          opt.dataset.oid = o.id;
+          if (o.id === prefill.correct_option_id) opt.querySelector('.exam-opt-correct').checked = true;
+        });
+      }
+
       row.querySelector('.feedback-q-marks input').addEventListener('input', renumberFeedbackQuestions);
       row.querySelector('.exam-q-ctrl.up').addEventListener('click', () => {
         const prev = row.previousElementSibling;
@@ -1311,15 +1353,25 @@
         if (!text) return; // skip empty rows
         const marksRaw = row.querySelector('.feedback-q-marks input').value;
         const marks = marksRaw ? parseFloat(marksRaw) : NaN;
-        const criteria = (row.querySelector('.feedback-q-criteria').value || '').trim();
+        const type = row.querySelector('.feedback-q-type').value === 'multiple_choice' ? 'multiple_choice' : 'text';
         const q = {
           id: row.dataset.qid,
-          type: 'text',
+          type,
           text,
           marks: Number.isFinite(marks) ? marks : NaN,
           attachments: row._attachments || [],
         };
-        if (criteria) q.criteria_text = criteria;
+        if (type === 'multiple_choice') {
+          const optEls = Array.from(row.querySelectorAll('.exam-q-options-list .exam-opt'));
+          q.options = optEls
+            .map((o) => ({ id: o.dataset.oid, text: (o.querySelector('.exam-opt-text').value || '').trim() }))
+            .filter((o) => o.text);
+          const checked = optEls.find((o) => o.querySelector('.exam-opt-correct').checked);
+          q.correct_option_id = checked ? checked.dataset.oid : null;
+        } else {
+          const criteria = (row.querySelector('.feedback-q-criteria').value || '').trim();
+          if (criteria) q.criteria_text = criteria;
+        }
         out.push(q);
       });
       return out;
@@ -1540,6 +1592,10 @@
         for (let i = 0; i < qs.length; i++) {
           if (!qs[i].text) { alert('Question ' + (i + 1) + ' needs question text.'); restoreButtons(); return; }
           if (!(qs[i].marks > 0)) { alert('Question ' + (i + 1) + ' needs a mark value greater than zero.'); restoreButtons(); return; }
+          if (qs[i].type === 'multiple_choice') {
+            if (!qs[i].options || qs[i].options.length < 2) { alert('Question ' + (i + 1) + ' needs at least two answer options.'); restoreButtons(); return; }
+            if (!qs[i].correct_option_id) { alert('Question ' + (i + 1) + ' needs the correct answer selected.'); restoreButtons(); return; }
+          }
         }
         questionsPayload = qs;
         question = null;
