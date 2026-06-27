@@ -126,7 +126,9 @@ export async function generateQuestionFeedback(opts: GenerateQuestionFeedbackOpt
       }>({
         client,
         model: HAIKU,
-        max_tokens: 1200,
+        // Headroom for the 7-dimension skill_assessment + feedback fields — the
+        // proven silent-insights Haiku pass uses 1400; a tighter cap truncated.
+        max_tokens: 1600,
         temperature: 0.3,
         system: buildShortAnswerSystem(opts.course || undefined, opts.yearLevel || undefined),
         user: buildShortAnswerUser({
@@ -136,7 +138,9 @@ export async function generateQuestionFeedback(opts: GenerateQuestionFeedbackOpt
           answer: answerText,
         }),
         tool: buildInsightsSignalsTool('writing'),
-        cacheSystem: true,
+        // No prompt-cache on the short pass: the per-question prompt is tiny and
+        // near-unique, so caching saves ~nothing — and it matches the proven
+        // (un-cached) silent-insights Haiku call exactly.
         label: 'multi:short',
         requiredKeys: ['what_youve_done_well', 'improvements', 'top_priority'],
       });
