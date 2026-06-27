@@ -515,6 +515,12 @@
     .class-heading a:hover { color: #d4690f; }
     .class-empty { background: #fff; border-radius: 10px; padding: 18px; font-size: 13px; color: #9ca3af; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); }
     .task-card-row { display: flex; flex-direction: column; gap: 8px; }
+    /* Once a class has many tasks, cap the list height on the dashboard and let
+       it scroll — the "Open class" view shows the full, unbounded list. */
+    .task-card-row.is-scroll { max-height: 340px; overflow-y: auto; padding: 2px 6px 2px 2px; margin: -2px; }
+    .task-card-row.is-scroll::-webkit-scrollbar { width: 8px; }
+    .task-card-row.is-scroll::-webkit-scrollbar-thumb { background: #e0d8cc; border-radius: 4px; }
+    .scroll-hint { font-size: 11px; color: #9ca3af; margin-top: 6px; text-align: right; }
     .task-row { background: #fff; border-radius: 10px; padding: 14px 18px; text-decoration: none; color: inherit; display: flex; justify-content: space-between; align-items: center; gap: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04); transition: box-shadow 0.15s, transform 0.15s; }
     .task-row:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
     /* Assessment tasks get an orange left accent + stronger shadow so they
@@ -851,7 +857,11 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
       if (tasks.length === 0) {
         html += '<div class="class-empty">No tasks yet — your teacher will post some soon.</div>';
       } else {
-        html += '<div class="task-card-row">';
+        // Past a handful of tasks, scroll the list in place rather than letting
+        // the dashboard grow without bound. "Open class →" shows them all.
+        const SCROLL_AFTER = 5;
+        const scrollCls = tasks.length > SCROLL_AFTER ? ' is-scroll' : '';
+        html += '<div class="task-card-row' + scrollCls + '">';
         tasks.forEach(function(t) {
           var metaParts = [];
           if (t.task_type) metaParts.push(escapeHtml(t.task_type));
@@ -898,6 +908,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           html += '</a>';
         });
         html += '</div>';
+        if (scrollCls) html += '<div class="scroll-hint">Scroll for more · <a href="class-view.html?id=' + encodeURIComponent(c.id) + '">open class</a></div>';
       }
       html += '</div>';
       return html;
