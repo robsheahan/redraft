@@ -116,46 +116,41 @@ export async function generateQuestionFeedback(opts: GenerateQuestionFeedbackOpt
   }
 
   if (depth === 'short') {
-    // Lightweight, student-facing tool (no heavy skill_assessment — that field
-    // made Haiku intermittently drop the required student fields). Try Haiku
-    // first (cheap); if it still flakes on the structured output, fall back to
-    // Sonnet (more reliable) so the student always gets feedback. Short-answer
+    // One concise Sonnet call with a lightweight, student-facing tool (no heavy
+    // skill_assessment). Haiku proved unreliable here — even with the small tool
+    // it intermittently dropped required student fields (improvements /
+    // top_priority), so every short question paid a failed Haiku call + a Sonnet
+    // retry. Sonnet fills it reliably; one small call is still ~10× cheaper than
+    // the extended three-pass, so the marks-scaling still pays. Short-answer
     // questions don't feed the skill database (thin signal) → skill_assessment [].
-    const runShort = (model: string) => callTool<{
-      what_youve_done_well?: { summary?: string[] };
-      task_verb_check?: { summary?: string };
-      improvements?: { summary?: string[]; detail?: string[] };
-      top_priority?: string;
-    }>({
-      client,
-      model,
-      max_tokens: 1200,
-      temperature: 0.2,
-      system: buildShortAnswerSystem(opts.course || undefined, opts.yearLevel || undefined),
-      user: buildShortAnswerUser({
-        question: question.text,
-        marks: question.marks,
-        criteriaText: question.criteria_text,
-        answer: answerText,
-      }),
-      tool: SHORT_ANSWER_FEEDBACK_TOOL,
-      label: model === HAIKU ? 'multi:short' : 'multi:short:sonnet',
-      requiredKeys: ['what_youve_done_well', 'improvements', 'top_priority'],
-    });
-
     let v: any;
     try {
-      v = (await runShort(HAIKU)).value;
-    } catch (errH) {
-      log(errH, 'multi-short-haiku');
-      try {
-        v = (await runShort(SONNET)).value;
-      } catch (errS) {
-        log(errS, 'multi-short-sonnet');
-        return emptyResult(question, depth, false);
-      }
+      const r = await callTool<{
+        what_youve_done_well?: { summary?: string[] };
+        task_verb_check?: { summary?: string };
+        improvements?: { summary?: string[]; detail?: string[] };
+        top_priority?: string;
+      }>({
+        client,
+        model: SONNET,
+        max_tokens: 1200,
+        temperature: 0.2,
+        system: buildShortAnswerSystem(opts.course || undefined, opts.yearLevel || undefined),
+        user: buildShortAnswerUser({
+          question: question.text,
+          marks: question.marks,
+          criteriaText: question.criteria_text,
+          answer: answerText,
+        }),
+        tool: SHORT_ANSWER_FEEDBACK_TOOL,
+        label: 'multi:short',
+        requiredKeys: ['what_youve_done_well', 'improvements', 'top_priority'],
+      });
+      v = r.value || {};
+    } catch (err) {
+      log(err, 'multi-short');
+      return emptyResult(question, depth, false);
     }
-    v = v || {};
     return {
       question_id: question.id,
       marks: question.marks,
