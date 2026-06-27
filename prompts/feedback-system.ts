@@ -170,6 +170,18 @@ export function buildSystemPrompt(courseName?: string, discipline?: string, year
     }
   }
 
+  // Register + volume calibrated to the reader. Younger students (Stage 4-5)
+  // need plainer language and fewer, blunter steps; senior (HSC) students can
+  // take more sophisticated language and a more comprehensive list. Both still
+  // ban teacher/marking jargon the student would have to decode.
+  const audience = typeof yearLevel === 'number' ? `Year ${yearLevel}` : (isHsc ? 'senior secondary' : 'secondary');
+  const registerRule = isHsc
+    ? `Write so a ${audience} student understands every sentence on the first read. Plain, direct language; subject-specific terminology is fine where it's a term they should know, but avoid teacher/marking jargon — say "explain why that happens" not "show the cause-and-effect chain", "add a real example" not "ground your explanation".`
+    : `Write so a ${audience} student understands every sentence the FIRST time they read it — this is a younger student. Short sentences, everyday words. Avoid teacher/marking jargon entirely: "say WHY that happens, step by step" not "show the cause-and-effect chain"; "add a real example" not "ground your explanation in an example"; "you've named it — now say why" not "turn this identification into an explanation". The thinner the answer, the plainer and more concrete you go.`;
+  const volumeRule = isHsc
+    ? `Be thorough, but LEAD with the highest-leverage changes — don't drown the student in every minor flaw.`
+    : `Do NOT list every flaw — a younger student can't action a long list. Pick the 2-3 changes that matter most and explain those clearly; let the single top_priority carry the most important one. Fewer, clearer, and actioned beats comprehensive and ignored.`;
+
   // Subject-specific pitfalls for Stage 4-5
   const stage45Ref = !isHsc ? getStage45Reference(discipline || null, stage as 4 | 5) : null;
   const stage45PitfallsBlock = stage45Ref
@@ -236,7 +248,7 @@ You are writing feedback directly to the student. Use "you" and "your" throughou
 
 Avoid robotic or mechanical language. Don't use phrases like "the response demonstrates" or "the submission exhibits". Instead say things like "you've shown a solid understanding of..." or "this part of your response needs more depth because...".
 
-Use language a Year 12 student will understand. No jargon unless it's subject-specific terminology they should know.
+${registerRule}
 
 IMPORTANT: Always use Australian English spelling (e.g. analyse, organisation, behaviour, colour, programme, prioritise, recognise, defence, centre). Never use US English spelling.
 
@@ -248,7 +260,7 @@ Think about how you would actually sit down with a student and go through their 
 - Point to exact parts of their writing when giving feedback
 - Explain WHY something needs to change, not just that it does
 - Tell them the single most important thing to focus on
-- Be thorough — flag every issue you find, big or small
+- ${volumeRule}
 - Frame improvements as forward-looking revision actions: "In your next revision, do X" rather than "You failed to do X"
 
 TASK FORMAT AWARENESS:
@@ -357,7 +369,7 @@ Keep every sentence purposeful. Summaries are punchy and scannable. Detail secti
       "Short bullet per issue: the problem + the fix in ~15 words (e.g. 'Paragraph 3 describes but doesn't analyse — add cause-effect links')"
     ],
     "detail": [
-      "Full explanation of each issue with specific, actionable steps. Frame as feedforward: 'In your next revision, [do X]'. Reference their actual text. Include every flaw — do not omit any. Where relevant, name the SOLO level and what the next level looks like."
+      "Full explanation of each issue with specific, actionable steps. Frame as feedforward: 'In your next revision, [do X]'. Reference their actual text. Prioritise the highest-leverage changes (see the how-much-to-say guidance above) rather than cataloguing every minor flaw. Where relevant, name the SOLO level and what the next level looks like."
     ]
   },
   "overall": {
@@ -503,7 +515,7 @@ ${wrapUntrusted('student_draft', input.studentText)}${resubmissionBlock}`;
 
   prompt += `\n\n---\n\n${buildReadinessBlock(input.readiness)}`;
 
-  prompt += `\n\n---\n\nProvide your feedback. Remember: write directly to the student, be honest, be thorough, reference their actual text, list every issue you find, diagnose using SOLO taxonomy, frame improvements as forward-looking revision actions, and pitch each improvement at the right support level for this student (reminder / scaffold / example) without ever naming their readiness.`;
+  prompt += `\n\n---\n\nProvide your feedback. Remember: write directly to the student in plain language for their year level, be honest, reference their actual text, lead with the highest-leverage changes (don't drown them in every minor flaw), diagnose using SOLO taxonomy, frame improvements as forward-looking revision actions, and pitch each improvement at the right support level for this student (reminder / scaffold / example) without ever naming their readiness.`;
 
   return prompt;
 }

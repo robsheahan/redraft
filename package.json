@@ -6,6 +6,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test-feedback": "npx tsx test/evaluate-sample.ts",
+    "calibrate-feedback": "npx tsx test/calibrate-feedback.ts",
     "test-inline": "npx tsx test/test-inline-suggestions.ts",
     "backfill-inline": "npx tsx scripts/backfill-inline-suggestions.ts",
     "generate-lti-keypair": "npx tsx scripts/generate-lti-keypair.ts",
