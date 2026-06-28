@@ -270,17 +270,7 @@
       }
       html += '</div>';
 
-      // Resources footer — admin-only (this whole view only renders after the
-      // admin-stats check passes). Presentation assets for pitching/demos; the
-      // walkthrough video lives in the public 'resources' Storage bucket so
-      // re-uploading it updates the site with no code change.
-      var walkthroughUrl = SUPABASE_URL + '/storage/v1/object/public/resources/walkthrough.mp4';
       html += '<footer class="admin-footer">';
-      html += '<div class="admin-resources"><span class="footer-label">Resources</span>';
-      html += '<a href="' + walkthroughUrl + '" target="_blank" rel="noopener">Narrative walkthrough</a>';
-      html += '<a href="/deck" target="_blank" rel="noopener">Slide deck</a>';
-      html += '<a href="/handout" target="_blank" rel="noopener">Handout</a>';
-      html += '</div>';
       html += '<div class="admin-compliance"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/compliance.html">Compliance</a></div>';
       html += '</footer>';
 
