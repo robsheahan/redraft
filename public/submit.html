@@ -895,12 +895,13 @@
         }
       });
 
+      // Count every paste (blocked on typed-only tasks, allowed otherwise) so the
+      // teacher can see a paste happened even when pasting is permitted.
+      el.addEventListener('paste', function(ev) {
+        telemetry.paste_attempts_blocked += 1;
+        if (typedOnly) { ev.preventDefault(); showToast('Pasting is disabled for this task. Please type your response.'); }
+      });
       if (typedOnly) {
-        el.addEventListener('paste', function(ev) {
-          ev.preventDefault();
-          telemetry.paste_attempts_blocked += 1;
-          showToast('Pasting is disabled for this task. Please type your response.');
-        });
         el.addEventListener('drop', function(ev) {
           ev.preventDefault();
           telemetry.paste_attempts_blocked += 1;
@@ -1040,8 +1041,13 @@
             el.dispatchEvent(new Event('input', { bubbles: true }));
           }
         });
+        // Count every paste (blocked on typed-only tasks, allowed otherwise) so
+        // the teacher can see a paste happened even when pasting is permitted.
+        el.addEventListener('paste', function(ev) {
+          telemetry.paste_attempts_blocked += 1;
+          if (typedOnly) { ev.preventDefault(); showToast('Pasting is disabled for this task. Please type your response.'); }
+        });
         if (typedOnly) {
-          el.addEventListener('paste', function(ev) { ev.preventDefault(); telemetry.paste_attempts_blocked += 1; showToast('Pasting is disabled for this task. Please type your response.'); });
           el.addEventListener('drop', function(ev) { ev.preventDefault(); telemetry.paste_attempts_blocked += 1; showToast('Dragging text in is disabled for this task.'); });
           el.addEventListener('dragover', function(ev) { ev.preventDefault(); });
         }
@@ -1464,12 +1470,12 @@
             el.dispatchEvent(new Event('input', { bubbles: true }));
           }
         });
+        // Count every paste (blocked on typed-only tasks, allowed otherwise).
+        el.addEventListener('paste', function(ev) {
+          telemetry.paste_attempts_blocked += 1;
+          if (typedOnly) { ev.preventDefault(); showToast('Pasting is disabled for this task. Please type your response.'); }
+        });
         if (typedOnly) {
-          el.addEventListener('paste', function(ev) {
-            ev.preventDefault();
-            telemetry.paste_attempts_blocked += 1;
-            showToast('Pasting is disabled for this task. Please type your response.');
-          });
           el.addEventListener('drop', function(ev) {
             ev.preventDefault();
             telemetry.paste_attempts_blocked += 1;
