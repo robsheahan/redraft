@@ -707,17 +707,18 @@
           html += '<span class="submission-arrow">›</span>';
           html += '</div>';
           html += '<div class="submission-draft">';
-          stu.drafts.forEach((d, j) => {
+          // Show only the student's most recent submission — not every draft.
+          // (drafts[0] is latest; the endpoint orders by created_at desc.)
+          {
+            const d = stu.drafts[0];
             const dDate = new Date(d.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
             const _noFeedback = currentTask.task_mode === 'marked_task' || currentTask.task_mode === 'quick_task';
-            const draftLabel = _noFeedback
-              ? 'Submission'
-              : 'Draft ' + (d.draft_version || (count - j)) + (j === 0 ? ' (latest)' : '');
+            const draftLabel = _noFeedback ? 'Submission' : 'Latest draft';
             html += '<div class="draft-label">' + e(draftLabel) + ' · ' + e(dDate) + renderLateBadge(d, currentTask) + '</div>';
             html += '<div class="draft-content">' + e(d.draft_text || 'No draft text') + '</div>';
-            html += renderTypingSummary(d);
+            html += renderTypingSummary(bestTelemetryDraft(stu.drafts));
             html += renderDraftActions(d);
-          });
+          }
           html += '</div>';
           html += '</div>';
         });
@@ -1475,6 +1476,19 @@
       return html;
     }
 
+    // Telemetry resets per page-session, so a "submit for marking" done after
+    // returning from the feedback page (work prefilled, nothing re-typed) carries
+    // 0 keystrokes. Show the student's most-active draft's telemetry instead, so
+    // the latest submission reflects the real work.
+    function bestTelemetryDraft(drafts) {
+      let best = null, bestScore = -1;
+      (drafts || []).forEach((d) => {
+        const score = (d.keystroke_count || 0) + (d.paste_attempts_blocked || 0);
+        if (score > bestScore) { bestScore = score; best = d; }
+      });
+      return best || (drafts && drafts[0]) || {};
+    }
+
     function renderTypingSummary(d) {
       if (typeof d.keystroke_count !== 'number') return '';
       const parts = [];
@@ -1486,10 +1500,16 @@
         parts.push('<strong>' + sessions + ' ' + sessionLabel + '</strong> over <strong>' + minutes + ' min</strong>');
       }
       parts.push('<strong>' + d.keystroke_count.toLocaleString() + '</strong> keystrokes');
-      const blocked = d.paste_attempts_blocked;
-      if (typeof blocked === 'number' && blocked > 0) {
-        parts.push('<strong>' + blocked + '</strong> paste ' + (blocked === 1 ? 'attempt' : 'attempts') + ' blocked');
-      } else if (typeof blocked === 'number') {
+      // paste_attempts_blocked counts paste events: BLOCKED on typed-only tasks,
+      // ALLOWED pastes otherwise. Interpret by the task's typed-only setting so a
+      // paste-allowed task never reads as "no paste attempts".
+      const pastes = d.paste_attempts_blocked;
+      const typedOnly = currentTask.typed_response_only !== false;
+      if (typeof pastes === 'number' && pastes > 0) {
+        parts.push(typedOnly
+          ? '<strong>' + pastes + '</strong> paste ' + (pastes === 1 ? 'attempt' : 'attempts') + ' blocked'
+          : '<strong>' + pastes + '</strong> paste' + (pastes === 1 ? '' : 's') + ' (pasting allowed)');
+      } else if (typeof pastes === 'number' && typedOnly) {
         parts.push('no paste attempts');
       }
       return '<div class="typing-summary"><span class="ts-icon">Typing</span>' +
