@@ -53,9 +53,8 @@ export async function parseRubricWithAI(rawText: string): Promise<StructuredRubr
   try {
     const result = await callTool<StructuredRubric>({
       client,
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       max_tokens: 4000,
-      temperature: 0,
       system: SYSTEM_PROMPT,
       user: `Parse this marking rubric:\n\n${rawText}`,
       tool: RUBRIC_PARSE_TOOL,

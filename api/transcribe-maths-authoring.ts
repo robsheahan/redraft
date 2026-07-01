@@ -64,9 +64,8 @@ export default withHandler({ methods: ['POST'], label: 'transcribe-maths-authori
     const tool = target === 'parts' ? MATHS_AUTHORING_PARTS_TOOL : MATHS_AUTHORING_TEXT_TOOL;
     const result = await callTool<any>({
       client,
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       max_tokens: 2000,
-      temperature: 0,
       system: buildMathsAuthoringTranscriptionSystem(target),
       user: [
         { type: 'text', text: buildMathsAuthoringUserText(target, courseStr) },

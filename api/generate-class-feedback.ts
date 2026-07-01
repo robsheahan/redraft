@@ -117,9 +117,8 @@ Synthesise the above into a class-level overview. Look for patterns — what com
 
     const result = await callTool<Record<string, any>>({
       client,
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       max_tokens: 2000,
-      temperature: 0.2,
       system: systemPrompt,
       user: userPrompt,
       tool: CLASS_FEEDBACK_TOOL,

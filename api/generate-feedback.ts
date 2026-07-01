@@ -321,9 +321,8 @@ Assess this draft against each marking criterion above. Address every criterion 
     const pass2Promise = hasCriteria
       ? callTool<{ criteria_feedback: any }>({
           client,
-          model: 'claude-sonnet-4-6',
+          model: 'claude-sonnet-5',
           max_tokens: 2000,
-          temperature: 0.3,
           system: buildCriteriaCheckPrompt(resolvedCourse as string || undefined, isBandRubric),
           user: criteriaCheckPrompt,
           tool: CRITERIA_CHECK_TOOL,
@@ -335,9 +334,8 @@ Assess this draft against each marking criterion above. Address every criterion 
     const [pass1Settled, pass2Settled, inlineSettled] = await Promise.allSettled([
       callTool<Record<string, any>>({
         client,
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-5',
         max_tokens: 5000,
-        temperature: 0.2,
         system: systemPrompt,
         user: userPrompt,
         tool: HOLISTIC_FEEDBACK_TOOL,

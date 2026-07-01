@@ -25,7 +25,7 @@ import { currentYearLevelFromGraduationYear } from '../data/nesa-reference.js';
 import { familyForSubjectType, dimensionsForFamily, TAXONOMY_VERSION } from '../data/skill-taxonomy.js';
 import { buildActivitySystemPrompt, buildMathsActivitySystemPrompt, buildActivityUserPrompt, buildMathsReskinVerifySystemPrompt, buildMathsReskinVerifyUserPrompt } from '../prompts/lesson-builder-system.js';
 
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'claude-sonnet-5';
 
 // Shape returned to the student (teacher-facing fields intentionally absent).
 const MAIN_ACTIVITY = { is_differentiated: false, activity: null };
@@ -112,7 +112,6 @@ export default withHandler({ methods: ['POST'], label: 'generate-activity' }, as
       client,
       model: MODEL,
       max_tokens: 1024,
-      temperature: 0.3,
       system: isMathsReskin
         ? buildMathsActivitySystemPrompt({ question: task.question, course: task.course || null, yearLevel })
         : buildActivitySystemPrompt({
@@ -168,7 +167,6 @@ export default withHandler({ methods: ['POST'], label: 'generate-activity' }, as
         client: verifyClient,
         model: MODEL,
         max_tokens: 1024,
-        temperature: 0,
         system: buildMathsReskinVerifySystemPrompt({ course: task.course || null, yearLevel }),
         user: buildMathsReskinVerifyUserPrompt({
           originalQuestion: task.question,

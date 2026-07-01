@@ -9,7 +9,7 @@ import { resolveUserSchool, getSchoolTeacherIds, canViewInsights } from '../lib/
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'claude-sonnet-5';
 
 /**
  * Leadership insights synthesis.
@@ -187,7 +187,6 @@ export default withHandler({ methods: ['GET', 'POST'], label: 'insights-synthesi
       client,
       model: MODEL,
       max_tokens: 3000,
-      temperature: 0.2,
       system: systemPrompt,
       user: userPrompt,
       tool: SCHOOL_INSIGHTS_TOOL,

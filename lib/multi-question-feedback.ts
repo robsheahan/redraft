@@ -34,7 +34,7 @@ import { SKILL_LEVELS, LEVEL_VALUE } from '../data/skill-taxonomy.js';
 import type { FeedbackQuestion } from './feedback-questions.js';
 
 const HAIKU = 'claude-haiku-4-5-20251001';
-const SONNET = 'claude-sonnet-4-6';
+const SONNET = 'claude-sonnet-5';
 
 /**
  * Marks at or above this get the full extended-response treatment; below it,
@@ -134,7 +134,6 @@ export async function generateQuestionFeedback(opts: GenerateQuestionFeedbackOpt
         client,
         model: SONNET,
         max_tokens: 1200,
-        temperature: 0.2,
         system: buildShortAnswerSystem(opts.course || undefined, opts.yearLevel || undefined),
         user: buildShortAnswerUser({
           question: question.text,
@@ -195,7 +194,6 @@ Assess this draft against each marking criterion above. Address every criterion 
       client,
       model: SONNET,
       max_tokens: 5000,
-      temperature: 0.2,
       system: opts.holisticSystem,
       user: buildUserPrompt({
         taskDescription,
@@ -220,7 +218,6 @@ Assess this draft against each marking criterion above. Address every criterion 
           client,
           model: SONNET,
           max_tokens: 2000,
-          temperature: 0.3,
           system: buildCriteriaCheckPrompt(opts.course || undefined, isBandRubric),
           user: criteriaCheckUser,
           tool: CRITERIA_CHECK_TOOL,

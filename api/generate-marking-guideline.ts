@@ -20,7 +20,7 @@ import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
 import { withHandler } from '../lib/with-handler.js';
 
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'claude-sonnet-5';
 
 type Stage = 4 | 5 | 6;
 
@@ -99,7 +99,6 @@ export default withHandler({ methods: ['POST'], label: 'generate-marking-guideli
     const resp = await client.messages.create({
       model: MODEL,
       max_tokens: 1000,
-      temperature: 0.3,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
     });

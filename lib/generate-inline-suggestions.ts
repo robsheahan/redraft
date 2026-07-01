@@ -77,9 +77,8 @@ export async function generateInlineSuggestions(
     const t0 = Date.now();
     toolResult = await callTool<{ inline_suggestions?: unknown }>({
       client,
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       max_tokens: 2500,
-      temperature: 0.2,
       system,
       user,
       tool: INLINE_SUGGESTIONS_TOOL,

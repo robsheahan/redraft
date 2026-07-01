@@ -92,7 +92,9 @@ export async function callTool<T = unknown>(opts: CallToolOptions): Promise<Tool
       const resp = await client.messages.create({
         model,
         max_tokens,
-        temperature,
+        // Sonnet 5 rejects `temperature` (deprecated for the model); only send
+        // it when a caller explicitly set one (e.g. the Haiku insights pass).
+        ...(temperature !== undefined ? { temperature } : {}),
         system: systemParam,
         tools: [tool],
         tool_choice: { type: 'tool', name: tool.name },

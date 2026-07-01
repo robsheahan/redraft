@@ -5,7 +5,7 @@ import { captureError } from '../lib/sentry.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { withHandler } from '../lib/with-handler.js';
 
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'claude-sonnet-5';
 
 export default withHandler({ methods: ['POST'], label: 'generate-criteria' }, async (req, res, ctx) => {
   const user = ctx.user!;
@@ -66,7 +66,6 @@ export default withHandler({ methods: ['POST'], label: 'generate-criteria' }, as
     const resp = await client.messages.create({
       model: MODEL,
       max_tokens: 1500,
-      temperature: 0.5,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
     });

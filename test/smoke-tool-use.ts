@@ -53,9 +53,8 @@ async function main() {
 
   await check('HOLISTIC_FEEDBACK_TOOL', callTool({
     client,
-    model: 'claude-sonnet-4-6',
+    model: 'claude-sonnet-5',
     max_tokens: 2000,
-    temperature: 0,
     system: 'You are a HSC PDHPE teacher providing brief draft feedback. Use the tool.',
     user: `Question: Outline one risk factor for CVD.\n\nDraft:\n${TINY_DRAFT}\n\nProvide feedback.`,
     tool: HOLISTIC_FEEDBACK_TOOL,
@@ -63,9 +62,8 @@ async function main() {
 
   await check('CRITERIA_CHECK_TOOL', callTool({
     client,
-    model: 'claude-sonnet-4-6',
+    model: 'claude-sonnet-5',
     max_tokens: 1000,
-    temperature: 0,
     system: 'Assess against each criterion. Use the tool.',
     user: `MARKING CRITERIA:\n1. Knowledge of CVD (1 mark)\n\nDRAFT:\n${TINY_DRAFT}\n\nAssess each criterion.`,
     tool: CRITERIA_CHECK_TOOL,
@@ -73,9 +71,8 @@ async function main() {
 
   await check('INLINE_SUGGESTIONS_TOOL', callTool({
     client,
-    model: 'claude-sonnet-4-6',
+    model: 'claude-sonnet-5',
     max_tokens: 1500,
-    temperature: 0,
     system: 'You add inline annotations anchored to exact verbatim quotes. Use the tool.',
     user: `DRAFT:\n${TINY_DRAFT}\n\nAdd up to 3 annotations.`,
     tool: INLINE_SUGGESTIONS_TOOL,
@@ -83,9 +80,8 @@ async function main() {
 
   await check('CLASS_FEEDBACK_TOOL', callTool({
     client,
-    model: 'claude-sonnet-4-6',
+    model: 'claude-sonnet-5',
     max_tokens: 1000,
-    temperature: 0,
     system: 'Synthesise class-level feedback. Use the tool.',
     user: `Three students answered "Outline one risk factor for CVD". All described instead of outlining and didn't use data. Synthesise.`,
     tool: CLASS_FEEDBACK_TOOL,

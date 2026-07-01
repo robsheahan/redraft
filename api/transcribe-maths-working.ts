@@ -70,9 +70,8 @@ export default withHandler({ methods: ['POST'], label: 'transcribe-maths-working
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
     const result = await callTool<{ lines: Array<{ math: string }> }>({
       client,
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       max_tokens: 2000,
-      temperature: 0,
       system: buildMathsTranscriptionSystem(),
       user: [
         { type: 'text', text: buildMathsTranscriptionUserText(question) },

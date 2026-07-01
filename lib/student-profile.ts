@@ -22,7 +22,7 @@ import { callTool } from './anthropic-tool-call.js';
 
 type Tool = Anthropic.Messages.Tool;
 
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'claude-sonnet-5';
 
 const PROFILE_TOOL: Tool = {
   name: 'synthesise_student_profile',
@@ -382,7 +382,6 @@ HARD RULES:
     client,
     model: MODEL,
     max_tokens: 1200,
-    temperature: 0.3,
     system,
     user,
     tool: PROFILE_TOOL,

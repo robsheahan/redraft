@@ -49,7 +49,7 @@ import {
  * card doesn't burn the bucket for other cards.
  */
 
-const MODEL = 'claude-sonnet-4-6';
+const MODEL = 'claude-sonnet-5';
 const MAX_SUBMISSIONS_TO_FEED = 60;
 
 // Cohort cards are cached per (owner, kind, scope) with corpus-fingerprint
@@ -597,7 +597,6 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
       client,
       model: MODEL,
       max_tokens: 2500,
-      temperature: 0.2,
       system: cfg.buildSystemPrompt(schoolName, rows.length),
       user: cfg.buildUserPrompt(rows, { schoolName }),
       tool: cfg.tool,
@@ -854,7 +853,6 @@ async function handleStudentKind(
       client,
       model: MODEL,
       max_tokens: 2000,
-      temperature: 0.2,
       system: cfg.buildSystemPrompt(studentName, enriched.length),
       user: cfg.buildUserPrompt(enriched, { studentName }),
       tool: cfg.tool,
@@ -1047,7 +1045,6 @@ async function handleClassProfileSummary(
       client,
       model: MODEL,
       max_tokens: 1500,
-      temperature: 0.2,
       system,
       user: userPrompt,
       tool: CLASS_PROFILE_SUMMARY_TOOL,

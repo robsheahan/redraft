@@ -94,9 +94,8 @@ async function runPassBWithVerifier(args: {
   for (let iter = 0; iter < MAX_ITERS; iter++) {
     const lastIter = iter === MAX_ITERS - 1;
     const resp = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       max_tokens: 4000,
-      temperature: 0.2,
       system: [{ type: 'text', text: systemB, cache_control: { type: 'ephemeral' } }] as any,
       tools: tools as any,
       tool_choice: (lastIter ? { type: 'tool', name: MATHS_PER_LINE_DIAGNOSTIC_TOOL.name } : { type: 'auto' }) as any,
@@ -262,7 +261,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
         const passC = await callTool<{
           what_youve_done_well: string[]; top_priority: string; improvements: string[]; skill_assessment?: any[];
         }>({
-          client, model: 'claude-sonnet-4-6', max_tokens: 2200, temperature: 0.3,
+          client, model: 'claude-sonnet-5', max_tokens: 2200,
           system: systemC,
           user: buildMathsHolisticUserPrompt({ question: qArgs.question, workingLines: qArgs.workingLines, perLineDiagnostic: passB }),
           tool: MATHS_HOLISTIC_TOOL, cacheSystem: true, label: 'maths:holistic',
