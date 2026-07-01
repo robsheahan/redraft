@@ -33,7 +33,6 @@ import { extractTaskVerbs } from './task-verbs.js';
 import { SKILL_LEVELS, LEVEL_VALUE } from '../data/skill-taxonomy.js';
 import type { FeedbackQuestion } from './feedback-questions.js';
 
-const HAIKU = 'claude-haiku-4-5-20251001';
 const SONNET = 'claude-sonnet-5';
 
 /**
