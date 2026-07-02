@@ -1,0 +1,201 @@
+<title>ProofReady Audit & Fix Report — 2026-07-03</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+    --ink:#e8eaed; --muted:#9aa3b2; --faint:#6b7480;
+    --p0:#e5484d; --p1:#e2a03f; --p2:#5b8def; --ok:#3fae6a; --defer:#8a8f9a;
+    --accent:#f0873a; --accent-soft:#f0873a22;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:40px 24px 80px}
+  header.top{border-bottom:1px solid var(--line);padding-bottom:24px;margin-bottom:36px}
+  .kicker{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-size:30px;line-height:1.2;margin:.35em 0 .25em;font-weight:680;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:15px;max-width:70ch}
+  .meta{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
+  .chip{font-size:12.5px;padding:4px 10px;border-radius:999px;background:var(--panel2);
+    border:1px solid var(--line);color:var(--muted)}
+  .chip b{color:var(--ink);font-weight:600}
+  .chip.done{background:#3fae6a1a;border-color:#3fae6a55;color:#8fe0ac}
+
+  h2{font-size:20px;margin:48px 0 6px;font-weight:650;letter-spacing:-.01em}
+  h2 .n{color:var(--faint);font-weight:600;margin-right:10px;font-variant-numeric:tabular-nums}
+  .lede{color:var(--muted);margin:0 0 20px;max-width:78ch}
+
+  /* summary tiles */
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0 8px}
+  .tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 16px 14px}
+  .tile .big{font-size:30px;font-weight:680;line-height:1;font-variant-numeric:tabular-nums}
+  .tile .lbl{color:var(--muted);font-size:12.5px;margin-top:7px}
+  .tile.p0 .big{color:var(--p0)} .tile.p1 .big{color:var(--p1)}
+  .tile.p2 .big{color:var(--p2)} .tile.ok .big{color:var(--ok)}
+
+  /* finding rows */
+  .find{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:14px 16px;margin:10px 0;display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:start}
+  .sev{font-size:11px;font-weight:700;letter-spacing:.04em;padding:3px 0;border-radius:6px;text-align:center;
+    width:56px;color:#0f1115}
+  .sev.P0{background:var(--p0)} .sev.P1{background:var(--p1)} .sev.P2{background:var(--p2)}
+  .find .body b{font-weight:640}
+  .find .body .desc{color:var(--muted);font-size:13.5px;margin-top:3px}
+  .find .body code{background:#0c0e12;border:1px solid var(--line);border-radius:5px;
+    padding:1px 6px;font-size:12px;color:#cdd3dd;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .status{font-size:11.5px;font-weight:650;padding:4px 10px;border-radius:999px;white-space:nowrap;align-self:center}
+  .status.fixed{background:#3fae6a1f;color:#7fd6a2;border:1px solid #3fae6a44}
+  .status.defer{background:#8a8f9a1f;color:#b3b8c2;border:1px solid #8a8f9a44}
+
+  /* module grid */
+  .mods{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:20px}
+  .mod{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .mod .h{display:flex;align-items:baseline;gap:9px}
+  .mod .num{font-size:12px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+  .mod .nm{font-weight:620;font-size:14.5px}
+  .mod .files{color:var(--faint);font-size:12px;margin-top:5px;font-family:ui-monospace,Menlo,monospace;line-height:1.5}
+  .mod .hot{margin-top:8px;font-size:12.5px;color:var(--muted)}
+  .mod .hot .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+  /* insights roadmap */
+  .rec{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:10px;padding:15px 18px;margin:11px 0}
+  .rec .rid{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.03em}
+  .rec .rt{font-weight:640;font-size:15.5px;margin:2px 0 5px}
+  .rec .rd{color:var(--muted);font-size:13.5px}
+  .rec.lead{border-left-color:#f0873a;background:linear-gradient(90deg,var(--accent-soft),transparent 60%)}
+  .flag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;color:var(--accent);
+    border:1px solid var(--accent);border-radius:5px;padding:1px 6px;margin-left:8px;vertical-align:middle}
+
+  .callout{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:22px 0}
+  .callout h3{margin:0 0 6px;font-size:15px;font-weight:650}
+  .callout p{margin:0;color:var(--muted);font-size:13.5px}
+  .callout .big-quote{color:var(--ink);font-size:16px;font-weight:600;line-height:1.45;margin:0 0 10px}
+
+  footer{margin-top:56px;padding-top:22px;border-top:1px solid var(--line);color:var(--faint);font-size:12.5px}
+  a{color:var(--accent)}
+  @media (max-width:720px){
+    .tiles{grid-template-columns:repeat(2,1fr)}
+    .mods{grid-template-columns:1fr}
+    .find{grid-template-columns:56px 1fr;gap:10px}
+    .find .status{grid-column:2;justify-self:start;margin-top:4px}
+  }
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="kicker">Codebase Audit · Remediation Report</div>
+  <h1>ProofReady — audit findings & fixes</h1>
+  <p class="sub">Four parallel deep audits (security, backend correctness, frontend, insights) over the full codebase, plus a close read of the insights pipeline. Every finding was verified against the code before inclusion. All fixes are committed on branch <code style="font-family:ui-monospace,Menlo,monospace">fix/audit-2026-07</code> — not yet merged.</p>
+  <div class="meta">
+    <span class="chip"><b>40</b> files changed</span>
+    <span class="chip"><b>+869 / −404</b> lines</span>
+    <span class="chip done">typecheck clean</span>
+    <span class="chip">baseline commit <b>9ca724f</b></span>
+    <span class="chip">2026-07-03</span>
+  </div>
+</header>
+
+<h2><span class="n">01</span>At a glance</h2>
+<p class="lede">Foundations held up well under adversarial review — LTI 1.3, handler-level authorization, prompt-injection fencing and idempotency were all solid. The fixes concentrate on data integrity, one XSS class, the trust boundary, and insights correctness.</p>
+<div class="tiles">
+  <div class="tile p0"><div class="big">6</div><div class="lbl">P0 — critical, all fixed</div></div>
+  <div class="tile p1"><div class="big">11</div><div class="lbl">P1 — correctness, fixed</div></div>
+  <div class="tile p2"><div class="big">8+</div><div class="lbl">P2 — quality, most fixed</div></div>
+  <div class="tile ok"><div class="big">2</div><div class="lbl">deferred (migration / roadmap)</div></div>
+</div>
+
+<h2><span class="n">02</span>P0 — critical (all fixed)</h2>
+<p class="lede">Data-integrity, security-boundary and pilot-visible faults. These were the priority.</p>
+
+<div class="find">
+  <div class="sev P0">P0·1</div>
+  <div class="body"><b>Skill database silently lost all multi-part maths data</b>
+    <div class="desc">Duplicate skill dimensions across parts tripped a Postgres upsert error that was swallowed, dropping the whole submission's rollup — starving the product's strategic asset. Now aggregates per-dimension before write, with a dedupe safety-net in <code>recordSkillSignals</code>.</div></div>
+  <div class="status fixed">Fixed</div>
+</div>
+<div class="find">
+  <div class="sev P0">P0·2</div>
+  <div class="body"><b>Stored XSS: student maths → teacher's session</b>
+    <div class="desc">The shared escaper didn't escape quotes; student MathLive strings landed inside HTML attributes on the marking page. Made the escaper quote-safe across <b>17 pages</b> — closes the whole attribute-injection class.</div></div>
+  <div class="status fixed">Fixed</div>
+</div>
+<div class="find">
+  <div class="sev P0">P0·3</div>
+  <div class="body"><b>Any student could self-promote to teacher</b>
+    <div class="desc"><code>set-role</code> had no transition guard, so every "teacher-only" gate was decorative. Now refuses student→teacher self-promotion; teacher status must come from LTI or an admin grant.</div></div>
+  <div class="status fixed">Fixed</div>
+</div>
+<div class="find">
+  <div class="sev P0">P0·4</div>
+  <div class="body"><b>Faculty-restricted leaders saw whole-school data</b>
+    <div class="desc">Multi-faculty leaders got an unfiltered card corpus and shared a cache row with unrestricted executives. Now filters the corpus to granted KLAs and folds the restriction into the cache key.</div></div>
+  <div class="status fixed">Fixed</div>
+</div>
+<div class="find">
+  <div class="sev P0">P0·5</div>
+  <div class="body"><b>Every AI draft posted 100% "FullyGraded" to Canvas</b>
+    <div class="desc">Parent- and student-visible during the PCS pilot. Drafts now post <code>Submitted / Pending</code> with no score; real grades still post correctly; grade-clears now pass back; <code>/scores</code> URL is query-string safe.</div></div>
+  <div class="status fixed">Fixed</div>
+</div>
+<div class="find">
+  <div class="sev P0">P0·6</div>
+  <div class="body"><b>One bad roster member aborted the whole NRPS sync</b>
+    <div class="desc">A single pre-existing account left the rest of the class un-enrolled, silently. Now per-member resilient with a logged skip summary; <code>launch.ts</code> given a 300s timeout.</div></div>
+  <div class="status fixed">Fixed</div>
+</div>
+
+<h2><span class="n">03</span>P1 — correctness (fixed)</h2>
+<p class="lede">Bugs that produce wrong behaviour or wrong numbers under realistic conditions.</p>
+
+<div class="find"><div class="sev P1">P1·2</div><div class="body"><b>Fail-open lock &amp; cap sweep</b><div class="desc">Locks and the 3-draft cap silently vanished on multi-row edge cases or DB hiccups. Now use <code>.limit(1)</code> and fail <em>closed</em>; cap reads return 500 before spending Sonnet.</div></div><div class="status fixed">Fixed</div></div>
+<div class="find"><div class="sev P1">P1·1</div><div class="body"><b>Silent 1000-row truncation on insights queries</b><div class="desc">At scale every card computed over an arbitrary, unordered subset (wrong stats + flapping cache fingerprint). Added deterministic pagination.</div></div><div class="status fixed">Fixed</div></div>
+<div class="find"><div class="sev P1">P1·3</div><div class="body"><b>Autosave lock-griefing</b><div class="desc">Any user with a task UUID could freeze its content by creating an empty autosave. Now requires membership + published task + non-empty content.</div></div><div class="status fixed">Fixed</div></div>
+<div class="find"><div class="sev P1">P1·6</div><div class="body"><b>Cache fingerprint blind to re-grades</b><div class="desc">Moderation edits that netted to zero left stale decile cards "fresh." Fingerprint now hashes per-row id+mark tuples (v3).</div></div><div class="status fixed">Fixed</div></div>
+<div class="find"><div class="sev P1">P1·7·8</div><div class="body"><b>quick_task consistency + mark-distribution dedupe</b><div class="desc">quick_task now excluded consistently across student view and drill-down; the A–E chart dedupes to the latest graded draft per student·task (aligning it with the decile cards).</div></div><div class="status fixed">Fixed</div></div>
+<div class="find"><div class="sev P1">P1·5</div><div class="body"><b>Exam re-grade wiped other questions' marks</b><div class="desc">A partial re-grade deleted every other question's mark and deflated the LMS total. Now merges; omitted fields keep their stored values.</div></div><div class="status fixed">Fixed</div></div>
+<div class="find"><div class="sev P1">P1·4·9·11</div><div class="body"><b>Stale part-ids · attachment path binding · profile lifecycle</b><div class="desc">Maths now 400s on stale part-ids instead of charging a draft for empty feedback; attachment downloads bind the path to its owner; profiles flip stale on delete and regen on any count divergence.</div></div><div class="status fixed">Fixed</div></div>
+
+<h2><span class="n">04</span>P2 &amp; deferred</h2>
+<div class="find"><div class="sev P2">P2</div><div class="body"><b>Quality pass (mostly fixed)</b><div class="desc">Decile cards no longer overlap or claim a false "10%"; cards sample recent work; CSV formula injection neutralised; rate-limiter failures now visible; task-detail infinite-spinner guarded; fan-out desync surfaced.</div></div><div class="status fixed">Fixed</div></div>
+<div class="find"><div class="sev P1">P1·10</div><div class="body"><b>Skill-rollup race → migration written, not wired</b><div class="desc">Atomic fold written as <code>scripts/skill-profile-atomic-migration.sql</code>. JS path retained deliberately — pointing at an unapplied RPC would break all skill capture on deploy. Apply, then wire.</div></div><div class="status defer">Deferred · needs migration</div></div>
+<div class="find"><div class="sev P2">R4</div><div class="body"><b>Improvement-velocity rebuild &amp; time-window unification</b><div class="desc">Velocity still uses verbatim string matching; full window unification is feature-sized. Both belong in the insights roadmap below, not a hasty patch.</div></div><div class="status defer">Deferred · roadmap</div></div>
+
+<h2><span class="n">05</span>Module map</h2>
+<p class="lede">Twelve coherent modules for scoping future sessions — "let's work on Module 8." Dot colour = hottest audit finding in that module.</p>
+<div class="mods">
+  <div class="mod"><div class="h"><span class="num">01</span><span class="nm">Platform core</span></div><div class="files">lib/with-handler · auth · rate-limit · anthropic-tool-call · vercel.json</div><div class="hot"><span class="dot" style="background:var(--p2)"></span>rate-limiter race; SDK timeout vs 300s</div></div>
+  <div class="mod"><div class="h"><span class="num">02</span><span class="nm">Identity &amp; onboarding</span></div><div class="files">api/signup · set-role · request-password-reset</div><div class="hot"><span class="dot" style="background:var(--p0)"></span>P0-3 self-promotion (fixed)</div></div>
+  <div class="mod"><div class="h"><span class="num">03</span><span class="nm">Classes &amp; enrolment</span></div><div class="files">api/class · new-class · class-detail · class-view</div><div class="hot"><span class="dot" style="background:var(--p1)"></span>delete → profile stale (fixed)</div></div>
+  <div class="mod"><div class="h"><span class="num">04</span><span class="nm">Task authoring &amp; lifecycle</span></div><div class="files">api/task · generate-criteria · attachment · new-task · task-detail</div><div class="hot"><span class="dot" style="background:var(--p1)"></span>lock griefing; path binding (fixed)</div></div>
+  <div class="mod"><div class="h"><span class="num">05</span><span class="nm">Student drafting &amp; submission</span></div><div class="files">submit · submit-maths · draft-autosave · submit-for-marking</div><div class="hot"><span class="dot" style="background:var(--p1)"></span>fail-open locks (fixed); telemetry trust</div></div>
+  <div class="mod"><div class="h"><span class="num">06</span><span class="nm">Essay feedback engine</span></div><div class="files">generate-feedback · generate-multi-feedback · inline-suggestions · prompts</div><div class="hot"><span class="dot" style="background:var(--p1)"></span>draft-cap fail-open (fixed)</div></div>
+  <div class="mod"><div class="h"><span class="num">07</span><span class="nm">Maths feedback engine</span></div><div class="files">generate-maths-feedback · transcribe · maths-verify · maths-system</div><div class="hot"><span class="dot" style="background:var(--p0)"></span>P0-1 skill loss (fixed); stale parts</div></div>
+  <div class="mod"><div class="h"><span class="num">08</span><span class="nm">Skill database <span style="color:var(--accent);font-size:11px">★ strategic</span></span></div><div class="files">skill-taxonomy · skill-profile · insights-signals-feedback</div><div class="hot"><span class="dot" style="background:var(--p1)"></span>rollup race (migration ready) · no insights reader</div></div>
+  <div class="mod"><div class="h"><span class="num">09</span><span class="nm">Teacher marking &amp; markbook</span></div><div class="files">submission-grade · task-submissions · mark-submission · rubric.js</div><div class="hot"><span class="dot" style="background:var(--p0)"></span>XSS (fixed); re-grade loss (fixed)</div></div>
+  <div class="mod"><div class="h"><span class="num">10</span><span class="nm">Insights &amp; analytics</span></div><div class="files">api/insights-* · student-profile · insights-filters · schools</div><div class="hot"><span class="dot" style="background:var(--p0)"></span>scope leak; truncation (fixed) · roadmap target</div></div>
+  <div class="mod"><div class="h"><span class="num">11</span><span class="nm">Lesson Differentiator</span></div><div class="files">generate-activity · lesson-builder-system · task_activities</div><div class="hot"><span class="dot" style="background:var(--p2)"></span>re-skin risk · only current skill-DB reader</div></div>
+  <div class="mod"><div class="h"><span class="num">12</span><span class="nm">LTI / Canvas</span></div><div class="files">api/lti/* · lib/lti/* · lti-migration.sql</div><div class="hot"><span class="dot" style="background:var(--p0)"></span>AGS scores; roster sync (fixed)</div></div>
+</div>
+
+<h2><span class="n">06</span>The insights layer — the big opportunity</h2>
+<div class="callout">
+  <h3>Structural finding</h3>
+  <p class="big-quote">Nothing in the insights layer reads the skill database.</p>
+  <p><code>student_skill_profile</code> — the per-student, per-dimension data you've called the moat — is read by exactly one feature (the Lesson Differentiator). Every insight staff see is either raw-mark arithmetic or an LLM <em>re-deriving</em> patterns from feedback prose: expensive, rate-limited, unquantified, and unstable between runs. You're paying Sonnet to approximate numbers you already hold.</p>
+</div>
+<p class="lede">The correctness fixes above were the prerequisite. These build the actual product on top of data that's now complete and correctly scoped.</p>
+
+<div class="rec lead"><div class="rid">R1 · highest leverage <span class="flag">START HERE</span></div><div class="rt">Cohort skill matrix</div><div class="rd">A class × dimension heatmap straight from the skill DB — "14 of 22 students at <em>developing</em> or below on W4 Use of evidence, trend flat." Free, instant, quantified, identical every load. Turns the taxonomy from invisible plumbing into the visible, defensible product.</div></div>
+<div class="rec"><div class="rid">R2</div><div class="rt">Skill observation history</div><div class="rd">A thin history table (backfillable) enables growth-over-time — the mark-free developmental report schools actually want, and the retention story: data compounds every term.</div></div>
+<div class="rec"><div class="rid">R3</div><div class="rt">Feed the skill profile into every LLM synthesis</div><div class="rd">Anchor narratives in structured levels/trends alongside the prose — cuts run-to-run variance and shrinks the prompt.</div></div>
+<div class="rec"><div class="rid">R4</div><div class="rt">Rebuild improvement velocity on skill deltas</div><div class="rd">Replaces the noisy verbatim-string matching with per-dimension deltas between drafts. Same card, real numbers, no LLM call.</div></div>
+<div class="rec"><div class="rid">R5</div><div class="rt">Close the insight → action loop</div><div class="rd">Every gap card shows counts + affected students, with one click to spin up a Lesson Differentiator task targeting that dimension. Makes insights <em>start</em> the flywheel instead of ending in reading.</div></div>
+<div class="rec"><div class="rid">R6</div><div class="rt">Provenance on every card</div><div class="rd">"Based on 43 submissions across 6 tasks, past 12 months, 3 below confidence threshold." An experienced teacher hedges on thin evidence; the cards should too — cheapest trust-builder with sceptical staff.</div></div>
+
+<footer>
+  Full detail with file:line references and fix status: <code>docs/codebase-audit-2026-07-03.md</code> in the repo.
+  Deferred DB actions: the skill-race migration, plus any pending security-audit migrations.
+  Suggested next session: <b>R1 — the cohort skill matrix</b>.
+</footer>
+</div>

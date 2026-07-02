@@ -145,6 +145,8 @@ Every insight staff see is either raw-mark arithmetic or **an LLM re-deriving pa
 
 ### 3.3 Recommendations
 
+> **R1 — BUILT 2026-07-03.** The cohort skill matrix (**Skill breakdown** card) now ships: `lib/skill-matrix.ts` (`computeSkillMatrix`, pure/unit-tested) → `api/insights-cards.ts` (scoped by enrolled students × in-scope disciplines) → `renderSkillMatrix` in `public/insights.html`, on both the teacher and leader/admin grids. Per-dimension level distribution + median + net-trend + confidence + spine rollup + focus dimension. Deterministic, free, no-band. R2–R6 below remain open.
+
 **R1. Build the deterministic skill layer — the cohort skill matrix.** *(Highest leverage.)*
 A class × dimension heatmap straight from `student_skill_profile`: for each of W1–W7 / M1–M6, the distribution of students across emerging→extending, the class median, trend arrows, confidence shading. Instant, free, no rate limit, no floor beyond confidence, quantified ("14 of 22 students at *developing* or below on W4 Use of evidence, trend flat"), and identical on every load. Teacher tier scopes to their classes; leader/admin aggregates by faculty/year with a school baseline column. This single card turns the taxonomy from invisible plumbing into the visible product, and it's what makes ProofReady's insights *defensible* — an LLM summary of feedback prose is replicable by anyone; a term of consistent per-dimension measurement is not. The spine tier (4 capabilities) gives leaders a cross-KLA view no prose synthesis can.
 

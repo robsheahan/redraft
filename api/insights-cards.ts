@@ -8,6 +8,7 @@ import {
 } from '../lib/schools.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 import { fetchAllRows } from '../lib/db-page.js';
+import { computeSkillMatrix } from '../lib/skill-matrix.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import {
   parseFiltersFromQuery,
@@ -286,6 +287,37 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
   // submissions where feedback.kind === 'maths') --
   const mathsErrorCategories = computeMathsErrorCategories(submissions);
 
+  // -- Card: Cohort skill matrix (deterministic, from student_skill_profile) --
+  // The first insights reader of the skill database. Aggregates the rollup rows
+  // of the in-scope, in-discipline cohort into a per-dimension distribution. No
+  // LLM, no rate limit. Scoped by (a) students enrolled in the in-scope classes
+  // and (b) the disciplines those classes belong to — so faculty restriction is
+  // honoured (a restricted leader never sees a KLA they weren't granted, because
+  // its discipline isn't in classesInScope).
+  let skillMatrix: any = { writing: null, maths: null };
+  const inScopeClassIds = classesInScope.map((c: any) => c.id);
+  const inScopeDisciplines = [...new Set(classesInScope.map((c: any) => c.faculty).filter(Boolean))] as string[];
+  if (inScopeClassIds.length > 0 && inScopeDisciplines.length > 0) {
+    const memberRows = await fetchAllRows((from, to) =>
+      supabase.from('class_members')
+        .select('student_id')
+        .in('class_id', inScopeClassIds)
+        .order('student_id')
+        .range(from, to));
+    let cohortStudentIds = [...new Set((memberRows || []).map((m: any) => m.student_id).filter(Boolean))] as string[];
+    if (allowedStudentIds) cohortStudentIds = cohortStudentIds.filter(id => allowedStudentIds!.has(id));
+    if (cohortStudentIds.length > 0) {
+      const skillRows = await fetchAllRows((from, to) =>
+        supabase.from('student_skill_profile')
+          .select('student_id, discipline, dimension, level, level_label, confidence, trend, observation_count')
+          .in('student_id', cohortStudentIds)
+          .in('discipline', inScopeDisciplines)
+          .order('student_id')
+          .range(from, to));
+      skillMatrix = computeSkillMatrix(skillRows || []);
+    }
+  }
+
   // -- Cached LLM cards (Tier A) --
   // Cards are cached per scope so a generated card persists across reloads and
   // is reused by anyone viewing the same scope. Teacher tier reads its own
@@ -375,6 +407,7 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
       marking,
       teacher_activity: teacherActivity,
       maths_error_categories: mathsErrorCategories,
+      skill_matrix: skillMatrix,
       llm,
     },
     counts,
@@ -534,6 +567,7 @@ function emptyResponse(
       marking: { total: 0, marked: 0, awaiting_marking: 0, unmarked: 0 },
       teacher_activity: [],
       maths_error_categories: { total_maths_submissions: 0, total_lines: 0, categories: [] },
+      skill_matrix: { writing: null, maths: null },
     },
     counts: {
       teachers: 0,

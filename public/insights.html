@@ -1845,6 +1845,13 @@
         + renderMarkDistribution(cd.mark_distribution)
         + '</div>';
 
+      // 2. Cohort skill matrix — the deterministic, per-dimension read from the
+      // skill database. Free, no generation needed, so it's placed above the
+      // LLM cards as the headline diagnostic.
+      html += '<div class="card card-span-12">'
+        + cardHeader('Skill breakdown', 'Where the class sits on each skill — developmental levels, not marks')
+        + renderSkillMatrix(cd.skill_matrix)
+        + '</div>';
 
       // Top 3 mistakes → common_gaps
       html += '<div class="card card-span-6">' + renderLLMCard('common_gaps', llm.common_gaps, {
@@ -1927,6 +1934,13 @@
           + renderMarkByFaculty(cd.mark_by_faculty)
           + '</div>';
       }
+
+      // Cohort skill matrix — deterministic per-dimension read from the skill
+      // database (rolls up across the disciplines in scope for leaders).
+      html += '<div class="card card-span-12">'
+        + cardHeader('Skill breakdown', 'Where the cohort sits on each skill — developmental levels, not marks')
+        + renderSkillMatrix(cd.skill_matrix)
+        + '</div>';
 
       // Marking progress — 4 cols
       html += '<div class="card card-span-4">'
@@ -2175,6 +2189,94 @@
         currentStudentProfile = null;
         render();
       }
+    }
+
+    // ── Cohort skill matrix (R1) — deterministic, from student_skill_profile ──
+    const SKILL_LEVEL_ORDER = ['emerging', 'developing', 'consolidating', 'secure', 'extending'];
+    const SKILL_LEVEL_COLORS = {
+      emerging: '#d9694f', developing: '#e0a24a', consolidating: '#cabb52',
+      secure: '#6aa98f', extending: '#3f8f6b',
+    };
+    const SKILL_LEVEL_LABEL = {
+      emerging: 'Emerging', developing: 'Developing', consolidating: 'Consolidating',
+      secure: 'Secure', extending: 'Extending',
+    };
+
+    function skillTrendBadge(dim) {
+      const net = dim.net_trend || 0;
+      if (dim.trend && dim.trend.improving === 0 && dim.trend.regressing === 0) {
+        return '<span style="color:#9ca3af;font-size:11.5px">→ steady</span>';
+      }
+      if (net > 0) return '<span title="' + e(dim.trend.improving + ' improving, ' + dim.trend.regressing + ' slipping') + '" style="color:#3f8f6b;font-size:11.5px;font-weight:600">▲ ' + net + ' net improving</span>';
+      if (net < 0) return '<span title="' + e(dim.trend.improving + ' improving, ' + dim.trend.regressing + ' slipping') + '" style="color:#d9694f;font-size:11.5px;font-weight:600">▼ ' + (-net) + ' net slipping</span>';
+      return '<span style="color:#9ca3af;font-size:11.5px">→ steady</span>';
+    }
+
+    function renderSkillMatrixFamily(fam, familyLabel) {
+      let html = '<div style="margin-bottom:6px;display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px">'
+        + '<strong style="font-size:13.5px">' + e(familyLabel) + '</strong>'
+        + '<span style="font-size:11.5px;color:#9ca3af">' + fam.student_count + ' student' + (fam.student_count === 1 ? '' : 's') + ' with data · developmental levels, not marks</span>'
+        + '</div>';
+
+      // Spine rollup — the 4-capability whole-student view, lowest first.
+      if (fam.spine_rollup && fam.spine_rollup.length) {
+        html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px">';
+        fam.spine_rollup.forEach(s => {
+          const col = SKILL_LEVEL_COLORS[s.mean_label] || '#9ca3af';
+          html += '<span title="' + e(s.blurb) + '" style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;background:#faf8f4;border:1px solid #ece7de;border-radius:100px;padding:3px 10px">'
+            + '<span style="width:8px;height:8px;border-radius:50%;background:' + col + '"></span>'
+            + '<strong>' + e(s.label) + '</strong> <span style="color:#6b7280">' + e(SKILL_LEVEL_LABEL[s.mean_label] || s.mean_label) + '</span>'
+            + '</span>';
+        });
+        html += '</div>';
+      }
+
+      // Per-dimension distribution rows.
+      fam.dimensions.forEach(dim => {
+        const total = dim.observed_students || 0;
+        const isFocus = fam.focus_dimension === dim.key;
+        html += '<div style="margin:0 0 13px;padding-left:10px;border-left:3px solid ' + (isFocus ? '#ed7615' : 'transparent') + '">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px">'
+          + '<div style="font-size:13px"><strong>' + e(dim.key) + ' · ' + e(dim.label) + '</strong>'
+          + (isFocus ? ' <span style="font-size:10px;font-weight:700;color:#ed7615;border:1px solid #ed7615;border-radius:4px;padding:0 5px;vertical-align:middle;letter-spacing:0.3px">FOCUS</span>' : '')
+          + '</div>'
+          + '<div style="text-align:right;white-space:nowrap">median <strong>' + e(SKILL_LEVEL_LABEL[dim.median_label] || dim.median_label) + '</strong> &nbsp; ' + skillTrendBadge(dim) + '</div>'
+          + '</div>';
+
+        if (total === 0) {
+          html += '<div style="height:16px;border-radius:4px;background:#f3f0ea;color:#b8b0a2;font-size:10.5px;display:flex;align-items:center;justify-content:center">no data for this skill yet</div>';
+        } else {
+          html += '<div style="display:flex;height:16px;border-radius:4px;overflow:hidden;background:#f3f0ea">';
+          SKILL_LEVEL_ORDER.forEach(lv => {
+            const c = dim.distribution[lv] || 0;
+            if (!c) return;
+            const w = (c / total) * 100;
+            html += '<div title="' + e(SKILL_LEVEL_LABEL[lv] + ': ' + c + ' student' + (c === 1 ? '' : 's')) + '" style="width:' + w.toFixed(1) + '%;background:' + SKILL_LEVEL_COLORS[lv] + '"></div>';
+          });
+          html += '</div>';
+          let meta = total + ' student' + (total === 1 ? '' : 's') + ' · avg confidence ' + Math.round((dim.avg_confidence || 0) * 100) + '%';
+          if (dim.low_confidence_students > 0) meta += ' · ' + dim.low_confidence_students + ' on thin evidence';
+          html += '<div style="font-size:11px;color:#9ca3af;margin-top:3px">' + e(meta) + '</div>';
+        }
+        html += '</div>';
+      });
+      return html;
+    }
+
+    function renderSkillMatrix(m) {
+      if (!m || (!m.writing && !m.maths)) {
+        return '<div class="card-empty"><strong>No skill data yet</strong>Once students submit drafts and get feedback, each submission is scored against the ProofReady skill dimensions and the cohort\'s distribution appears here — free, instant, and updated on every load.</div>';
+      }
+      // Legend.
+      let html = '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px;font-size:11px;color:#6b7280">';
+      SKILL_LEVEL_ORDER.forEach(lv => {
+        html += '<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:' + SKILL_LEVEL_COLORS[lv] + '"></span>' + e(SKILL_LEVEL_LABEL[lv]) + '</span>';
+      });
+      html += '</div>';
+      if (m.writing) html += renderSkillMatrixFamily(m.writing, 'Writing skills');
+      if (m.writing && m.maths) html += '<div style="height:1px;background:#ece7de;margin:16px 0"></div>';
+      if (m.maths) html += renderSkillMatrixFamily(m.maths, 'Maths skills');
+      return html;
     }
 
     function renderMathsErrorCategories(d) {
