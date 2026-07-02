@@ -103,8 +103,15 @@ export function processExamAnswers(questions: ExamQuestion[], clientAnswers: unk
 /**
  * Merge a teacher's per-text-question marks with the stored MC auto-marks and
  * compute the exam total. Teachers mark TEXT questions only; the MC rows
- * (source:'auto') are preserved untouched. Returns the merged marks + total, or
- * `{ error }` for a 400 (invalid question, or a mark out of range).
+ * (source:'auto') are preserved untouched.
+ *
+ * Merge semantics (a partial re-grade must never discard earlier marks):
+ *   - a question present in the payload with a numeric mark → replace the mark,
+ *   - a question present with mark:null → explicitly CLEAR that mark,
+ *   - a question absent from the payload → KEEP the previously-stored teacher row.
+ *
+ * Returns the merged marks + total, or `{ error }` for a 400 (invalid question,
+ * or a mark out of range).
  */
 export function mergeExamGrade(
   answers: any[],
@@ -122,6 +129,11 @@ export function mergeExamGrade(
     if (!qid || seen.has(qid)) continue;
     const ans = answerById.get(qid);
     if (!ans || ans.type !== 'text') continue; // teachers mark text questions only
+    if (m.mark === null || m.mark === undefined) {
+      // Explicit clear: the question was addressed in this grade, with no mark.
+      seen.add(qid);
+      continue;
+    }
     const mark = Number(m.mark);
     if (!Number.isFinite(mark) || mark < 0) {
       return { error: 'Marks must be zero or greater.' };
@@ -133,7 +145,16 @@ export function mergeExamGrade(
     teacherRows.push({ question_id: qid, mark, source: 'teacher' });
   }
 
-  const questionMarks = [...autoRows, ...teacherRows];
+  // Keep earlier teacher marks for questions this payload didn't touch (still
+  // bound to a real text answer — defensive against stale/dangling rows).
+  const keptRows: QuestionMark[] = stored.filter((m: any) => {
+    if (!m || m.source !== 'teacher' || typeof m.question_id !== 'string') return false;
+    if (seen.has(m.question_id)) return false;
+    const ans = answerById.get(m.question_id);
+    return !!ans && ans.type === 'text' && typeof m.mark === 'number';
+  });
+
+  const questionMarks = [...autoRows, ...teacherRows, ...keptRows];
   const total = questionMarks.reduce((s, m) => s + (typeof m.mark === 'number' ? m.mark : 0), 0);
   return { questionMarks, total };
 }

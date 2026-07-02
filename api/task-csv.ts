@@ -3,7 +3,12 @@ import { withHandler } from '../lib/with-handler.js';
 
 function csvEscape(value: unknown): string {
   if (value === null || value === undefined) return '';
-  const s = String(value);
+  let s = String(value);
+  // Formula-injection guard: Excel/Sheets execute cells starting with = + - @
+  // (or tab/CR) as formulas when the teacher opens the export. Prefix a single
+  // quote so the cell renders as literal text. Student draft_text is the main
+  // vector.
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
   return s;
 }

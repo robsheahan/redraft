@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabase, verifyAuth } from '../lib/auth.js';
+import { captureError } from '../lib/sentry.js';
 import { parseRubricWithAI } from '../lib/parse-rubric-with-ai.js';
 import { withHandler } from '../lib/with-handler.js';
 import { validateExamQuestions, studentTaskView, type ExamQuestion } from '../lib/exam-questions.js';
@@ -302,11 +303,15 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   // OR an in-progress autosaved draft. Before that it's fully editable; once a
   // student has started, only title / due date / teacher notes can change
   // (everything they answer against is locked to protect their work).
-  const [{ count: subCount }, { count: autoCount }] = await Promise.all([
+  // Fail CLOSED: if either count read errors, treat the task as started — a
+  // transient DB error must not bypass the lock and let an edit destroy the
+  // ground students are answering against.
+  const [subRes, autoRes] = await Promise.all([
     supabase.from('submissions').select('id', { count: 'exact', head: true }).eq('task_id', id),
     supabase.from('draft_autosaves').select('task_id', { count: 'exact', head: true }).eq('task_id', id),
   ]);
-  const started = (subCount || 0) > 0 || (autoCount || 0) > 0;
+  const started = !!subRes.error || !!autoRes.error
+    || (subRes.count || 0) > 0 || (autoRes.count || 0) > 0;
 
   const patch: any = {
     course: course ?? undefined,
@@ -333,12 +338,36 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   };
   Object.keys(patch).forEach(k => patch[k] === undefined && delete patch[k]);
 
+  // The subject/mode the task will have AFTER this update — used by the guards
+  // below, which mirror the create-path restrictions (parts ⇒ maths take-home;
+  // questions ⇒ essay).
+  const effectiveSubject: string = (subject_type === 'essay' || subject_type === 'maths')
+    ? subject_type : ((existing as any).subject_type || 'essay');
+  const effectiveMode: TaskMode = typeof incomingTaskMode === 'string'
+    ? resolveTaskMode(req.body) : (existing.task_mode as TaskMode);
+
+  // Flipping subject_type to maths while the task carries (or is being given)
+  // essay `questions` would leave an inconsistent hybrid — reject, matching the
+  // create-path rule that multi-question is essay-only.
+  if (patch.subject_type === 'maths') {
+    const willHaveQuestions = questions !== undefined
+      ? questions !== null
+      : (Array.isArray((existing as any).questions) && (existing as any).questions.length > 0);
+    if (willHaveQuestions) {
+      return res.status(400).json({ error: 'Multiple questions are only available on written tasks. Remove the questions before switching to maths.' });
+    }
+  }
+
   // Multi-part maths: validate + set parts (and derive total_marks) when the
   // client sends them. null clears them back to a single-question task.
+  // Same guard as the create path: parts only belong on a take-home maths task.
   if (parts !== undefined) {
     if (parts === null) {
       patch.parts = null;
     } else {
+      if (effectiveSubject !== 'maths' || effectiveMode !== 'feedback_task') {
+        return res.status(400).json({ error: 'Multi-part questions are only available on a take-home maths task.' });
+      }
       const v = validateMathsParts(parts);
       if ('error' in v) return res.status(400).json({ error: v.error });
       patch.parts = v.parts;
@@ -463,8 +492,32 @@ async function handleDelete(req: VercelRequest, res: VercelResponse) {
   const teacherId = (existing.classes as any)?.teacher_id;
   if (teacherId !== user.id) return res.status(403).json({ error: 'You can only delete your own tasks.' });
 
-  await supabase.from('submissions').delete().eq('task_id', id);
+  // Collect the students whose work is about to be cascade-deleted BEFORE the
+  // delete — their cached longitudinal profile describes submissions that will
+  // no longer exist, so it must be flagged stale afterwards.
+  const { data: subRows, error: subReadErr } = await supabase
+    .from('submissions').select('student_id').eq('task_id', id);
+  if (subReadErr) {
+    captureError(subReadErr, { stage: 'task-delete-submitters-read', task_id: id });
+  }
+  const affectedStudents = [...new Set((subRows || []).map((s) => s.student_id).filter(Boolean))] as string[];
+
+  // Delete the task only — submissions (and autosaves) go via FK cascade, so
+  // either the whole delete succeeds or nothing is touched. (The old explicit
+  // submissions-delete could destroy student work and then leave the task
+  // behind if the task delete failed.)
   const { error } = await supabase.from('tasks').delete().eq('id', id);
   if (error) return res.status(500).json({ error: error.message });
+
+  // Mark affected students' profile syntheses stale (kept, not deleted) so the
+  // read path regenerates them without the deleted work. Best-effort.
+  if (affectedStudents.length > 0) {
+    const { error: staleErr } = await supabase
+      .from('student_profile_synthesis')
+      .update({ stale: true })
+      .in('student_id', affectedStudents);
+    if (staleErr) captureError(staleErr, { stage: 'task-delete-profile-stale', task_id: id });
+  }
+
   return res.status(200).json({ ok: true });
 }

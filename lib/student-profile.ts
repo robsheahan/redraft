@@ -174,7 +174,11 @@ export async function countStudentSubmissions(
  *   - Fresh and not stale                → serve cached.
  */
 export function profileNeedsRegen(cached: StoredProfile, currentSubmissionCount: number): boolean {
-  if (currentSubmissionCount > cached.submission_count_at_generation) return true;
+  // `!==` not `>`: a deleted task/class REMOVES submissions, so the live count
+  // can drop below the count at generation. A `>` test would then serve a profile
+  // describing deleted work indefinitely (and stay stuck even once new work
+  // brings the count back up to the old value). Any divergence forces a regen.
+  if (currentSubmissionCount !== cached.submission_count_at_generation) return true;
   if (!cached.stale) return false;
   const age = Date.now() - new Date(cached.generated_at).getTime();
   return age >= STALE_REFRESH_WINDOW_MS;

@@ -9,15 +9,31 @@ export default withHandler(
   async (req, res, { user, supabase }) => {
     const { role, year_level, graduation_year, faculties } = req.body || {};
 
-    // role is required only on first-time setup; if user already has a role we
-    // treat this as a profile update and don't insist on it being supplied.
-    const existingRole = (user!.app_metadata as any)?.role ?? (user!.user_metadata as any)?.role;
+    // The authoritative role lives in app_metadata (service-role only). Read it
+    // — never user_metadata — for the transition gate below.
+    const existingRole = (user!.app_metadata as any)?.role;
     const effectiveRole = role || existingRole;
     if (effectiveRole && !['teacher', 'student'].includes(effectiveRole)) {
       return res.status(400).json({ error: 'Role must be teacher or student' });
     }
     if (!effectiveRole) {
       return res.status(400).json({ error: 'Role is required.' });
+    }
+
+    // Teacher is a trust boundary: every "teacher-only" server gate keys off
+    // this role, so a student must not be able to self-promote. Permit a role
+    // WRITE only when it isn't a privilege escalation:
+    //   - first-time onboarding (no authoritative role yet), or
+    //   - a no-op (role unchanged — a profile update carrying the same role), or
+    //   - a downgrade (teacher → student, which grants nothing).
+    // A student → teacher self-transition is refused; teacher status must come
+    // from an out-of-band signal (LTI Instructor launch provisions it directly,
+    // or an admin grant), never from this self-service endpoint.
+    const isChange = existingRole != null && effectiveRole !== existingRole;
+    if (isChange && effectiveRole === 'teacher') {
+      return res.status(403).json({
+        error: 'Teacher access can’t be self-assigned. Contact your administrator or launch from your LMS as a teacher.',
+      });
     }
 
     // Build patch

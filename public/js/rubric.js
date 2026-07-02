@@ -350,7 +350,7 @@
   }
 
   function renderRubric(textOrStructured, escapeFn, structured, opts) {
-    var e = escapeFn || function(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    var e = escapeFn || function(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
     opts = opts || {};
     var mode = opts.mode || 'display';  // 'display' | 'mark-entry' | 'graded'
     var marks = opts.marks;

@@ -1031,7 +1031,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
         dots += '<span class="draft-dot ' + (i < n ? 'filled' : '') + '"></span>';
       }
       var labelClass = 'draft-label' + (n === 0 ? ' none' : (n >= MAX ? ' done' : ''));
-      var labelText = n === 0 ? 'Not started' : (n >= MAX ? 'All 3 used' : n + '/' + MAX);
+      var labelText = n === 0 ? 'Not started' : (n >= MAX ? 'All 3 drafts used' : n + ' of ' + MAX + ' drafts');
       return '<div class="draft-progress"><span class="draft-dots">' + dots + '</span><span class="' + labelClass + '">' + labelText + '</span></div>';
     }
 
@@ -1402,9 +1402,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
     }
 
     function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
+      return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
 
     // Word counts with length warning

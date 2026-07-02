@@ -157,7 +157,7 @@
         document.getElementById('pageHeading').textContent = 'Welcome, ' + displayName;
       }
 
-      const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+      const e = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
       const container = document.getElementById('content');
 
       const res = await authFetch('/api/class');

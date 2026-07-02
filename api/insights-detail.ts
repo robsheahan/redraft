@@ -100,13 +100,14 @@ export default withHandler({ methods: ['GET'], label: 'insights-detail' }, async
 
   const { data: rawTasks } = await supabase
     .from('tasks')
-    .select('id, title, course, class_id, total_marks, due_date, published_at, class_feedback_count, class_feedback_generated_at, created_at')
+    .select('id, title, course, class_id, total_marks, due_date, published_at, class_feedback_count, class_feedback_generated_at, created_at, task_mode')
     .in('class_id', classIds);
   const taskMap: Record<string, any> = {};
   (rawTasks || []).forEach(t => {
     const cls = classMap[t.class_id];
     taskMap[t.id] = {
       ...t,
+      task_mode: t.task_mode || 'feedback_task',
       faculty: t.course
         ? (getDisciplineForCourse(t.course) || cls?.faculty || 'Other')
         : (cls?.faculty || 'Other'),
@@ -274,6 +275,10 @@ export default withHandler({ methods: ['GET'], label: 'insights-detail' }, async
         if (!s.graded_at || s.total_mark == null) return false;
         const t = taskMap[s.task_id];
         if (!t || !t.total_marks) return false;
+        // quick_task is excluded from the mark-distribution card it drills into,
+        // so exclude it here too — otherwise the drill lists rows the card never
+        // counted and the totals disagree.
+        if (t.task_mode === 'quick_task') return false;
         if (bandFor(Number(s.total_mark), Number(t.total_marks)) !== drillBand) return false;
       }
       return true;

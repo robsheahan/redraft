@@ -15,6 +15,7 @@ import {
   cohortFingerprint,
 } from '../lib/insights-filters.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
+import { fetchAllRows } from '../lib/db-page.js';
 import { captureError } from '../lib/sentry.js';
 import { callTool } from '../lib/anthropic-tool-call.js';
 import {
@@ -67,9 +68,9 @@ const KIND_CONFIG: Record<string, {
     tool: BOTTOM_DECILE_TOOL,
     endpointName: 'insights-card-bottom-decile',
     buildSystemPrompt: (schoolName, sample) => [
-      `You are a senior NSW NESA-trained educator analysing the bottom decile of a school's student writing.`,
+      `You are a senior NSW NESA-trained educator analysing the lowest-scoring group of a school's student writing.`,
       `School: ${schoolName}`,
-      `Sample size: ${sample} submissions from students in the bottom 10% by mark percentage.`,
+      `Sample size: ${sample} submissions — the lowest-scoring in scope by mark percentage (a small cohort, so treat this as the group needing the most support, not a precise decile).`,
       ``,
       `You'll receive each student's AI improvement feedback. Identify the 3 dominant patterns of mistakes — the things appearing across multiple students that a head of teaching & learning should action.`,
       ``,
@@ -86,9 +87,9 @@ const KIND_CONFIG: Record<string, {
     tool: TOP_DECILE_TOOL,
     endpointName: 'insights-card-top-decile',
     buildSystemPrompt: (schoolName, sample) => [
-      `You are a senior NSW NESA-trained educator analysing the top decile of a school's student writing.`,
+      `You are a senior NSW NESA-trained educator analysing the highest-scoring group of a school's student writing.`,
       `School: ${schoolName}`,
-      `Sample size: ${sample} submissions from students in the top 10% by mark percentage.`,
+      `Sample size: ${sample} submissions — the highest-scoring in scope by mark percentage (a small cohort, so treat this as the strongest group, not a precise decile).`,
       ``,
       `These students are already performing well. You'll receive each student's AI improvement feedback. Identify the 3 highest-impact next steps that would stretch them further — the things that would move "high" responses to "exceptional".`,
       ``,
@@ -437,21 +438,40 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
   if (taskIds.length === 0) return res.status(400).json({ error: 'No tasks in scope yet.' });
 
   const subsCutoff = getTimeWindowCutoff(filters.time_window);
-  let subsQuery = supabase
-    .from('submissions')
-    .select('id, task_id, student_id, draft_version, graded_at, total_mark, feedback, created_at')
-    .in('task_id', taskIds);
-  if (subsCutoff) subsQuery = subsQuery.gte('created_at', subsCutoff.toISOString());
-  const { data: rawSubs } = await subsQuery;
+  // Paginate: the fingerprint + sampling must see the WHOLE in-scope corpus, or a
+  // >1000-submission school gets a nondeterministic subset (flapping fingerprint →
+  // cache misses / false hits, and an arbitrary sample fed to the model).
+  const rawSubs = await fetchAllRows((from, to) => {
+    let q = supabase
+      .from('submissions')
+      .select('id, task_id, student_id, draft_version, graded_at, total_mark, feedback, created_at')
+      .in('task_id', taskIds)
+      .order('id')
+      .range(from, to);
+    if (subsCutoff) q = q.gte('created_at', subsCutoff.toISOString());
+    return q;
+  });
 
   const allowedStudentIds = filters.year_level != null
     ? userIdsForYearLevel(allUsers as any, filters.year_level)
+    : null;
+
+  // A faculty-restricted leader (school_members.faculties[]) must never have
+  // out-of-scope KLAs in their card corpus. applyFacultyScope only pins the
+  // faculty FILTER when the restriction is a single faculty; for a multi-faculty
+  // grant it leaves filters.faculty null, so we enforce the restriction as a hard
+  // task-level filter here (mirroring insights-cards.ts). Without this, a leader
+  // scoped to [English, Maths] would get whole-school feedback text in their
+  // gaps/decile cards.
+  const facultyAllow = (restrictedFaculties && restrictedFaculties.length)
+    ? new Set(restrictedFaculties)
     : null;
 
   // Apply page-level filters.
   let submissions = (rawSubs || []).filter(s => {
     const t = taskMap[s.task_id];
     if (!t) return false;
+    if (facultyAllow && !facultyAllow.has(t.faculty)) return false;
     if (filters.faculty && t.faculty !== filters.faculty) return false;
     if (filters.course && t.course !== filters.course) return false;
     if (filters.class_id && t.class_id !== filters.class_id) return false;
@@ -474,7 +494,12 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
     const prev = byPair.get(k);
     if (!prev || (s.created_at || '') > (prev.created_at || '')) byPair.set(k, s);
   }
-  submissions = [...byPair.values(), ...anonSubs];
+  // Sort newest-first so the MAX_SUBMISSIONS_TO_FEED cap and decile tie-breaks are
+  // deterministic AND biased to recent work, rather than slicing an arbitrary
+  // (often physically-oldest) chunk of the DB's return order. Note the fingerprint
+  // is computed over the full pre-slice set, so this ordering doesn't affect it.
+  submissions = [...byPair.values(), ...anonSubs]
+    .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
 
   if (submissions.length === 0) {
     return res.status(400).json({ error: 'No submissions with AI feedback in scope yet. Have students submit drafts to generate feedback first.' });
@@ -502,6 +527,7 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
       feedback: s.feedback,
       faculty: t.faculty,
       course: t.course,
+      task_id: s.task_id,
       task_title: t.title,
       task_question: t.question || '',
       task_mode: t.task_mode,
@@ -513,7 +539,10 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
   let rows: any[];
   if (kind === 'bottom_decile' || kind === 'top_decile') {
     const graded = enriched.filter(r => r.mark_pct != null);
-    const gradedFloor = callerRole === 'teacher' ? 4 : 5;
+    // Floor of 6 so a slice of 3 each side can't overlap (see the floor(n/2) cap
+    // below): at 5 graded, "bottom 3" and "top 3" would share a submission, so the
+    // same work would drive both the weakest-students and strongest-students card.
+    const gradedFloor = 6;
     if (graded.length < gradedFloor) {
       return res.status(400).json({ error: `Not enough graded submissions yet. This card needs at least ${gradedFloor} marked submissions in scope.` });
     }
@@ -523,7 +552,9 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
     // for pattern-matching. Stretch goals / top mistakes for the top or
     // bottom 25% of the class is the sweet spot.
     const fraction = callerRole === 'teacher' ? 4 : 10;
-    const sliceCount = Math.max(3, Math.min(MAX_SUBMISSIONS_TO_FEED, Math.ceil(graded.length / fraction)));
+    // Cap at floor(n/2) so bottom and top slices never overlap.
+    const sliceCap = Math.floor(graded.length / 2);
+    const sliceCount = Math.max(3, Math.min(MAX_SUBMISSIONS_TO_FEED, sliceCap, Math.ceil(graded.length / fraction)));
     rows = graded.slice(0, sliceCount);
   } else {
     // Verb depth / common gaps / things done well — feed whole cohort, capped.
@@ -542,7 +573,7 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
   //     card instead of overwriting one shared slot, while two leaders viewing
   //     the *same* scope reuse it.
   // A cache hit returns for free and skips the rate-limit.
-  const scopeKey = scopeKeyForFilters(filters);
+  const scopeKey = scopeKeyForFilters(filters, restrictedFaculties);
   const fingerprint = cohortFingerprint(submissions);
   const cacheHitResponse = (hit: any) => res.status(200).json({
     kind,
@@ -625,7 +656,9 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
   }
 
   // -- Cache write --
-  const sourceTaskCount = new Set(rows.map(r => r.task_title)).size;
+  // Count distinct tasks by id, not title — two tasks both named "Essay draft"
+  // are two tasks, not one.
+  const sourceTaskCount = new Set(rows.map(r => r.task_id)).size;
   const generatedAt = new Date().toISOString();
   if (callerRole === 'teacher') {
     // Teacher tier: cache per (teacher, kind, scope) so re-clicks with no new
@@ -662,11 +695,16 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
   }
 
   // Fan the cohort STRENGTHS out into the things_done_well cache so that card
-  // and the gaps card always come from this one consistent call.
+  // and the gaps card always come from this one consistent call. Capture any
+  // write error: if this fan-out fails while the gaps write above succeeded, the
+  // two cards silently desync (different generations, different fingerprints) —
+  // exactly the "can never contradict" contract this design exists to keep. The
+  // error surfaces the break so it isn't invisible until someone spots it on screen.
   if (kind === 'common_gaps' && Array.isArray(value.strengths)) {
     const strengthsContent = { strengths: value.strengths };
+    let fanoutError: any = null;
     if (callerRole === 'teacher') {
-      await supabase.from('teacher_insights_cards').upsert({
+      ({ error: fanoutError } = await supabase.from('teacher_insights_cards').upsert({
         teacher_id: user.id,
         card_kind: 'things_done_well',
         scope_key: scopeKey,
@@ -675,9 +713,9 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
         source_submission_count: rows.length,
         source_task_count: sourceTaskCount,
         generated_at: generatedAt,
-      });
+      }));
     } else if (schoolId) {
-      await supabase.from('school_insights_cards').upsert({
+      ({ error: fanoutError } = await supabase.from('school_insights_cards').upsert({
         school_id: schoolId,
         card_kind: 'things_done_well',
         scope_key: scopeKey,
@@ -688,7 +726,10 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
         source_task_count: sourceTaskCount,
         generated_at: generatedAt,
         generated_by: user.id,
-      });
+      }));
+    }
+    if (fanoutError) {
+      captureError(new Error('things_done_well fan-out write failed: ' + fanoutError.message), { kind, school_id: schoolId, scope_key: scopeKey });
     }
   }
 

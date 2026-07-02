@@ -39,6 +39,7 @@ import { currentYearLevelFromGraduationYear } from '../data/nesa-reference.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { postCompletionIfLinked } from '../lib/lti/ags.js';
 import { recordSkillSignals } from '../lib/skill-profile.js';
+import { aggregateSkillAssessments } from '../lib/multi-question-feedback.js';
 
 const MAX_DRAFTS = 3;
 const MAX_LINES_SINGLE = 60;
@@ -298,6 +299,17 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
       if (totalLines > MAX_LINES_MULTIPART) {
         return res.status(400).json({ error: 'That\'s a lot of working — please trim it down.' });
       }
+      // Guard against a stale client whose submitted part ids don't match the
+      // task's authored parts (e.g. the teacher edited parts, or a malformed
+      // payload). Without this, every part takes the blank branch below: no LLM
+      // calls, all-empty feedback — yet the submission still inserts, consuming
+      // one of the student's 3 drafts. Require at least one authored part to
+      // actually carry submitted working.
+      const authoredIds = new Set(authoredParts.map((p) => p.id));
+      const hasMatchedWorking = pw.some((x) => authoredIds.has(x.part_id) && x.working_lines.length > 0);
+      if (!hasMatchedWorking) {
+        return res.status(400).json({ error: 'This task was updated — please reload the page and re-enter your working.' });
+      }
 
       const tM0 = Date.now();
       const partResults = await Promise.all(authoredParts.map(async (part, idx) => {
@@ -344,7 +356,13 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
         kind: 'maths_multipart',
         parts: partResults.map(({ skill_assessment, ...shown }) => shown),
       };
-      const merged = partResults.flatMap((p) => p.skill_assessment || []);
+      // Collapse duplicate dimensions across parts into one signal each. A raw
+      // flatMap produces multiple rows for the same dimension (e.g. M2 on parts
+      // (a) and (b)), which then trips the (student, dimension) upsert cardinality
+      // error in recordSkillSignals and silently drops the WHOLE submission's
+      // skill rollup. aggregateSkillAssessments is the same collapse the essay
+      // multi-question path uses.
+      const merged = aggregateSkillAssessments(partResults.map((p) => p.skill_assessment || []));
       skillAssessment = merged.length > 0 ? merged : null;
 
       storedWorkingLines = null;

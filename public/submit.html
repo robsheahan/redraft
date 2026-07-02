@@ -229,7 +229,7 @@
   <script src="/js/task-meta.js"></script>
   <script src="/js/attachments.js"></script>
   <script>
-    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    const e = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const MAX_DRAFTS = 3;
     let currentTask = null;
     let priorDrafts = [];

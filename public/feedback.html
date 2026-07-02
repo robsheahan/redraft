@@ -574,7 +574,7 @@
     const taskData = sessionStorage.getItem('proofready_task');
     const container = document.getElementById('content');
 
-    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    const e = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
     // State for draft navigation
     var allDrafts = null;  // Array of { draft_text, feedback, draft_version } if multi-draft

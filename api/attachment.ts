@@ -101,6 +101,10 @@ async function signDownload(req: VercelRequest, res: VercelResponse, user: any) 
       .from('tasks').select('id, teacher_id, class_id, teacher_attachments').eq('id', taskId).maybeSingle();
     if (!task) return res.status(404).json({ error: 'Task not found.' });
     if (!attachmentListHas(task.teacher_attachments, path)) return res.status(403).json({ error: 'Forbidden' });
+    // The attachment list was written verbatim from the client, so membership in
+    // it is NOT proof of ownership — also require the path to sit inside the
+    // task teacher's own upload folder (paths are minted as tasks/<userId>/…).
+    if (!path.startsWith(`tasks/${task.teacher_id}/`)) return res.status(403).json({ error: 'Forbidden' });
 
     let allowed = task.teacher_id === user.id;
     if (!allowed) {
@@ -117,6 +121,11 @@ async function signDownload(req: VercelRequest, res: VercelResponse, user: any) 
       .from('submissions').select('id, student_id, task_id, student_attachments').eq('id', submissionId).maybeSingle();
     if (!sub) return res.status(404).json({ error: 'Submission not found.' });
     if (!attachmentListHas(sub.student_attachments, path)) return res.status(403).json({ error: 'Forbidden' });
+    // The attachment list came verbatim from the client at submit time — a
+    // student could list ANY bucket path in their own submission. Require the
+    // path to sit inside the submitting student's own upload folder (paths are
+    // minted as submissions/<userId>/…).
+    if (!path.startsWith(`submissions/${sub.student_id}/`)) return res.status(403).json({ error: 'Forbidden' });
 
     let allowed = sub.student_id === user.id;
     if (!allowed && sub.task_id) {

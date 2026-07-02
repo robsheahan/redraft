@@ -97,6 +97,20 @@ export async function recordSkillSignals(opts: {
   }
   if (signals.length === 0) return 0;
 
+  // Defence-in-depth: collapse to one signal per dimension. A caller that passes
+  // duplicate dimensions (the maths multi-part flow did) would otherwise build an
+  // upsert with duplicate (student, discipline, dimension) conflict keys, which
+  // Postgres rejects wholesale (error 21000) — silently dropping the entire
+  // rollup. Callers should pre-aggregate, but this makes the drop impossible.
+  const seenDim = new Set<string>();
+  const dedupedSignals = signals.filter(s => {
+    if (seenDim.has(s.dimension)) return false;
+    seenDim.add(s.dimension);
+    return true;
+  });
+  signals.length = 0;
+  signals.push(...dedupedSignals);
+
   const dims = signals.map(s => s.dimension);
 
   // Read existing rollup rows for these dimensions in one query.

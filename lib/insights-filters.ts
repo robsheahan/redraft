@@ -120,13 +120,25 @@ export function isFilterActive(filters: InsightsFilters): boolean {
  * executive's whole-school view) keep their own cached cards instead of
  * overwriting one shared slot. Same scope → same key → shared/reused card.
  */
-export function scopeKeyForFilters(filters: InsightsFilters): string {
+export function scopeKeyForFilters(
+  filters: InsightsFilters,
+  restrictedFaculties?: string[] | null,
+): string {
+  // The caller's faculty restriction is part of the scope, not just the filters:
+  // a leader restricted to [English, Maths] with no explicit faculty filter sees
+  // a DIFFERENT corpus than an unrestricted executive, even though their filter
+  // objects are identical. Folding the sorted restriction into the key stops the
+  // two from sharing (and overwriting) one cached card row.
+  const restriction = (restrictedFaculties && restrictedFaculties.length)
+    ? [...restrictedFaculties].sort()
+    : null;
   return JSON.stringify({
     class_id: filters.class_id ?? null,
     faculty: filters.faculty ?? null,
     course: filters.course ?? null,
     year_level: filters.year_level ?? null,
     time_window: filters.time_window ?? null,
+    restriction,
   });
 }
 
@@ -140,24 +152,39 @@ export function scopeKeyForFilters(filters: InsightsFilters): string {
  * scope-filtered cohort) so the fingerprints are comparable.
  */
 export function cohortFingerprint(
-  subs: Array<{ created_at?: string | null; graded_at?: string | null; total_mark?: number | null }>,
+  subs: Array<{ id?: string; created_at?: string | null; graded_at?: string | null; total_mark?: number | null }>,
 ): string {
   let latestCreated = '';
   let latestGraded = '';
   let gradedCount = 0;
-  let markSum = 0;
+  // Order-independent signature of the (id, mark) pairs. A plain sum of marks is
+  // blind to moderation edits that cancel out (A 12→10 while B 8→10 leaves the
+  // sum unchanged) — which then serves a stale decile card as "fresh". Folding a
+  // per-row hash of id+mark makes any individual mark change move the signature,
+  // regardless of whether the totals happen to net to zero.
+  let markSig = 0;
   for (const s of subs) {
     if (s.created_at && s.created_at > latestCreated) latestCreated = s.created_at;
     if (s.graded_at) {
       gradedCount++;
       if (s.graded_at > latestGraded) latestGraded = s.graded_at;
     }
-    if (typeof s.total_mark === 'number') markSum += s.total_mark;
+    if (typeof s.total_mark === 'number') {
+      markSig = (markSig + strHash(`${s.id ?? ''}:${s.total_mark}`)) % 0xffffffff;
+    }
   }
   // The leading version tag invalidates existing cohort-card caches whenever card
   // generation logic changes (prompts, schemas, gap/strength counts) — so the next
   // regenerate actually re-runs the new logic instead of serving a stale card.
-  return `v2|${subs.length}|${latestCreated}|${gradedCount}|${markSum}|${latestGraded}`;
+  return `v3|${subs.length}|${latestCreated}|${gradedCount}|${markSig}|${latestGraded}`;
+}
+
+// Small deterministic string hash (djb2). Not cryptographic — only needs to make
+// a value change detectable when its inputs change, for cache-freshness folding.
+function strHash(s: string): number {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h;
 }
 
 /**

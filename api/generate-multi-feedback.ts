@@ -92,14 +92,22 @@ export default withHandler({ methods: ['POST'], label: 'generate-multi-feedback'
   }
 
   // Lock: graded or already-submitted-for-marking blocks further drafts.
+  // .limit(1) matters: without it maybeSingle() errors when MORE than one row
+  // matches (e.g. two graded drafts), which would silently unlock the task.
+  // Any read error fails CLOSED.
   const supabase = getSupabase();
-  const { data: locked } = await supabase
+  const { data: locked, error: lockErr } = await supabase
     .from('submissions')
     .select('id, graded_at, submitted_for_marking')
     .eq('student_id', user.id)
     .eq('task_id', task_id)
     .or('graded_at.not.is.null,submitted_for_marking.eq.true')
+    .limit(1)
     .maybeSingle();
+  if (lockErr) {
+    captureError(lockErr, { stage: 'lock-check-multi', task_id, user_id: user.id });
+    return res.status(403).json({ error: 'Could not confirm this task is still open for drafts. Please try again in a moment.' });
+  }
   if (locked) {
     const reason = locked.graded_at
       ? 'This task has been marked by your teacher. You cannot submit further drafts.'
@@ -132,13 +140,18 @@ export default withHandler({ methods: ['POST'], label: 'generate-multi-feedback'
     .maybeSingle();
   if (!membership) return res.status(403).json({ error: 'You are not a member of this task\'s class.' });
 
-  // Draft version + 3-draft cap.
-  const { data: priorSubs } = await supabase
+  // Draft version + 3-draft cap. Fail closed on a read error — never skip the
+  // cap and spend Anthropic calls blind.
+  const { data: priorSubs, error: priorErr } = await supabase
     .from('submissions')
     .select('draft_version')
     .eq('student_id', user.id)
     .eq('task_id', task_id)
     .order('draft_version', { ascending: true });
+  if (priorErr) {
+    captureError(priorErr, { stage: 'prior-drafts-read-multi', task_id, user_id: user.id });
+    return res.status(500).json({ error: 'Could not check your draft history. Please try again.' });
+  }
   const priorCount = (priorSubs || []).length;
   if (priorCount >= MAX_DRAFTS) {
     return res.status(400).json({ error: `You've reached the maximum of ${MAX_DRAFTS} drafts for this task.` });

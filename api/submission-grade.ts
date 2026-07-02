@@ -66,17 +66,30 @@ export default withHandler({ methods: ['PUT'], label: 'submission-grade' }, asyn
     ? teacher_annotations.filter((a: any) => !a?.question_id || examAnswers!.some((ans) => ans.question_id === a.question_id))
     : (teacher_annotations ?? null);
 
-  const effectiveTotal = isExamGrade ? computedTotal : (total_mark ?? null);
+  // Partial-update semantics: a field ABSENT from the request body means "keep
+  // what's stored"; a field explicitly present as null/empty means "clear it".
+  // Without this, any re-grade that omitted a field nulled it out.
+  const body = (req.body || {}) as Record<string, unknown>;
+  const sent = (k: string) => Object.prototype.hasOwnProperty.call(body, k);
 
-  const patch: Record<string, unknown> = {
-    criterion_marks: isExamGrade ? null : (criterion_marks ?? null),
-    total_mark: effectiveTotal,
-    teacher_comment: teacher_comment ?? null,
-    teacher_annotations: cleanAnnotations,
-    completion_status: isExamGrade ? null : (completion_status ?? null),
-    graded_by: user.id,
-  };
-  if (isExamGrade) patch.question_marks = mergedQuestionMarks;
+  const effectiveTotal = isExamGrade
+    ? computedTotal
+    : (sent('total_mark') ? (total_mark ?? null) : null);
+
+  const patch: Record<string, unknown> = { graded_by: user.id };
+  if (isExamGrade) {
+    // Exams: server-computed marks/total; criterion/completion fields don't apply.
+    patch.question_marks = mergedQuestionMarks;
+    patch.total_mark = computedTotal;
+    patch.criterion_marks = null;
+    patch.completion_status = null;
+  } else {
+    if (sent('criterion_marks')) patch.criterion_marks = criterion_marks ?? null;
+    if (sent('total_mark')) patch.total_mark = total_mark ?? null;
+    if (sent('completion_status')) patch.completion_status = completion_status ?? null;
+  }
+  if (sent('teacher_comment')) patch.teacher_comment = teacher_comment ?? null;
+  if (sent('teacher_annotations')) patch.teacher_annotations = cleanAnnotations;
   if (!submission.graded_at) patch.graded_at = new Date().toISOString();
 
   const { error: updateErr } = await supabase
@@ -101,6 +114,7 @@ export default withHandler({ methods: ['PUT'], label: 'submission-grade' }, asyn
   }
 
   const taskTotalMarks = (submission.tasks as any)?.total_marks;
+  const gradeCleared = !isExamGrade && sent('total_mark') && total_mark == null;
   if (typeof effectiveTotal === 'number' && typeof taskTotalMarks === 'number' && taskTotalMarks > 0) {
     // Await before responding — on Vercel the instance freezes once the response
     // is sent, which would tear down this in-flight passback socket (surfaces as
@@ -112,6 +126,16 @@ export default withHandler({ methods: ['PUT'], label: 'submission-grade' }, asyn
       scoreMaximum: taskTotalMarks,
       comment: `Graded by teacher: ${effectiveTotal}/${taskTotalMarks}`,
     }).catch(err => captureError(err, { stage: 'ags-grade-passback', submission_id }));
+  } else if (gradeCleared) {
+    // The teacher CLEARED the grade — the LMS must not keep showing the old
+    // score. Post a score-less update (the AGS helper posts no-score /
+    // Submitted / Pending when no scoreGiven is supplied) so Canvas reflects
+    // the cleared state instead of a stale mark.
+    await postCompletionIfLinked({
+      taskId: submission.task_id as string,
+      studentId: submission.student_id as string,
+      comment: 'Grade cleared by teacher in ProofReady',
+    }).catch(err => captureError(err, { stage: 'ags-grade-clear-passback', submission_id }));
   }
 
   return res.status(200).json({ ok: true });

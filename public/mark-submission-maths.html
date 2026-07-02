@@ -133,7 +133,7 @@
   <script src="/js/app.js"></script>
   <script src="/js/attachments.js"></script>
   <script>
-    const e = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    const e = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     let task = null;
     let submission = null;
     let studentActivity = null;    // Lesson Builder: the support this student was given (if any)

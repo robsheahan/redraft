@@ -99,13 +99,14 @@ export default withHandler({ methods: ['GET'], label: 'insights-student' }, asyn
 
   const { data: taskRows } = await supabase
     .from('tasks')
-    .select('id, title, course, class_id, total_marks')
+    .select('id, title, course, class_id, total_marks, task_mode')
     .in('class_id', studentClassIds);
   const taskMap: Record<string, any> = {};
   (taskRows || []).forEach(t => {
     const cls = classMap[t.class_id];
     taskMap[t.id] = {
       ...t,
+      task_mode: t.task_mode || 'feedback_task',
       faculty: t.course
         ? (getDisciplineForCourse(t.course) || cls?.faculty || 'Other')
         : (cls?.faculty || 'Other'),
@@ -194,6 +195,9 @@ function computeStudentMarkDistribution(subs: any[], taskMap: any) {
     if (s.graded_at == null || s.total_mark == null) continue;
     const t = taskMap[s.task_id];
     if (!t || !t.total_marks) continue;
+    // quick_task is "not a graded task" by design — exclude it here to match the
+    // school-level mark distribution and the drill-down, which both skip it.
+    if (t.task_mode === 'quick_task') continue;
     const awarded = Number(s.total_mark);
     const outOf = Number(t.total_marks);
     if (!Number.isFinite(awarded) || !Number.isFinite(outOf) || outOf <= 0) continue;

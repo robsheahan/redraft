@@ -7,6 +7,7 @@ import {
   listAllAuthUsers,
 } from '../lib/schools.js';
 import { isGlobalAdmin } from '../lib/admin.js';
+import { fetchAllRows } from '../lib/db-page.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import {
   parseFiltersFromQuery,
@@ -124,13 +125,18 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
   const subsCutoff = getTimeWindowCutoff(filters.time_window);
   let rawSubs: any[] = [];
   if (taskIds.length > 0) {
-    let q = supabase
-      .from('submissions')
-      .select('id, task_id, student_id, draft_version, graded_at, total_mark, criterion_marks, feedback, created_at, submitted_for_marking')
-      .in('task_id', taskIds);
-    if (subsCutoff) q = q.gte('created_at', subsCutoff.toISOString());
-    const { data } = await q;
-    rawSubs = data || [];
+    // Paginate — a school with >1000 in-window submissions would otherwise get an
+    // arbitrary, unordered 1000-row subset (wrong card stats, flapping fingerprint).
+    rawSubs = await fetchAllRows((from, to) => {
+      let q = supabase
+        .from('submissions')
+        .select('id, task_id, student_id, draft_version, graded_at, total_mark, criterion_marks, feedback, created_at, submitted_for_marking')
+        .in('task_id', taskIds)
+        .order('id')
+        .range(from, to);
+      if (subsCutoff) q = q.gte('created_at', subsCutoff.toISOString());
+      return q;
+    });
   }
 
   // Tag classes + tasks with faculty (from course → NESA discipline).
@@ -285,7 +291,7 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
   // is reused by anyone viewing the same scope. Teacher tier reads its own
   // per-teacher cache; leader/admin read the per-school cache.
   const llm: Record<string, any> = {};
-  const scopeKey = scopeKeyForFilters(filters);
+  const scopeKey = scopeKeyForFilters(filters, restrictedFaculties);
   if (callerRole !== 'teacher' && schoolId) {
     // Per (school, kind, scope) — so an English HOD never sees the HSIE HOD's
     // card (and vice versa); each scope has its own row.
@@ -454,11 +460,29 @@ function computeClassEngagement(
   return { mode: 'classes', faculty, rows };
 }
 
+// Keep only the latest graded draft per (student, task). Without this the A–E
+// chart counts EVERY graded draft — a student marked 6/20 on v1 and 15/20 on v2
+// contributes both a D and a B — while the LLM decile cards (which dedupe to the
+// latest draft) describe a different population. Deduping here aligns the two and
+// stops heavy drafters being over-weighted. Anonymous rows (null student_id) are
+// kept as-is — there's no student to dedupe within.
+function latestGradedPerStudentTask(submissions: any[]): any[] {
+  const byPair = new Map<string, any>();
+  const kept: any[] = [];
+  for (const s of submissions) {
+    if (s.graded_at == null || s.total_mark == null) continue;
+    if (!s.student_id || !s.task_id) { kept.push(s); continue; }
+    const k = s.student_id + '|' + s.task_id;
+    const prev = byPair.get(k);
+    if (!prev || (s.created_at || '') > (prev.created_at || '')) byPair.set(k, s);
+  }
+  return [...byPair.values(), ...kept];
+}
+
 function computeMarkDistribution(submissions: any[], taskMap: any) {
   const counts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, E: 0 };
   let total = 0;
-  for (const s of submissions) {
-    if (s.graded_at == null || s.total_mark == null) continue;
+  for (const s of latestGradedPerStudentTask(submissions)) {
     const t = taskMap[s.task_id];
     if (!t || !t.total_marks) continue;
     // quick_task is "not a graded task" by design — exclude even if the
@@ -473,8 +497,7 @@ function computeMarkDistribution(submissions: any[], taskMap: any) {
 
 function computeMarkByFaculty(submissions: any[], taskMap: any) {
   const byFaculty: Record<string, { faculty: string; counts: Record<string, number>; total: number }> = {};
-  for (const s of submissions) {
-    if (s.graded_at == null || s.total_mark == null) continue;
+  for (const s of latestGradedPerStudentTask(submissions)) {
     const t = taskMap[s.task_id];
     if (!t || !t.total_marks) continue;
     if (t.task_mode === 'quick_task') continue;

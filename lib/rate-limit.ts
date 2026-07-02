@@ -16,6 +16,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { captureError } from './sentry.js';
 
 export interface RateLimitConfig {
   endpoint: string;
@@ -133,14 +134,21 @@ export async function checkAndLogRateLimit(
 
   // 3. Log this call so future checks see it. Best-effort — if this insert
   //    fails, we still serve the request (the alternative is denying service
-  //    on a transient DB error).
+  //    on a transient DB error). But it must be VISIBLE: supabase-js returns
+  //    errors rather than throwing, so inspect the result — persistent insert
+  //    failures silently disable the whole limiter otherwise.
   try {
-    await supabase.from('api_call_log').insert({
+    const { error: logErr } = await supabase.from('api_call_log').insert({
       user_id: userId,
       endpoint: config.endpoint,
     });
+    if (logErr) {
+      console.error('[rate-limit] failed to log call — limiter is not recording usage:', logErr.message);
+      captureError(logErr, { stage: 'rate-limit-log-insert', endpoint: config.endpoint });
+    }
   } catch (e: any) {
-    console.warn('[rate-limit] failed to log call, continuing:', e?.message || e);
+    console.error('[rate-limit] failed to log call — limiter is not recording usage:', e?.message || e);
+    captureError(e, { stage: 'rate-limit-log-insert', endpoint: config.endpoint });
   }
 
   return { ok: true };

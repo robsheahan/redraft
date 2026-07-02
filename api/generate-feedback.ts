@@ -34,13 +34,22 @@ export default withHandler({ methods: ['POST'], label: 'generate-feedback' }, as
   // submitted-for-marking submission for this task, further drafts are
   // blocked.
   if (user && task_id) {
-    const { data: locked } = await getSupabase()
+    // .limit(1) matters: without it maybeSingle() returns {data:null, error} when
+    // MORE than one row matches (e.g. a teacher graded two draft rows), which
+    // would silently unlock the task. And any read error fails CLOSED — we must
+    // never let a transient DB error bypass the lock.
+    const { data: locked, error: lockErr } = await getSupabase()
       .from('submissions')
       .select('id, graded_at, submitted_for_marking')
       .eq('student_id', user.id)
       .eq('task_id', task_id)
       .or('graded_at.not.is.null,submitted_for_marking.eq.true')
+      .limit(1)
       .maybeSingle();
+    if (lockErr) {
+      captureError(lockErr, { stage: 'lock-check', task_id, user_id: user.id });
+      return res.status(403).json({ error: 'Could not confirm this task is still open for drafts. Please try again in a moment.' });
+    }
     if (locked) {
       const reason = locked.graded_at
         ? 'This task has been marked by your teacher. You cannot submit further drafts.'
@@ -135,28 +144,33 @@ export default withHandler({ methods: ['POST'], label: 'generate-feedback' }, as
     resolvedTitle = task.title || null;
     teacherNotes = task.notes || null;
 
-    const { data: priorSubs } = await supabase
+    // Fail closed: if we can't read the prior drafts we can't enforce the
+    // 3-draft cap or the daily distinct-task cap — return 500 BEFORE spending
+    // an Anthropic call rather than skipping the caps.
+    const { data: priorSubs, error: priorErr } = await supabase
       .from('submissions')
       .select('draft_text, feedback, draft_version')
       .eq('student_id', user.id)
       .eq('task_id', task_id)
       .order('draft_version', { ascending: true });
-    if (priorSubs) {
-      priorDrafts = priorSubs;
-      if (priorSubs.length >= MAX_DRAFTS) {
-        return res.status(400).json({
-          error: `You've reached the maximum of ${MAX_DRAFTS} drafts for this task.`,
-        });
-      }
-      draftVersion = priorSubs.length + 1;
+    if (priorErr) {
+      captureError(priorErr, { stage: 'prior-drafts-read', task_id, user_id: user.id });
+      return res.status(500).json({ error: 'Could not check your draft history. Please try again.' });
+    }
+    priorDrafts = priorSubs || [];
+    if (priorDrafts.length >= MAX_DRAFTS) {
+      return res.status(400).json({
+        error: `You've reached the maximum of ${MAX_DRAFTS} drafts for this task.`,
+      });
+    }
+    draftVersion = priorDrafts.length + 1;
 
-      // Daily cap: a student can START up to 5 distinct class tasks per day.
-      // Adding drafts 2-3 to an already-started task does not count.
-      if (priorSubs.length === 0 && (await distinctTasksStartedToday('task_id')) >= 5) {
-        return res.status(429).json({
-          error: "You've started 5 different class tasks today — that's the daily limit. You can still add more drafts to a task you've already started, or come back tomorrow.",
-        });
-      }
+    // Daily cap: a student can START up to 5 distinct class tasks per day.
+    // Adding drafts 2-3 to an already-started task does not count.
+    if (priorDrafts.length === 0 && (await distinctTasksStartedToday('task_id')) >= 5) {
+      return res.status(429).json({
+        error: "You've started 5 different class tasks today — that's the daily limit. You can still add more drafts to a task you've already started, or come back tomorrow.",
+      });
     }
   } else if (user && isOwnTaskSubmission) {
     const supabase = getSupabase();
@@ -166,28 +180,31 @@ export default withHandler({ methods: ['POST'], label: 'generate-feedback' }, as
     resolvedTitle = own_task_title;
 
     // Drafts of this own task share a stable own_task_id, so the same 3-draft
-    // iterative model as teacher tasks applies.
-    const { data: priorSubs } = await supabase
+    // iterative model as teacher tasks applies. Fail closed on a read error —
+    // never skip the caps and spend an Anthropic call blind.
+    const { data: priorSubs, error: priorErr } = await supabase
       .from('submissions')
       .select('draft_text, feedback, draft_version')
       .eq('student_id', user.id)
       .eq('own_task_id', own_task_id)
       .order('draft_version', { ascending: true });
-    if (priorSubs) {
-      priorDrafts = priorSubs;
-      if (priorSubs.length >= MAX_DRAFTS) {
-        return res.status(400).json({
-          error: `You've reached the maximum of ${MAX_DRAFTS} drafts for this task.`,
-        });
-      }
-      draftVersion = priorSubs.length + 1;
+    if (priorErr) {
+      captureError(priorErr, { stage: 'prior-drafts-read-own', own_task_id, user_id: user.id });
+      return res.status(500).json({ error: 'Could not check your draft history. Please try again.' });
+    }
+    priorDrafts = priorSubs || [];
+    if (priorDrafts.length >= MAX_DRAFTS) {
+      return res.status(400).json({
+        error: `You've reached the maximum of ${MAX_DRAFTS} drafts for this task.`,
+      });
+    }
+    draftVersion = priorDrafts.length + 1;
 
-      // Daily cap: a student can START up to 3 of their own tasks per day.
-      if (priorSubs.length === 0 && (await distinctTasksStartedToday('own_task_id')) >= 3) {
-        return res.status(429).json({
-          error: "You've started 3 of your own tasks today — that's the daily limit. You can still add more drafts to a task you've already started, or come back tomorrow.",
-        });
-      }
+    // Daily cap: a student can START up to 3 of their own tasks per day.
+    if (priorDrafts.length === 0 && (await distinctTasksStartedToday('own_task_id')) >= 3) {
+      return res.status(429).json({
+        error: "You've started 3 of your own tasks today — that's the daily limit. You can still add more drafts to a task you've already started, or come back tomorrow.",
+      });
     }
   }
 

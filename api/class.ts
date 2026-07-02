@@ -408,6 +408,16 @@ async function handleDelete(req: VercelRequest, res: VercelResponse) {
   const { data: taskIds } = await supabase.from('tasks').select('id').eq('class_id', id);
   const ids = (taskIds || []).map((t: any) => t.id);
   if (ids.length > 0) {
+    // Mark the cached longitudinal profile of every affected student stale BEFORE
+    // deleting their submissions — otherwise the profile keeps describing work
+    // that no longer exists (profileNeedsRegen can't detect deletions on its own).
+    const { data: affected } = await supabase
+      .from('submissions').select('student_id').in('task_id', ids).not('student_id', 'is', null);
+    const studentIds = [...new Set((affected || []).map((s: any) => s.student_id).filter(Boolean))];
+    if (studentIds.length > 0) {
+      await supabase
+        .from('student_profile_synthesis').update({ stale: true }).in('student_id', studentIds);
+    }
     await supabase.from('submissions').delete().in('task_id', ids);
     await supabase.from('tasks').delete().in('id', ids);
   }

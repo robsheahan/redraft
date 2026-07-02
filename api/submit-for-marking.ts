@@ -70,14 +70,21 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
   const supabase = getSupabase();
 
   // Reject if the task is already locked for this student (graded OR
-  // already submitted-for-marking).
-  const { data: locked } = await supabase
+  // already submitted-for-marking). .limit(1) matters: without it maybeSingle()
+  // errors when MORE than one row matches (e.g. two graded drafts), which would
+  // silently unlock the task. Any read error fails CLOSED.
+  const { data: locked, error: lockErr } = await supabase
     .from('submissions')
     .select('id, graded_at, submitted_for_marking')
     .eq('student_id', user.id)
     .eq('task_id', task_id as string)
     .or('graded_at.not.is.null,submitted_for_marking.eq.true')
+    .limit(1)
     .maybeSingle();
+  if (lockErr) {
+    captureError(lockErr, { stage: 'lock-check-submit', task_id, user_id: user.id });
+    return res.status(403).json({ error: 'Could not confirm this task is still open for submission. Please try again in a moment.' });
+  }
   if (locked) {
     const reason = locked.graded_at
       ? 'This task has already been marked by your teacher.'
@@ -87,14 +94,29 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
 
   // Read task context for the submission row
   const { data: task } = await supabase
-    .from('tasks').select('id, question, questions, course, class_id, task_mode, subject_type').eq('id', task_id as string).maybeSingle();
+    .from('tasks').select('id, question, questions, course, class_id, task_mode, subject_type, published_at').eq('id', task_id as string).maybeSingle();
   if (!task) return res.status(404).json({ error: 'Task not found.' });
+  if (!task.published_at) {
+    return res.status(400).json({ error: 'This task is a draft and not yet open for submissions.' });
+  }
 
   // Confirm the student is a member of the class
   const { data: member } = await supabase
     .from('class_members').select('class_id')
     .eq('class_id', task.class_id).eq('student_id', user.id).maybeSingle();
   if (!member) return res.status(403).json({ error: 'You are not enrolled in this class.' });
+
+  // Shape must match the task's subject: a maths task takes working_lines, an
+  // essay task takes a text draft (or exam answers). A mismatched shape would
+  // otherwise flow into the silent insights pass and score essay text on maths
+  // dimensions (or vice versa).
+  const isMathsTask = (task as any).subject_type === 'maths';
+  if (isMathsTask && !isMathsSubmission) {
+    return res.status(400).json({ error: 'This is a maths task — submit your working lines, not a written draft.' });
+  }
+  if (!isMathsTask && isMathsSubmission) {
+    return res.status(400).json({ error: 'This is a written task — submit a text draft, not maths working lines.' });
+  }
 
   // Multi-question exam: snapshot the task's questions into the stored answers,
   // auto-mark MC, and serialise the transcript into draft_text.
@@ -220,7 +242,10 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
       recordSkillSignals({
         supabase,
         studentId: user.id,
-        discipline: (task.course ? getDisciplineForCourse(task.course) : null) || 'General',
+        // Maths signals roll up under 'Mathematics' (matching the maths feedback
+        // path) so the profile isn't split across two discipline keys.
+        discipline: (task.course ? getDisciplineForCourse(task.course) : null)
+          || (family === 'maths' ? 'Mathematics' : 'General'),
         family,
         assessment: skillAssessment,
       }).catch(err => captureError(err, { stage: 'skill-rollup-submit', user_id: user.id, task_id }))

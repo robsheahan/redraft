@@ -33,6 +33,19 @@ async function getAutosave(req: VercelRequest, res: VercelResponse, userId: stri
   });
 }
 
+/** Does an exam-style per-question answers object carry any real content? */
+function answersHaveContent(answers: unknown): boolean {
+  if (!answers || typeof answers !== 'object' || Array.isArray(answers)) return false;
+  return Object.values(answers as Record<string, unknown>).some((v: any) => {
+    if (typeof v === 'string') return v.trim().length > 0;
+    if (v && typeof v === 'object') {
+      return (typeof v.text === 'string' && v.text.trim().length > 0)
+        || (typeof v.selected_option_id === 'string' && v.selected_option_id.length > 0);
+    }
+    return false;
+  });
+}
+
 async function putAutosave(req: VercelRequest, res: VercelResponse, userId: string) {
   const { task_id, draft_text, answers, telemetry } = req.body || {};
   if (!task_id) return res.status(400).json({ error: 'task_id is required.' });
@@ -42,6 +55,35 @@ async function putAutosave(req: VercelRequest, res: VercelResponse, userId: stri
   }
 
   const supabase = getSupabase();
+
+  // An autosave row is the "a student has started" signal that permanently locks
+  // the teacher's ability to edit the question/criteria (api/task.ts), so it
+  // must only ever exist for a real, published task the caller can actually see.
+  const { data: task, error: taskErr } = await supabase
+    .from('tasks').select('id, class_id, published_at').eq('id', task_id).maybeSingle();
+  if (taskErr) return res.status(500).json({ error: taskErr.message });
+  if (!task) return res.status(404).json({ error: 'Task not found.' });
+  // Draft (unpublished) tasks are invisible to students — mirror api/task.ts GET.
+  if (!task.published_at) return res.status(404).json({ error: 'Task not found.' });
+
+  const { data: member, error: memberErr } = await supabase
+    .from('class_members').select('student_id')
+    .eq('class_id', task.class_id).eq('student_id', userId).maybeSingle();
+  if (memberErr) return res.status(500).json({ error: memberErr.message });
+  if (!member) return res.status(403).json({ error: 'You are not a member of this task\'s class.' });
+
+  // An empty autosave shouldn't create the row that locks the task. Skip the
+  // write (no-op success) until there's genuine in-progress work; once a row
+  // exists the student truly started, and updates — even back to empty — save
+  // normally via the upsert below.
+  if (!draft_text.trim() && !answersHaveContent(answers)) {
+    const { data: existing, error: existErr } = await supabase
+      .from('draft_autosaves').select('task_id')
+      .eq('student_id', userId).eq('task_id', task_id).maybeSingle();
+    if (existErr) return res.status(500).json({ error: existErr.message });
+    if (!existing) return res.status(200).json({ ok: true, skipped: true });
+  }
+
   const { error } = await supabase.from('draft_autosaves').upsert({
     student_id: userId,
     task_id,
