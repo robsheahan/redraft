@@ -68,26 +68,29 @@ function nearestLabel(value: number): SkillLevel {
  * Validate + persist a submission's skill read, then update the student's
  * rollup. Returns the number of dimensions recorded (0 on no-op).
  */
-export async function recordSkillSignals(opts: {
-  supabase: SupabaseClient;
-  studentId: string;
-  discipline: string;
-  family: SkillFamily;
-  assessment: unknown;
-}): Promise<number> {
-  const { supabase, studentId, discipline, family, assessment } = opts;
-  if (!Array.isArray(assessment) || assessment.length === 0) return 0;
+interface ValidSignal { dimension: string; level: SkillLevel; note: string; confidence: string }
 
+/**
+ * Validate a raw skill_assessment against the family's taxonomy and collapse to
+ * one signal per dimension. Shared by the rollup write, the observation-history
+ * write, and the backfill so all three see an identical, deduped signal set.
+ *
+ * The dedupe is load-bearing: a caller passing duplicate dimensions (the maths
+ * multi-part flow did) would otherwise build an upsert with duplicate
+ * (student, discipline, dimension) conflict keys, which Postgres rejects
+ * wholesale (error 21000) — silently dropping the entire rollup.
+ */
+export function validateSkillSignals(assessment: unknown, family: SkillFamily): ValidSignal[] {
+  if (!Array.isArray(assessment) || assessment.length === 0) return [];
   const validKeys = new Set(dimensionsForFamily(family).map(d => d.key));
-
-  // Keep only well-formed, actually-assessed signals for a dimension in this
-  // family with a recognised level.
-  const signals: Array<{ dimension: string; level: SkillLevel; note: string; confidence: string }> = [];
+  const seenDim = new Set<string>();
+  const signals: ValidSignal[] = [];
   for (const raw of assessment as RawSignal[]) {
     if (!raw || raw.assessed === false) continue;
     const dim = typeof raw.dimension === 'string' ? raw.dimension : '';
     const level = typeof raw.level === 'string' ? raw.level.toLowerCase() : '';
-    if (!validKeys.has(dim) || !VALID_LEVELS.has(level)) continue;
+    if (!validKeys.has(dim) || !VALID_LEVELS.has(level) || seenDim.has(dim)) continue;
+    seenDim.add(dim);
     signals.push({
       dimension: dim,
       level: level as SkillLevel,
@@ -95,21 +98,84 @@ export async function recordSkillSignals(opts: {
       confidence: typeof raw.confidence === 'string' ? raw.confidence : '',
     });
   }
+  return signals;
+}
+
+/**
+ * Append this submission's skill reads to the skill_observations history — one
+ * row per (submission, dimension). Best-effort and fully isolated: it never
+ * throws, so a missing table or failed insert can't disturb the rollup that
+ * already succeeded. Idempotent via the (submission_id, dimension) unique index.
+ * Reused by the backfill script.
+ */
+export async function recordSkillObservations(opts: {
+  supabase: SupabaseClient;
+  studentId: string;
+  discipline: string;
+  family: SkillFamily;
+  assessment: unknown;
+  submissionId: string;
+  taskId?: string | null;
+  observedAt?: string | null;
+}): Promise<number> {
+  const { supabase, studentId, discipline, family, assessment, submissionId, taskId, observedAt } = opts;
+  if (!submissionId) return 0;
+  const signals = validateSkillSignals(assessment, family);
+  if (signals.length === 0) return 0;
+  const observed = observedAt || new Date().toISOString();
+  const rows = signals.map(s => ({
+    submission_id: submissionId,
+    task_id: taskId || null,
+    student_id: studentId,
+    discipline,
+    family,
+    dimension: s.dimension,
+    level: LEVEL_VALUE[s.level],
+    level_label: s.level,
+    confidence: s.confidence || null,
+    evidence_weight: evidenceWeight(s.confidence, s.note),
+    observed_at: observed,
+    taxonomy_version: TAXONOMY_VERSION,
+  }));
+  try {
+    const { error } = await supabase
+      .from('skill_observations')
+      .upsert(rows, { onConflict: 'submission_id,dimension', ignoreDuplicates: true });
+    if (error) {
+      console.warn('[skill-observations] insert failed (history skipped):', error.message);
+      return 0;
+    }
+    return rows.length;
+  } catch (e: any) {
+    console.warn('[skill-observations] insert threw (history skipped):', e?.message);
+    return 0;
+  }
+}
+
+export async function recordSkillSignals(opts: {
+  supabase: SupabaseClient;
+  studentId: string;
+  discipline: string;
+  family: SkillFamily;
+  assessment: unknown;
+  // Optional provenance — when supplied, the same signals are also appended to
+  // the skill_observations history (best-effort; never affects the rollup).
+  submissionId?: string | null;
+  taskId?: string | null;
+  observedAt?: string | null;
+}): Promise<number> {
+  const { supabase, studentId, discipline, family, assessment } = opts;
+
+  const signals = validateSkillSignals(assessment, family);
   if (signals.length === 0) return 0;
 
-  // Defence-in-depth: collapse to one signal per dimension. A caller that passes
-  // duplicate dimensions (the maths multi-part flow did) would otherwise build an
-  // upsert with duplicate (student, discipline, dimension) conflict keys, which
-  // Postgres rejects wholesale (error 21000) — silently dropping the entire
-  // rollup. Callers should pre-aggregate, but this makes the drop impossible.
-  const seenDim = new Set<string>();
-  const dedupedSignals = signals.filter(s => {
-    if (seenDim.has(s.dimension)) return false;
-    seenDim.add(s.dimension);
-    return true;
-  });
-  signals.length = 0;
-  signals.push(...dedupedSignals);
+  // Append to the history log first — isolated so it can't affect the rollup.
+  if (opts.submissionId) {
+    await recordSkillObservations({
+      supabase, studentId, discipline, family, assessment,
+      submissionId: opts.submissionId, taskId: opts.taskId, observedAt: opts.observedAt,
+    });
+  }
 
   const dims = signals.map(s => s.dimension);
 

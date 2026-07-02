@@ -435,7 +435,7 @@ Assess this draft against each marking criterion above. Address every criterion 
     // Save submission if user is authenticated
     if (user) {
       const supabase = getSupabase();
-      const { error: insertErr } = await supabase.from('submissions').insert({
+      const { data: insertedSub, error: insertErr } = await supabase.from('submissions').insert({
         student_id: user.id,
         task_id: task_id || null,
         // Own-task columns are only written for own tasks — so a teacher-task
@@ -459,7 +459,7 @@ Assess this draft against each marking criterion above. Address every criterion 
         total_typing_time_ms: typeof total_typing_time_ms === 'number' ? total_typing_time_ms : null,
         time_to_first_keystroke_ms: typeof time_to_first_keystroke_ms === 'number' ? time_to_first_keystroke_ms : null,
         student_attachments: Array.isArray(student_attachments) ? student_attachments.slice(0, 5) : [],
-      });
+      }).select('id').single();
       // 23505 = a concurrent/duplicate submit already stored this
       // draft_version (double-click). The unique index kept it from becoming a
       // second row + a second round of Sonnet spend; the student still gets
@@ -494,6 +494,8 @@ Assess this draft against each marking criterion above. Address every criterion 
             discipline: (resolvedCourse ? getDisciplineForCourse(resolvedCourse as string) : null) || 'General',
             family: 'writing',
             assessment: skillAssessment,
+            submissionId: insertedSub?.id,
+            taskId: task_id || null,
           }).catch(err => captureError(err, { stage: 'skill-rollup', user_id: user.id, task_id }))
         );
       }

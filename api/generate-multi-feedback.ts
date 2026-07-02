@@ -276,7 +276,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-multi-feedback'
       },
     };
 
-    const { error: insertErr } = await supabase.from('submissions').insert({
+    const { data: insertedSub, error: insertErr } = await supabase.from('submissions').insert({
       student_id: user.id,
       task_id,
       question: task.question || null,
@@ -292,7 +292,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-multi-feedback'
       total_typing_time_ms: typeof total_typing_time_ms === 'number' ? total_typing_time_ms : null,
       time_to_first_keystroke_ms: typeof time_to_first_keystroke_ms === 'number' ? time_to_first_keystroke_ms : null,
       student_attachments: Array.isArray(student_attachments) ? student_attachments.slice(0, 5) : [],
-    });
+    }).select('id').single();
     // 23505 = a concurrent/duplicate submit already stored this draft_version
     // (double-click). The student still gets their feedback; skip the side-effects
     // the winning request already ran.
@@ -317,6 +317,8 @@ export default withHandler({ methods: ['POST'], label: 'generate-multi-feedback'
           discipline: discipline || 'General',
           family: 'writing',
           assessment: aggregated,
+          submissionId: insertedSub?.id,
+          taskId: task_id || null,
         }).catch((err) => captureError(err, { stage: 'skill-rollup-multi', user_id: user.id, task_id }))
       );
     }

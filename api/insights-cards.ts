@@ -9,6 +9,7 @@ import {
 import { isGlobalAdmin } from '../lib/admin.js';
 import { fetchAllRows } from '../lib/db-page.js';
 import { computeSkillMatrix } from '../lib/skill-matrix.js';
+import { computeSkillGrowth } from '../lib/skill-history.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import {
   parseFiltersFromQuery,
@@ -295,6 +296,10 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
   // honoured (a restricted leader never sees a KLA they weren't granted, because
   // its discipline isn't in classesInScope).
   let skillMatrix: any = { writing: null, maths: null };
+  // -- Card: Cohort skill growth (deterministic, from skill_observations) --
+  // R2 — within-student growth over time. Same cohort + discipline scope as the
+  // matrix, honouring the page's time window.
+  let skillGrowth: any = { writing: null, maths: null };
   const inScopeClassIds = classesInScope.map((c: any) => c.id);
   const inScopeDisciplines = [...new Set(classesInScope.map((c: any) => c.faculty).filter(Boolean))] as string[];
   if (inScopeClassIds.length > 0 && inScopeDisciplines.length > 0) {
@@ -315,6 +320,19 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
           .order('student_id')
           .range(from, to));
       skillMatrix = computeSkillMatrix(skillRows || []);
+
+      // Growth history — the observation log, windowed to match the dashboard.
+      const obsRows = await fetchAllRows((from, to) => {
+        let q = supabase.from('skill_observations')
+          .select('student_id, dimension, level, observed_at')
+          .in('student_id', cohortStudentIds)
+          .in('discipline', inScopeDisciplines)
+          .order('student_id')
+          .range(from, to);
+        if (subsCutoff) q = q.gte('observed_at', subsCutoff.toISOString());
+        return q;
+      });
+      skillGrowth = computeSkillGrowth(obsRows || []);
     }
   }
 
@@ -408,6 +426,7 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
       teacher_activity: teacherActivity,
       maths_error_categories: mathsErrorCategories,
       skill_matrix: skillMatrix,
+      skill_growth: skillGrowth,
       llm,
     },
     counts,
@@ -568,6 +587,7 @@ function emptyResponse(
       teacher_activity: [],
       maths_error_categories: { total_maths_submissions: 0, total_lines: 0, categories: [] },
       skill_matrix: { writing: null, maths: null },
+      skill_growth: { writing: null, maths: null },
     },
     counts: {
       teachers: 0,

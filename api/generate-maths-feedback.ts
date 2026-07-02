@@ -461,7 +461,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
       },
     };
 
-    const { error: insertErr } = await supabase.from('submissions').insert(insertPayload);
+    const { data: insertedSub, error: insertErr } = await supabase.from('submissions').insert(insertPayload).select('id').single();
     // 23505 = a concurrent/duplicate submit already stored this draft_version
     // (double-click). The unique index blocked the second row; the student still
     // gets their feedback, so return it and skip the side-effects the winning
@@ -491,6 +491,8 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
           discipline: (task.course ? getDisciplineForCourse(task.course) : null) || 'Mathematics',
           family: 'maths',
           assessment: skillAssessment,
+          submissionId: insertedSub?.id,
+          taskId: task_id || null,
         }).catch(err => captureError(err, { stage: 'skill-rollup-maths', user_id: user.id, task_id }))
       );
     }

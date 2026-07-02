@@ -187,7 +187,7 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
     }
   }
 
-  const { error: insertErr } = await supabase.from('submissions').insert({
+  const { data: insertedSub, error: insertErr } = await supabase.from('submissions').insert({
     student_id: user.id,
     task_id: task_id as string,
     // Exam submissions are self-describing via `answers`; the scalar question is null.
@@ -216,7 +216,7 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
       answers: processedExam!.answers,
       question_marks: processedExam!.questionMarks,
     } : {}),
-  });
+  }).select('id').single();
   // 23505 = a concurrent/duplicate submit already created this row (double-
   // click on Submit). The lock check above catches the sequential case; the
   // unique index catches the race. Report it cleanly rather than 500.
@@ -248,6 +248,8 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
           || (family === 'maths' ? 'Mathematics' : 'General'),
         family,
         assessment: skillAssessment,
+        submissionId: insertedSub?.id,
+        taskId: task_id as string,
       }).catch(err => captureError(err, { stage: 'skill-rollup-submit', user_id: user.id, task_id }))
     );
   }
