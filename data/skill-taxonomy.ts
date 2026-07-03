@@ -13,8 +13,16 @@
  *    etc. Only the *calibration* (marker-voice exemplars, band descriptors)
  *    is jurisdiction-specific; the dimensions are not.
  *  - Two tiers: a 4-capability universal SPINE that every subject rolls up to
- *    (cross-subject, whole-student view), and discipline DIMENSIONS underneath
- *    that carry the actionable signal.
+ *    (a per-family capability view — see the caveat below), and discipline
+ *    DIMENSIONS underneath that carry the actionable signal.
+ *  - SPINE COMPARABILITY CAVEAT: the four capabilities are the same NAMES across
+ *    families, but the dimensions rolling up to each differ, so a spine level is
+ *    NOT directly comparable between families. Most starkly, `evidence` = W4/W5
+ *    (selecting/integrating supporting material) for writing but M2 (procedural
+ *    accuracy — the working IS the demonstrated evidence of competence) for
+ *    maths. The spine rollup is therefore computed and shown PER FAMILY, never as
+ *    a single cross-subject "Evidence" number. Read it as "this cohort's Evidence
+ *    capability in writing" — not "in general".
  *  - The scale is DEVELOPMENTAL, never a mark or band. This is load-bearing:
  *    ProofReady never predicts marks/bands, and the skill read must stay
  *    diagnostic ("consolidating analysis") not predictive ("Band 4").
@@ -32,7 +40,7 @@ export type SpineCapability = 'task_command' | 'reasoning' | 'evidence' | 'commu
 export const SPINE: Record<SpineCapability, { label: string; blurb: string }> = {
   task_command:  { label: 'Task Command',   blurb: 'Doing what the question actually asks, at the cognitive level demanded.' },
   reasoning:     { label: 'Reasoning',      blurb: 'The climb from stating → explaining → analysing → justifying/evaluating.' },
-  evidence:      { label: 'Evidence & Support', blurb: 'Selecting and deploying the right material to back claims.' },
+  evidence:      { label: 'Evidence & Support', blurb: 'Writing: selecting and deploying the right material to back claims. Maths: procedural accuracy — the correct working that demonstrates competence. (Not directly comparable across families — see the header caveat.)' },
   communication: { label: 'Communication', blurb: 'Clarity, structure, conventions, register and notation.' },
 };
 
@@ -56,13 +64,13 @@ export const WRITING_DIMENSIONS: SkillDimension[] = [
   { key: 'W3', label: 'Analytical depth', spine: 'reasoning',
     guidance: 'Moves beyond description to analysis and evaluation (SOLO: multistructural → relational → extended abstract). Explains how/why, weighs significance, not just what.' },
   { key: 'W4', label: 'Use of evidence', spine: 'evidence',
-    guidance: 'Selects relevant, accurate evidence/examples/textual references/data to support claims. Enough, and on-point.' },
+    guidance: 'Selects relevant, accurate evidence/examples/textual references/data to support claims. Enough, and on-point. Distinguish from W5: W4 is whether the evidence is PRESENT, relevant and accurate; if evidence exists but isn\'t linked to the argument, that\'s a W5 issue, not W4.' },
   { key: 'W5', label: 'Integration of evidence', spine: 'evidence',
-    guidance: 'Weaves evidence INTO the argument so it earns its place — not listed then asserted, not dropped in without linking back to the point.' },
+    guidance: 'Weaves evidence INTO the argument so it earns its place — not listed then asserted, not dropped in without linking back to the point. Distinguish from W4: a response with plenty of accurate evidence that is merely listed scores high W4 but low W5.' },
   { key: 'W6', label: 'Structure & cohesion', spine: 'communication',
-    guidance: 'Logical organisation, clear paragraphing, signposting, and flow between ideas; a coherent whole rather than fragments.' },
+    guidance: 'Logical organisation, clear paragraphing, signposting, and flow between ideas; a coherent whole rather than fragments. Distinguish from W7: W6 is ORGANISATION of the whole; sentence-level word choice and grammar are W7.' },
   { key: 'W7', label: 'Expression & conventions', spine: 'communication',
-    guidance: 'Subject-appropriate register and metalanguage, precise word choice, and written accuracy (grammar, syntax, punctuation).' },
+    guidance: 'Subject-appropriate register and metalanguage, precise word choice, and written accuracy (grammar, syntax, punctuation). Distinguish from W6: W7 is SENTENCE-level expression; how the whole is organised is W6. A well-organised essay with clumsy sentences is high W6, low W7.' },
 ];
 
 /** Mathematics family — maps onto the per-line (math + reason) working model. */
@@ -70,15 +78,15 @@ export const MATHS_DIMENSIONS: SkillDimension[] = [
   { key: 'M1', label: 'Comprehension & method', spine: 'task_command',
     guidance: 'Understands what the problem asks and selects a valid, efficient approach. Sets the problem up correctly.' },
   { key: 'M2', label: 'Procedural accuracy', spine: 'evidence',
-    guidance: 'Executes the chosen method correctly — algebra, computation, manipulation — without slips that derail the result.' },
+    guidance: 'Executes the chosen method correctly — algebra, computation, manipulation — without slips that derail the result. This is CORRECTNESS of execution, distinct from choosing the method (M1) or justifying it (M3).' },
   { key: 'M3', label: 'Reasoning & justification', spine: 'reasoning',
-    guidance: 'Shows WHY, not just the steps: justifies moves, handles "show that"/proof, states conditions and reasoning rather than bare working.' },
+    guidance: 'Shows WHY, not just the steps: justifies moves, handles "show that"/proof, states conditions and reasoning rather than bare working. Distinguish from M6: M3 justifies the WORKING; interpreting the RESULT in context is M6.' },
   { key: 'M4', label: 'Notation & conventions', spine: 'communication',
-    guidance: 'Correct mathematical notation, symbols, units and conventions (e.g. +C, domain/restriction statements) appropriate to the stage.' },
+    guidance: 'Correct mathematical notation, symbols, units and conventions (e.g. +C, domain/restriction statements) appropriate to the stage. Distinguish from M5: M4 is CONVENTIONS (symbols, units, +C); the order and legibility of the working is M5.' },
   { key: 'M5', label: 'Communication of working', spine: 'communication',
-    guidance: 'Working is ordered, legible and easy to follow line to line; each step connects to the next.' },
+    guidance: 'Working is ordered, legible and easy to follow line to line; each step connects to the next. Distinguish from M4: M5 is LAYOUT; correct symbols/units/notation are M4. Correct notation in a jumbled order is good M4 but weak M5.' },
   { key: 'M6', label: 'Interpretation & application', spine: 'reasoning',
-    guidance: 'Interprets results in context and applies maths to modelling/applied situations, including sensible checking of reasonableness.' },
+    guidance: 'Interprets results in context and applies maths to modelling/applied situations, including sensible checking of reasonableness. Distinguish from M3: M6 interprets the RESULT / applies maths to a real situation; justifying the steps themselves is M3.' },
 ];
 
 /** Developmental scale — ordinal, jurisdiction-neutral, NOT a mark/band. */
