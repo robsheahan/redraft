@@ -273,3 +273,53 @@ export function computeStudentSkillJourney(rows: SkillObservationIn[]): SkillJou
 export function isEmptyJourney(j: SkillJourney): boolean {
   return !j.writing && !j.maths;
 }
+
+// ─────────────── Skill movement summary (R4) ───────────────
+
+// At/above this level a dimension is "held" rather than a live growth area.
+const SECURE_LEVEL = 4;
+
+export interface SkillMovementItem {
+  key: string;
+  label: string;
+  delta: number;
+  current_level: number;
+  current_label: SkillLevel;
+}
+
+export interface SkillMovement {
+  improved: SkillMovementItem[];       // net up over the student's own history
+  slipped: SkillMovementItem[];        // net down — reteach / check in
+  still_working: SkillMovementItem[];  // flat AND still below secure — a persistent growth area
+  tracked_count: number;               // dimensions with ≥2 observations (a real trend)
+}
+
+/**
+ * Summarise a student's skill movement from their journey — the R4 replacement
+ * for the old improvement-velocity card, which compared LLM improvement TITLES
+ * as verbatim strings (so rephrased feedback read as churn and the numbers were
+ * noise). This classifies real, measured level change per dimension instead:
+ * improved / slipped / a persistent growth area. Reuses the already-computed
+ * journey, so it costs no extra read.
+ */
+export function summariseSkillMovement(j: SkillJourney): SkillMovement {
+  const dims = [
+    ...((j.writing && j.writing.dimensions) || []),
+    ...((j.maths && j.maths.dimensions) || []),
+  ];
+  const trend = dims.filter(d => d.status !== 'single');
+  const pick = (d: DimensionJourney): SkillMovementItem => ({
+    key: d.key,
+    label: d.label,
+    delta: d.delta,
+    current_level: d.current_level,
+    current_label: d.current_label,
+  });
+  const improved = trend.filter(d => d.status === 'improved').sort((a, b) => b.delta - a.delta).map(pick);
+  const slipped = trend.filter(d => d.status === 'regressed').sort((a, b) => a.delta - b.delta).map(pick);
+  const still_working = trend
+    .filter(d => d.status === 'steady' && d.current_level < SECURE_LEVEL)
+    .sort((a, b) => a.current_level - b.current_level)
+    .map(pick);
+  return { improved, slipped, still_working, tracked_count: trend.length };
+}

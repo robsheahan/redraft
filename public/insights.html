@@ -1680,6 +1680,13 @@
         + renderStudentMarkDistribution(cd.mark_distribution)
         + '</div>';
 
+      // Skill movement (R4) — the at-a-glance summary of measured change,
+      // above the detailed trajectory. Replaces the old string-matched velocity.
+      html += '<div class="card card-span-12">'
+        + cardHeader('Skill movement', 'What this student has improved on, slipped on, or is still working on')
+        + renderSkillMovement(cd.skill_movement)
+        + '</div>';
+
       // Skill trajectory (R2b) — per-dimension level over time from the
       // observation history. Deterministic, free, no generation.
       html += '<div class="card card-span-12">'
@@ -2416,6 +2423,42 @@
       if (t.writing && t.maths) html += '<div style="height:1px;background:#ece7de;margin:16px 0"></div>';
       if (t.maths) html += renderSkillTrajectoryFamily(t.maths, 'Maths skills');
       return html;
+    }
+
+    // ── Per-student skill movement summary (R4) — from measured skill deltas ──
+    function skillMovementChips(items, kind) {
+      return items.map(it => {
+        let tail;
+        if (kind === 'improved') tail = '<span style="color:#3f8f6b;font-weight:600"> +' + (it.delta || 0).toFixed(1) + '</span>';
+        else if (kind === 'slipped') tail = '<span style="color:#d9694f;font-weight:600"> −' + Math.abs(it.delta || 0).toFixed(1) + '</span>';
+        else tail = '<span style="color:#9ca3af"> · ' + e(SKILL_LEVEL_LABEL[it.current_label] || it.current_label) + '</span>';
+        return '<span style="display:inline-flex;align-items:baseline;background:#faf8f4;border:1px solid #ece7de;border-radius:100px;padding:3px 11px;font-size:11.5px">'
+          + '<strong>' + e(it.key) + '</strong>&nbsp;' + e(it.label) + tail + '</span>';
+      }).join('');
+    }
+
+    function skillMovementGroup(title, color, items, kind) {
+      if (!items || !items.length) return '';
+      return '<div style="margin-bottom:11px">'
+        + '<div style="font-size:12px;font-weight:600;color:' + color + ';margin-bottom:6px">' + title + '</div>'
+        + '<div style="display:flex;flex-wrap:wrap;gap:6px">' + skillMovementChips(items, kind) + '</div>'
+        + '</div>';
+    }
+
+    function renderSkillMovement(m) {
+      if (!m || !m.tracked_count) {
+        return '<div class="card-empty"><strong>No movement to show yet</strong>Once this student has been assessed on a skill more than once, whether they\'ve improved, slipped, or plateaued on it appears here — measured from their actual levels, not guessed from feedback wording.</div>';
+      }
+      let html = '<div style="font-size:11px;color:#9ca3af;margin-bottom:12px">Measured change in this student\'s own level on each skill (needs 2+ assessments of a skill). Developmental, not a mark or band.</div>';
+      const body = [
+        skillMovementGroup('▲ Improving', '#3f8f6b', m.improved, 'improved'),
+        skillMovementGroup('▼ Slipped — worth a check-in', '#d9694f', m.slipped, 'slipped'),
+        skillMovementGroup('Still working on', '#b8873a', m.still_working, 'working'),
+      ].filter(Boolean).join('');
+      if (!body) {
+        return html + '<div style="font-size:13px;color:#6b7280">Holding steady across ' + m.tracked_count + ' tracked skill' + (m.tracked_count === 1 ? '' : 's') + ' — no notable movement yet.</div>';
+      }
+      return html + body;
     }
 
     function renderMathsErrorCategories(d) {

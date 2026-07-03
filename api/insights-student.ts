@@ -9,7 +9,7 @@ import {
 import { isGlobalAdmin } from '../lib/admin.js';
 import { yearLevelFromGraduationYear } from '../lib/insights-filters.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
-import { computeStudentSkillJourney } from '../lib/skill-history.js';
+import { computeStudentSkillJourney, summariseSkillMovement } from '../lib/skill-history.js';
 
 /**
  * Single-student insights endpoint.
@@ -140,12 +140,9 @@ export default withHandler({ methods: ['GET'], label: 'insights-student' }, asyn
   // ── Mark distribution (per-student) ───────────────────────────────
   const markDistribution = computeStudentMarkDistribution(subs, taskMap);
 
-  // ── Improvement velocity (per-student, across their own tasks) ────
-  const improvementVelocity = computeStudentVelocity(subs);
-
-  // ── Skill trajectory (R2b) — the student's per-dimension observation series
-  // over time, from skill_observations. Scoped to the disciplines of their
-  // in-scope classes (so it matches the cohort cards' scoping).
+  // ── Skill trajectory (R2b) + movement summary (R4) — both from the student's
+  // observation history, one read. Scoped to the disciplines of their in-scope
+  // classes (matching the cohort cards' scoping).
   const inScopeDisciplines = [...new Set(Object.values(classMap).map((c: any) => c.faculty).filter(Boolean))] as string[];
   let skillTrajectory: any = { writing: null, maths: null };
   if (inScopeDisciplines.length > 0) {
@@ -157,6 +154,9 @@ export default withHandler({ methods: ['GET'], label: 'insights-student' }, asyn
       .order('observed_at');
     skillTrajectory = computeStudentSkillJourney(obsRows || []);
   }
+  // R4 — measured skill movement (improved / slipped / still-working), replacing
+  // the old title-string-matching "improvement velocity".
+  const skillMovement = summariseSkillMovement(skillTrajectory);
 
   // ── LLM eligibility ───────────────────────────────────────────────
   const llmEligible = submissionsWithFeedback.length >= LLM_FLOOR;
@@ -181,8 +181,8 @@ export default withHandler({ methods: ['GET'], label: 'insights-student' }, asyn
     },
     cards: {
       mark_distribution: markDistribution,
-      improvement_velocity: improvementVelocity,
       skill_trajectory: skillTrajectory,
+      skill_movement: skillMovement,
       llm_eligible: llmEligible,
       llm_floor: LLM_FLOOR,
       // LLM card content is loaded via /api/insights-card-generate with
@@ -235,91 +235,3 @@ function computeStudentMarkDistribution(subs: any[], taskMap: any) {
   perTask.sort((a, b) => b.pct - a.pct);
   return { counts, total, bands: NESA_BANDS, per_task: perTask };
 }
-
-function extractImprovementTitles(feedback: any): string[] | null {
-  if (!feedback || typeof feedback !== 'object') return null;
-  const imp = feedback.improvements;
-  if (!imp || typeof imp !== 'object') return null;
-  const arr = Array.isArray(imp.summary) ? imp.summary : (Array.isArray(imp) ? imp : null);
-  if (!arr) return null;
-  return arr.map((item: any): string => {
-    if (typeof item === 'string') return item;
-    if (item && typeof item === 'object') return item.title || item.heading || item.label || item.priority || '';
-    return '';
-  }).filter((t: string) => t.trim().length > 0);
-}
-
-function normaliseTitle(t: string): string {
-  return t.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-function computeStudentVelocity(subs: any[]) {
-  // Group the student's submissions by task; need ≥2 drafts on the same
-  // task to compare. Aggregate across every task they've multi-drafted.
-  const byTask: Record<string, any[]> = {};
-  for (const s of subs) {
-    if (!s.task_id) continue;
-    (byTask[s.task_id] ||= []).push(s);
-  }
-  let sampleTasks = 0;
-  let tasksWithAddressed = 0;
-  let v1Sum = 0;
-  let vNSum = 0;
-  let decreased = 0;
-  let increased = 0;
-  let unchanged = 0;
-  const persistentCounts: Record<string, number> = {};
-  const regressionCounts: Record<string, number> = {};
-
-  for (const taskSubs of Object.values(byTask)) {
-    if (taskSubs.length < 2) continue;
-    taskSubs.sort((a, b) => (a.draft_version || 0) - (b.draft_version || 0));
-    const first = taskSubs[0];
-    const last = taskSubs[taskSubs.length - 1];
-    const v1Titles = extractImprovementTitles(first?.feedback);
-    const vNTitles = extractImprovementTitles(last?.feedback);
-    if (v1Titles == null || vNTitles == null) continue;
-    sampleTasks++;
-    v1Sum += v1Titles.length;
-    vNSum += vNTitles.length;
-    if (vNTitles.length < v1Titles.length) decreased++;
-    else if (vNTitles.length > v1Titles.length) increased++;
-    else unchanged++;
-
-    const v1Set = new Set(v1Titles.map(normaliseTitle));
-    const vNSet = new Set(vNTitles.map(normaliseTitle));
-    let addressedOne = false;
-    for (const t of v1Set) {
-      if (!vNSet.has(t)) addressedOne = true;
-      else persistentCounts[t] = (persistentCounts[t] || 0) + 1;
-    }
-    for (const t of vNSet) {
-      if (!v1Set.has(t)) regressionCounts[t] = (regressionCounts[t] || 0) + 1;
-    }
-    if (addressedOne) tasksWithAddressed++;
-  }
-
-  const topPersistent = Object.entries(persistentCounts)
-    .map(([title, count]) => ({ title, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-  const topRegressions = Object.entries(regressionCounts)
-    .map(([title, count]) => ({ title, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
-
-  return {
-    sample_size: sampleTasks,
-    avg_v1: sampleTasks > 0 ? v1Sum / sampleTasks : 0,
-    avg_vN: sampleTasks > 0 ? vNSum / sampleTasks : 0,
-    avg_delta_pct: v1Sum > 0 ? ((v1Sum - vNSum) / v1Sum) * 100 : 0,
-    decreased,
-    increased,
-    unchanged,
-    addressed_rate: sampleTasks > 0 ? (tasksWithAddressed / sampleTasks) * 100 : 0,
-    students_with_any_addressed: tasksWithAddressed, // tasks, not students
-    top_persistent: topPersistent,
-    top_regressions: topRegressions,
-  };
-}
-

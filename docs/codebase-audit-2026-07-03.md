@@ -158,6 +158,8 @@ The rollup is a snapshot; history exists only inside per-submission jsonb. Add a
 **R3. Feed the skill profile into every LLM synthesis.**
 The student profile, student cards, and cohort cards should receive the structured skill rollup (levels, trends, confidence) *alongside* the prose. It anchors the narrative ("their Use of evidence has moved from emerging to consolidating over five submissions"), reduces run-to-run variance, and shrinks the prompt (structured lines are cheaper than 60 prose blocks). The prose stays for colour; the numbers carry the claims.
 
+> **R4 — BUILT 2026-07-03.** The improvement-velocity card is rebuilt as **Skill movement** (`summariseSkillMovement` in `lib/skill-history.ts`): improved / slipped / still-working per dimension, from measured `skill_observations` deltas instead of verbatim title matching. The old `computeStudentVelocity` + `extractImprovementTitles` + `normaliseTitle` (which were computed but never rendered) are deleted. Rendered on the student view above the trajectory.
+
 **R4. Rebuild improvement velocity on skill deltas, not string matching.**
 The current "addressed/persistent/regressed" card compares verbatim improvement titles across drafts — regenerated LLM text rarely repeats strings, so the numbers are noise (P2 finding). Per-dimension `skill_assessment` deltas between drafts of the same task measure the same thing robustly: dimension went up = addressed, flat = persistent, down = regressed. Same card, real numbers, no LLM call.
 
