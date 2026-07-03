@@ -2384,7 +2384,7 @@
         html += bar;
         html += '<div style="text-align:right;font-size:11.5px"><strong style="color:' + col + '">' + e(deltaStr) + ' lvl</strong>'
           + '<span style="color:#9ca3af"> · ' + d.improved + '↑ ' + d.declined + '↓</span>'
-          + '<div style="color:#b8b0a2;font-size:10.5px">' + d.students_with_trend + ' with 2+ obs</div>'
+          + '<div style="color:#b8b0a2;font-size:10.5px">' + d.students_with_trend + ' with 3+ obs</div>'
           + '</div>';
         html += '</div>';
       });
@@ -2399,7 +2399,7 @@
       if (g.writing) html += renderSkillGrowthFamily(g.writing, 'Writing skills');
       if (g.writing && g.maths) html += '<div style="height:1px;background:#ece7de;margin:16px 0"></div>';
       if (g.maths) html += renderSkillGrowthFamily(g.maths, 'Maths skills');
-      html += provenanceFooter('Measures each student\'s change against their <strong>own</strong> earlier work (not cohort averages), for skills assessed 2+ times · developmental levels, not marks or bands');
+      html += provenanceFooter('Measures each student\'s change against their <strong>own</strong> earlier work (not cohort averages), for skills assessed 3+ times, comparing smoothed start vs end · developmental levels, not marks or bands');
       return html;
     }
 

@@ -59,13 +59,27 @@ export interface SkillGrowth {
   maths: FamilyGrowth | null;
 }
 
-// A student needs at least two observations in a dimension to have a trend.
-const MIN_OBS_FOR_TREND = 2;
+// A student needs at least this many observations in a dimension to contribute a
+// cohort-growth trend. 3 (not 2) so a "most improved" headline a leader sees
+// rests on more than a single before/after pair.
+const MIN_OBS_FOR_TREND = 3;
 // A family growth panel renders only once this many students contribute a trend.
 const FAMILY_MIN_STUDENTS_WITH_TREND = 3;
-// A delta smaller than this (in levels) is "steady", not a real move — matches
-// the trend threshold used in the rollup (skill-profile.ts).
-const MOVE_THRESHOLD = 0.25;
+// A delta smaller than this (in levels) is "steady", not a real move. Raised from
+// 0.25 → 0.4 so ordinary read-to-read wobble doesn't register as improvement or
+// decline (the per-submission reads are noisy — that's why the rollup smooths).
+const MOVE_THRESHOLD = 0.4;
+
+// Endpoint levels for a within-student delta, smoothed: the mean of the first k
+// and last k observations rather than the single first/last read (k scales with
+// how much history the student has, 1–3). This diffs a smoothed start against a
+// smoothed end instead of the two noisiest points.
+function smoothedEndpoints(sortedLevels: number[]): { earliest: number; latest: number } {
+  const n = sortedLevels.length;
+  const k = Math.max(1, Math.min(3, Math.floor(n / 3)));
+  const mean = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length;
+  return { earliest: mean(sortedLevels.slice(0, k)), latest: mean(sortedLevels.slice(n - k)) };
+}
 
 function buildFamily(
   family: 'writing' | 'maths',
@@ -100,8 +114,7 @@ function buildFamily(
     for (const [sid, obs] of byStudent) {
       if (obs.length < MIN_OBS_FOR_TREND) continue;
       const sorted = [...obs].sort((a, b) => a.observed_at.localeCompare(b.observed_at));
-      const first = sorted[0].level;
-      const last = sorted[sorted.length - 1].level;
+      const { earliest: first, latest: last } = smoothedEndpoints(sorted.map(o => o.level));
       const delta = last - first;
       deltas.push(delta);
       earliests.push(first);
@@ -228,8 +241,11 @@ function buildFamilyJourney(
     const obs = byDim.get(d.key);
     if (!obs || obs.length === 0) continue;
     const sorted = [...obs].sort((a, b) => a.observed_at.localeCompare(b.observed_at));
-    const earliest = sorted[0].level;
-    const current = sorted[sorted.length - 1].level;
+    // Delta, status and the "now" level are computed on SMOOTHED endpoints, so
+    // they don't swing on a single noisy read — and "now" tracks the smoothed
+    // recent level (closer to the anchored rollup) rather than the latest single
+    // observation. The sparkline series below stays RAW to show the real journey.
+    const { earliest, latest: current } = smoothedEndpoints(sorted.map(o => o.level));
     const delta = sorted.length >= 2 ? Math.round((current - earliest) * 100) / 100 : 0;
     let status: SkillMoveStatus;
     if (sorted.length < 2) status = 'single';
