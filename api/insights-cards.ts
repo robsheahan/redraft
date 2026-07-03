@@ -36,18 +36,22 @@ import {
  * skeleton on day one before any data exists.
  */
 
-const NESA_BANDS = [
-  { code: 'A', label: 'Outstanding', minPct: 90 },
-  { code: 'B', label: 'High',        minPct: 75 },
-  { code: 'C', label: 'Sound',       minPct: 50 },
-  { code: 'D', label: 'Basic',       minPct: 20 },
-  { code: 'E', label: 'Elementary',  minPct: 0  },
+// Neutral task-score buckets. The codes A–E are OPAQUE internal ids (drill-down
+// keys + bar colours); the LABELS shown to users are plain percentage ranges.
+// Deliberately NOT NESA Common Grade Scale grades — a raw per-task percentage is
+// not a course grade, and ProofReady never predicts grades/bands.
+const SCORE_BANDS = [
+  { code: 'A', label: '90–100%', minPct: 90 },
+  { code: 'B', label: '75–89%',  minPct: 75 },
+  { code: 'C', label: '50–74%',  minPct: 50 },
+  { code: 'D', label: '20–49%',  minPct: 20 },
+  { code: 'E', label: '0–19%',   minPct: 0  },
 ];
 
 function bandFor(awarded: number, total: number): string {
   if (!total || total <= 0) return 'E';
   const pct = (awarded / total) * 100;
-  for (const b of NESA_BANDS) if (pct >= b.minPct) return b.code;
+  for (const b of SCORE_BANDS) if (pct >= b.minPct) return b.code;
   return 'E';
 }
 
@@ -556,7 +560,7 @@ function computeMarkDistribution(submissions: any[], taskMap: any) {
     counts[code]++;
     total++;
   }
-  return { counts, total, bands: NESA_BANDS };
+  return { counts, total, bands: SCORE_BANDS };
 }
 
 function computeMarkByFaculty(submissions: any[], taskMap: any) {
@@ -573,7 +577,7 @@ function computeMarkByFaculty(submissions: any[], taskMap: any) {
   }
   return {
     rows: Object.values(byFaculty).sort((a, b) => b.total - a.total),
-    bands: NESA_BANDS,
+    bands: SCORE_BANDS,
   };
 }
 
@@ -593,8 +597,8 @@ function emptyResponse(
     cards: {
       activity: { weeks: [], total_in_window: 0 },
       engagement: { mode: 'faculty', rows: [] },
-      mark_distribution: { counts: { A: 0, B: 0, C: 0, D: 0, E: 0 }, total: 0, bands: NESA_BANDS },
-      mark_by_faculty: restrictedFaculties && restrictedFaculties.length <= 1 ? null : { rows: [], bands: NESA_BANDS },
+      mark_distribution: { counts: { A: 0, B: 0, C: 0, D: 0, E: 0 }, total: 0, bands: SCORE_BANDS },
+      mark_by_faculty: restrictedFaculties && restrictedFaculties.length <= 1 ? null : { rows: [], bands: SCORE_BANDS },
       marking: { total: 0, marked: 0, awaiting_marking: 0, unmarked: 0 },
       teacher_activity: [],
       maths_error_categories: { total_maths_submissions: 0, total_lines: 0, categories: [] },

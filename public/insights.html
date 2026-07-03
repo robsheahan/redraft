@@ -184,11 +184,10 @@
     .bar-row .bar-value { color: #111827; font-weight: 700; font-size: 13px; min-width: 28px; text-align: right; font-variant-numeric: tabular-nums; }
     .bar-row .bar-meta { font-size: 11px; color: #9ca3af; font-weight: 500; }
 
-    /* Mark distribution (A-E) */
+    /* Task-score distribution (neutral score bands, not NESA grades) */
     .band-list { display: flex; flex-direction: column; gap: 8px; }
-    .band-row { display: grid; grid-template-columns: 28px 90px 1fr 48px; gap: 10px; align-items: center; font-size: 13px; }
-    .band-row .band-letter { font-weight: 800; font-size: 18px; letter-spacing: -0.5px; text-align: center; }
-    .band-row .band-label { color: #374151; font-weight: 600; }
+    .band-row { display: grid; grid-template-columns: 74px 1fr 48px; gap: 10px; align-items: center; font-size: 13px; }
+    .band-row .band-label { color: #374151; font-weight: 600; font-variant-numeric: tabular-nums; }
     .band-row .band-track { background: #f9fafb; border-radius: 4px; height: 18px; position: relative; overflow: hidden; }
     .band-row .band-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; }
     .band-row .band-value { color: #111827; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; }
@@ -1041,7 +1040,8 @@
           const res = await authFetch('/api/insights-detail' + buildQueryString({ kind: 'submissions', band: params.band }));
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || 'Failed to load');
-          html = drillHeader('Band ' + params.band + ' — submissions') + renderSubmissionsDrill(data.rows || [], data.truncated_at);
+          const rangeByCode = { A: '90–100%', B: '75–89%', C: '50–74%', D: '20–49%', E: '0–19%' };
+          html = drillHeader((rangeByCode[params.band] || params.band) + ' — submissions') + renderSubmissionsDrill(data.rows || [], data.truncated_at);
         } else if (kind === 'teacher') {
           const res = await authFetch('/api/insights-detail' + buildQueryString({ kind: 'submissions', teacher_id: params.teacher_id }));
           const data = await res.json();
@@ -1676,7 +1676,7 @@
 
       // SQL cards
       html += '<div class="card card-span-12">'
-        + cardHeader('Mark distribution', 'This student\'s graded submissions')
+        + cardHeader('Task-score distribution', 'This student\'s graded submissions — scores, not grades')
         + renderStudentMarkDistribution(cd.mark_distribution)
         + '</div>';
 
@@ -1828,7 +1828,7 @@
 
     function renderStudentMarkDistribution(d) {
       if (!d || !d.total) {
-        return '<div class="card-empty"><strong>No graded submissions yet</strong>Once teachers mark this student\'s work, A–E band counts and a task-by-task list appear here.</div>';
+        return '<div class="card-empty"><strong>No graded submissions yet</strong>Once teachers mark this student\'s work, a task-score distribution and a task-by-task list appear here.</div>';
       }
       // Reuse the same band rendering as the cohort card, then append a
       // per-task list.
@@ -1841,7 +1841,7 @@
           html += '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:4px 0;border-bottom:1px solid #f5f0e8">'
             + '<div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#374151">' + e(t.task_title) + '</div>'
             + '<div style="font-weight:700;color:#111827;margin-left:10px">' + t.awarded + '/' + t.out_of + '</div>'
-            + '<div style="font-size:11px;font-weight:700;padding:1px 7px;border-radius:100px;margin-left:8px;background:#fdf6ee;color:#ed7615">' + e(t.band) + '</div>'
+            + '<div style="font-size:11px;font-weight:700;padding:1px 7px;border-radius:100px;margin-left:8px;background:#fdf6ee;color:#ed7615">' + Math.round(t.pct != null ? t.pct : (t.awarded / (t.out_of || 1)) * 100) + '%</div>'
             + '</div>';
         });
         html += '</div>';
@@ -1859,7 +1859,7 @@
 
       // 1. Mark distribution
       html += '<div class="card card-span-12">'
-        + cardHeader('Mark distribution', 'Common Grade Scale')
+        + cardHeader('Task-score distribution', 'Task scores — not grades or bands')
         + renderMarkDistribution(cd.mark_distribution)
         + '</div>';
 
@@ -1947,14 +1947,14 @@
 
       // Mark distribution (A-E) — 5 cols
       html += '<div class="card card-span-5">'
-        + cardHeader('Mark distribution', 'Common Grade Scale')
+        + cardHeader('Task-score distribution', 'Task scores — not grades or bands')
         + renderMarkDistribution(cd.mark_distribution)
         + '</div>';
 
       // Mark by faculty — full width (when shown)
       if (cd.mark_by_faculty) {
         html += '<div class="card card-span-12">'
-          + cardHeader('Mark distribution by faculty', 'Common Grade Scale per KLA')
+          + cardHeader('Task scores by faculty', 'Task scores per KLA — not grades or bands')
           + renderMarkByFaculty(cd.mark_by_faculty)
           + '</div>';
       }
@@ -2782,7 +2782,7 @@
 
     function renderMarkDistribution(dist) {
       if (!dist || !dist.total) {
-        return '<div class="card-empty"><strong>No marks awarded yet</strong>This bucket shows the Common Grade Scale spread across all marked submissions.</div>';
+        return '<div class="card-empty"><strong>No marks awarded yet</strong>This shows the spread of task scores across all marked submissions (task scores, not grades or bands).</div>';
       }
       const counts = dist.counts || {};
       const total = dist.total || 1;
@@ -2792,8 +2792,7 @@
         const n = counts[b.code] || 0;
         const pct = (n / total) * 100;
         const clickable = n > 0 ? ' clickable" data-drill-band="' + e(b.code) : '';
-        html += '<div class="band-row band-' + e(b.code) + clickable + '" title="' + (n > 0 ? 'Click to see submissions in this band' : 'No submissions') + '">'
-          + '<div class="band-letter">' + e(b.code) + '</div>'
+        html += '<div class="band-row band-' + e(b.code) + clickable + '" title="' + (n > 0 ? 'Click to see submissions in this score range' : 'No submissions') + '">'
           + '<div class="band-label">' + e(b.label || b.code) + '</div>'
           + '<div class="band-track"><div class="band-fill" style="width:' + Math.max(pct, n > 0 ? 1.5 : 0).toFixed(1) + '%"></div></div>'
           + '<div class="band-value">' + n + ' <span style="color:#9ca3af;font-weight:500;font-size:11px">(' + pct.toFixed(0) + '%)</span></div>'
@@ -2807,7 +2806,7 @@
       const rows = (byFaculty && byFaculty.rows) || [];
       const bands = (byFaculty && byFaculty.bands) || [{ code: 'A' }, { code: 'B' }, { code: 'C' }, { code: 'D' }, { code: 'E' }];
       if (rows.length === 0) {
-        return '<div class="card-empty"><strong>No marks per faculty yet</strong>Each faculty\'s grade-scale spread shows here once submissions are graded.</div>';
+        return '<div class="card-empty"><strong>No marks per faculty yet</strong>Each faculty\'s task-score spread shows here once submissions are graded.</div>';
       }
       let html = '<div class="mark-faculty-grid">';
       rows.forEach(r => {
@@ -2818,7 +2817,7 @@
         bands.forEach(b => {
           const n = (r.counts && r.counts[b.code]) || 0;
           const pct = (n / total) * 100;
-          if (n > 0) html += '<div class="mini-band band-' + e(b.code) + '" style="flex:' + pct + '" title="' + e(b.code) + ': ' + n + '">' + (pct >= 9 ? e(b.code) : '') + '</div>';
+          if (n > 0) html += '<div class="mini-band band-' + e(b.code) + '" style="flex:' + pct + '" title="' + e((b.label || b.code) + ': ' + n) + '"></div>';
         });
         html += '</div>';
         html += '</div>';

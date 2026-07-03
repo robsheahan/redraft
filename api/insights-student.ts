@@ -30,17 +30,19 @@ import { computeStudentSkillJourney, summariseSkillMovement } from '../lib/skill
  * their classes gets a combined view.
  */
 
-const NESA_BANDS = [
-  { code: 'A', label: 'Outstanding', minPct: 90 },
-  { code: 'B', label: 'High',        minPct: 75 },
-  { code: 'C', label: 'Sound',       minPct: 50 },
-  { code: 'D', label: 'Basic',       minPct: 20 },
-  { code: 'E', label: 'Elementary',  minPct: 0  },
+// Neutral task-score buckets — codes A–E are opaque internal ids; the labels are
+// plain percentage ranges. NOT NESA grade bands (see insights-cards.ts).
+const SCORE_BANDS = [
+  { code: 'A', label: '90–100%', minPct: 90 },
+  { code: 'B', label: '75–89%',  minPct: 75 },
+  { code: 'C', label: '50–74%',  minPct: 50 },
+  { code: 'D', label: '20–49%',  minPct: 20 },
+  { code: 'E', label: '0–19%',   minPct: 0  },
 ];
 function bandFor(awarded: number, total: number): string {
   if (!total || total <= 0) return 'E';
   const pct = (awarded / total) * 100;
-  for (const b of NESA_BANDS) if (pct >= b.minPct) return b.code;
+  for (const b of SCORE_BANDS) if (pct >= b.minPct) return b.code;
   return 'E';
 }
 
@@ -233,5 +235,5 @@ function computeStudentMarkDistribution(subs: any[], taskMap: any) {
     });
   }
   perTask.sort((a, b) => b.pct - a.pct);
-  return { counts, total, bands: NESA_BANDS, per_task: perTask };
+  return { counts, total, bands: SCORE_BANDS, per_task: perTask };
 }
