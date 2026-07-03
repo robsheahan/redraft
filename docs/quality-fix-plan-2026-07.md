@@ -90,7 +90,9 @@ Make the tag trustworthy. Everything downstream improves once these land. Sequen
 **Files:** `lib/skill-profile.ts` (confidence calc); reads `skill_observations`.
 **Effort:** M · **Deploy:** API, no migration.
 
-### 1.4 — Reconcile the skill store with teacher marks ⬜ ON HOLD — needs a product call
+### 1.4 — Reconcile the skill store with teacher marks — ❌ WON'T DO (Rob's call, 2026-07-03)
+Decided against: the skill store stays purely developmental and model-derived. The teacher's judgment already surfaces via the mark distribution and their own reading of a student; folding marks into the mark-free skill store risks the difficulty confound below distorting a longitudinal developmental read. Left here for the record.
+
 **The tension (why this isn't just "build it"):** the skill store is deliberately DEVELOPMENTAL, not marks. A mark reflects performance on *one task* including its difficulty and cohort; a skill level is a longitudinal developmental read. A low mark on a hard task doesn't mean the student's skill is low — so naïvely folding marks into the store could INTRODUCE noise rather than remove it, and it partially re-introduces mark influence into a store that exists precisely to be mark-free. Two viable stances:
   - **Conservative (recommended):** on a large mark-vs-model disagreement, only LOWER CONFIDENCE on the affected dimensions (don't move the level) — "the teacher and the model disagree, so we're less sure." Safe regardless of the difficulty confound.
   - **Aggressive:** nudge the rolled-up level toward a mark-implied level. More corrective, but risks the difficulty confound distorting the developmental read.
