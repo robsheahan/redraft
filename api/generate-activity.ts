@@ -30,6 +30,23 @@ const MODEL = 'claude-sonnet-5';
 // Shape returned to the student (teacher-facing fields intentionally absent).
 const MAIN_ACTIVITY = { is_differentiated: false, activity: null };
 
+// student_focus is shown RAW to the student and must be an invitation, never a
+// deficit diagnosis. The prompt says so, but there's no verifier on the writing
+// path — so this is the backstop: if a focus line reads as a diagnosis (level/
+// band words, "because you…", "weakness", "you struggle/lack"), drop it rather
+// than show it. Blanking is safe — the student still gets the scaffolding and the
+// main activity. False positives just lose one line; a false negative would put a
+// deficit label in front of a student.
+const DEFICIT_FRAMING_RE = /\bbecause you\b|\bweakness(es)?\b|\byou struggle\b|\byou'?re?\s+(weak|struggling)\b|\byou lack\b|\bdeficit\b|\bband\s*\d|\b(emerging|developing|consolidating|secure|extending)\s+level\b/i;
+
+function safeStudentFocus(text: string): string {
+  if (text && DEFICIT_FRAMING_RE.test(text)) {
+    console.warn('[lesson-builder] student_focus dropped — deficit-framed:', text.slice(0, 120));
+    return '';
+  }
+  return text;
+}
+
 export default withHandler({ methods: ['POST'], label: 'generate-activity' }, async (req, res, ctx) => {
   const user = ctx.user!;
 
@@ -74,7 +91,14 @@ export default withHandler({ methods: ['POST'], label: 'generate-activity' }, as
   const family = familyForSubjectType(task.subject_type);
   const familyKeys = new Set(dimensionsForFamily(family).map((d) => d.key));
   const allRows = await readSkillProfile(supabase, user.id, discipline);
-  const rows = allRows.filter((r) => r.observation_count > 0 && familyKeys.has(r.dimension));
+  // Confidence floor (2.2): differentiate off a dimension only once it has ≥2
+  // observations. A single read — especially an outlier (a hard question, an OCR
+  // glitch, a bad day) — shouldn't peg and LOCK a student's differentiation; below
+  // the floor they get the main activity (not locked as differentiated, so it
+  // re-evaluates once more data lands). The rule 4 "keep support gentle on thin
+  // data" prompt line stays as a second guard for the 2-observation case.
+  const MIN_OBS_TO_DIFFERENTIATE = 2;
+  const rows = allRows.filter((r) => r.observation_count >= MIN_OBS_TO_DIFFERENTIATE && familyKeys.has(r.dimension));
 
   // No usable skill data → main activity, locked, no model call.
   if (rows.length === 0) {
@@ -136,7 +160,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-activity' }, as
   }
 
   const scaffolding = Array.isArray(value?.scaffolding) ? value.scaffolding.filter((s: any) => typeof s === 'string' && s.trim()) : [];
-  const studentFocus = typeof value?.student_focus === 'string' ? value.student_focus : '';
+  const studentFocus = safeStudentFocus(typeof value?.student_focus === 'string' ? value.student_focus : '');
 
   let activity: any;
   if (isMathsReskin) {
@@ -175,6 +199,10 @@ export default withHandler({ methods: ['POST'], label: 'generate-activity' }, as
           originalQuestion: task.question,
           reskinnedQuestion: reskinned,
           claimedDifficulty,
+          // The base question's worked solution (when the teacher provided one) is
+          // the intended METHOD — give it to the verifier so "same method" is
+          // judged against the real approach, not just "an answer exists".
+          workedSolution: typeof task.worked_solution === 'string' ? task.worked_solution : null,
         }),
         tool: MATHS_RESKIN_VERIFY_TOOL,
         label: 'lesson-builder:maths-verify',
@@ -197,11 +225,19 @@ export default withHandler({ methods: ['POST'], label: 'generate-activity' }, as
       scaffolding,
     };
   } else {
-    activity = {
-      student_focus: studentFocus,
-      scaffolding,
-      extension: typeof value?.extension === 'string' ? value.extension : '',
-    };
+    const extension = typeof value?.extension === 'string' ? value.extension : '';
+    // Empty-activity guard: if nothing differentiating survived (no focus after
+    // the tone strip, no scaffolding, no extension), deliver the MAIN activity
+    // rather than a "Your focus for this task" banner with nothing under it.
+    if (!studentFocus.trim() && scaffolding.length === 0 && !extension.trim()) {
+      await supabase.from('task_activities').upsert({
+        task_id, student_id: user.id,
+        activity: { student_focus: '', scaffolding: [], extension: '' },
+        is_differentiated: false, source_submission_count: 0, taxonomy_version: TAXONOMY_VERSION,
+      });
+      return res.status(200).json(MAIN_ACTIVITY);
+    }
+    activity = { student_focus: studentFocus, scaffolding, extension };
   }
 
   const sourceCount = rows.reduce((m, r) => Math.max(m, r.observation_count), 0);

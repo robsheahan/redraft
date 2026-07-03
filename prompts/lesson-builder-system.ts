@@ -118,7 +118,7 @@ export function buildMathsReskinVerifySystemPrompt(opts: {
     `1. Work the RE-SKINNED question fully, from scratch, showing every step to a final answer. Do not assume it is correct — derive it.`,
     `2. Then judge three things independently:`,
     `   - solvable: Is the re-skinned question well-posed, unambiguous, and fully solvable with no missing information or internal contradiction, landing on a definite answer? (A messy or ugly answer is fine; an impossible or under-specified one is not.)`,
-    `   - method_matches: Does it assess the SAME outcome and require the SAME solution method/technique as the original? (Topic drift or a different technique = false.)`,
+    `   - method_matches: Does it assess the SAME outcome and require the SAME solution method/technique as the original? If an intended worked solution for the original is provided, the re-skin must be solvable by that SAME approach — reject drift even when an answer exists by another route (e.g. a factorising task whose re-skin no longer factorises, so it needs the quadratic formula, is NOT a method match).`,
     `   - difficulty_appropriate: Is it a genuine re-skin — the same kind of task at a sensible difficulty for this student — rather than something materially harder, trivially easier, or restructured? It should take a comparable number of steps to the original.`,
     `3. If you are UNCERTAIN about any of the three, mark it false. Default to rejecting.`,
     ``,
@@ -130,11 +130,16 @@ export function buildMathsReskinVerifyUserPrompt(opts: {
   originalQuestion: string;
   reskinnedQuestion: string;
   claimedDifficulty: string;
+  workedSolution?: string | null;
 }): string {
-  const { originalQuestion, reskinnedQuestion, claimedDifficulty } = opts;
+  const { originalQuestion, reskinnedQuestion, claimedDifficulty, workedSolution } = opts;
+  const solutionBlock = workedSolution && workedSolution.trim()
+    ? [``, `INTENDED WORKED SOLUTION for the original (the method the re-skin must preserve):`, workedSolution.trim()]
+    : [];
   return [
     `ORIGINAL question (the reference for method + difficulty):`,
     originalQuestion,
+    ...solutionBlock,
     ``,
     `RE-SKINNED question to verify (the generator labelled it "${claimedDifficulty}" relative to the original):`,
     reskinnedQuestion,
