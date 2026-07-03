@@ -94,7 +94,7 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
 
   // Read task context for the submission row
   const { data: task } = await supabase
-    .from('tasks').select('id, question, questions, course, class_id, task_mode, subject_type, published_at').eq('id', task_id as string).maybeSingle();
+    .from('tasks').select('id, question, questions, course, class_id, task_mode, subject_type, published_at, lesson_builder').eq('id', task_id as string).maybeSingle();
   if (!task) return res.status(404).json({ error: 'Task not found.' });
   if (!task.published_at) {
     return res.status(400).json({ error: 'This task is a draft and not yet open for submissions.' });
@@ -116,6 +116,24 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
   }
   if (!isMathsTask && isMathsSubmission) {
     return res.status(400).json({ error: 'This is a written task — submit a text draft, not maths working lines.' });
+  }
+
+  // Lesson Differentiator: a maths task with NO marking guideline may have given
+  // this student a per-student RE-SKINNED question (same method, different
+  // numbers). They answered THAT, not task.question — so use it as the effective
+  // question for BOTH the stored submission (the teacher marks against what the
+  // student actually saw) and the silent skill read (Haiku must judge the right
+  // question, or it reads phantom errors and corrupts the skill store).
+  // Support-layer activities carry no `question`, so this only fires on a real
+  // re-skin.
+  let effectiveQuestion: string = (task as any).question || '';
+  if ((task as any).lesson_builder && isMathsTask) {
+    const { data: act } = await supabase
+      .from('task_activities').select('activity, is_differentiated')
+      .eq('task_id', task_id as string).eq('student_id', user.id).maybeSingle();
+    const reskinned = act?.is_differentiated && act.activity && typeof (act.activity as any).question === 'string'
+      ? String((act.activity as any).question).trim() : '';
+    if (reskinned) effectiveQuestion = reskinned;
   }
 
   // Multi-question exam: snapshot the task's questions into the stored answers,
@@ -160,7 +178,7 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
       // for objective performance while weighting toward the written answers.
       const haikuQuestion = isExamSubmission
         ? `In-class exam (${processedExam!.answers.length} questions)`
-        : ((task as any).question || '');
+        : effectiveQuestion;
       const haikuDraft = (isExamSubmission && processedExam && processedExam.mcTotal > 0)
         ? `[Multiple choice: ${processedExam.mcCorrect}/${processedExam.mcTotal} correct — weight the skill read toward the written answers below.]\n\n${draftText}`
         : draftText;
@@ -190,8 +208,10 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
   const { data: insertedSub, error: insertErr } = await supabase.from('submissions').insert({
     student_id: user.id,
     task_id: task_id as string,
-    // Exam submissions are self-describing via `answers`; the scalar question is null.
-    question: isExamSubmission ? null : task.question,
+    // Exam submissions are self-describing via `answers`; the scalar question is
+    // null. Otherwise store the effective question — the per-student re-skin when
+    // there is one — so the marking screen shows what the student actually answered.
+    question: isExamSubmission ? null : effectiveQuestion,
     course: task.course,
     draft_text: draftText,
     feedback: insightsFeedback,
