@@ -28,6 +28,7 @@ import { stageForYearLevel, type Stage } from '../data/nesa-reference.js';
 import { getStage45Reference } from '../data/stage-4-5-reference.js';
 import { buildMarkerVoiceReference } from '../data/marker-voice-loader.js';
 import { wrapUntrusted, UNTRUSTED_CONTENT_RULE } from '../lib/prompt-safety.js';
+import { SKILL_RATING_GUIDANCE } from '../data/skill-taxonomy.js';
 
 function resolveStage(yearLevel?: number | null): Stage {
   return stageForYearLevel(yearLevel) ?? 6;
@@ -203,7 +204,9 @@ ABSOLUTE RULES — do NOT, anywhere:
 - Predict a mark, band, or grade.
 - Mention or quote the marking guideline.
 - Use the word "criterion" or "criteria" — this isn't an essay rubric.
-- Suggest they "ask their teacher for help" — you ARE the teacher voice.${markerVoice}`;
+- Suggest they "ask their teacher for help" — you ARE the teacher voice.
+
+${SKILL_RATING_GUIDANCE}${markerVoice}`;
 }
 
 /**

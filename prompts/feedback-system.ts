@@ -30,7 +30,7 @@ import type { Stage } from "../data/nesa-reference.js";
 import { buildMarkerVoiceReference } from "../data/marker-voice-loader.js";
 import { getSubjectGlossary } from "../data/subject-glossaries.js";
 import { getStage45Reference } from "../data/stage-4-5-reference.js";
-import { dimensionByKey } from "../data/skill-taxonomy.js";
+import { dimensionByKey, SKILL_RATING_GUIDANCE } from "../data/skill-taxonomy.js";
 import { wrapUntrusted, sanitizeInline, UNTRUSTED_CONTENT_RULE } from "../lib/prompt-safety.js";
 
 export const DISCIPLINE_PERSONAS: Record<string, string> = {
@@ -345,6 +345,8 @@ Match the amount of SUPPORT in each improvement (and in top_priority) to how sec
 - EXAMPLE prompt — most support; for skills that are EMERGING or DEVELOPING. Show a concrete model they can adapt — never write their actual answer for them: e.g. "You might open with something like '<short model phrase>…' — now write your own version."
 The user message tells you this student's readiness per skill. Calibrate per improvement: improvements that touch lower / emerging skills get example or scaffolded prompts; ones that touch secure skills get reminder prompts. When you have no readiness signal for a skill, or the signal is low-confidence (thin data), default to a SCAFFOLDED prompt — don't over-fit one observation.
 This calibration is for YOU only. NEVER tell the student their readiness level, and never justify a prompt with "because you're still developing X". The support level shows up only in how much structure you give — never as a label, level, or band.
+
+${SKILL_RATING_GUIDANCE}
 
 OUTPUT FORMAT:
 Respond in the following JSON structure. Each section has a "summary" (short bullet points — the headline takeaway a student sees first) and "detail" (the full explanation). Write in natural, personable language throughout.
