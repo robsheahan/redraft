@@ -19,6 +19,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { callTool } from './anthropic-tool-call.js';
+import { readSkillProfile } from './skill-profile.js';
+import { formatStudentSkillProfile } from './skill-prompt.js';
 
 type Tool = Anthropic.Messages.Tool;
 
@@ -227,7 +229,13 @@ export async function regenerateProfile(
   if (subs.length === 0) {
     synthesis = emptyProfile();
   } else {
-    synthesis = await callSynthesisLLM(subs);
+    // R3 — anchor the narrative in the measured skill rollup (best-effort; a
+    // read failure just omits the block, leaving the prose-only synthesis).
+    let skillBlock: string | null = null;
+    try {
+      skillBlock = formatStudentSkillProfile(await readSkillProfile(supabase, studentId));
+    } catch { /* skill block is an enhancement, never a hard dependency */ }
+    synthesis = await callSynthesisLLM(subs, skillBlock);
   }
 
   const row = {
@@ -305,7 +313,7 @@ function emptyProfile(): ProfileSynthesisResult {
   };
 }
 
-async function callSynthesisLLM(subs: RawSubmission[]): Promise<ProfileSynthesisResult> {
+async function callSynthesisLLM(subs: RawSubmission[], skillBlock?: string | null): Promise<ProfileSynthesisResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set');
   const client = new Anthropic({ apiKey, maxRetries: 0 });
@@ -322,7 +330,8 @@ HARD RULES:
 5. If submission_count is 3–5, set profile_status="developing".
 6. If submission_count ≥ 6, set profile_status="established".
 7. The narrative should read like a careful half-year report comment from an experienced teacher: specific, generous, honest about priorities.
-8. Entries labelled "(own task)" are self-directed practice the student set themselves (their own question and criteria) — count them as genuine effort and signal, but treat them as practice rather than set assessment.`;
+8. Entries labelled "(own task)" are self-directed practice the student set themselves (their own question and criteria) — count them as genuine effort and signal, but treat them as practice rather than set assessment.
+9. If a MEASURED SKILL LEVELS block is provided, treat it as the objective backbone of your read: name the specific skills that are strongest and the ones that are the priority, and let a dimension's trend inform whether you describe it as improving or entrenched. Levels are developmental, never marks/bands — do not convert them to scores.`;
 
   const lines: string[] = [];
   subs.forEach((s, i) => {

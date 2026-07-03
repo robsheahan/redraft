@@ -18,6 +18,9 @@ import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { fetchAllRows } from '../lib/db-page.js';
 import { captureError } from '../lib/sentry.js';
 import { callTool } from '../lib/anthropic-tool-call.js';
+import { readSkillProfile } from '../lib/skill-profile.js';
+import { computeSkillMatrix } from '../lib/skill-matrix.js';
+import { formatStudentSkillProfile, formatCohortSkillMatrix } from '../lib/skill-prompt.js';
 import {
   BOTTOM_DECILE_TOOL,
   TOP_DECILE_TOOL,
@@ -620,6 +623,28 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
     return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded. Please try again later.' });
   }
 
+  // R3 — for the whole-cohort pattern cards, anchor the synthesis in the
+  // measured skill distribution of the same cohort (deterministic, computed over
+  // the full in-scope set, not the 60-row sample). Decile cards are skipped: a
+  // whole-cohort distribution doesn't describe a top/bottom slice. Best-effort.
+  let cohortSkillBlock: string | null = null;
+  if (kind === 'common_gaps' || kind === 'things_done_well') {
+    try {
+      const cohortStudentIds = [...new Set(submissions.map((s: any) => s.student_id).filter(Boolean))] as string[];
+      const cohortDisc = [...new Set(enriched.map((r: any) => r.faculty).filter(Boolean))] as string[];
+      if (cohortStudentIds.length > 0 && cohortDisc.length > 0) {
+        const skillRows = await fetchAllRows((from, to) =>
+          supabase.from('student_skill_profile')
+            .select('student_id, discipline, dimension, level, level_label, confidence, trend, observation_count')
+            .in('student_id', cohortStudentIds)
+            .in('discipline', cohortDisc)
+            .order('student_id')
+            .range(from, to));
+        cohortSkillBlock = formatCohortSkillMatrix(computeSkillMatrix(skillRows || []));
+      }
+    } catch { /* enhancement only */ }
+  }
+
   // -- Anthropic call --
   let value: any;
   try {
@@ -629,7 +654,7 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
       model: MODEL,
       max_tokens: 2500,
       system: cfg.buildSystemPrompt(schoolName, rows.length),
-      user: cfg.buildUserPrompt(rows, { schoolName }),
+      user: cfg.buildUserPrompt(rows, { schoolName }) + (cohortSkillBlock ? '\n\n' + cohortSkillBlock : ''),
       tool: cfg.tool,
       cacheSystem: true,
       label: `insights:${kind}`,
@@ -886,6 +911,18 @@ async function handleStudentKind(
   const meta = (studentUser?.user_metadata || {}) as any;
   const studentName = meta.display_name || meta.full_name || meta.name || 'this student';
 
+  // R3 — anchor the card in the student's measured skill rollup, scoped to the
+  // disciplines in view. Best-effort: a read failure just omits the block.
+  let skillBlock: string | null = null;
+  try {
+    const inScopeDisc = new Set(
+      (taskRows || []).map((t: any) => (t.course ? getDisciplineForCourse(t.course) : null)).filter(Boolean) as string[],
+    );
+    const skillRows = (await readSkillProfile(supabase, studentId))
+      .filter(r => inScopeDisc.size === 0 || inScopeDisc.has(r.discipline));
+    skillBlock = formatStudentSkillProfile(skillRows);
+  } catch { /* enhancement only */ }
+
   // -- Anthropic call --
   let value: any;
   try {
@@ -895,7 +932,7 @@ async function handleStudentKind(
       model: MODEL,
       max_tokens: 2000,
       system: cfg.buildSystemPrompt(studentName, enriched.length),
-      user: cfg.buildUserPrompt(enriched, { studentName }),
+      user: cfg.buildUserPrompt(enriched, { studentName }) + (skillBlock ? '\n\n' + skillBlock : ''),
       tool: cfg.tool,
     });
     value = result.value;
