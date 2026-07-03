@@ -22,7 +22,9 @@ Only one issue is an active regression (already fixed: `e20a9ed`). Everything be
 
 ---
 
-## Phase 0 — Quick wins (do first)
+## Phase 0 — Quick wins (do first)  ✅ BUILT 2026-07-03
+
+All six done (commits `5bb81d1` skill-rollup trio, `508582e` discipline key, `28ca9d2` fan-out, `ebef63f` mark card). Typecheck clean, math changes unit-verified, frontend render-checked. **NOT yet deployed** — 0.1 (mark card) is held pending Rob's sign-off on the presentation; the rest are ready to ship together.
 
 Small, safe, independently shippable. High trust-per-hour.
 
