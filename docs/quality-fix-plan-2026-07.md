@@ -106,6 +106,8 @@ Decided against: the skill store stays purely developmental and model-derived. T
 
 ## Phase 2 — Differentiation correctness
 
+**Status 2026-07-03:** 2.1 ✅ (`8840fbd`), 2.2/2.3/2.4 ✅ (`a4d3dc4`) — built, typecheck clean, prompt/regex unit-verified, NOT yet deployed. **2.5 deferred (polish).**
+
 Fixes the maths re-skin path (latent — no maths skill data in the pilot yet, but broken before it's used) and turns "confidence-aware" from prompt aspiration into behaviour.
 
 ### 2.1 — Thread the re-skinned question through `submit-for-marking` ⬜
