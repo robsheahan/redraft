@@ -279,13 +279,19 @@ const CONF_LABEL = ['', 'low', 'medium', 'high'];
 /**
  * Collapse the per-question skill reads into ONE assessment per dimension, so
  * recordSkillSignals logs exactly one observation per dimension for this
- * submission (and never duplicate-keys the upsert). Level = average across
- * questions that assessed the dimension; confidence = the strongest among them;
- * note = the most specific (longest) one.
+ * submission (and never duplicate-keys the upsert). Level = confidence-weighted
+ * average across the questions that assessed the dimension; confidence = the
+ * MEAN confidence of those reads; note = the most specific (longest) one.
+ *
+ * The confidence is the mean, not the max, deliberately: a diluted average level
+ * must not inherit the single strongest part's confidence, or the rollup folds a
+ * watered-down reading in at full weight (an upward calibration leak). Weighting
+ * the level by each part's confidence lets a confident part count for more than a
+ * tentative one.
  */
 export function aggregateSkillAssessments(groups: any[][]): any[] {
   const LV = LEVEL_VALUE as Record<string, number>;
-  const byDim = new Map<string, { levels: number[]; conf: number; notes: string[] }>();
+  const byDim = new Map<string, { levels: number[]; confRanks: number[]; notes: string[] }>();
   for (const group of groups) {
     if (!Array.isArray(group)) continue;
     for (const sig of group) {
@@ -293,10 +299,9 @@ export function aggregateSkillAssessments(groups: any[][]): any[] {
       const dim = typeof sig.dimension === 'string' ? sig.dimension : '';
       const level = typeof sig.level === 'string' ? sig.level.toLowerCase() : '';
       if (!dim || LV[level] == null) continue;
-      const e = byDim.get(dim) || { levels: [], conf: 0, notes: [] };
+      const e = byDim.get(dim) || { levels: [], confRanks: [], notes: [] };
       e.levels.push(LV[level]);
-      const confRank = CONF_RANK[typeof sig.confidence === 'string' ? sig.confidence.toLowerCase() : 'medium'] ?? 2;
-      if (confRank > e.conf) e.conf = confRank;
+      e.confRanks.push(CONF_RANK[typeof sig.confidence === 'string' ? sig.confidence.toLowerCase() : 'medium'] ?? 2);
       const note = typeof sig.note === 'string' ? sig.note.trim() : '';
       if (note) e.notes.push(note);
       byDim.set(dim, e);
@@ -304,10 +309,16 @@ export function aggregateSkillAssessments(groups: any[][]): any[] {
   }
   const out: any[] = [];
   for (const [dimension, e] of byDim) {
-    const avg = e.levels.reduce((a, b) => a + b, 0) / e.levels.length;
+    const wsum = e.confRanks.reduce((a, b) => a + b, 0);
+    // Confidence-weighted level; fall back to a plain mean if every weight is 0.
+    const avg = wsum > 0
+      ? e.levels.reduce((acc, lv, i) => acc + lv * e.confRanks[i], 0) / wsum
+      : e.levels.reduce((a, b) => a + b, 0) / e.levels.length;
     const level = SKILL_LEVELS[Math.max(1, Math.min(5, Math.round(avg))) - 1];
+    const meanConf = Math.round(wsum / e.confRanks.length);
+    const confidence = CONF_LABEL[Math.max(1, Math.min(3, meanConf))] || 'medium';
     const note = e.notes.sort((a, b) => b.length - a.length)[0] || '';
-    out.push({ dimension, assessed: true, level, confidence: CONF_LABEL[e.conf] || 'medium', note });
+    out.push({ dimension, assessed: true, level, confidence, note });
   }
   return out;
 }

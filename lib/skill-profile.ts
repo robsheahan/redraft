@@ -46,6 +46,13 @@ const CONFIDENCE_FULL_AT = 5;
 //   2. A hard ±1 cap on how far any single submission can move the stored
 //      level, regardless of how extreme the reading.
 const MAX_LEVEL_DELTA = 1;
+// Neutral prior a FIRST observation is seeded toward (weighted by its evidence),
+// so a single thin read can't peg a brand-new dimension at 1.0 or 5.0.
+// 3 = consolidating, the midpoint of the 1–5 developmental scale.
+const NEUTRAL_PRIOR = 3;
+// Minimum smoothed movement (in levels) for a step to count as improving/
+// regressing rather than stable — keeps trend from flipping on tiny wobbles.
+const TREND_THRESHOLD = 0.15;
 const EVIDENCE_WEIGHT: Record<string, number> = { high: 1, medium: 0.6, low: 0.3 };
 // A note this short can't carry concrete evidence — treat as low confidence
 // however the model labelled it.
@@ -201,13 +208,23 @@ export async function recordSkillSignals(opts: {
       const ewma = effAlpha * obs + (1 - effAlpha) * before.level;
       newLevel = Math.max(before.level - MAX_LEVEL_DELTA, Math.min(before.level + MAX_LEVEL_DELTA, ewma));
     } else {
-      newLevel = obs;
+      // First observation: seed toward a neutral prior weighted by the read's
+      // evidence, so one thin/low-confidence read can't peg the extremes (a
+      // single low-confidence "extending" would otherwise set the level to 5.0
+      // outright). A high-confidence first read passes through ~unchanged.
+      const w = evidenceWeight(s.confidence, s.note);
+      newLevel = w * obs + (1 - w) * NEUTRAL_PRIOR;
     }
     const count = (before?.observation_count ?? 0) + 1;
+    // Trend from the SMOOTHED movement this step (post-EWMA newLevel vs the prior
+    // stored level), not the raw observation vs the prior — the raw-residual
+    // version flipped improving/regressing on any single reading above/below the
+    // average, so it oscillated submission-to-submission instead of tracking a
+    // trajectory.
     let trend: string;
     if (!before) trend = 'new';
-    else if (obs > before.level + 0.25) trend = 'improving';
-    else if (obs < before.level - 0.25) trend = 'regressing';
+    else if (newLevel > before.level + TREND_THRESHOLD) trend = 'improving';
+    else if (newLevel < before.level - TREND_THRESHOLD) trend = 'regressing';
     else trend = 'stable';
     return {
       student_id: studentId,
