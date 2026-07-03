@@ -144,6 +144,8 @@ Fixes the maths re-skin path (latent — no maths skill data in the pilot yet, b
 
 ## Phase 3 — Insights hardening
 
+**Status 2026-07-03:** 3.1 ✅ (`da797de`), 3.2 ✅ (`3d84022`+), 3.4 ✅, 3.5 caveats ✅ (`3d84022`). **Partial/deferred:** 3.3 did the faculty-floor half; the skill-matrix *anchoring* of the leadership synthesis is deferred (heavier plumbing — read school students × disciplines, compute+inject the matrix). 3.5 fingerprint-content fold deferred (narrow blind spot — new drafts already bump the id-hash). Built, typecheck clean, math unit-verified, NOT yet deployed.
+
 De-risk the surfaces a skeptical HOD/principal would attack (beyond 0.1).
 
 ### 3.1 — De-risk the decile cards ⬜
