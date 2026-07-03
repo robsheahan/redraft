@@ -405,6 +405,15 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
       restrictedFaculties,
     });
   }
+  // things_done_well is generated ONLY as a fan-out of common_gaps (one call
+  // produces both, so the gaps and strengths cards can never contradict). A
+  // standalone generation would regenerate strengths WITHOUT the gaps context
+  // and silently desync the pair — so it's refused here. The UI only ever
+  // requests common_gaps; the cache read path (GET /api/insights-cards) still
+  // serves the fanned-out things_done_well row.
+  if (kind === 'things_done_well') {
+    return res.status(400).json({ error: 'The strengths card is generated together with the gaps card — request "common_gaps" instead.' });
+  }
   const cfg = KIND_CONFIG[kind];
 
   const rawFilters = parseFiltersFromQuery(req.body as any);
