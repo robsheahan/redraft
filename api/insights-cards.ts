@@ -10,6 +10,7 @@ import { isGlobalAdmin } from '../lib/admin.js';
 import { fetchAllRows } from '../lib/db-page.js';
 import { computeSkillMatrix } from '../lib/skill-matrix.js';
 import { computeSkillGrowth } from '../lib/skill-history.js';
+import { captureError } from '../lib/sentry.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import {
   parseFiltersFromQuery,
@@ -302,37 +303,48 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
   let skillGrowth: any = { writing: null, maths: null };
   const inScopeClassIds = classesInScope.map((c: any) => c.id);
   const inScopeDisciplines = [...new Set(classesInScope.map((c: any) => c.faculty).filter(Boolean))] as string[];
+  // The skill cards are an enhancement — a failed read (e.g. an unprovisioned
+  // table, a transient DB error) must degrade to empty cards, NOT 500 the whole
+  // dashboard. Every other skill read in the codebase is isolated this way;
+  // this one is too. Each fetchAllRows also carries a UNIQUE sort key so
+  // .range() pagination can't skip/duplicate rows across page boundaries at
+  // scale (ordering by a non-unique column like student_id alone is unsafe).
   if (inScopeClassIds.length > 0 && inScopeDisciplines.length > 0) {
-    const memberRows = await fetchAllRows((from, to) =>
-      supabase.from('class_members')
-        .select('student_id')
-        .in('class_id', inScopeClassIds)
-        .order('student_id')
-        .range(from, to));
-    let cohortStudentIds = [...new Set((memberRows || []).map((m: any) => m.student_id).filter(Boolean))] as string[];
-    if (allowedStudentIds) cohortStudentIds = cohortStudentIds.filter(id => allowedStudentIds!.has(id));
-    if (cohortStudentIds.length > 0) {
-      const skillRows = await fetchAllRows((from, to) =>
-        supabase.from('student_skill_profile')
-          .select('student_id, discipline, dimension, level, level_label, confidence, trend, observation_count')
-          .in('student_id', cohortStudentIds)
-          .in('discipline', inScopeDisciplines)
-          .order('student_id')
+    try {
+      const memberRows = await fetchAllRows((from, to) =>
+        supabase.from('class_members')
+          .select('student_id')
+          .in('class_id', inScopeClassIds)
+          .order('class_id').order('student_id')
           .range(from, to));
-      skillMatrix = computeSkillMatrix(skillRows || []);
+      let cohortStudentIds = [...new Set((memberRows || []).map((m: any) => m.student_id).filter(Boolean))] as string[];
+      if (allowedStudentIds) cohortStudentIds = cohortStudentIds.filter(id => allowedStudentIds!.has(id));
+      if (cohortStudentIds.length > 0) {
+        const skillRows = await fetchAllRows((from, to) =>
+          supabase.from('student_skill_profile')
+            .select('student_id, discipline, dimension, level, level_label, confidence, trend, observation_count')
+            .in('student_id', cohortStudentIds)
+            .in('discipline', inScopeDisciplines)
+            .order('student_id').order('discipline').order('dimension')
+            .range(from, to));
+        skillMatrix = computeSkillMatrix(skillRows || []);
 
-      // Growth history — the observation log, windowed to match the dashboard.
-      const obsRows = await fetchAllRows((from, to) => {
-        let q = supabase.from('skill_observations')
-          .select('student_id, dimension, level, observed_at')
-          .in('student_id', cohortStudentIds)
-          .in('discipline', inScopeDisciplines)
-          .order('student_id')
-          .range(from, to);
-        if (subsCutoff) q = q.gte('observed_at', subsCutoff.toISOString());
-        return q;
-      });
-      skillGrowth = computeSkillGrowth(obsRows || []);
+        // Growth history — the observation log, windowed to match the dashboard.
+        const obsRows = await fetchAllRows((from, to) => {
+          let q = supabase.from('skill_observations')
+            .select('student_id, dimension, level, observed_at')
+            .in('student_id', cohortStudentIds)
+            .in('discipline', inScopeDisciplines)
+            .order('id')
+            .range(from, to);
+          if (subsCutoff) q = q.gte('observed_at', subsCutoff.toISOString());
+          return q;
+        });
+        skillGrowth = computeSkillGrowth(obsRows || []);
+      }
+    } catch (err) {
+      captureError(err, { stage: 'insights-cards-skill', school_id: schoolId });
+      // leave skillMatrix / skillGrowth as their empty defaults
     }
   }
 
