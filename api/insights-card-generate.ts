@@ -120,6 +120,8 @@ const KIND_CONFIG: Record<string, {
       `- The gaps and strengths must NOT contradict each other. Never list a skill as a strength if its absence appears in the gaps, or vice versa (e.g. do NOT praise "use of concrete, real-world evidence" while also listing "claims made without evidence" as a gap).`,
       `- If a skill is genuinely uneven across the cohort, put it in ONE list only and describe it as inconsistent, rather than claiming it is both a strength and a weakness.`,
       `- No mark or band predictions.`,
+      ``,
+      `EVIDENCE WEIGHTING: entries tagged "full feedback" come from detailed written feedback on assessment tasks; entries tagged "brief auto-signal" come from quick or exam tasks and carry lighter, less nuanced evidence. When they conflict, weight the "full feedback" entries more heavily.`,
     ].join('\n'),
     buildUserPrompt: (rows) => buildCohortPatternsPrompt(rows),
   },
@@ -172,6 +174,14 @@ function buildStrengthsPrompt(rows: any[]): string {
 
 // Feeds BOTH the improvement and strength signals from each submission so the
 // model can produce gaps and strengths that are mutually consistent.
+// Feedback provenance for the prompt (R6). Quick/exam tasks are scored by the
+// cheaper silent Haiku pass — a briefer, less nuanced signal than the full
+// Sonnet feedback a take-home assessment gets. Tagging each entry lets the model
+// weight the fuller evidence more heavily.
+function feedbackSourceLabel(taskMode: string | undefined): string {
+  return taskMode === 'feedback_task' ? 'full feedback' : 'brief auto-signal';
+}
+
 function buildCohortPatternsPrompt(rows: any[]): string {
   const lines = rows.map((r, i) => {
     const fb = r.feedback || {};
@@ -181,7 +191,7 @@ function buildCohortPatternsPrompt(rows: any[]): string {
     const strSummary = w && Array.isArray(w.summary) ? w.summary : (Array.isArray(w) ? w : []);
     const top = (fb.top_priority && fb.top_priority.summary) || fb.top_priority || '';
     return [
-      `--- submission #${i + 1} ---`,
+      `--- submission #${i + 1} (${feedbackSourceLabel(r.task_mode)}) ---`,
       `Faculty: ${r.faculty || 'Other'}  Course: ${r.course || '(unknown)'}  Task: ${r.task_title}`,
       top ? `Top priority: ${top}` : '',
       `Improvements: ${JSON.stringify(impSummary)}`,

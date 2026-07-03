@@ -253,6 +253,7 @@ Rate limit: 5/hr per user per card kind for cohort; 8/hr per student per kind on
 - The single **Generate Insights** button shows an inline spinner while running (not a wait-cursor); each card keeps prior content under a spinner overlay until its own result lands.
 - Card titles are uniform (one `cardHeader` style). The cohort grid orders **gaps + things-done-well above the maths-errors and decile cards**. "Top 3 cohort-wide gaps" → "Top 3 most common gaps".
 - The **Leadership synthesis** card (formerly "Cross-faculty synthesis") renders as one flat card — sub-sections are plain subheadings, not nested boxes.
+- **Provenance labels (R6).** Every insight card states what it rests on, so a teacher can calibrate trust. LLM cohort + student cards show "N submissions across M tasks · updated … · scope …" in the header. The deterministic skill cards carry a `provenanceFooter` (shared helper): the **Skill breakdown** footer names the student basis and flags how many skill readings rest on thin evidence ("8 of 24 … treat those as indicative"); **Skill growth / trajectory / movement** footers state the within-student method so growth isn't misread as a cohort mean. All reiterate "developmental levels, not marks or bands". Backend: the cohort `common_gaps` prompt tags each entry "full feedback" (Sonnet, assessment tasks) vs "brief auto-signal" (Haiku, quick/exam tasks) with a weighting instruction, so the model discounts the lighter evidence.
 
 ### Student search
 
