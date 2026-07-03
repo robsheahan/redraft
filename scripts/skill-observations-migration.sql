@@ -33,9 +33,15 @@ create table if not exists skill_observations (
 
 -- One observation per (submission, dimension) — makes the live write and the
 -- backfill idempotent (re-runs and retries no-op via ON CONFLICT DO NOTHING).
+-- NOTE: a FULL (non-partial) unique index, deliberately. A partial index
+-- (`where submission_id is not null`) cannot serve as an ON CONFLICT arbiter
+-- unless the statement repeats the predicate, which the Supabase client does not
+-- emit — it fails with "no unique or exclusion constraint matching the ON
+-- CONFLICT specification". submission_id is always set on inserted rows (the
+-- observation write and the backfill both require it), and NULLs are distinct in
+-- a unique index anyway, so a full index is both correct and ON-CONFLICT-usable.
 create unique index if not exists skill_observations_submission_dim
-  on skill_observations (submission_id, dimension)
-  where submission_id is not null;
+  on skill_observations (submission_id, dimension);
 
 -- Read paths: per-student trajectory, and cohort growth by discipline.
 create index if not exists skill_observations_student_dim_time
