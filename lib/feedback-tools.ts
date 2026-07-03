@@ -431,20 +431,26 @@ export const CLASS_FEEDBACK_TOOL: Tool = {
 export const BOTTOM_DECILE_TOOL: Tool = {
   name: 'provide_bottom_decile_patterns',
   description:
-    'Identify the dominant patterns of mistakes appearing in the AI improvement feedback for the bottom decile of students by mark percentage. Output 3 actionable, specific patterns that a head of teaching & learning could put on a faculty meeting agenda.',
+    'Identify the dominant patterns of mistakes appearing in the AI improvement feedback for the lowest-scoring group of students. Output UP TO 3 actionable, specific patterns a head of teaching & learning could action — only as many as the sample genuinely supports; do not pad to three.',
   input_schema: {
     type: 'object',
     properties: {
       patterns: {
         type: 'array',
-        description: 'Exactly 3 dominant patterns, ordered by how widespread they are. Most prevalent first.',
+        minItems: 1,
+        maxItems: 3,
+        description: '1–3 dominant patterns, most widespread first. Return FEWER than 3 if the sample only supports fewer — do not invent a pattern to reach three.',
         items: {
           type: 'object',
           properties: {
             rank: { type: 'integer', minimum: 1, maximum: 3 },
             headline: { type: 'string', description: 'One short, specific sentence naming the mistake (e.g. "Treating analyse as describe — listing features without explaining significance").' },
             detail: { type: 'string', description: '1-2 sentences expanding what the pattern looks like and why it matters for these students.' },
-            prevalence_note: { type: 'string', description: "Plain-language indicator of how widespread (e.g. 'shows in most of the bottom-decile submissions reviewed', 'half of the cohort'). No numeric claims." },
+            prevalence_note: {
+              type: 'string',
+              enum: ['in most of the reviewed sample', 'in several of the reviewed sample', 'in a few of the reviewed sample'],
+              description: 'How widespread within THE REVIEWED SAMPLE (not the whole cohort — you only saw a slice). Pick the closest bracket; never state a number or a cohort-wide fraction.',
+            },
           },
           required: ['rank', 'headline', 'detail', 'prevalence_note'],
         },
@@ -457,13 +463,15 @@ export const BOTTOM_DECILE_TOOL: Tool = {
 export const TOP_DECILE_TOOL: Tool = {
   name: 'provide_top_decile_next_steps',
   description:
-    'For the top decile of students by mark percentage, identify the 3 most useful next-step recommendations to lift their work further. Stretch-focused — these students already perform well.',
+    'For the highest-scoring group of students, identify UP TO 3 useful next-step recommendations to lift their work further. Stretch-focused — these students already perform well. Only as many as the sample supports; do not pad to three.',
   input_schema: {
     type: 'object',
     properties: {
       next_steps: {
         type: 'array',
-        description: 'Exactly 3 next steps, ordered by impact.',
+        minItems: 1,
+        maxItems: 3,
+        description: '1–3 next steps, most impactful first. Return fewer than 3 if the sample only supports fewer.',
         items: {
           type: 'object',
           properties: {
