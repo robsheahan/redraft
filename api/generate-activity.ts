@@ -20,7 +20,7 @@ import { captureError } from '../lib/sentry.js';
 import { callTool } from '../lib/anthropic-tool-call.js';
 import { readSkillProfile } from '../lib/skill-profile.js';
 import { DIFFERENTIATED_ACTIVITY_TOOL, DIFFERENTIATED_MATHS_ACTIVITY_TOOL, MATHS_RESKIN_VERIFY_TOOL } from '../lib/feedback-tools.js';
-import { getDisciplineForCourse } from '../data/nesa-courses.js';
+import { skillDiscipline } from '../data/nesa-courses.js';
 import { currentYearLevelFromGraduationYear } from '../data/nesa-reference.js';
 import { familyForSubjectType, dimensionsForFamily, TAXONOMY_VERSION } from '../data/skill-taxonomy.js';
 import { buildActivitySystemPrompt, buildMathsActivitySystemPrompt, buildActivityUserPrompt, buildMathsReskinVerifySystemPrompt, buildMathsReskinVerifyUserPrompt } from '../prompts/lesson-builder-system.js';
@@ -67,7 +67,10 @@ export default withHandler({ methods: ['POST'], label: 'generate-activity' }, as
   }
 
   // Read the student's skill profile for this task's discipline + family.
-  const discipline = (task.course ? getDisciplineForCourse(task.course) : null) || 'General';
+  // skillDiscipline is the SAME key the write side uses (fallback 'Other'), so a
+  // task with an unrecognised course still finds its skill data (previously the
+  // read used 'General'/write used 'Mathematics' → silent no-data → no differentiation).
+  const discipline = skillDiscipline(task.course);
   const family = familyForSubjectType(task.subject_type);
   const familyKeys = new Set(dimensionsForFamily(family).map((d) => d.key));
   const allRows = await readSkillProfile(supabase, user.id, discipline);

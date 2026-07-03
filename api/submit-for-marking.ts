@@ -3,7 +3,7 @@ import { captureError } from './../lib/sentry.js';
 import { withHandler } from '../lib/with-handler.js';
 import { generateInsightsSignals } from '../lib/insights-signals-feedback.js';
 import { recordSkillSignals } from '../lib/skill-profile.js';
-import { getDisciplineForCourse } from '../data/nesa-courses.js';
+import { skillDiscipline } from '../data/nesa-courses.js';
 import { familyForSubjectType } from '../data/skill-taxonomy.js';
 import { processExamAnswers, type ProcessedExam } from '../lib/exam-submission.js';
 import { serializeExamAnswers } from '../lib/exam-transcript.js';
@@ -244,8 +244,7 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
         studentId: user.id,
         // Maths signals roll up under 'Mathematics' (matching the maths feedback
         // path) so the profile isn't split across two discipline keys.
-        discipline: (task.course ? getDisciplineForCourse(task.course) : null)
-          || (family === 'maths' ? 'Mathematics' : 'General'),
+        discipline: skillDiscipline(task.course),
         family,
         assessment: skillAssessment,
         submissionId: insertedSub?.id,

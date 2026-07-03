@@ -36,7 +36,7 @@ import {
 } from '../prompts/maths-system.js';
 import { studentPartsView, type MathsPart } from '../lib/maths-parts.js';
 import { currentYearLevelFromGraduationYear } from '../data/nesa-reference.js';
-import { getDisciplineForCourse } from '../data/nesa-courses.js';
+import { skillDiscipline } from '../data/nesa-courses.js';
 import { postCompletionIfLinked } from '../lib/lti/ags.js';
 import { recordSkillSignals } from '../lib/skill-profile.js';
 import { aggregateSkillAssessments } from '../lib/multi-question-feedback.js';
@@ -488,7 +488,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
         recordSkillSignals({
           supabase,
           studentId: user.id,
-          discipline: (task.course ? getDisciplineForCourse(task.course) : null) || 'Mathematics',
+          discipline: skillDiscipline(task.course),
           family: 'maths',
           assessment: skillAssessment,
           submissionId: insertedSub?.id,

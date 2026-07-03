@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { buildSystemPrompt, buildUserPrompt, buildCriteriaCheckPrompt } from '../prompts/feedback-system.js';
 import { getSupabase } from '../lib/auth.js';
-import { getDisciplineForCourse } from '../data/nesa-courses.js';
+import { getDisciplineForCourse, skillDiscipline } from '../data/nesa-courses.js';
 import { currentYearLevelFromGraduationYear } from '../data/nesa-reference.js';
 import { VERB_DEPTH_MAP } from '../data/nesa-reference.js';
 import { generateInlineSuggestions } from '../lib/generate-inline-suggestions.js';
@@ -270,7 +270,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-feedback' }, as
   // error readSkillProfile returns [], and the prompt falls back to scaffolded
   // prompts for everyone. Discipline matches the write path's rollup key.
   const readiness = user
-    ? await readSkillProfile(getSupabase(), user.id, discipline || 'General')
+    ? await readSkillProfile(getSupabase(), user.id, skillDiscipline(resolvedCourse as string))
     : [];
 
   const userPrompt = buildUserPrompt({
@@ -491,7 +491,7 @@ Assess this draft against each marking criterion above. Address every criterion 
           recordSkillSignals({
             supabase,
             studentId: user.id,
-            discipline: (resolvedCourse ? getDisciplineForCourse(resolvedCourse as string) : null) || 'General',
+            discipline: skillDiscipline(resolvedCourse as string),
             family: 'writing',
             assessment: skillAssessment,
             submissionId: insertedSub?.id,

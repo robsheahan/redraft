@@ -185,3 +185,20 @@ export function getDisciplineForCourse(courseName: string): DisciplineCategory |
 
   return null;
 }
+
+/**
+ * The canonical discipline KEY used to store and read a student's skill data.
+ *
+ * This MUST be identical on the write side (recording skill signals) and every
+ * read side (insights cards, the Lesson Differentiator, graduated feedback), or
+ * skill data is silently orphaned — written under one key, queried under another.
+ * Previously writes fell back to 'General'/'Mathematics' while the insights reads
+ * fell back to 'Other', so any task whose course didn't resolve lost its skill
+ * data from the matrix/growth and disabled maths differentiation. Recognised
+ * courses are unaffected (they resolve to their KLA); only the fallback changes.
+ * Family (writing vs maths) is always recoverable from the dimension key
+ * (W-prefixed vs M-prefixed), so one 'Other' bucket for unrecognised courses is safe.
+ */
+export function skillDiscipline(courseName: string | null | undefined): string {
+  return (courseName ? getDisciplineForCourse(courseName) : null) || 'Other';
+}
