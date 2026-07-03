@@ -144,7 +144,7 @@ Fixes the maths re-skin path (latent — no maths skill data in the pilot yet, b
 
 ## Phase 3 — Insights hardening
 
-**Status 2026-07-03:** 3.1 ✅ (`da797de`), 3.2 ✅ (`3d84022`+), 3.4 ✅, 3.5 caveats ✅ (`3d84022`). **Partial/deferred:** 3.3 did the faculty-floor half; the skill-matrix *anchoring* of the leadership synthesis is deferred (heavier plumbing — read school students × disciplines, compute+inject the matrix). 3.5 fingerprint-content fold deferred (narrow blind spot — new drafts already bump the id-hash). Built, typecheck clean, math unit-verified, NOT yet deployed.
+**Status 2026-07-03:** ALL of Phase 3 ✅. 3.1 (`da797de`), 3.2 (`af08b75`), 3.4 + 3.5 caveats + 3.3 faculty-floor (`3d84022`), and the previously-deferred 3.3 skill-matrix anchor + 3.5 fingerprint-content fold now done (`b803daf`).
 
 De-risk the surfaces a skeptical HOD/principal would attack (beyond 0.1).
 
@@ -180,7 +180,9 @@ De-risk the surfaces a skeptical HOD/principal would attack (beyond 0.1).
 
 ---
 
-## Phase 4 — Taxonomy refinement (reduce noise at source)
+## Phase 4 — Taxonomy refinement (reduce noise at source)  ✅ BUILT 2026-07-03 (`315d9d6`)
+
+4.1 disambiguators added to the confusable dimension guidance (no key change / no version bump); 4.2 handled as a framing fix — spine rollup is already per-family, so the header + evidence blurb now state the cross-family non-comparability honestly rather than remapping M2 (churn for no gain).
 
 ### 4.1 — Operationalise confusable dimension boundaries ⬜
 **Problem:** W4 "Use of evidence" vs W5 "Integration of evidence"; W6 vs W7 (overlap on "flow"); M3 "Reasoning" vs M6 "Interpretation" (both "why", both roll up to `reasoning`); M4 "Notation" vs M5 "Communication of working". Good prose guidance, but no operational boundary — an LLM (especially Haiku) smears evidence across the pair, adding noise to two rows.
