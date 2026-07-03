@@ -8,9 +8,15 @@
  *
  * Privacy contract:
  *   - The synthesis input never includes raw draft text.
- *   - It never includes verbatim teacher annotations or AI inline quotes
- *     (the .quote fields are stripped before the model sees them).
+ *   - The verbatim .quote of every teacher annotation and AI inline suggestion
+ *     is stripped before the model sees them (only the .comment text remains).
  *   - The model is forbidden from quoting or paraphrasing draft content.
+ *   - Teacher-authored text (the overall teacher_comment and annotation comments)
+ *     IS forwarded — it's the teacher's own words, not the student's. The one
+ *     residual: a teacher could themselves quote the draft inside a comment; that
+ *     text would reach the model. Acceptable (teacher-authored, and the model is
+ *     told not to reproduce draft content), but noted so the guarantee isn't
+ *     overstated as "no student writing ever reaches the model".
  *
  * This means a teacher who never saw a previous teacher's class can still see
  * the profile without ever seeing what the student wrote in that class.

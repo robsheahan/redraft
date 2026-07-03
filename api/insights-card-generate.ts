@@ -1128,6 +1128,7 @@ async function handleClassProfileSummary(
     `- No mark or band predictions.`,
     `- Frame priorities as patterns the teacher can target in their first few weeks of lessons.`,
     `- Recognise variation honestly: if the cohort is mixed, say so. Don't homogenise.`,
+    `- REPRESENTATIVENESS: the profiles below are only the ${profileLines.length} of ${studentIds.length} enrolled students who already have a cached profile — a non-random subset (students get one by being viewed or marked enough). If a large share is missing, say the baseline is PARTIAL and covers only the students with enough history, not the whole class.`,
     ``,
     `Cohort breakdown:`,
     `- Total students enrolled: ${studentIds.length}`,

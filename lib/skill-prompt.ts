@@ -91,7 +91,12 @@ export function formatCohortSkillMatrix(matrix: SkillMatrix | null | undefined):
       .map(d => {
         const belowOrAt = (d.distribution.emerging || 0) + (d.distribution.developing || 0);
         const focus = fam.focus_dimension === d.key ? '  [lowest — likely whole-cohort focus]' : '';
-        return `- ${d.key} ${d.label}: cohort median ${d.median_label}; ${belowOrAt}/${d.observed_students} at developing-or-below${focus}`;
+        // Surface confidence so the model can weight a thin distribution lightly:
+        // a median resting mostly on low-confidence reads shouldn't override a
+        // real prose gap.
+        const conf = `avg confidence ${Math.round((d.avg_confidence || 0) * 100)}%`;
+        const thin = d.low_confidence_students > 0 ? `, ${d.low_confidence_students} on thin evidence` : '';
+        return `- ${d.key} ${d.label}: cohort median ${d.median_label}; ${belowOrAt}/${d.observed_students} at developing-or-below (${conf}${thin})${focus}`;
       });
     if (lines.length === 0) continue;
     const famName = fam.family === 'maths' ? 'Maths' : 'Writing';
@@ -101,7 +106,7 @@ export function formatCohortSkillMatrix(matrix: SkillMatrix | null | undefined):
 
   return [
     `MEASURED COHORT SKILL DISTRIBUTION (${SCALE_NOTE}), from ProofReady's skill database.`,
-    `Anchor your patterns to these where they agree; do NOT surface a gap the distribution contradicts, and do NOT restate levels as marks or bands.`,
+    `Anchor your patterns to these where they AGREE and the distribution is well-evidenced. Where a dimension's confidence is low (few observations / many on thin evidence), treat it as weak corroboration — it should NOT override a clear pattern in the feedback text. Do not restate levels as marks or bands.`,
     '',
     sections.join('\n\n'),
   ].join('\n');

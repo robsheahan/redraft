@@ -313,7 +313,7 @@ function buildUserPrompt(schoolName: string, tasks: Array<{ title: string; cours
   return [
     `Synthesise the following ${tasks.length} task-level class-feedback rollups into a single school-level overview for ${schoolName}.`,
     ``,
-    `When you fill in the by_faculty array, group tasks by their Faculty tag (a NESA KLA). Only include a faculty if at least one task contributes to it.`,
+    `When you fill in the by_faculty array, group tasks by their Faculty tag (a NESA KLA). A faculty needs at least TWO tasks before you present a strengths/gaps "faculty pattern" for it — one task is a single class's single piece of feedback, not a faculty trend. If a faculty has only one task, either omit it from by_faculty or state explicitly in its entry that it rests on a single task (not a pattern).`,
     ``,
     block,
     ``,
