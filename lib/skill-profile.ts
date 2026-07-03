@@ -46,6 +46,12 @@ const CONFIDENCE_FULL_AT = 5;
 //   2. A hard ±1 cap on how far any single submission can move the stored
 //      level, regardless of how extreme the reading.
 const MAX_LEVEL_DELTA = 1;
+// Where a skill read came from. The silent Haiku pass on quick/exam tasks is the
+// BULK of submissions but a briefer, less-nuanced read than the full Sonnet
+// feedback an assessment task gets — so a Haiku read moves the rollup less. This
+// stops the store being dominated by the cheapest reads at full weight.
+export type SkillSource = 'sonnet' | 'haiku';
+const SOURCE_WEIGHT: Record<SkillSource, number> = { sonnet: 1, haiku: 0.5 };
 // Neutral prior a FIRST observation is seeded toward (weighted by its evidence),
 // so a single thin read can't peg a brand-new dimension at 1.0 or 5.0.
 // 3 = consolidating, the midpoint of the 1–5 developmental scale.
@@ -124,8 +130,10 @@ export async function recordSkillObservations(opts: {
   submissionId: string;
   taskId?: string | null;
   observedAt?: string | null;
+  source?: SkillSource;
 }): Promise<number> {
   const { supabase, studentId, discipline, family, assessment, submissionId, taskId, observedAt } = opts;
+  const source: SkillSource = opts.source || 'sonnet';
   if (!submissionId) return 0;
   const signals = validateSkillSignals(assessment, family);
   if (signals.length === 0) return 0;
@@ -140,7 +148,8 @@ export async function recordSkillObservations(opts: {
     level: LEVEL_VALUE[s.level],
     level_label: s.level,
     confidence: s.confidence || null,
-    evidence_weight: evidenceWeight(s.confidence, s.note),
+    evidence_weight: evidenceWeight(s.confidence, s.note) * (SOURCE_WEIGHT[source] ?? 1),
+    source,
     observed_at: observed,
     taxonomy_version: TAXONOMY_VERSION,
   }));
@@ -170,8 +179,13 @@ export async function recordSkillSignals(opts: {
   submissionId?: string | null;
   taskId?: string | null;
   observedAt?: string | null;
+  // Which model produced the read — the Haiku silent pass is discounted (see
+  // SOURCE_WEIGHT). Defaults to 'sonnet' (the AI-feedback paths).
+  source?: SkillSource;
 }): Promise<number> {
   const { supabase, studentId, discipline, family, assessment } = opts;
+  const source: SkillSource = opts.source || 'sonnet';
+  const srcWeight = SOURCE_WEIGHT[source] ?? 1;
 
   const signals = validateSkillSignals(assessment, family);
   if (signals.length === 0) return 0;
@@ -180,7 +194,7 @@ export async function recordSkillSignals(opts: {
   if (opts.submissionId) {
     await recordSkillObservations({
       supabase, studentId, discipline, family, assessment,
-      submissionId: opts.submissionId, taskId: opts.taskId, observedAt: opts.observedAt,
+      submissionId: opts.submissionId, taskId: opts.taskId, observedAt: opts.observedAt, source,
     });
   }
 
@@ -200,11 +214,14 @@ export async function recordSkillSignals(opts: {
   const rows = signals.map(s => {
     const obs = LEVEL_VALUE[s.level];
     const before = prev.get(s.dimension);
+    // Evidence weight, discounted by source: a Haiku read moves the rollup less
+    // than a Sonnet read of the same self-reported confidence.
+    const ew = evidenceWeight(s.confidence, s.note) * srcWeight;
     let newLevel: number;
     if (before) {
       // Evidence-weighted EWMA: a weakly-evidenced observation moves the
       // estimate less, then a hard ±1 cap bounds any single submission.
-      const effAlpha = ALPHA * evidenceWeight(s.confidence, s.note);
+      const effAlpha = ALPHA * ew;
       const ewma = effAlpha * obs + (1 - effAlpha) * before.level;
       newLevel = Math.max(before.level - MAX_LEVEL_DELTA, Math.min(before.level + MAX_LEVEL_DELTA, ewma));
     } else {
@@ -212,8 +229,7 @@ export async function recordSkillSignals(opts: {
       // evidence, so one thin/low-confidence read can't peg the extremes (a
       // single low-confidence "extending" would otherwise set the level to 5.0
       // outright). A high-confidence first read passes through ~unchanged.
-      const w = evidenceWeight(s.confidence, s.note);
-      newLevel = w * obs + (1 - w) * NEUTRAL_PRIOR;
+      newLevel = ew * obs + (1 - ew) * NEUTRAL_PRIOR;
     }
     const count = (before?.observation_count ?? 0) + 1;
     // Trend from the SMOOTHED movement this step (post-EWMA newLevel vs the prior

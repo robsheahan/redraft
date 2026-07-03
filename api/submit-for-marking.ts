@@ -249,6 +249,8 @@ export default withHandler({ methods: ['POST'], label: 'submit-for-marking' }, a
         assessment: skillAssessment,
         submissionId: insertedSub?.id,
         taskId: task_id as string,
+        // This is the silent Haiku pass — discounted in the rollup vs Sonnet.
+        source: 'haiku',
       }).catch(err => captureError(err, { stage: 'skill-rollup-submit', user_id: user.id, task_id }))
     );
   }
