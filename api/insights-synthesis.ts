@@ -6,8 +6,11 @@ import { captureError } from '../lib/sentry.js';
 import { callTool } from '../lib/anthropic-tool-call.js';
 import { SCHOOL_INSIGHTS_TOOL } from '../lib/feedback-tools.js';
 import { resolveUserSchool, getSchoolTeacherIds, canViewInsights } from '../lib/schools.js';
-import { getDisciplineForCourse } from '../data/nesa-courses.js';
+import { getDisciplineForCourse, skillDiscipline } from '../data/nesa-courses.js';
 import { isGlobalAdmin } from '../lib/admin.js';
+import { fetchAllRows } from '../lib/db-page.js';
+import { computeSkillMatrix } from '../lib/skill-matrix.js';
+import { formatCohortSkillMatrix } from '../lib/skill-prompt.js';
 
 const MODEL = 'claude-sonnet-5';
 
@@ -178,8 +181,34 @@ export default withHandler({ methods: ['GET', 'POST'], label: 'insights-synthesi
     feedback: t.class_feedback as any,
   }));
 
+  // Skill anchor (3.3): the synthesis is otherwise two LLM hops from any real
+  // data (per-task class_feedback → school synthesis). Fold in the school's
+  // MEASURED skill distribution so at least one leadership claim rests on
+  // numbers, not accumulated summarisation. Best-effort — a read failure just
+  // omits the block.
+  let skillBlock: string | null = null;
+  try {
+    const disciplines = [...new Set(taggedTasks.map(t => skillDiscipline(t.course)).filter(Boolean))];
+    if (classIds.length > 0 && disciplines.length > 0) {
+      const memberRows = await fetchAllRows((from, to) =>
+        supabase.from('class_members').select('student_id')
+          .in('class_id', classIds).order('class_id').order('student_id').range(from, to));
+      const studentIds = [...new Set((memberRows || []).map((m: any) => m.student_id).filter(Boolean))] as string[];
+      if (studentIds.length > 0) {
+        const skillRows = await fetchAllRows((from, to) =>
+          supabase.from('student_skill_profile')
+            .select('student_id, discipline, dimension, level, level_label, confidence, trend, observation_count')
+            .in('student_id', studentIds).in('discipline', disciplines)
+            .order('student_id').order('discipline').order('dimension').range(from, to));
+        skillBlock = formatCohortSkillMatrix(computeSkillMatrix(skillRows || []));
+      }
+    }
+  } catch (err) {
+    captureError(err, { stage: 'insights-synthesis-skill', school_id: schoolId });
+  }
+
   const systemPrompt = buildSystemPrompt(schoolName, taggedTasks.length);
-  const userPrompt = buildUserPrompt(schoolName, taggedTasks);
+  const userPrompt = buildUserPrompt(schoolName, taggedTasks, skillBlock);
 
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
@@ -294,7 +323,7 @@ function buildSystemPrompt(schoolName: string, taskCount: number): string {
   ].join('\n');
 }
 
-function buildUserPrompt(schoolName: string, tasks: Array<{ title: string; course: string; faculty: string; feedback: any }>): string {
+function buildUserPrompt(schoolName: string, tasks: Array<{ title: string; course: string; faculty: string; feedback: any }>, skillBlock?: string | null): string {
   const block = tasks.map((t, i) => {
     const fb = t.feedback || {};
     return [
@@ -316,6 +345,7 @@ function buildUserPrompt(schoolName: string, tasks: Array<{ title: string; cours
     `When you fill in the by_faculty array, group tasks by their Faculty tag (a NESA KLA). A faculty needs at least TWO tasks before you present a strengths/gaps "faculty pattern" for it — one task is a single class's single piece of feedback, not a faculty trend. If a faculty has only one task, either omit it from by_faculty or state explicitly in its entry that it rests on a single task (not a pattern).`,
     ``,
     block,
+    ...(skillBlock ? ['', skillBlock, '', 'The skill distribution above is MEASURED data (not another summary). Anchor at least one school-level claim to it where it agrees with the task feedback, and don\'t assert a school-wide pattern the distribution contradicts.'] : []),
     ``,
     `Now produce the school-level synthesis. Look for cross-faculty patterns first; if a finding only appears in one faculty, flag it as such in the by_faculty entry rather than the school-level lists.`,
   ].join('\n');

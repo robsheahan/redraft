@@ -152,7 +152,7 @@ export function scopeKeyForFilters(
  * scope-filtered cohort) so the fingerprints are comparable.
  */
 export function cohortFingerprint(
-  subs: Array<{ id?: string; created_at?: string | null; graded_at?: string | null; total_mark?: number | null }>,
+  subs: Array<{ id?: string; created_at?: string | null; graded_at?: string | null; total_mark?: number | null; feedback?: any }>,
 ): string {
   let latestCreated = '';
   let latestGraded = '';
@@ -163,6 +163,10 @@ export function cohortFingerprint(
   // per-row hash of id+mark makes any individual mark change move the signature,
   // regardless of whether the totals happen to net to zero.
   let markSig = 0;
+  // Signature of the FEEDBACK CONTENT the cards are actually synthesised from, so
+  // an in-place feedback/skill regeneration (same id, same mark) still refreshes
+  // the card instead of serving stale prose.
+  let fbSig = 0;
   for (const s of subs) {
     if (s.created_at && s.created_at > latestCreated) latestCreated = s.created_at;
     if (s.graded_at) {
@@ -172,11 +176,15 @@ export function cohortFingerprint(
     if (typeof s.total_mark === 'number') {
       markSig = (markSig + strHash(`${s.id ?? ''}:${s.total_mark}`)) % 0xffffffff;
     }
+    if (s.feedback != null) {
+      // Bounded — a stable content signature, not the whole blob.
+      fbSig = (fbSig + strHash(`${s.id ?? ''}:${JSON.stringify(s.feedback).slice(0, 2000)}`)) % 0xffffffff;
+    }
   }
   // The leading version tag invalidates existing cohort-card caches whenever card
   // generation logic changes (prompts, schemas, gap/strength counts) — so the next
   // regenerate actually re-runs the new logic instead of serving a stale card.
-  return `v3|${subs.length}|${latestCreated}|${gradedCount}|${markSig}|${latestGraded}`;
+  return `v4|${subs.length}|${latestCreated}|${gradedCount}|${markSig}|${latestGraded}|${fbSig}`;
 }
 
 // Small deterministic string hash (djb2). Not cryptographic — only needs to make
