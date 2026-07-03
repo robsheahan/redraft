@@ -70,6 +70,32 @@ function evidenceWeight(confidence: string, note: string): number {
   return w;
 }
 
+// Standard deviation (in levels) treated as "reads fully disagree" — at/above
+// this, the agreement multiplier bottoms out.
+const SD_FULL_DISAGREEMENT = 1.5;
+// Floor on the agreement multiplier so wildly-disagreeing reads still leave some
+// confidence proportional to volume (they don't zero it out).
+const AGREEMENT_FLOOR = 0.4;
+
+/**
+ * Confidence a rollup should carry, given how MANY observations back it and how
+ * much they AGREE. Volume alone (count / CONFIDENCE_FULL_AT) pinned confidence to
+ * 100% after 5 reads no matter how contradictory they were — and that confidence
+ * drives whether graduated feedback strips a student's support. This tempers the
+ * volume component by the spread of the recent observed levels: consistent reads
+ * keep full volume-confidence; scattered reads are discounted toward the floor.
+ * Pure — unit-tested.
+ */
+export function agreementConfidence(count: number, recentLevels: number[]): number {
+  const volume = Math.min(1, count / CONFIDENCE_FULL_AT);
+  if (!recentLevels || recentLevels.length < 2) return volume;
+  const mean = recentLevels.reduce((a, b) => a + b, 0) / recentLevels.length;
+  const variance = recentLevels.reduce((a, l) => a + (l - mean) ** 2, 0) / recentLevels.length;
+  const sd = Math.sqrt(variance);
+  const agreement = 1 - Math.min(1, sd / SD_FULL_DISAGREEMENT);
+  return volume * (AGREEMENT_FLOOR + (1 - AGREEMENT_FLOOR) * agreement);
+}
+
 const VALID_LEVELS = new Set<string>(SKILL_LEVELS);
 
 function nearestLabel(value: number): SkillLevel {
@@ -210,6 +236,29 @@ export async function recordSkillSignals(opts: {
   const prev = new Map<string, { level: number; observation_count: number }>();
   (existingRows || []).forEach((r: any) => prev.set(r.dimension, { level: Number(r.level), observation_count: r.observation_count }));
 
+  // Recent observed levels per dimension, to temper confidence by how much the
+  // reads agree (1.3). Best-effort: the current read was just written to the log
+  // above, so it's included; any read error leaves the map empty and confidence
+  // falls back to volume-only. Capped per dimension so old history doesn't drown
+  // the recent picture.
+  const RECENT_PER_DIM = 10;
+  const recentByDim = new Map<string, number[]>();
+  try {
+    const { data: obsHist } = await supabase
+      .from('skill_observations')
+      .select('dimension, level, observed_at')
+      .eq('student_id', studentId)
+      .eq('discipline', discipline)
+      .in('dimension', dims)
+      .order('observed_at', { ascending: false })
+      .limit(dims.length * RECENT_PER_DIM * 2);
+    (obsHist || []).forEach((r: any) => {
+      const arr = recentByDim.get(r.dimension) || [];
+      if (arr.length < RECENT_PER_DIM && typeof r.level === 'number') arr.push(Number(r.level));
+      recentByDim.set(r.dimension, arr);
+    });
+  } catch { /* confidence falls back to volume-only */ }
+
   const now = new Date().toISOString();
   const rows = signals.map(s => {
     const obs = LEVEL_VALUE[s.level];
@@ -248,7 +297,10 @@ export async function recordSkillSignals(opts: {
       dimension: s.dimension,
       level: Math.round(newLevel * 100) / 100,
       level_label: nearestLabel(newLevel),
-      confidence: Math.min(1, count / CONFIDENCE_FULL_AT),
+      // Confidence = volume tempered by agreement of the recent reads (1.3), not
+      // volume alone. The recent-levels list already includes this submission's
+      // read (written to the history log just above).
+      confidence: Math.round(agreementConfidence(count, recentByDim.get(s.dimension) || []) * 100) / 100,
       trend,
       signal: s.note || null,
       observation_count: count,
