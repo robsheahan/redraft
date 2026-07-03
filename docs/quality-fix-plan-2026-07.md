@@ -68,6 +68,8 @@ Small, safe, independently shippable. High trust-per-hour.
 
 ## Phase 1 — Skill calibration (the foundation)
 
+**Status 2026-07-03:** 1.1 ✅ (`5abcfc2`), 1.2 ✅ (`988f762`), 1.3 ✅ (`a5e0ada`) — built, typecheck clean, math unit-verified, NOT yet deployed. **1.4 is on hold pending a product decision (see below).** 1.1's optional `source` column: `scripts/skill-observations-source-migration.sql`.
+
 Make the tag trustworthy. Everything downstream improves once these land. Sequence within the phase matters: 1.1 and 1.2 are the highest leverage.
 
 ### 1.1 — Discount the Haiku silent pass in the rollup ⬜  ★ highest leverage
@@ -88,7 +90,11 @@ Make the tag trustworthy. Everything downstream improves once these land. Sequen
 **Files:** `lib/skill-profile.ts` (confidence calc); reads `skill_observations`.
 **Effort:** M · **Deploy:** API, no migration.
 
-### 1.4 — Reconcile the skill store with teacher marks ⬜
+### 1.4 — Reconcile the skill store with teacher marks ⬜ ON HOLD — needs a product call
+**The tension (why this isn't just "build it"):** the skill store is deliberately DEVELOPMENTAL, not marks. A mark reflects performance on *one task* including its difficulty and cohort; a skill level is a longitudinal developmental read. A low mark on a hard task doesn't mean the student's skill is low — so naïvely folding marks into the store could INTRODUCE noise rather than remove it, and it partially re-introduces mark influence into a store that exists precisely to be mark-free. Two viable stances:
+  - **Conservative (recommended):** on a large mark-vs-model disagreement, only LOWER CONFIDENCE on the affected dimensions (don't move the level) — "the teacher and the model disagree, so we're less sure." Safe regardless of the difficulty confound.
+  - **Aggressive:** nudge the rolled-up level toward a mark-implied level. More corrective, but risks the difficulty confound distorting the developmental read.
+  Also needs a mark%→level mapping choice. **Decision for Rob:** do it at all? and if so, conservative or aggressive?
 **Problem:** The teacher's awarded grade — the only ground-truth signal in the system — never touches the skill store. `submission-grade.ts` writes no skill signal. The store is a closed loop of model self-assessment that can drift arbitrarily from the mark the teacher gave the same work.
 **Fix:** On grade write, fold a coarse reconciling signal into the profile: when the awarded mark is well below (or above) the model's implied level for that submission, nudge the relevant dimensions' level/confidence toward the mark. Keep it coarse (marks aren't per-dimension) — a gentle anchor, not a rewrite.
 **Files:** `api/submission-grade.ts`, `lib/skill-profile.ts` (a `reconcileWithMark` helper).
