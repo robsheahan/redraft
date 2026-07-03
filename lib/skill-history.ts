@@ -15,6 +15,8 @@
  */
 
 import {
+  SKILL_LEVELS,
+  SkillLevel,
   WRITING_DIMENSIONS,
   MATHS_DIMENSIONS,
   SPINE,
@@ -158,4 +160,116 @@ export function computeSkillGrowth(rows: SkillObservationIn[]): SkillGrowth {
 
 export function isEmptyGrowth(g: SkillGrowth): boolean {
   return !g.writing && !g.maths;
+}
+
+// ─────────────── Per-student journey (R2b / R4) ───────────────
+
+// Longest sparkline we return per dimension — the most recent N observations.
+// Delta/status are always computed over the FULL history, not this tail.
+const MAX_SERIES_POINTS = 20;
+
+export type SkillMoveStatus = 'improved' | 'steady' | 'regressed' | 'single';
+
+export interface JourneyPoint { level: number; at: string }
+
+export interface DimensionJourney {
+  key: string;
+  label: string;
+  spine: SpineCapability;
+  spine_label: string;
+  count: number;              // total observations
+  series: JourneyPoint[];     // oldest → newest, capped to MAX_SERIES_POINTS most recent
+  earliest_level: number;
+  current_level: number;
+  current_label: SkillLevel;
+  delta: number;              // current − earliest (0 when a single observation)
+  status: SkillMoveStatus;
+}
+
+export interface FamilyJourney {
+  family: 'writing' | 'maths';
+  dimensions: DimensionJourney[];   // taxonomy order; only dimensions with data
+  observed_from: string | null;
+  observed_to: string | null;
+}
+
+export interface SkillJourney {
+  writing: FamilyJourney | null;
+  maths: FamilyJourney | null;
+}
+
+function nearestLabel(value: number): SkillLevel {
+  const i = Math.max(1, Math.min(5, Math.round(value)));
+  return SKILL_LEVELS[i - 1] as SkillLevel;
+}
+
+function buildFamilyJourney(
+  family: 'writing' | 'maths',
+  rows: SkillObservationIn[],
+): FamilyJourney | null {
+  const dims = family === 'maths' ? MATHS_DIMENSIONS : WRITING_DIMENSIONS;
+  const dimKeys = new Set(dims.map(d => d.key));
+  const famRows = rows.filter(r => dimKeys.has(r.dimension) && typeof r.level === 'number' && r.observed_at);
+  if (famRows.length === 0) return null;
+
+  let fromISO: string | null = null;
+  let toISO: string | null = null;
+  const byDim = new Map<string, SkillObservationIn[]>();
+  for (const r of famRows) {
+    if (!fromISO || r.observed_at < fromISO) fromISO = r.observed_at;
+    if (!toISO || r.observed_at > toISO) toISO = r.observed_at;
+    const arr = byDim.get(r.dimension) || [];
+    arr.push(r);
+    byDim.set(r.dimension, arr);
+  }
+
+  const dimensions: DimensionJourney[] = [];
+  for (const d of dims) {
+    const obs = byDim.get(d.key);
+    if (!obs || obs.length === 0) continue;
+    const sorted = [...obs].sort((a, b) => a.observed_at.localeCompare(b.observed_at));
+    const earliest = sorted[0].level;
+    const current = sorted[sorted.length - 1].level;
+    const delta = sorted.length >= 2 ? Math.round((current - earliest) * 100) / 100 : 0;
+    let status: SkillMoveStatus;
+    if (sorted.length < 2) status = 'single';
+    else if (delta > MOVE_THRESHOLD) status = 'improved';
+    else if (delta < -MOVE_THRESHOLD) status = 'regressed';
+    else status = 'steady';
+    const series = sorted
+      .slice(-MAX_SERIES_POINTS)
+      .map(o => ({ level: o.level, at: o.observed_at }));
+    dimensions.push({
+      key: d.key,
+      label: d.label,
+      spine: d.spine,
+      spine_label: SPINE[d.spine].label,
+      count: sorted.length,
+      series,
+      earliest_level: Math.round(earliest * 100) / 100,
+      current_level: Math.round(current * 100) / 100,
+      current_label: nearestLabel(current),
+      delta,
+      status,
+    });
+  }
+  if (dimensions.length === 0) return null;
+  return { family, dimensions, observed_from: fromISO, observed_to: toISO };
+}
+
+/**
+ * One student's skill journey — the ordered observation series per dimension,
+ * with the net change and a movement status. Powers the per-student trajectory
+ * sparklines (R2b) and the skill-movement summary (R4).
+ */
+export function computeStudentSkillJourney(rows: SkillObservationIn[]): SkillJourney {
+  const safe = Array.isArray(rows) ? rows : [];
+  return {
+    writing: buildFamilyJourney('writing', safe),
+    maths: buildFamilyJourney('maths', safe),
+  };
+}
+
+export function isEmptyJourney(j: SkillJourney): boolean {
+  return !j.writing && !j.maths;
 }

@@ -1680,6 +1680,13 @@
         + renderStudentMarkDistribution(cd.mark_distribution)
         + '</div>';
 
+      // Skill trajectory (R2b) — per-dimension level over time from the
+      // observation history. Deterministic, free, no generation.
+      html += '<div class="card card-span-12">'
+        + cardHeader('Skill trajectory', 'How this student\'s level on each skill has moved over time')
+        + renderSkillTrajectory(cd.skill_trajectory)
+        + '</div>';
+
       // LLM cards (per-student kinds)
       html += '<div class="card card-span-6">' + renderStudentLLMCard('student_top_mistakes', llm.student_top_mistakes, {
         title: 'Top 3 mistakes',
@@ -2354,6 +2361,60 @@
       if (g.writing) html += renderSkillGrowthFamily(g.writing, 'Writing skills');
       if (g.writing && g.maths) html += '<div style="height:1px;background:#ece7de;margin:16px 0"></div>';
       if (g.maths) html += renderSkillGrowthFamily(g.maths, 'Maths skills');
+      return html;
+    }
+
+    // ── Per-student skill trajectory (R2b) — sparklines from skill_observations ──
+    const SKILL_STATUS_COLORS = { improved: '#3f8f6b', regressed: '#d9694f', steady: '#9ca3af', single: '#c4bdb0' };
+
+    function skillSparkline(series, color) {
+      const W = 132, H = 30, pad = 4;
+      const n = series.length;
+      if (n === 0) return '';
+      const x = i => (n <= 1 ? W / 2 : pad + (i / (n - 1)) * (W - 2 * pad));
+      const y = lvl => pad + (1 - (Math.max(1, Math.min(5, lvl)) - 1) / 4) * (H - 2 * pad);
+      let svg = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" style="display:block">';
+      // Faint "secure" (level 4) reference line.
+      svg += '<line x1="0" y1="' + y(4).toFixed(1) + '" x2="' + W + '" y2="' + y(4).toFixed(1) + '" stroke="#ece7de" stroke-width="1" stroke-dasharray="2 2"/>';
+      if (n >= 2) {
+        const pts = series.map((p, i) => x(i).toFixed(1) + ',' + y(p.level).toFixed(1)).join(' ');
+        svg += '<polyline fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="' + pts + '"/>';
+      }
+      series.forEach((p, i) => {
+        const last = i === n - 1;
+        svg += '<circle cx="' + x(i).toFixed(1) + '" cy="' + y(p.level).toFixed(1) + '" r="' + (last ? 2.8 : 1.7) + '" fill="' + (last ? color : '#c4bdb0') + '"><title>' + e((SKILL_LEVEL_LABEL[SKILL_LEVEL_ORDER[Math.max(0, Math.min(4, Math.round(p.level) - 1))]] || '') + ' · ' + (p.at || '').slice(0, 10)) + '</title></circle>';
+      });
+      svg += '</svg>';
+      return svg;
+    }
+
+    function renderSkillTrajectoryFamily(fam, familyLabel) {
+      let html = '<div style="margin-bottom:10px"><strong style="font-size:13.5px">' + e(familyLabel) + '</strong></div>';
+      fam.dimensions.forEach(d => {
+        const color = SKILL_STATUS_COLORS[d.status] || '#9ca3af';
+        let badge;
+        if (d.status === 'single') badge = '<span style="color:#9ca3af">1 observation</span>';
+        else if (d.status === 'improved') badge = '<span style="color:#3f8f6b;font-weight:600">▲ +' + d.delta.toFixed(1) + ' lvl</span>';
+        else if (d.status === 'regressed') badge = '<span style="color:#d9694f;font-weight:600">▼ −' + Math.abs(d.delta).toFixed(1) + ' lvl</span>';
+        else badge = '<span style="color:#9ca3af">steady</span>';
+        const curCol = SKILL_LEVEL_COLORS[d.current_label] || '#6b7280';
+        html += '<div style="display:grid;grid-template-columns:150px 132px 1fr;gap:12px;align-items:center;margin:0 0 9px">';
+        html += '<div style="font-size:12.5px"><strong>' + e(d.key) + '</strong> ' + e(d.label) + '<div style="color:#b8b0a2;font-size:10.5px">' + d.count + ' observation' + (d.count === 1 ? '' : 's') + '</div></div>';
+        html += '<div>' + skillSparkline(d.series, color) + '</div>';
+        html += '<div style="font-size:11.5px;text-align:right">now <strong style="color:' + curCol + '">' + e(SKILL_LEVEL_LABEL[d.current_label] || d.current_label) + '</strong><div style="font-size:11px;margin-top:1px">' + badge + '</div></div>';
+        html += '</div>';
+      });
+      return html;
+    }
+
+    function renderSkillTrajectory(t) {
+      if (!t || (!t.writing && !t.maths)) {
+        return '<div class="card-empty"><strong>No skill history yet</strong>Each time this student submits and gets feedback, their level on each skill is logged. Their trajectory on every skill appears here once they have a submission or two.</div>';
+      }
+      let html = '<div style="font-size:11px;color:#9ca3af;margin-bottom:12px">Each line is this student\'s assessed level on that skill over time (bottom = emerging, top = extending). The dashed line marks <em>secure</em>.</div>';
+      if (t.writing) html += renderSkillTrajectoryFamily(t.writing, 'Writing skills');
+      if (t.writing && t.maths) html += '<div style="height:1px;background:#ece7de;margin:16px 0"></div>';
+      if (t.maths) html += renderSkillTrajectoryFamily(t.maths, 'Maths skills');
       return html;
     }
 

@@ -212,8 +212,8 @@ A **time-window filter** applies to all submissions queries via `getTimeWindowCu
 
 **Individual student view** — triggered by selecting a student from the search box. Available to all tiers. Loads the longitudinal profile via `/api/student-profile` and renders metric cards alongside it:
 1. Hero: **Student profile** (LLM, span 12) — longitudinal narrative + headline strength + headline priority + improvement / strength themes + profile_status (established / developing / new). Cached in `student_profile_synthesis`; regenerated lazily on cache miss.
-2. **Mark distribution** (span 6) — A–E band counts + per-task list (this student only). Excludes `quick_task` submissions by design.
-3. **Improvement velocity** (span 6) — their own draft-to-draft priority shifts: addressed / persistent / regressed themes
+2. **Mark distribution** (span 12) — A–E band counts + per-task list (this student only). Excludes `quick_task` submissions by design.
+3. **Skill trajectory** (span 12) — this student's per-dimension level over time as sparklines, from `skill_observations` (`computeStudentSkillJourney` in `lib/skill-history.ts`). Deterministic, developmental levels only. Each line shows the assessed level per skill across submissions, with a net-change badge and the current level; a dashed reference line marks *secure*.
 4. **Top 3 mistakes** (LLM, span 6) — recurring patterns in their improvement feedback
 5. **Stretch goals** (LLM, span 6) — personalised next steps
 6. **3 things done well** (LLM, span 12) — consistent strengths

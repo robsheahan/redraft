@@ -9,6 +9,7 @@ import {
 import { isGlobalAdmin } from '../lib/admin.js';
 import { yearLevelFromGraduationYear } from '../lib/insights-filters.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
+import { computeStudentSkillJourney } from '../lib/skill-history.js';
 
 /**
  * Single-student insights endpoint.
@@ -142,6 +143,21 @@ export default withHandler({ methods: ['GET'], label: 'insights-student' }, asyn
   // ── Improvement velocity (per-student, across their own tasks) ────
   const improvementVelocity = computeStudentVelocity(subs);
 
+  // ── Skill trajectory (R2b) — the student's per-dimension observation series
+  // over time, from skill_observations. Scoped to the disciplines of their
+  // in-scope classes (so it matches the cohort cards' scoping).
+  const inScopeDisciplines = [...new Set(Object.values(classMap).map((c: any) => c.faculty).filter(Boolean))] as string[];
+  let skillTrajectory: any = { writing: null, maths: null };
+  if (inScopeDisciplines.length > 0) {
+    const { data: obsRows } = await supabase
+      .from('skill_observations')
+      .select('student_id, dimension, level, observed_at')
+      .eq('student_id', studentId)
+      .in('discipline', inScopeDisciplines)
+      .order('observed_at');
+    skillTrajectory = computeStudentSkillJourney(obsRows || []);
+  }
+
   // ── LLM eligibility ───────────────────────────────────────────────
   const llmEligible = submissionsWithFeedback.length >= LLM_FLOOR;
 
@@ -166,6 +182,7 @@ export default withHandler({ methods: ['GET'], label: 'insights-student' }, asyn
     cards: {
       mark_distribution: markDistribution,
       improvement_velocity: improvementVelocity,
+      skill_trajectory: skillTrajectory,
       llm_eligible: llmEligible,
       llm_floor: LLM_FLOOR,
       // LLM card content is loaded via /api/insights-card-generate with
