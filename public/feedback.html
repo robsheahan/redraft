@@ -646,6 +646,32 @@
       }
     }
 
+    // Draft navigator, shared by the single- and multi-question renderers.
+    // The submit-for-marking / graded row is the student's FINAL submission, not
+    // a draft — it's counted and labelled separately, so a student who used 2
+    // feedback drafts then submitted for marking still reads "2 drafts" (not 3).
+    function renderDraftNav(drafts, currentVersion) {
+      if (!Array.isArray(drafts) || drafts.length <= 1) return '';
+      var feedbackDrafts = drafts
+        .filter(function(d) { return d && !d.submitted_for_marking; })
+        .slice().sort(function(a, b) { return a.draft_version - b.draft_version; });
+      var finalSub = drafts.find(function(d) { return d && d.submitted_for_marking; }) || null;
+      var html = '<div class="draft-nav">';
+      html += '<div class="draft-nav-label">You have ' + feedbackDrafts.length + ' draft' + (feedbackDrafts.length !== 1 ? 's' : '') + ':</div>';
+      html += '<div class="draft-nav-btns">';
+      feedbackDrafts.forEach(function(d) {
+        var active = d.draft_version === currentVersion ? ' active' : '';
+        html += '<button class="draft-btn' + active + '" onclick="switchDraft(' + d.draft_version + ')">Draft ' + d.draft_version + '</button>';
+      });
+      if (finalSub) {
+        var activeF = finalSub.draft_version === currentVersion ? ' active' : '';
+        var finalLabel = finalSub.graded_at ? 'Marked submission' : 'Final submission';
+        html += '<button class="draft-btn' + activeF + '" onclick="switchDraft(' + finalSub.draft_version + ')">' + finalLabel + '</button>';
+      }
+      html += '</div></div>';
+      return html;
+    }
+
     function renderFeedback(fb, meta, drafts, currentVersion, draftText) {
       var task = currentTask || {};
       // Multi-question take-home feedback has its own per-question renderer.
@@ -727,17 +753,8 @@
       html += '<div id="myAttachments"></div>';
       html += '</div>';
 
-      // Draft navigator — shown if there are multiple drafts
-      if (drafts && drafts.length > 1) {
-        html += '<div class="draft-nav">';
-        html += '<div class="draft-nav-label">You have ' + drafts.length + ' draft' + (drafts.length !== 1 ? 's' : '') + ':</div>';
-        html += '<div class="draft-nav-btns">';
-        drafts.forEach(function(d) {
-          var active = d.draft_version === currentVersion ? ' active' : '';
-          html += '<button class="draft-btn' + active + '" onclick="switchDraft(' + d.draft_version + ')">Draft ' + d.draft_version + '</button>';
-        });
-        html += '</div></div>';
-      }
+      // Draft navigator — shown if there's more than one submission to switch between
+      html += renderDraftNav(drafts, currentVersion);
 
       // Resubmit bar — shown if under the cap AND task isn't locked
       var draftsUsed = drafts ? drafts.length : (meta.draftVersion || 1);
@@ -990,16 +1007,15 @@
       var className = task.class_name || (task.class && task.class.name);
       if (className) bits.push(e(className));
       if (task.course || (meta && meta.course)) bits.push(e(task.course || meta.course));
-      bits.push('Draft ' + (currentVersion || 1) + ' of ' + MAX_DRAFTS);
+      // The final (submit-for-marking / graded) row is not a numbered draft.
+      if (currentDraft && currentDraft.submitted_for_marking) {
+        bits.push(currentDraft.graded_at ? 'Marked submission' : 'Final submission');
+      } else {
+        bits.push('Draft ' + (currentVersion || 1) + ' of ' + MAX_DRAFTS);
+      }
       html += '<div class="task-meta">' + bits.join(' · ') + '</div></div>';
 
-      if (draftList.length > 1) {
-        html += '<div class="draft-nav"><div class="draft-nav-label">You have ' + draftList.length + ' drafts:</div><div class="draft-nav-btns">';
-        draftList.slice().sort(function(a, b) { return a.draft_version - b.draft_version; }).forEach(function(d) {
-          html += '<button class="draft-btn' + (d.draft_version === currentVersion ? ' active' : '') + '" onclick="switchDraft(' + d.draft_version + ')">Draft ' + d.draft_version + '</button>';
-        });
-        html += '</div></div>';
-      }
+      html += renderDraftNav(draftList, currentVersion);
 
       if (teacherGrade) {
         // renderExamTeacherMarkHtml renders its own "Marked by your teacher" hero.

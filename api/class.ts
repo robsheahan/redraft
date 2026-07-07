@@ -97,6 +97,11 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
   // For students, decorate each task with how many drafts they've submitted
   // plus their current grading state (graded / submitted-for-marking / none).
   let studentSubmissionCounts: Record<string, number> = {};
+  // Feedback drafts only — excludes the submit-for-marking row. The "X of 3
+  // drafts" progress reflects feedback attempts used, so submitting for marking
+  // never bumps the count (a student who used 2 feedback drafts then submitted
+  // stays on 2).
+  let studentDraftCounts: Record<string, number> = {};
   let studentStateByTask: Record<string, { graded_at: string | null; total_mark: number | null; submitted_for_marking: boolean }> = {};
   if (!isOwner && (tasks || []).length > 0) {
     const taskIds = (tasks || []).map((t: any) => t.id);
@@ -108,6 +113,9 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
     (subs || []).forEach((s: any) => {
       if (!s.task_id) return;
       studentSubmissionCounts[s.task_id] = (studentSubmissionCounts[s.task_id] || 0) + 1;
+      if (!s.submitted_for_marking) {
+        studentDraftCounts[s.task_id] = (studentDraftCounts[s.task_id] || 0) + 1;
+      }
       const existing = studentStateByTask[s.task_id];
       const next = {
         graded_at: s.graded_at || existing?.graded_at || null,
@@ -153,6 +161,7 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
     return {
       ...rest,
       my_submission_count: studentSubmissionCounts[t.id] || 0,
+      my_feedback_draft_count: studentDraftCounts[t.id] || 0,
       my_graded_at: st?.graded_at || null,
       my_total_mark: st?.total_mark ?? null,
       my_submitted_for_marking: !!st?.submitted_for_marking,
@@ -232,6 +241,9 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
 
   // Student's own submission counts + grading state by task_id, for inline indicators on the dashboard
   let myCounts: Record<string, number> = {};
+  // Feedback drafts only — see studentDraftCounts above. Submit-for-marking
+  // doesn't count toward the "X of 3 drafts" progress.
+  let myDraftCounts: Record<string, number> = {};
   let myStateByTask: Record<string, { graded_at: string | null; total_mark: number | null; submitted_for_marking: boolean }> = {};
   const studentTaskIds: string[] = [];
   Object.values(allTasksByClass).forEach(ts => ts.forEach((t: any) => { if (t.published_at) studentTaskIds.push(t.id); }));
@@ -243,6 +255,9 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
     (subs || []).forEach((s: any) => {
       if (!s.task_id) return;
       myCounts[s.task_id] = (myCounts[s.task_id] || 0) + 1;
+      if (!s.submitted_for_marking) {
+        myDraftCounts[s.task_id] = (myDraftCounts[s.task_id] || 0) + 1;
+      }
       const existing = myStateByTask[s.task_id];
       myStateByTask[s.task_id] = {
         graded_at: s.graded_at || existing?.graded_at || null,
@@ -282,6 +297,7 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
         return {
           ...t,
           my_submission_count: myCounts[t.id] || 0,
+          my_feedback_draft_count: myDraftCounts[t.id] || 0,
           my_graded_at: st?.graded_at || null,
           my_total_mark: st?.total_mark ?? null,
           my_submitted_for_marking: !!st?.submitted_for_marking,

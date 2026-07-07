@@ -896,7 +896,9 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           // tasks (multi-draft, feedback shown). Quick tasks: just the
           // status pill + the row-click navigation.
           if (!noFeedback) {
-            html += renderDraftProgress(t.my_submission_count || 0);
+            // Draft dots count feedback attempts only — submitting for marking
+            // locks the task but doesn't consume a draft.
+            html += renderDraftProgress(t.my_feedback_draft_count || 0);
             if (hasSubmission) {
               html += '<button type="button" class="btn-view-feedback" onclick="openFeedback(event, \'' + encodeURIComponent(t.id) + '\')">' + (t.my_graded_at ? 'View mark' : 'View feedback') + '</button>';
             } else {

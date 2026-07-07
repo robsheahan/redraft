@@ -136,7 +136,12 @@
           html += '<div style="flex:1"><div class="task-title">' + e(t.title || t.question || 'Untitled task') + '</div>';
           html += '<div class="task-meta">' + metaParts.join(' · ') + '</div></div>';
           if (statusPill) html += statusPill;
-          html += renderDraftProgress(t.my_submission_count || 0);
+          // Draft progress (X of 3) is meaningful only for take-home feedback
+          // tasks, and counts feedback attempts only — submit-for-marking locks
+          // the task without consuming a draft.
+          if ((t.task_mode || 'feedback_task') === 'feedback_task') {
+            html += renderDraftProgress(t.my_feedback_draft_count || 0);
+          }
           html += '<span style="color:#d1d5db;font-size:20px">›</span>';
           html += '</a>';
         });
