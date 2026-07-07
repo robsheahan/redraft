@@ -83,12 +83,25 @@
       text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
     }
     .task-card {
+      position: relative;
       background: #fff; border-radius: 12px;
       padding: 22px 24px; cursor: pointer;
       text-decoration: none; color: inherit; display: block;
       box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
       transition: box-shadow 0.15s, transform 0.15s;
     }
+    /* New-submissions notification flag on a class card */
+    .notif-flag {
+      position: absolute; top: -9px; right: -9px;
+      background: #dc2626; color: #fff;
+      font-size: 12px; font-weight: 700;
+      padding: 4px 11px; border-radius: 999px;
+      box-shadow: 0 2px 8px rgba(220,38,38,0.35);
+      border: 2px solid #fff;
+      cursor: pointer; z-index: 3; white-space: nowrap;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .notif-flag:hover { background: #b91c1c; transform: scale(1.04); }
     .task-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04); transform: translateY(-1px); }
     .task-card-header {
       display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px;
@@ -194,7 +207,20 @@
 
       function renderClassCard(c) {
         var courseLine = c.course ? '<div class="task-stats"><span class="stat">' + e(c.course) + '</span></div>' : '';
+        // New-submissions flag: clicking it opens the pending task (when one task
+        // holds them all) or the class page (when spread across tasks).
+        var flag = '';
+        var toMark = c.to_mark_count || 0;
+        if (toMark > 0) {
+          var dest = c.to_mark_task_id
+            ? 'task-detail.html?id=' + encodeURIComponent(c.to_mark_task_id)
+            : 'class-detail.html?id=' + encodeURIComponent(c.id);
+          flag = '<span class="notif-flag" title="' + toMark + ' submission' + (toMark === 1 ? '' : 's') + ' to mark"'
+            + ' onclick="event.preventDefault();event.stopPropagation();window.location.href=\'' + dest + '\'">'
+            + toMark + ' new</span>';
+        }
         return '<a href="class-detail.html?id=' + encodeURIComponent(c.id) + '" class="task-card">'
+          + flag
           + '<div class="task-card-header">'
           + '<div><h3>' + e(c.name) + '</h3></div>'
           + '<div class="task-code">' + e(c.code) + '</div>'

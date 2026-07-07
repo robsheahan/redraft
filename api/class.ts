@@ -267,6 +267,38 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
     });
   }
 
+  // Teacher: per-class "to mark" — submissions submitted for marking but not yet
+  // graded — so the dashboard can flag classes with new submissions. Also track
+  // which task(s) they're for, so a single-task class can deep-link to it.
+  const toMarkByClass: Record<string, number> = {};
+  const toMarkTasksByClass: Record<string, Set<string>> = {};
+  const ownedTaskToClass: Record<string, string> = {};
+  const ownedTaskIds: string[] = [];
+  (owned || []).forEach((c: any) => {
+    (allTasksByClass[c.id] || []).forEach((t: any) => {
+      if (t.published_at) { ownedTaskIds.push(t.id); ownedTaskToClass[t.id] = c.id; }
+    });
+  });
+  if (ownedTaskIds.length > 0) {
+    const { data: pending } = await supabase
+      .from('submissions')
+      .select('task_id, student_id')
+      .in('task_id', ownedTaskIds)
+      .eq('submitted_for_marking', true)
+      .is('graded_at', null);
+    const seen = new Set<string>();  // dedupe to distinct (task, student)
+    (pending || []).forEach((s: any) => {
+      if (!s.task_id || !s.student_id) return;
+      const key = s.task_id + '|' + s.student_id;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const cid = ownedTaskToClass[s.task_id];
+      if (!cid) return;
+      toMarkByClass[cid] = (toMarkByClass[cid] || 0) + 1;
+      (toMarkTasksByClass[cid] || (toMarkTasksByClass[cid] = new Set())).add(s.task_id);
+    });
+  }
+
   const decorate = (c: any) => {
     // Latest published task date for the class — used by the dashboards
     // to sort classes with the most recently active class first.
@@ -277,12 +309,16 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
         lastTaskPublishedAt = t.published_at;
       }
     }
+    const toMarkTasks = toMarkTasksByClass[c.id];
     return {
       ...c,
       task_count_total: taskCountMap[c.id]?.total || 0,
       task_count_published: taskCountMap[c.id]?.published || 0,
       member_count: memberCountMap[c.id] || 0,
       last_task_published_at: lastTaskPublishedAt,
+      to_mark_count: toMarkByClass[c.id] || 0,
+      // Deep-link target when a single task holds all the pending submissions.
+      to_mark_task_id: (toMarkTasks && toMarkTasks.size === 1) ? Array.from(toMarkTasks)[0] : null,
     };
   };
 
