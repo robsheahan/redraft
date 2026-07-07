@@ -154,8 +154,9 @@
     .submit-doc { max-height: 560px; overflow-y: auto; background: #fffdf6; border: 1px solid #ece2cf; border-radius: 4px; padding: 40px 48px; margin-bottom: 16px; font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif; font-size: 15.5px; line-height: 1.9; color: #2c2a26; box-shadow: 0 2px 5px rgba(60,45,20,0.06), 0 16px 44px rgba(60,45,20,0.13); }
     .submit-doc p { margin: 0 0 1.15em; }
     .submit-doc p:last-child { margin-bottom: 0; }
-    /* Editable version — same page look, appears when the student clicks "Edit" */
-    .submit-doc-edit { display: block; width: 100%; box-sizing: border-box; min-height: 460px; background: #fffdf6; border: 1px solid #ed7615; border-radius: 4px; padding: 38px 46px; margin-bottom: 16px; font-family: Georgia, 'Iowan Old Style', 'Times New Roman', serif; font-size: 15.5px; line-height: 1.9; color: #2c2a26; resize: vertical; outline: none; box-shadow: 0 2px 5px rgba(60,45,20,0.06), 0 0 0 3px rgba(237,118,21,0.15); }
+    /* Editable version — standard editor look (white, black text, sans) so it's
+       clearly a text field once "Edit" is clicked. */
+    .submit-doc-edit { display: block; width: 100%; box-sizing: border-box; min-height: 460px; background: #fff; border: 1px solid #ed7615; border-radius: 6px; padding: 20px 22px; margin-bottom: 16px; font-family: inherit; font-size: 15px; line-height: 1.7; color: #111827; resize: vertical; outline: none; box-shadow: 0 0 0 3px rgba(237,118,21,0.12); }
     .submit-panel-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
     /* Lightweight toast (paste blocked, etc.) */
     .fb-toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); background: #1f2937; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13.5px; z-index: 9999; opacity: 0; transition: opacity 0.2s ease; pointer-events: none; max-width: 90%; text-align: center; }
