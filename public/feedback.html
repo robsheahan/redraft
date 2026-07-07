@@ -145,27 +145,6 @@
     .draft-btn:disabled {
       opacity: 0.5; cursor: not-allowed;
     }
-    .btn-resubmit {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 10px 20px; background: #ed7615; color: #fff;
-      border: none; border-radius: 8px; font-size: 14px;
-      font-weight: 600; text-decoration: none;
-      box-shadow: 0 2px 8px rgba(237,118,21,0.35);
-      transition: all 0.15s; font-family: inherit; cursor: pointer;
-    }
-    .btn-resubmit:hover {
-      background: #d4690f; box-shadow: 0 4px 12px rgba(237,118,21,0.4);
-    }
-    .resubmit-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      background: #fff; border: 1px solid #e8e0d4;
-      border-radius: 12px; padding: 16px 20px; margin-bottom: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    }
-    .resubmit-bar-text {
-      font-size: 14px; color: #4b5563;
-    }
-    .resubmit-bar-text strong { color: #111827; }
     /* "Ready to submit?" panel (Option A) */
     .submit-panel { margin-top: 26px; border: 1px solid #e8e0d4; border-radius: 12px; background: #fdf8f1; padding: 20px 22px; }
     .submit-panel-title { font-size: 16.5px; font-weight: 700; color: #111827; margin: 0 0 4px; }
@@ -613,7 +592,8 @@
     var currentMeta = null;
     var currentTask = null;
     var initialAnswers = null;  // multi-question: the just-submitted answer snapshot
-    var currentDraftText = '';  // text of the draft currently in view — submitted by "Submit for marking"
+    var currentDraftText = '';  // essay text of the draft in view — submitted by "Submit for marking"
+    var currentSubmitAnswers = null;  // multi-question: answers of the draft in view (null = single-question)
 
     var CATEGORY_LABELS = {
       strength: 'Strength',
@@ -707,11 +687,12 @@
 
     function renderFeedback(fb, meta, drafts, currentVersion, draftText) {
       var task = currentTask || {};
-      currentDraftText = draftText || '';  // the draft "Submit for marking" will send
       // Multi-question take-home feedback has its own per-question renderer.
       if (fb && fb.kind === 'multi_question') {
         return renderMultiQuestionFeedback(fb, meta, drafts, currentVersion);
       }
+      currentDraftText = draftText || '';  // the draft "Submit for marking" will send
+      currentSubmitAnswers = null;         // single-question path submits essay text, not answers
       const MAX_DRAFTS = meta.maxDrafts || 3;
       const annotations = (Array.isArray(fb && fb.inline_suggestions) ? fb.inline_suggestions : [])
         .filter(function(a) { return a && typeof a === 'object' && typeof a.quote === 'string' && typeof a.category === 'string'; });
@@ -1040,6 +1021,10 @@
       var answers = (currentDraft && Array.isArray(currentDraft.answers)) ? currentDraft.answers
                   : (Array.isArray(initialAnswers) ? initialAnswers : []);
       var ansByQid = {}; answers.forEach(function(a) { if (a && a.question_id) ansByQid[a.question_id] = a; });
+      // Answers "Submit for marking" will send — the stored answers already carry
+      // question_id + text/selected_option_id, so submit-for-marking re-processes them.
+      currentSubmitAnswers = Array.isArray(answers) ? answers : [];
+      currentDraftText = '';
       var qfbList = (fb && Array.isArray(fb.questions)) ? fb.questions : [];
       var qfbByQid = {}; qfbList.forEach(function(q) { if (q && q.question_id) qfbByQid[q.question_id] = q; });
       var taskQById = {}; (task.questions || []).forEach(function(q) { taskQById[q.id] = q; });
@@ -1160,6 +1145,31 @@
       });
 
       var backId = task.task_id || (meta && meta.task_id) || '';
+
+      // "Ready to submit?" panel — live class task, not locked, at least one
+      // answer. The answers are already shown per-question above, so the panel
+      // is just the count + actions (no re-display).
+      var mqLocked = draftList.some(function(d) { return d && (d.graded_at || d.submitted_for_marking); });
+      var answeredCount = answers.filter(function(a) {
+        return a && ((typeof a.text === 'string' && a.text.trim()) || a.selected_option_id);
+      }).length;
+      var mqDraftsUsed = draftList.filter(function(d) { return d && !d.submitted_for_marking; }).length;
+      if (backId && !mqLocked && answeredCount > 0) {
+        var mqCanRevise = mqDraftsUsed < MAX_DRAFTS;
+        var totalQ = order.length;
+        html += '<div class="submit-panel" id="submitPanel">';
+        html += '<div class="submit-panel-title">Ready to submit?</div>';
+        html += '<div class="submit-panel-sub">If you\'re happy with your answers above, submit them for marking. Your teacher marks this version — and you won\'t be able to get more feedback on this task.'
+              + (mqCanRevise ? ' Want to change something first? Start a new draft.' : ' You\'ve used all ' + MAX_DRAFTS + ' feedback drafts.') + '</div>';
+        html += '<div class="submit-panel-label">You\'ve answered ' + answeredCount + ' of ' + totalQ + ' question' + (totalQ === 1 ? '' : 's') + '</div>';
+        html += '<div class="submit-panel-actions">';
+        html += '<button type="button" class="btn-submit-marking" id="submitMarkingBtn" onclick="submitForMarking(\'' + backId + '\')">Submit for marking</button>';
+        if (mqCanRevise) {
+          html += '<a class="btn-revise-secondary" href="submit.html?task=' + encodeURIComponent(backId) + '">Submit new draft</a>';
+        }
+        html += '</div></div>';
+      }
+
       html += '<div style="margin-top:18px"><a href="submit.html?task=' + encodeURIComponent(backId) + '" class="back-link">← Back to the task</a></div>';
 
       container.innerHTML = html;
@@ -1428,17 +1438,32 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Submit the draft currently in view for marking. Locks the task (no more
-    // feedback) — mirrors submit.html's "Submit for marking", but for a draft
-    // the student has already written, straight from the feedback page.
+    // Submit the work currently in view for marking. Locks the task (no more
+    // feedback) — mirrors submit.html's "Submit for marking", but for work the
+    // student has already written, straight from the feedback page. Handles both
+    // single-question essays (draft text) and multi-question take-homes (answers).
     async function submitForMarking(taskId) {
       if (!taskId) return;
-      var draftText = (currentDraftText || '').trim();
-      if (draftText.length < 50) {
-        alert('This draft looks too short to submit for marking. Use "Submit new draft" to keep writing.');
-        return;
+      var isMulti = Array.isArray(currentSubmitAnswers);
+      var body;
+      if (isMulti) {
+        var answered = currentSubmitAnswers.filter(function(a) {
+          return a && ((typeof a.text === 'string' && a.text.trim()) || a.selected_option_id);
+        });
+        if (answered.length === 0) {
+          alert('Answer at least one question before submitting for marking.');
+          return;
+        }
+        body = { task_id: taskId, answers: currentSubmitAnswers };
+      } else {
+        var draftText = (currentDraftText || '').trim();
+        if (draftText.length < 50) {
+          alert('This draft looks too short to submit for marking. Use "Submit new draft" to keep writing.');
+          return;
+        }
+        body = { task_id: taskId, draft: draftText };
       }
-      if (!confirm('Submit this draft for marking?\n\nYour teacher will mark this version, and you won\'t be able to get any more feedback on this task.')) {
+      if (!confirm('Submit this for marking?\n\nYour teacher will mark this version, and you won\'t be able to get any more feedback on this task.')) {
         return;
       }
       var btn = document.getElementById('submitMarkingBtn');
@@ -1446,7 +1471,7 @@
       try {
         var res = await authFetch('/api/submit-for-marking', {
           method: 'POST',
-          body: JSON.stringify({ task_id: taskId, draft: draftText })
+          body: JSON.stringify(body)
         });
         var data = await res.json().catch(function() { return {}; });
         if (!res.ok) {
