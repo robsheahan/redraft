@@ -172,10 +172,10 @@
     .empty-annotations { font-size: 13px; color: #9ca3af; padding: 14px; text-align: center; background: #f9fafb; border-radius: 8px; border: 1px dashed #e5e7eb; }
 
     .save-bar {
-      display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+      display: flex; align-items: center; gap: 12px;
       padding: 16px 0; margin-top: 12px;
     }
-    .save-bar .lock-note { font-size: 12.5px; color: #6b7280; margin-right: auto; max-width: 60%; }
+    .save-bar .btn { flex: 1; }
 
     .loading { text-align: center; padding: 60px; color: #9ca3af; }
     .error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 14px; border-radius: 8px; margin-bottom: 14px; }
@@ -497,10 +497,9 @@
         : null;
 
       html += '<div class="save-bar">';
-      html += '<div class="lock-note">Saving <strong>locks</strong> this task for the student — they can no longer submit further drafts.</div>';
       html += '<button type="button" class="btn btn-primary" id="saveGradeBtn" onclick="saveGrade()">' + (isCompletionOnly ? 'Save' : 'Save grade') + '</button>';
       if (nextUnmarked) {
-        html += '<button type="button" class="btn btn-primary" id="saveNextBtn" onclick="saveGrade(\'' + e(nextUnmarked.id) + '\')" style="margin-left:8px">Save and next</button>';
+        html += '<button type="button" class="btn btn-primary" id="saveNextBtn" onclick="saveGrade(\'' + e(nextUnmarked.id) + '\')">Save and next</button>';
       }
       html += '</div>';
       html += '</div>'; // right col
@@ -611,9 +610,8 @@
         ? (allSubs.slice(currentIdx + 1).find(s => !s.graded_at) || allSubs.slice(0, currentIdx).find(s => !s.graded_at))
         : null;
       html += '<div class="save-bar">';
-      html += '<div class="lock-note">Saving <strong>locks</strong> this task for the student — they can no longer submit again.</div>';
       html += '<button type="button" class="btn btn-primary" id="saveGradeBtn" onclick="saveGrade()">Save grade</button>';
-      if (nextUnmarked) html += '<button type="button" class="btn btn-primary" id="saveNextBtn" onclick="saveGrade(\'' + e(nextUnmarked.id) + '\')" style="margin-left:8px">Save and next</button>';
+      if (nextUnmarked) html += '<button type="button" class="btn btn-primary" id="saveNextBtn" onclick="saveGrade(\'' + e(nextUnmarked.id) + '\')">Save and next</button>';
       html += '</div>';
       html += '</div>'; // exam-marking
 
