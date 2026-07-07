@@ -96,6 +96,44 @@
     return line.match(/^\s*[-*•]\s+(.+)$/);
   }
 
+  // Inline formatting: bold (**text**). Input is RAW text — we escape first,
+  // then convert the (still-literal) ** markers into <strong>. Safe because the
+  // escape step has already neutralised any real HTML. Most teacher/AI-authored
+  // tasks carry no markdown, so this is a no-op for them.
+  function inlineFormat(raw, escapeFn) {
+    let s = escapeFn(String(raw == null ? '' : raw));
+    s = s.replace(/\*\*(?=\S)(.+?)\*\*/g, '<strong>$1</strong>');
+    return s;
+  }
+
+  // A short label followed by ": " and a description, e.g.
+  // "Executive Summary: Briefly outline ...". The label char class excludes
+  // sentence punctuation (. , ; !) so ordinary prose with a mid-sentence colon
+  // won't match. Returns { label, desc } or null.
+  function labelDescMatch(line) {
+    const m = String(line).match(/^([A-Z][A-Za-z0-9 &/'’-]{1,44}?):\s+(\S.*)$/);
+    if (!m) return null;
+    const label = m[1].trim();
+    if (label.split(/\s+/).length > 6) return null;   // labels are short phrases
+    return { label, desc: m[2].trim() };
+  }
+
+  // Standalone heading line: either a short colon-terminated line
+  // ("Instructions:") or a short, title-cased line that introduces a body
+  // ("Report Requirements"). Never a full sentence.
+  function genericHeadingMatch(line, hasBody) {
+    const t = String(line).trim();
+    const words = t.split(/\s+/).filter(Boolean);
+    if (/:$/.test(t)) {
+      return t.length <= 42 && words.length <= 6;
+    }
+    if (hasBody && t.indexOf(':') === -1 && !/[.!?:,;]$/.test(t) && t.length <= 46 && words.length <= 7) {
+      const caps = words.filter(w => /^[A-Z0-9]/.test(w)).length;
+      return caps >= Math.ceil(words.length * 0.6);   // title-ish
+    }
+    return false;
+  }
+
   function renderTaskDescription(text, escapeFn) {
     if (!text) return '';
     // Strip a redundant leading heading like "Task Description" / "Description"
@@ -126,7 +164,7 @@
         html += '<ul class="task-desc-list">';
         lines.forEach(l => {
           const bm = bulletMatch(l);
-          html += '<li>' + escapeFn(bm[1].trim()) + '</li>';
+          html += '<li>' + inlineFormat(bm[1].trim(), escapeFn) + '</li>';
         });
         html += '</ul>';
         return;
@@ -173,8 +211,10 @@
     return html;
   }
 
-  // Renders a sequence of lines as a single <p>, joining soft-wrapped lines
-  // and splitting any lines that match a bullet pattern into a sibling <ul>.
+  // Renders a sequence of lines, classifying each as a heading, a
+  // "Label: description" item, a bullet, or plain prose. Consecutive plain
+  // lines are joined (soft-wrap); anything structural breaks the paragraph so
+  // a description never reads as "one big paragraph".
   function renderParagraphBody(lines, escapeFn) {
     let html = '';
     let buffer = [];
@@ -182,26 +222,40 @@
 
     function flushBuffer() {
       if (buffer.length === 0) return;
-      html += '<p class="task-desc-p">' + escapeFn(buffer.join(' ').trim()) + '</p>';
+      html += '<p class="task-desc-p">' + inlineFormat(buffer.join(' ').trim(), escapeFn) + '</p>';
       buffer = [];
     }
     function flushBullets() {
       if (bullets.length === 0) return;
       html += '<ul class="task-desc-list">';
-      bullets.forEach(b => { html += '<li>' + escapeFn(b) + '</li>'; });
+      bullets.forEach(b => { html += '<li>' + inlineFormat(b, escapeFn) + '</li>'; });
       html += '</ul>';
       bullets = [];
     }
 
-    lines.forEach(l => {
+    lines.forEach((l, idx) => {
       const bm = bulletMatch(l);
       if (bm) {
         flushBuffer();
         bullets.push(bm[1].trim());
-      } else {
-        flushBullets();
-        buffer.push(l);
+        return;
       }
+      const hasBody = idx < lines.length - 1;
+      if (genericHeadingMatch(l, hasBody)) {
+        flushBuffer();
+        flushBullets();
+        html += '<h4 class="task-desc-h">' + inlineFormat(String(l).replace(/:\s*$/, '').trim(), escapeFn) + '</h4>';
+        return;
+      }
+      const ld = labelDescMatch(l);
+      if (ld) {
+        flushBuffer();
+        flushBullets();
+        html += '<p class="task-desc-p task-desc-item"><strong>' + escapeFn(ld.label) + ':</strong> ' + inlineFormat(ld.desc, escapeFn) + '</p>';
+        return;
+      }
+      flushBullets();
+      buffer.push(l);
     });
     flushBuffer();
     flushBullets();
