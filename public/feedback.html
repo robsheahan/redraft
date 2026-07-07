@@ -178,6 +178,14 @@
     .btn-revise-secondary { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; background: #fff; color: #4b5563; border: 1px solid #d1c7b6; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; transition: all 0.15s; cursor: pointer; font-family: inherit; }
     .btn-revise-secondary:hover { background: #f9f5ee; border-color: #b9ab95; }
     .submit-panel-success { text-align: center; padding: 10px 0; color: #15803d; font-size: 15px; font-weight: 600; }
+    /* Multi-question inline answer editors */
+    .mq-edit-input { margin-top: 6px; }
+    .mq-edit-text { min-height: 200px; }
+    .exam-mc-group { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+    .exam-mc-opt { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid #e8e0d4; border-radius: 8px; cursor: pointer; font-size: 15px; color: #111827; background: #fff; transition: border-color 0.15s, background 0.15s; }
+    .exam-mc-opt:hover { border-color: #d1bfa3; }
+    .exam-mc-opt input { width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; }
+    .exam-mc-opt:has(input:checked) { border-color: #ed7615; background: #fff7ef; }
 
     /* Feedback sections */
     .section {
@@ -616,6 +624,16 @@
       }).join('') || '<p></p>';
     }
 
+    // Normalise an answers array to { question_id -> value } for comparison,
+    // ignoring snapshot-only fields (question_text, marks, type, …).
+    function answersKeyMap(arr) {
+      var m = {};
+      (Array.isArray(arr) ? arr : []).forEach(function(a) {
+        if (a && a.question_id) m[a.question_id] = (typeof a.text === 'string' ? a.text : (a.selected_option_id || ''));
+      });
+      return m;
+    }
+
     // Lightweight toast (used for paste-blocked notices in the inline editor).
     var _fbToastTimer = null;
     function showToast(msg) {
@@ -639,12 +657,15 @@
     // is the iteration hub: edits autosave, carry keystroke telemetry + paste
     // blocking (parity with submit.html), and can be re-fed for more feedback.
     var pendingAutosave = null;   // restored working-draft text from draft_autosaves (null = use latest submission)
+    var pendingAnswers = null;    // multi-question: restored working answers from draft_autosaves
     var fbTelemetry = { keystroke_count: 0, paste_attempts_blocked: 0, typing_session_count: 0, total_typing_time_ms: 0, time_to_first_keystroke_ms: null };
     var fbEditorShownAt = null;   // when the inline editor first appeared (for time-to-first-keystroke)
     var fbLastInputAt = null;
     var fbAutosaveTimer = null;
     var fbLastSavedText = null;
     var fbGenInFlight = false;    // guard against double "Submit another draft"
+    var mqIsMulti = false;        // true while the multi-question view is active (drives autosave shape)
+    var mqEditMode = false;       // multi-question: whether the answers are currently editable
 
     var CATEGORY_LABELS = {
       strength: 'Strength',
@@ -715,11 +736,22 @@
     // then render with the full drafts list.
     function renderWithDrafts(draftsArr, autosaveData, fb, meta, draftText) {
       var locked = draftsArr.some(function(d) { return d && (d.graded_at || d.submitted_for_marking); });
+      var latestSub = draftsArr.length ? draftsArr[draftsArr.length - 1] : null;
       if (!locked && autosaveData && typeof autosaveData.draft_text === 'string' && autosaveData.draft_text.trim()) {
-        var latestSub = draftsArr.length ? draftsArr[draftsArr.length - 1] : null;
         if (!latestSub || autosaveData.draft_text !== (latestSub.draft_text || '')) {
           pendingAutosave = autosaveData.draft_text;
           fbLastSavedText = autosaveData.draft_text;
+          if (autosaveData.telemetry && typeof autosaveData.telemetry === 'object') {
+            fbTelemetry = Object.assign(fbTelemetry, autosaveData.telemetry);
+          }
+        }
+      }
+      // Multi-question: restore working answers if they differ from the latest
+      // submission's answers.
+      if (!locked && autosaveData && Array.isArray(autosaveData.answers) && autosaveData.answers.length) {
+        var latestAns = (latestSub && Array.isArray(latestSub.answers)) ? latestSub.answers : [];
+        if (JSON.stringify(answersKeyMap(autosaveData.answers)) !== JSON.stringify(answersKeyMap(latestAns))) {
+          pendingAnswers = autosaveData.answers;
           if (autosaveData.telemetry && typeof autosaveData.telemetry === 'object') {
             fbTelemetry = Object.assign(fbTelemetry, autosaveData.telemetry);
           }
@@ -803,6 +835,7 @@
       }
       currentDraftText = draftText || '';  // the draft "Submit for marking" will send
       currentSubmitAnswers = null;         // single-question path submits essay text, not answers
+      mqIsMulti = false;
       const MAX_DRAFTS = meta.maxDrafts || 3;
       const annotations = (Array.isArray(fb && fb.inline_suggestions) ? fb.inline_suggestions : [])
         .filter(function(a) { return a && typeof a === 'object' && typeof a.quote === 'string' && typeof a.category === 'string'; });
@@ -1156,11 +1189,22 @@
       var task = currentTask || {};
       var draftList = Array.isArray(drafts) ? drafts : (allDrafts || []);
       var currentDraft = draftList.find(function(d) { return d && d.draft_version === currentVersion; }) || null;
-      var answers = (currentDraft && Array.isArray(currentDraft.answers)) ? currentDraft.answers
+      // Editability: the latest feedback draft of an unlocked task is editable in
+      // place (parity with single-question essays); earlier drafts + locked tasks
+      // are read-only, preserving each iteration's answers.
+      var mqFeedbackDrafts = draftList.filter(function(d) { return d && !d.submitted_for_marking; });
+      var mqLatestV = mqFeedbackDrafts.length ? mqFeedbackDrafts[mqFeedbackDrafts.length - 1].draft_version : currentVersion;
+      var mqAnyLocked = draftList.some(function(d) { return d && (d.graded_at || d.submitted_for_marking); });
+      var mqViewingFeedback = !currentDraft || !currentDraft.submitted_for_marking;
+      var mqEditable = !mqAnyLocked && mqViewingFeedback && (currentVersion === mqLatestV) && !!(task.questions && task.questions.length);
+      mqIsMulti = true;
+      var baseAnswers = (currentDraft && Array.isArray(currentDraft.answers)) ? currentDraft.answers
                   : (Array.isArray(initialAnswers) ? initialAnswers : []);
+      // On the editable latest draft, prefer restored working answers (autosave).
+      var answers = (mqEditable && Array.isArray(pendingAnswers) && pendingAnswers.length) ? pendingAnswers : baseAnswers;
       var ansByQid = {}; answers.forEach(function(a) { if (a && a.question_id) ansByQid[a.question_id] = a; });
-      // Answers "Submit for marking" will send — the stored answers already carry
-      // question_id + text/selected_option_id, so submit-for-marking re-processes them.
+      // Answers "Submit for marking"/"Submit another draft" send when NOT edited;
+      // once the student edits, readMqAnswers() reads the live inputs instead.
       currentSubmitAnswers = Array.isArray(answers) ? answers : [];
       currentDraftText = '';
       var qfbList = (fb && Array.isArray(fb.questions)) ? fb.questions : [];
@@ -1216,12 +1260,22 @@
         // plus the correct answer revealed.
         if (qfb && qfb.type === 'multiple_choice' && qfb.mc) {
           var mc = qfb.mc;
+          if (mqEditable) html += '<div id="mqView_' + e(qid) + '">';
           html += '<div class="mq-mc-result ' + (mc.correct ? 'is-correct' : 'is-wrong') + '">';
           html += '<span class="mq-mc-badge">' + (mc.correct ? 'Correct ✓' : 'Not quite') + '</span>';
           if (mc.selected_option_text) html += '<div class="mq-mc-line">Your answer: <strong>' + e(mc.selected_option_text) + '</strong></div>';
           else html += '<div class="mq-mc-line mq-empty">You didn\'t answer this one.</div>';
           if (!mc.correct && mc.correct_option_text) html += '<div class="mq-mc-line mq-mc-correct">Correct answer: <strong>' + e(mc.correct_option_text) + '</strong></div>';
           html += '</div>';
+          if (mqEditable) {
+            html += '</div>';  // close mqView
+            html += '<div id="mqEdit_' + e(qid) + '" class="exam-mc-group mq-edit-input" data-qid="' + e(qid) + '" data-type="mc" style="display:none">';
+            (q.options || []).forEach(function(o) {
+              var ck = (ans && ans.selected_option_id === o.id) ? ' checked' : '';
+              html += '<label class="exam-mc-opt"><input type="radio" class="mq-edit-radio" name="mqq_' + e(qid) + '" value="' + e(o.id) + '"' + ck + '><span>' + e(o.text) + '</span></label>';
+            });
+            html += '</div>';
+          }
           html += '</div>'; // close mq-block
           return;
         }
@@ -1231,6 +1285,7 @@
           ? qfb.inline_suggestions.filter(function(a) { return a && typeof a.quote === 'string' && typeof a.category === 'string'; })
           : [];
         html += '<div class="mq-answer-label">Your answer</div>';
+        if (mqEditable) html += '<div id="mqView_' + e(qid) + '">';
         if (answerText && inline.length) {
           html += '<div class="annotated-layout"><div class="annotated-draft-text">' + renderAnnotatedDraftHtml(answerText, inline) + '</div>';
           html += '<div class="annotated-sidebar">' + renderAnnotationCardsHtml(inline) + '</div></div>';
@@ -1238,6 +1293,10 @@
           html += '<div class="mq-answer">' + e(answerText) + '</div>';
         } else {
           html += '<div class="mq-answer mq-empty">No answer submitted for this question.</div>';
+        }
+        if (mqEditable) {
+          html += '</div>';  // close mqView
+          html += '<textarea class="submit-doc-edit mq-edit-input mq-edit-text" id="mqEdit_' + e(qid) + '" data-qid="' + e(qid) + '" data-type="text" style="display:none;min-height:200px">' + e(answerText) + '</textarea>';
         }
 
         if (!qfb || qfb.ok === false) {
@@ -1284,28 +1343,38 @@
 
       var backId = task.task_id || (meta && meta.task_id) || '';
 
-      // "Ready to submit?" panel — live class task, not locked, at least one
-      // answer. The answers are already shown per-question above, so the panel
-      // is just the count + actions (no re-display).
-      var mqLocked = draftList.some(function(d) { return d && (d.graded_at || d.submitted_for_marking); });
+      // Bottom panel. On the editable latest draft: edit answers inline, submit
+      // for marking, or submit another draft — all in place. On an earlier draft:
+      // a note that this iteration is preserved, with a link to the latest.
+      mqEditMode = false;  // fresh render starts in read-only mode
       var answeredCount = answers.filter(function(a) {
         return a && ((typeof a.text === 'string' && a.text.trim()) || a.selected_option_id);
       }).length;
-      var mqDraftsUsed = draftList.filter(function(d) { return d && !d.submitted_for_marking; }).length;
-      if (backId && !mqLocked && answeredCount > 0) {
-        var mqCanRevise = mqDraftsUsed < MAX_DRAFTS;
+      if (backId && mqEditable && answeredCount > 0) {
+        var mqCanRevise = mqFeedbackDrafts.length < MAX_DRAFTS;
         var totalQ = order.length;
         html += '<div class="submit-panel" id="submitPanel">';
         html += '<div class="submit-panel-title">Ready to submit?</div>';
-        html += '<div class="submit-panel-sub">If you\'re happy with your answers above, submit them for marking. Your teacher marks this version — and you won\'t be able to get more feedback on this task.'
-              + (mqCanRevise ? ' Want to change something first? Start a new draft.' : ' You\'ve used all ' + MAX_DRAFTS + ' feedback drafts.') + '</div>';
+        html += '<div class="submit-panel-sub">If you\'re happy with your answers, submit them for marking — or click <strong>Edit answers</strong> to make changes'
+              + (mqCanRevise ? ', then submit another draft for more feedback.' : '. Your teacher marks this version, and you won\'t be able to get more feedback on this task.') + '</div>';
         html += '<div class="submit-panel-label">You\'ve answered ' + answeredCount + ' of ' + totalQ + ' question' + (totalQ === 1 ? '' : 's') + '</div>';
+        html += '<div class="fb-save-indicator" id="fbSaveIndicator"></div>';
         html += '<div class="submit-panel-actions">';
         html += '<button type="button" class="btn-submit-marking" id="submitMarkingBtn" onclick="submitForMarking(\'' + backId + '\')">Submit for marking</button>';
         if (mqCanRevise) {
-          html += '<a class="btn-revise-secondary" href="submit.html?task=' + encodeURIComponent(backId) + '">Submit new draft</a>';
+          html += '<button type="button" class="btn-revise-secondary" id="submitAnotherBtn" onclick="submitNewDraft(\'' + backId + '\')">Submit another draft</button>';
         }
+        html += '<button type="button" class="btn-revise-secondary" id="editAnswersBtn" onclick="toggleEditAnswers()">Edit answers</button>';
         html += '</div></div>';
+      } else if (backId && mqViewingFeedback && (currentVersion !== mqLatestV)) {
+        html += '<div class="submit-panel">';
+        html += '<div class="submit-panel-title">Draft ' + currentVersion + '</div>';
+        html += '<div class="submit-panel-sub">This is an earlier draft, kept for reference'
+              + (!mqAnyLocked ? '. Go to your latest draft to make changes or submit.' : '.') + '</div>';
+        if (!mqAnyLocked) {
+          html += '<div class="submit-panel-actions"><button type="button" class="btn-revise-secondary" onclick="switchDraft(' + mqLatestV + ')">Go to your latest draft →</button></div>';
+        }
+        html += '</div>';
       }
 
       html += '<div style="margin-top:18px"><a href="submit.html?task=' + encodeURIComponent(backId) + '" class="back-link">← Back to the task</a></div>';
@@ -1582,17 +1651,19 @@
     // single-question essays (draft text) and multi-question take-homes (answers).
     async function submitForMarking(taskId) {
       if (!taskId) return;
-      var isMulti = Array.isArray(currentSubmitAnswers);
+      var isMulti = mqIsMulti || Array.isArray(currentSubmitAnswers);
       var body;
       if (isMulti) {
-        var answered = currentSubmitAnswers.filter(function(a) {
+        // Read the (possibly edited) live answers.
+        var answers = readMqAnswers();
+        var answered = answers.filter(function(a) {
           return a && ((typeof a.text === 'string' && a.text.trim()) || a.selected_option_id);
         });
         if (answered.length === 0) {
           alert('Answer at least one question before submitting for marking.');
           return;
         }
-        body = { task_id: taskId, answers: currentSubmitAnswers };
+        body = { task_id: taskId, answers: answers };
       } else {
         // Prefer the (possibly edited) inline editor value over the original draft.
         var editEl = document.getElementById('submitDocEdit');
@@ -1601,15 +1672,14 @@
           alert('This draft looks too short to submit for marking. Click "Edit" to keep writing.');
           return;
         }
-        body = {
-          task_id: taskId, draft: draftText,
-          keystroke_count: fbTelemetry.keystroke_count,
-          paste_attempts_blocked: fbTelemetry.paste_attempts_blocked,
-          typing_session_count: fbTelemetry.typing_session_count,
-          total_typing_time_ms: fbTelemetry.total_typing_time_ms,
-          time_to_first_keystroke_ms: fbTelemetry.time_to_first_keystroke_ms,
-        };
+        body = { task_id: taskId, draft: draftText };
       }
+      body.keystroke_count = fbTelemetry.keystroke_count;
+      body.paste_attempts_blocked = fbTelemetry.paste_attempts_blocked;
+      body.typing_session_count = fbTelemetry.typing_session_count;
+      body.total_typing_time_ms = fbTelemetry.total_typing_time_ms;
+      body.time_to_first_keystroke_ms = fbTelemetry.time_to_first_keystroke_ms;
+      body.student_attachments = fbCurrentAttachments();
       if (!confirm('Submit this for marking?\n\nYour teacher will mark this version, and you won\'t be able to get any more feedback on this task.')) {
         return;
       }
@@ -1718,57 +1788,180 @@
       el.textContent = state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved' : state === 'failed' ? 'Save failed — your work is still in this tab' : '';
     }
     async function fbPushAutosave() {
-      var edit = document.getElementById('submitDocEdit');
-      if (!edit) return;
       var tId = (currentTask && (currentTask.id || currentTask.task_id)) || (currentMeta && currentMeta.task_id);
       if (!tId) return;
-      var text = edit.value;
-      if (text === fbLastSavedText) return;
+      var body, sig;
+      if (mqIsMulti) {
+        var ans = readMqAnswers();
+        sig = 'A:' + JSON.stringify(answersKeyMap(ans));
+        body = { task_id: tId, answers: ans, telemetry: fbTelemetry };
+      } else {
+        var edit = document.getElementById('submitDocEdit');
+        if (!edit) return;
+        sig = 'T:' + edit.value;
+        body = { task_id: tId, draft_text: edit.value, telemetry: fbTelemetry };
+      }
+      if (sig === fbLastSavedText) return;
       setFbSaveIndicator('saving');
       try {
-        var res = await authFetch('/api/draft-autosave', {
-          method: 'PUT',
-          body: JSON.stringify({ task_id: tId, draft_text: text, telemetry: fbTelemetry }),
-        });
+        var res = await authFetch('/api/draft-autosave', { method: 'PUT', body: JSON.stringify(body) });
         if (!res.ok) throw new Error('save failed');
-        fbLastSavedText = text;
+        fbLastSavedText = sig;
         setFbSaveIndicator('saved');
       } catch (_) {
         setFbSaveIndicator('failed');
       }
     }
 
-    // "Submit another draft" — generate feedback on the (edited) working draft
-    // in place, then reload the feedback screen with the new draft's feedback.
+    // Read the current multi-question answers from the inline editors (falling
+    // back to the stored answers when the editors aren't present).
+    function readMqAnswers() {
+      var qs = (currentTask && currentTask.questions) || [];
+      if (!qs.length || !document.querySelector('.mq-edit-input')) {
+        return Array.isArray(currentSubmitAnswers) ? currentSubmitAnswers : [];
+      }
+      return qs.map(function(q) {
+        if (q.type === 'multiple_choice') {
+          var checked = document.querySelector('.mq-edit-radio[name="mqq_' + q.id + '"]:checked');
+          return { question_id: q.id, selected_option_id: checked ? checked.value : '' };
+        }
+        var ed = document.getElementById('mqEdit_' + q.id);
+        return { question_id: q.id, text: ed ? ed.value : '' };
+      });
+    }
+
+    // Toggle multi-question answers between read-only and editable.
+    function toggleEditAnswers() {
+      var btn = document.getElementById('editAnswersBtn');
+      var edits = document.querySelectorAll('.mq-edit-input');
+      var views = document.querySelectorAll('[id^="mqView_"]');
+      mqEditMode = !mqEditMode;
+      for (var i = 0; i < views.length; i++) views[i].style.display = mqEditMode ? 'none' : '';
+      for (var j = 0; j < edits.length; j++) edits[j].style.display = mqEditMode ? '' : 'none';
+      if (btn) btn.textContent = mqEditMode ? 'Done editing' : 'Edit answers';
+      if (mqEditMode) {
+        if (fbEditorShownAt == null) fbEditorShownAt = Date.now();
+        wireMqEditors();
+        var firstTa = document.querySelector('.mq-edit-text');
+        if (firstTa) firstTa.focus();
+      } else {
+        syncMqViews();
+        if (fbAutosaveTimer) clearTimeout(fbAutosaveTimer);
+        fbPushAutosave();
+      }
+    }
+
+    // Wire telemetry + paste blocking + autosave onto the answer editors (once).
+    function wireMqEditors() {
+      var typedOnly = !currentTask || currentTask.typed_response_only !== false;
+      document.querySelectorAll('.mq-edit-text').forEach(function(ta) {
+        if (ta.dataset.wired) return;
+        ta.dataset.wired = '1';
+        ta.addEventListener('input', function() {
+          var now = Date.now();
+          if (fbTelemetry.time_to_first_keystroke_ms == null) {
+            fbTelemetry.time_to_first_keystroke_ms = now - (fbEditorShownAt || now);
+            fbTelemetry.typing_session_count = Math.max(1, fbTelemetry.typing_session_count);
+          }
+          fbTelemetry.keystroke_count += 1;
+          if (fbLastInputAt) fbTelemetry.total_typing_time_ms += Math.min(now - fbLastInputAt, 5000);
+          fbLastInputAt = now;
+          pendingAnswers = readMqAnswers();
+          fbScheduleAutosave();
+        });
+        ta.addEventListener('paste', function(ev) {
+          fbTelemetry.paste_attempts_blocked += 1;
+          if (typedOnly) { ev.preventDefault(); showToast('Pasting is disabled for this task — please type your changes.'); }
+        });
+        ta.addEventListener('drop', function(ev) {
+          fbTelemetry.paste_attempts_blocked += 1;
+          if (typedOnly) { ev.preventDefault(); showToast('Dragging text in is disabled for this task.'); }
+        });
+        ta.addEventListener('dragover', function(ev) { if (typedOnly) ev.preventDefault(); });
+      });
+      document.querySelectorAll('.mq-edit-radio').forEach(function(r) {
+        if (r.dataset.wired) return;
+        r.dataset.wired = '1';
+        r.addEventListener('change', function() {
+          if (fbTelemetry.time_to_first_keystroke_ms == null) {
+            fbTelemetry.time_to_first_keystroke_ms = Date.now() - (fbEditorShownAt || Date.now());
+            fbTelemetry.typing_session_count = Math.max(1, fbTelemetry.typing_session_count);
+          }
+          pendingAnswers = readMqAnswers();
+          fbScheduleAutosave();
+        });
+      });
+    }
+
+    // Regenerate the read-only answer views from the edited answers (on "Done").
+    function syncMqViews() {
+      var qs = (currentTask && currentTask.questions) || [];
+      qs.forEach(function(q) {
+        var view = document.getElementById('mqView_' + q.id);
+        if (!view) return;
+        if (q.type === 'multiple_choice') {
+          var checked = document.querySelector('.mq-edit-radio[name="mqq_' + q.id + '"]:checked');
+          var opt = checked ? (q.options || []).find(function(o) { return o.id === checked.value; }) : null;
+          view.innerHTML = '<div class="mq-mc-result"><div class="mq-mc-line">Your answer: <strong>' + (opt ? e(opt.text) : 'Not answered') + '</strong></div></div>';
+        } else {
+          var ed = document.getElementById('mqEdit_' + q.id);
+          var t = ed ? ed.value : '';
+          view.innerHTML = t ? '<div class="mq-answer">' + e(t) + '</div>' : '<div class="mq-answer mq-empty">No answer submitted for this question.</div>';
+        }
+      });
+    }
+
+    // Attachments to carry forward from the latest submission (feedback page has
+    // no uploader, so re-feeding/marking preserves the prior draft's files).
+    function fbCurrentAttachments() {
+      return (allDrafts && allDrafts.length && Array.isArray(allDrafts[allDrafts.length - 1].student_attachments))
+        ? allDrafts[allDrafts.length - 1].student_attachments : [];
+    }
+
+    // "Submit another draft" — generate feedback on the (edited) working draft or
+    // answers in place, then reload the feedback screen with the new feedback.
     // Counts toward the 3-draft cap. No bounce back to submit.html.
     var _fbGenMsgTimer = null;
     async function submitNewDraft(taskId) {
       if (!taskId || fbGenInFlight) return;
-      var edit = document.getElementById('submitDocEdit');
-      var draft = ((edit ? edit.value : currentDraftText) || '').trim();
-      if (draft.length < 50) { alert('Your draft is too short for feedback — write at least a paragraph.'); return; }
+      var isMulti = mqIsMulti;
+      var endpoint, body;
+      if (isMulti) {
+        var answers = readMqAnswers();
+        var answered = answers.filter(function(a) { return a && ((typeof a.text === 'string' && a.text.trim()) || a.selected_option_id); });
+        if (answered.length === 0) { alert('Answer at least one question before getting feedback.'); return; }
+        endpoint = '/api/generate-multi-feedback';
+        body = { task_id: taskId, answers: answers };
+      } else {
+        var edit = document.getElementById('submitDocEdit');
+        var draft = ((edit ? edit.value : currentDraftText) || '').trim();
+        if (draft.length < 50) { alert('Your draft is too short for feedback — write at least a paragraph.'); return; }
+        endpoint = '/api/generate-feedback';
+        body = { task_id: taskId, draft: draft };
+      }
+      body.keystroke_count = fbTelemetry.keystroke_count;
+      body.paste_attempts_blocked = fbTelemetry.paste_attempts_blocked;
+      body.typing_session_count = fbTelemetry.typing_session_count;
+      body.total_typing_time_ms = fbTelemetry.total_typing_time_ms;
+      body.time_to_first_keystroke_ms = fbTelemetry.time_to_first_keystroke_ms;
+      body.student_attachments = fbCurrentAttachments();
       // Flush any pending autosave first (best-effort).
       if (fbAutosaveTimer) { clearTimeout(fbAutosaveTimer); }
       fbGenInFlight = true;
       var overlay = document.createElement('div');
       overlay.className = 'fb-gen-overlay';
-      overlay.innerHTML = '<div class="fb-gen-spinner"></div><div class="fb-gen-text" id="fbGenText">Reading your draft…</div><div class="fb-gen-hint">Full feedback can take up to a couple of minutes. Please don\'t refresh.</div>';
+      var lead = isMulti ? 'Reading your answers…' : 'Reading your draft…';
+      overlay.innerHTML = '<div class="fb-gen-spinner"></div><div class="fb-gen-text" id="fbGenText">' + lead + '</div><div class="fb-gen-hint">Full feedback can take up to a couple of minutes. Please don\'t refresh.</div>';
       document.body.appendChild(overlay);
-      var msgs = ['Reading your draft…', 'Checking against the marking criteria…', 'Looking at the depth of your analysis…', 'Comparing with your previous draft…', 'Finding your strengths…', 'Writing your top-priority focus…', 'Assembling inline annotations…', 'Almost there — finalising your feedback…'];
+      var msgs = isMulti
+        ? ['Reading your answers…', 'Checking each question against the criteria…', 'Looking at the depth of each response…', 'Finding your strengths…', 'Drafting per-question feedback…', 'Almost there — finalising your feedback…']
+        : ['Reading your draft…', 'Checking against the marking criteria…', 'Looking at the depth of your analysis…', 'Comparing with your previous draft…', 'Finding your strengths…', 'Writing your top-priority focus…', 'Assembling inline annotations…', 'Almost there — finalising your feedback…'];
       var mi = 0;
       _fbGenMsgTimer = setInterval(function() { mi = (mi + 1) % msgs.length; var t = document.getElementById('fbGenText'); if (t) t.textContent = msgs[mi]; }, 5000);
       try {
-        var res = await authFetch('/api/generate-feedback', {
+        var res = await authFetch(endpoint, {
           method: 'POST',
-          body: JSON.stringify({
-            task_id: taskId,
-            draft: draft,
-            keystroke_count: fbTelemetry.keystroke_count,
-            paste_attempts_blocked: fbTelemetry.paste_attempts_blocked,
-            typing_session_count: fbTelemetry.typing_session_count,
-            total_typing_time_ms: fbTelemetry.total_typing_time_ms,
-            time_to_first_keystroke_ms: fbTelemetry.time_to_first_keystroke_ms,
-          }),
+          body: JSON.stringify(body),
         });
         var text = await res.text();
         var data; try { data = text ? JSON.parse(text) : {}; } catch (_) { data = {}; }
@@ -1785,6 +1978,7 @@
           task_id: (currentTask && currentTask.id) || taskId,
           title: currentTask && currentTask.title,
           question: currentTask && currentTask.question,
+          questions: (currentTask && currentTask.questions) || null,
           course: currentTask && currentTask.course,
           total_marks: (currentTask && currentTask.total_marks) || null,
           due_date: (currentTask && currentTask.due_date) || null,
