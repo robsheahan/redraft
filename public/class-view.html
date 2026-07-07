@@ -132,7 +132,12 @@
           } else if (t.my_submitted_for_marking) {
             statusPill = '<span class="task-status-pill pending">Pending</span>';
           }
-          html += '<a href="submit.html?task=' + encodeURIComponent(t.id) + '" class="task-card">';
+          // A feedback task with a submission opens straight to the feedback
+          // page (which self-loads from ?task); other tasks open the task screen.
+          var cvIsFeedback = (t.task_mode || 'feedback_task') === 'feedback_task';
+          var cvGoToFeedback = cvIsFeedback && (t.my_submission_count || 0) > 0;
+          var cvHref = (cvGoToFeedback ? 'feedback.html' : 'submit.html') + '?task=' + encodeURIComponent(t.id);
+          html += '<a href="' + cvHref + '" class="task-card">';
           html += '<div style="flex:1"><div class="task-title">' + e(t.title || t.question || 'Untitled task') + '</div>';
           html += '<div class="task-meta">' + metaParts.join(' · ') + '</div></div>';
           if (statusPill) html += statusPill;

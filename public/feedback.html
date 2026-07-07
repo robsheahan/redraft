@@ -660,12 +660,19 @@
     var activeView = 'feedback';
 
     if (!feedbackData) {
-      container.innerHTML = `
-        <div class="empty-state">
-          <h2>No feedback to show</h2>
-          <p>Submit a draft first to see your feedback here.</p>
-          <a href="student.html">Go to student page</a>
-        </div>`;
+      // No sessionStorage handoff. If we arrived at feedback.html?task=<id>
+      // (e.g. a task-row link), self-load the latest submission for that task.
+      var selfTaskId = new URLSearchParams(window.location.search).get('task');
+      if (selfTaskId) {
+        selfLoadFromTask(selfTaskId);
+      } else {
+        container.innerHTML = `
+          <div class="empty-state">
+            <h2>No feedback to show</h2>
+            <p>Submit a draft first to see your feedback here.</p>
+            <a href="student.html">Go to student page</a>
+          </div>`;
+      }
     } else {
       const parsed = JSON.parse(feedbackData);
       currentMeta = parsed.meta;
@@ -674,58 +681,92 @@
       const meta = parsed.meta;
       const draftText = parsed.draft_text || '';
       initialAnswers = parsed.answers || null;
-      const task = currentTask;
 
-      // If this was submitted against a task, load all drafts + the full
-      // task so we can render the marked tab regardless of which page handed
-      // us off (submit / dashboard / my-results).
-      const taskId = task.task_id || meta.task_id;
+      // If this was submitted against a task, load all drafts + the full task so
+      // we can render the marked tab regardless of which page handed us off.
+      const taskId = currentTask.task_id || meta.task_id;
       if (taskId) {
-        // Initial render with whatever data we have from sessionStorage;
-        // re-render once the freshly-fetched task + drafts arrive.
-        renderFeedback(fb, meta, null, meta.draftVersion || 1, draftText);
+        renderFeedback(fb, meta, null, meta.draftVersion || 1, draftText);  // initial paint
         Promise.all([
-          authFetch('/api/me?resource=task-drafts&task_id=' + encodeURIComponent(taskId))
-            .then(r => r.ok ? r.json() : { drafts: [] }).catch(() => ({ drafts: [] })),
-          authFetch('/api/task?id=' + encodeURIComponent(taskId))
-            .then(r => r.ok ? r.json() : null).catch(() => null),
-          // In-progress edits from the inline editor (restore-on-reopen).
-          authFetch('/api/draft-autosave?task_id=' + encodeURIComponent(taskId))
-            .then(r => r.ok ? r.json() : null).catch(() => null),
-        ]).then(([draftsData, taskData, autosaveData]) => {
-          if (taskData && taskData.task) {
-            currentTask = { ...currentTask, ...taskData.task, class: taskData.class || currentTask.class || null };
-            if (taskData.task.classes && taskData.task.classes.teacher_name) {
-              currentTask.teacher_name = currentTask.teacher_name || taskData.task.classes.teacher_name;
-            }
-          }
-          var draftsArr = (draftsData && draftsData.drafts) ? draftsData.drafts : [];
-          // Restore the working draft from autosave: only for a not-yet-locked
-          // task, and only when the saved text actually differs from the latest
-          // submission (otherwise there's nothing unsaved to restore).
-          var locked = draftsArr.some(function(d) { return d && (d.graded_at || d.submitted_for_marking); });
-          if (!locked && autosaveData && typeof autosaveData.draft_text === 'string' && autosaveData.draft_text.trim()) {
-            var latestSub = draftsArr.length ? draftsArr[draftsArr.length - 1] : null;
-            if (!latestSub || autosaveData.draft_text !== (latestSub.draft_text || '')) {
-              pendingAutosave = autosaveData.draft_text;
-              fbLastSavedText = autosaveData.draft_text;
-              if (autosaveData.telemetry && typeof autosaveData.telemetry === 'object') {
-                fbTelemetry = Object.assign(fbTelemetry, autosaveData.telemetry);
-              }
-            }
-          }
-          if (draftsArr.length > 0) {
-            allDrafts = draftsArr;
-            var currentVersion = meta.draftVersion || allDrafts[allDrafts.length - 1].draft_version;
-            var current = allDrafts.find(function(d) { return d.draft_version === currentVersion; });
-            renderFeedback(fb, meta, allDrafts, currentVersion, current ? current.draft_text : draftText);
-          } else {
-            renderFeedback(fb, meta, null, meta.draftVersion || 1, draftText);
-          }
+          authFetch('/api/me?resource=task-drafts&task_id=' + encodeURIComponent(taskId)).then(r => r.ok ? r.json() : { drafts: [] }).catch(() => ({ drafts: [] })),
+          authFetch('/api/task?id=' + encodeURIComponent(taskId)).then(r => r.ok ? r.json() : null).catch(() => null),
+          authFetch('/api/draft-autosave?task_id=' + encodeURIComponent(taskId)).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]).then(function(results) {
+          mergeTask(results[1]);
+          renderWithDrafts((results[0] && results[0].drafts) || [], results[2], fb, meta, draftText);
         });
       } else {
         renderFeedback(fb, meta, null, meta.draftVersion || 1, draftText);
       }
+    }
+
+    // Merge the fetched task into currentTask (adds server-side fields + class).
+    function mergeTask(taskDataResp) {
+      if (taskDataResp && taskDataResp.task) {
+        currentTask = { ...currentTask, ...taskDataResp.task, class: taskDataResp.class || currentTask.class || null };
+        if (taskDataResp.task.classes && taskDataResp.task.classes.teacher_name) {
+          currentTask.teacher_name = currentTask.teacher_name || taskDataResp.task.classes.teacher_name;
+        }
+      }
+    }
+
+    // Restore any unsaved working draft (inline-editor autosave) — only for a
+    // not-yet-locked task, and only when it differs from the latest submission —
+    // then render with the full drafts list.
+    function renderWithDrafts(draftsArr, autosaveData, fb, meta, draftText) {
+      var locked = draftsArr.some(function(d) { return d && (d.graded_at || d.submitted_for_marking); });
+      if (!locked && autosaveData && typeof autosaveData.draft_text === 'string' && autosaveData.draft_text.trim()) {
+        var latestSub = draftsArr.length ? draftsArr[draftsArr.length - 1] : null;
+        if (!latestSub || autosaveData.draft_text !== (latestSub.draft_text || '')) {
+          pendingAutosave = autosaveData.draft_text;
+          fbLastSavedText = autosaveData.draft_text;
+          if (autosaveData.telemetry && typeof autosaveData.telemetry === 'object') {
+            fbTelemetry = Object.assign(fbTelemetry, autosaveData.telemetry);
+          }
+        }
+      }
+      if (draftsArr.length > 0) {
+        allDrafts = draftsArr;
+        var currentVersion = (meta && meta.draftVersion) || draftsArr[draftsArr.length - 1].draft_version;
+        var current = draftsArr.find(function(d) { return d.draft_version === currentVersion; });
+        renderFeedback(fb, meta, draftsArr, currentVersion, current ? current.draft_text : draftText);
+      } else {
+        renderFeedback(fb, meta, null, (meta && meta.draftVersion) || 1, draftText);
+      }
+    }
+
+    // Self-load path: feedback.html?task=<id> with no sessionStorage handoff.
+    async function selfLoadFromTask(taskId) {
+      container.innerHTML = '<div class="empty-state"><h2>Loading your feedback…</h2></div>';
+      var results = await Promise.all([
+        authFetch('/api/me?resource=task-drafts&task_id=' + encodeURIComponent(taskId)).then(r => r.ok ? r.json() : { drafts: [] }).catch(() => ({ drafts: [] })),
+        authFetch('/api/task?id=' + encodeURIComponent(taskId)).then(r => r.ok ? r.json() : null).catch(() => null),
+        authFetch('/api/draft-autosave?task_id=' + encodeURIComponent(taskId)).then(r => r.ok ? r.json() : null).catch(() => null),
+      ]);
+      var draftsData = results[0], taskDataResp = results[1], autosaveData = results[2];
+      var taskObj = taskDataResp && taskDataResp.task;
+      // Route to the right place if this isn't a written-feedback task to show.
+      if (taskObj && taskObj.subject_type === 'maths') { window.location.href = 'feedback-maths.html?task=' + encodeURIComponent(taskId); return; }
+      if (taskObj && (taskObj.task_mode === 'quick_task' || taskObj.task_mode === 'marked_task')) { window.location.href = 'submit.html?task=' + encodeURIComponent(taskId); return; }
+      var drafts = (draftsData && draftsData.drafts) ? draftsData.drafts : [];
+      if (!drafts.length) { window.location.href = 'submit.html?task=' + encodeURIComponent(taskId); return; }
+      // Pick the submission to show: graded > latest-with-feedback > latest.
+      var graded = drafts.filter(function(d) { return d.graded_at; }).slice(-1)[0];
+      var withFb = drafts.filter(function(d) { return d.feedback; }).slice(-1)[0];
+      var picked = graded || withFb || drafts[drafts.length - 1];
+      var meta = {
+        question: picked.question || (taskObj && taskObj.question) || '',
+        course: picked.course || (taskObj && taskObj.course) || '',
+        title: (taskObj && taskObj.title) || null,
+        task_id: taskId,
+        draftVersion: picked.draft_version || drafts[drafts.length - 1].draft_version,
+        maxDrafts: 3,
+      };
+      currentMeta = meta;
+      currentTask = taskObj ? Object.assign({}, taskObj, { class: taskDataResp.class || null }) : { task_id: taskId };
+      initialAnswers = picked.answers || null;
+      mergeTask(taskDataResp);
+      renderWithDrafts(drafts, autosaveData, picked.feedback || null, meta, picked.draft_text || '');
     }
 
     // Draft navigator, shared by the single- and multi-question renderers.
@@ -1045,13 +1086,19 @@
         html += '</div>';
       }
 
-      // "Ready to submit?" panel — only for a live class task that isn't locked.
-      // Shows the working draft (restored autosave edits if any, else the latest
-      // submission). The student can edit inline (autosaves), submit for marking,
-      // or re-feed the edited draft for more feedback — all without leaving here.
-      var latestSubText = (Array.isArray(drafts) && drafts.length) ? (drafts[drafts.length - 1].draft_text || '') : draftText;
-      var workingDraft = (pendingAutosave != null) ? pendingAutosave : latestSubText;
-      if (tId && !anyLocked && workingDraft) {
+      // Bottom draft card. Each iteration's text is preserved with its feedback:
+      //  - Viewing the LATEST feedback draft of a live (unlocked) task → the
+      //    actionable "Ready to submit?" panel (working draft may carry unsaved
+      //    autosaved edits; edit inline, submit for marking, or submit another).
+      //  - Viewing an EARLIER draft (or once locked) → a read-only snapshot of
+      //    that draft's text, labelled "Draft N", so previous versions are kept.
+      var feedbackDrafts = (Array.isArray(drafts) ? drafts : []).filter(function(d) { return d && !d.submitted_for_marking; });
+      var latestFbVersion = feedbackDrafts.length ? feedbackDrafts[feedbackDrafts.length - 1].draft_version : (meta.draftVersion || currentVersion || 1);
+      var viewingFeedbackDraft = !currentDraft || !currentDraft.submitted_for_marking;
+      var isLatestFb = (currentVersion === latestFbVersion);
+      if (tId && viewingFeedbackDraft && !anyLocked && isLatestFb) {
+        var latestSubText = feedbackDrafts.length ? (feedbackDrafts[feedbackDrafts.length - 1].draft_text || '') : draftText;
+        var workingDraft = (pendingAutosave != null) ? pendingAutosave : latestSubText;
         currentDraftText = workingDraft;
         var canRevise = draftsUsed < MAX_DRAFTS;
         html += '<div class="submit-panel" id="submitPanel">';
@@ -1070,6 +1117,18 @@
         }
         html += '<button type="button" class="btn-revise-secondary" id="editDraftBtn" onclick="toggleEditDraft()">Edit</button>';
         html += '</div>';
+        html += '</div>';
+      } else if (tId && viewingFeedbackDraft && draftText) {
+        // Preserved snapshot of an earlier draft.
+        html += '<div class="submit-panel">';
+        html += '<div class="submit-panel-title">Draft ' + currentVersion + '</div>';
+        html += '<div class="submit-panel-sub">This is an earlier draft, kept for reference'
+              + (!anyLocked ? '. Go to your latest draft to make changes or submit.' : '.') + '</div>';
+        html += '<div class="submit-panel-label">Your Draft ' + currentVersion + ' submission</div>';
+        html += '<div class="submit-doc">' + draftDocHtml(draftText) + '</div>';
+        if (!anyLocked && !isLatestFb) {
+          html += '<div class="submit-panel-actions"><button type="button" class="btn-revise-secondary" onclick="switchDraft(' + latestFbVersion + ')">Go to your latest draft →</button></div>';
+        }
         html += '</div>';
       }
 
@@ -1611,6 +1670,9 @@
             fbTelemetry.keystroke_count += 1;
             if (fbLastInputAt) fbTelemetry.total_typing_time_ms += Math.min(now - fbLastInputAt, 5000);
             fbLastInputAt = now;
+            // Keep the working draft in sync so navigating away and back (or a
+            // re-render) preserves in-session edits, not just the saved snapshot.
+            pendingAutosave = edit.value;
             fbScheduleAutosave();
           });
           edit.addEventListener('paste', function(ev) {

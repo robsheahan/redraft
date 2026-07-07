@@ -888,7 +888,11 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
             statusPill = '<span class="task-status-pill pending">Pending</span>';
           }
           const rowCls = 'task-row' + (isQuickTask ? '' : ' is-assessment');
-          html += '<a href="submit.html?task=' + encodeURIComponent(t.id) + '" class="' + rowCls + '">';
+          // Once a feedback task has a submission, clicking the row goes straight
+          // to the feedback page (not the blank task screen). openFeedback
+          // preventDefaults; the submit.html href stays as a no-JS fallback.
+          const goToFeedback = !noFeedback && hasSubmission;
+          html += '<a href="submit.html?task=' + encodeURIComponent(t.id) + '"' + (goToFeedback ? ' onclick="openFeedback(event, \'' + encodeURIComponent(t.id) + '\')"' : '') + ' class="' + rowCls + '">';
           html += '<div style="flex:1;min-width:0"><div class="task-row-title">' + escapeHtml(t.title || t.question || 'Untitled task') + '</div>';
           html += '<div class="task-row-meta">' + metaParts.join(' · ') + '</div></div>';
           if (statusPill) html += statusPill;
