@@ -162,7 +162,7 @@
     .fb-toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); background: #1f2937; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13.5px; z-index: 9999; opacity: 0; transition: opacity 0.2s ease; pointer-events: none; max-width: 90%; text-align: center; }
     .fb-toast.show { opacity: 1; }
     /* Saved indicator on the inline editor */
-    .fb-save-indicator { font-size: 12px; color: #9ca3af; margin-bottom: 8px; min-height: 15px; }
+    .fb-save-indicator { font-size: 12px; color: #9ca3af; min-height: 15px; margin: 2px 0 10px; text-align: right; }
     .fb-save-indicator.saving { color: #9ca3af; }
     .fb-save-indicator.saved { color: #15803d; }
     .fb-save-indicator.failed { color: #b91c1c; }
@@ -1139,10 +1139,10 @@
         html += '<div class="submit-panel-sub">If you\'re happy with this draft, submit it for marking — or click <strong>Edit</strong> to make changes'
               + (canRevise ? ', then get feedback on your new draft.' : '. Your teacher marks this version, and you won\'t be able to get more feedback on this task.') + '</div>';
         html += '<div class="submit-panel-label" id="submitDocLabel">This is what you\'ll submit</div>';
-        html += '<div class="fb-save-indicator" id="fbSaveIndicator"></div>';
         // Document view (read-only, reads like a page) + hidden editable textarea.
         html += '<div class="submit-doc" id="submitDocView">' + draftDocHtml(workingDraft) + '</div>';
         html += '<textarea class="submit-doc-edit" id="submitDocEdit" style="display:none">' + e(workingDraft) + '</textarea>';
+        html += '<div class="fb-save-indicator" id="fbSaveIndicator"></div>';
         html += '<div class="submit-panel-actions">';
         html += '<button type="button" class="btn-submit-marking" id="submitMarkingBtn" onclick="submitForMarking(\'' + tId + '\')">Submit for marking</button>';
         if (canRevise) {
