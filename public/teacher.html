@@ -92,16 +92,14 @@
     }
     /* New-submissions notification flag on a class card */
     .notif-flag {
-      position: absolute; top: -9px; right: -9px;
-      background: #dc2626; color: #fff;
+      display: inline-flex; align-items: center;
+      background: #16a34a; color: #fff;
       font-size: 12px; font-weight: 700;
-      padding: 4px 11px; border-radius: 999px;
-      box-shadow: 0 2px 8px rgba(220,38,38,0.35);
-      border: 2px solid #fff;
-      cursor: pointer; z-index: 3; white-space: nowrap;
-      transition: background 0.15s, transform 0.15s;
+      padding: 3px 10px; border-radius: 999px;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.15s;
     }
-    .notif-flag:hover { background: #b91c1c; transform: scale(1.04); }
+    .notif-flag:hover { background: #15803d; }
     .task-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04); transform: translateY(-1px); }
     .task-card-header {
       display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px;
@@ -206,7 +204,6 @@
       const archived = owned.filter(c => c.archived_at);
 
       function renderClassCard(c) {
-        var courseLine = c.course ? '<div class="task-stats"><span class="stat">' + e(c.course) + '</span></div>' : '';
         // New-submissions flag: clicking it opens the pending task (when one task
         // holds them all) or the class page (when spread across tasks).
         var flag = '';
@@ -219,8 +216,14 @@
             + ' onclick="event.preventDefault();event.stopPropagation();window.location.href=\'' + dest + '\'">'
             + toMark + ' new</span>';
         }
+        // Course + flag share one line, side by side.
+        var courseLine = (c.course || flag)
+          ? '<div class="task-stats" style="align-items:center">'
+              + (c.course ? '<span class="stat">' + e(c.course) + '</span>' : '')
+              + flag
+            + '</div>'
+          : '';
         return '<a href="class-detail.html?id=' + encodeURIComponent(c.id) + '" class="task-card">'
-          + flag
           + '<div class="task-card-header">'
           + '<div><h3>' + e(c.name) + '</h3></div>'
           + '<div class="task-code">' + e(c.code) + '</div>'
