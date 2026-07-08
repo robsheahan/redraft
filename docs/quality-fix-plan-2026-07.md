@@ -2,9 +2,11 @@
 
 Remediation plan for the issues found in the 2026-07-03 four-agent quality review (skill tagging, differentiation, insights) plus the regression sweep. Companion to `docs/codebase-audit-2026-07-03.md`.
 
-**Status legend:** ⬜ not started · 🔧 in progress · ✅ done
+**Status legend:** ⬜ not started · 🔧 in progress · ✅ done · ⏸ deferred · ❌ won't do
 **Effort:** S (<½ day) · M (½–1 day) · L (multi-day)
 **Deploy:** whether it needs a DB migration and/or a prod deploy.
+
+> **✅ COMPLETE — all of Phases 0–4 built + deployed 2026-07-03.** 1.4 (teacher-mark reconciliation) was deliberately **not done** (Rob's call); 2.5 was deferred as polish. Everything else shipped to prod. Remaining validation is human calibration on real teacher-marked work over the following weeks — see the Verification note.
 
 ---
 
@@ -22,43 +24,43 @@ Only one issue is an active regression (already fixed: `e20a9ed`). Everything be
 
 ---
 
-## Phase 0 — Quick wins (do first)  ✅ BUILT 2026-07-03
+## Phase 0 — Quick wins (do first)  ✅ DONE + DEPLOYED 2026-07-03
 
-All six done (commits `5bb81d1` skill-rollup trio, `508582e` discipline key, `28ca9d2` fan-out, `ebef63f` mark card). Typecheck clean, math changes unit-verified, frontend render-checked. **NOT yet deployed** — 0.1 (mark card) is held pending Rob's sign-off on the presentation; the rest are ready to ship together.
+All six built + deployed (commits `5bb81d1` skill-rollup trio, `508582e` discipline key, `28ca9d2` fan-out, `ebef63f` mark card). Typecheck clean, math changes unit-verified, frontend render-checked. 0.1 (mark card) shipped as the neutral **"Task-score distribution"** after Rob signed off on the presentation.
 
 Small, safe, independently shippable. High trust-per-hour.
 
-### 0.1 — Reframe the "Common Grade Scale" mark-distribution card ⬜
+### 0.1 — Reframe the "Common Grade Scale" mark-distribution card ✅ (`ebef63f`)
 **Problem:** The card labels raw per-task mark percentages as A–E "Common Grade Scale" bands with invented cutoffs (90/75/50/20). NESA's Common Grade Scale is a holistic, standards-referenced *course* grade with no fixed percentages — so this is methodologically indefensible *and* contradicts the app's own load-bearing no-mark/no-band rule. Biggest user-facing trust liability; a NESA-literate HOD objects on sight.
 **Fix:** Drop the NESA band labels. Present it as a neutral **"Task-score distribution"** with plain buckets (e.g. 0–49 / 50–74 / 75–89 / 90–100 or quartiles) and an explicit "not a grade or band" note. Keep the dedupe-to-latest-graded-draft logic. Consider hiding it entirely when tasks in scope have wildly different `total_marks` (incomparable pooling).
 **Files:** `api/insights-cards.ts` (`bandFor`, `NESA_BANDS`, `computeMarkDistribution`, `computeMarkByFaculty`), `public/insights.html` (renderers + card titles). Also mirror in `api/insights-student.ts` + `insights-detail.ts` band drill-downs.
 **Effort:** S · **Deploy:** frontend + API, no migration.
 
-### 0.2 — Fix the discipline-key mismatch (skill data silently orphaned) ⬜
+### 0.2 — Fix the discipline-key mismatch (skill data silently orphaned) ✅ (`508582e`)
 **Problem (confirmed by 2 reviewers):** skill *writes* fall back to `'General'` (writing) / `'Mathematics'` (maths); skill *reads* fall back to `'Other'` (insights cards) / `'General'` (differentiator). For any task whose `course` doesn't resolve via `getDisciplineForCourse`, written skill data lands under one key but is queried under another → silently excluded from the skill matrix/growth/trajectory AND maths differentiation silently disables. Latent for the pilot (all current courses resolve) but a real correctness hole.
 **Fix:** Make read + write fallbacks identical. Cleanest: a single shared helper `disciplineForCourse(course, family)` used by every write and read site, with one canonical fallback per family. Add a one-off log for skill rows whose `discipline` isn't an expected taxonomy faculty.
 **Files:** `api/generate-feedback.ts`, `generate-maths-feedback.ts`, `submit-for-marking.ts` (writes); `api/insights-cards.ts`, `insights-card-generate.ts`, `insights-student.ts`, `generate-activity.ts` (reads); new helper in `data/nesa-courses.ts` or `lib/`.
 **Effort:** S–M · **Deploy:** API, no migration. (Optional backfill to re-key any already-orphaned rows.)
 
-### 0.3 — Fix `aggregateSkillAssessments` confidence (upward leak) ⬜
+### 0.3 — Fix `aggregateSkillAssessments` confidence (upward leak) ✅ (`5bb81d1`)
 **Problem:** For multi-part maths / multi-question essays it pairs the **averaged** level across parts with the **max** confidence across parts. A skill weakly shown on two parts and strongly on one yields a diluted level carrying the strongest part's confidence → that confidence drives `effAlpha` in the rollup, folding a watered-down level in at full weight. Upward calibration leak on every multi-part submission.
 **Fix:** Pair the averaged level with an **evidence-weighted mean** confidence (or weight each part's level by its own confidence before averaging).
 **Files:** `lib/multi-question-feedback.ts` (`aggregateSkillAssessments`).
 **Effort:** S · **Deploy:** API, no migration. Verify with a unit test.
 
-### 0.4 — Seed/weight the first skill observation ⬜
+### 0.4 — Seed/weight the first skill observation ✅ (`5bb81d1`)
 **Problem:** A brand-new dimension is initialised as `newLevel = obs` with no evidence-weight and no ±1 clamp (the anti-gaming clamp only applies once a prior exists). One thin/low-confidence `extending` read sets the stored level to `5.0` outright, then takes several damped submissions to correct.
 **Fix:** Seed the first observation toward a neutral prior (e.g. blend `obs` with `consolidating` by evidence weight), so a single thin read can't peg the extremes.
 **Files:** `lib/skill-profile.ts` (the `else { newLevel = obs }` branch).
 **Effort:** S · **Deploy:** API, no migration. Unit-test the rollup.
 
-### 0.5 — Close the `things_done_well` fan-out desync hole ⬜
+### 0.5 — Close the `things_done_well` fan-out desync hole ✅ (`28ca9d2`)
 **Problem:** `common_gaps` generates gaps+strengths in one consistent call and fans strengths into `things_done_well` (so they can't contradict). But `things_done_well` still has its own standalone generation path that, if invoked, overwrites the fanned-out strengths without the gaps context — silently desyncing the pair.
 **Fix:** Remove the standalone `things_done_well` generation path (or alias it to run `common_gaps` and re-fan).
 **Files:** `api/insights-card-generate.ts` (`KIND_CONFIG.things_done_well`, handler).
 **Effort:** S · **Deploy:** API, no migration.
 
-### 0.6 — Recompute `trend` from the history slope ⬜
+### 0.6 — Recompute `trend` from the history slope ✅ (`5bb81d1`)
 **Problem:** `trend` compares the raw new observation against the pre-update smoothed level — it's the sign of the latest *residual*, not a trajectory, and oscillates submission-to-submission. It's surfaced to the graduated-prompt model and (indirectly) to teachers as "improving/regressing."
 **Fix:** Compute `trend` from the slope of the recent `skill_observations` history (which now exists) instead of the latest residual.
 **Files:** `lib/skill-profile.ts` (trend calc); reads `skill_observations`.
@@ -66,25 +68,25 @@ Small, safe, independently shippable. High trust-per-hour.
 
 ---
 
-## Phase 1 — Skill calibration (the foundation)
+## Phase 1 — Skill calibration (the foundation)  ✅ DONE + DEPLOYED 2026-07-03 (1.4 won't do)
 
-**Status 2026-07-03:** 1.1 ✅ (`5abcfc2`), 1.2 ✅ (`988f762`), 1.3 ✅ (`a5e0ada`) — built, typecheck clean, math unit-verified, NOT yet deployed. **1.4 is on hold pending a product decision (see below).** 1.1's optional `source` column: `scripts/skill-observations-source-migration.sql`.
+**Status 2026-07-03:** 1.1 ✅ (`5abcfc2`), 1.2 ✅ (`988f762`), 1.3 ✅ (`a5e0ada`) — built, typecheck clean, math unit-verified, **deployed**. **1.4 decided against (see below).** 1.1's optional `source` column: `scripts/skill-observations-source-migration.sql` (best-effort — the code works with or without it).
 
 Make the tag trustworthy. Everything downstream improves once these land. Sequence within the phase matters: 1.1 and 1.2 are the highest leverage.
 
-### 1.1 — Discount the Haiku silent pass in the rollup ⬜  ★ highest leverage
+### 1.1 — Discount the Haiku silent pass in the rollup ✅ (`5abcfc2`)  ★ highest leverage
 **Problem:** Quick/exam tasks (explicitly "the bulk of submissions") are scored by the cheap Haiku pass and written into `student_skill_profile` at **identical weight** to nuanced Sonnet reads. The store is dominated by the cheapest, least-guided reads treated as equal evidence.
 **Fix:** Thread a `source` ('sonnet' | 'haiku') into `recordSkillSignals`/`recordSkillObservations` and multiply `evidenceWeight` by a source factor (e.g. Haiku → 0.5). Optionally cap what a Haiku-only history can reach (e.g. can't exceed `consolidating` without one Sonnet corroboration). Store the source on `skill_observations` for auditability.
 **Files:** `lib/skill-profile.ts` (evidence weight + record signature), `api/submit-for-marking.ts` (pass source='haiku'), `generate-*.ts` (source='sonnet'). Optional migration: `skill_observations.source` column.
 **Effort:** M · **Deploy:** API; optional migration for the `source` column.
 
-### 1.2 — Give the skill read real prompt guidance ⬜
+### 1.2 — Give the skill read real prompt guidance ✅ (`988f762`)
 **Problem:** The skill-rating instruction lives *only* in the tool-schema array-description — the weakest form of instruction-following — and the **writing branch of the Haiku silent pass never mentions the skill dimensions at all**. The Sonnet holistic prompts are 250+ lines about student-facing feedback with the skill read tacked on as a tool field.
 **Fix:** Add a short explicit skill-rating block to `prompts/feedback-system.ts`, `prompts/maths-system.ts`, and **especially** the writing branch of `prompts/insights-signals-system.ts`: restate "rate only what the task exercised," "thin evidence → lower level + low confidence," the anti-gaming rule, and one worked `secure` vs `consolidating` example. Add M6 (interpretation/application) to the maths silent-pass dimension list.
 **Files:** `prompts/feedback-system.ts`, `prompts/maths-system.ts`, `prompts/insights-signals-system.ts`.
 **Effort:** M · **Deploy:** API, no migration. Verify with `npm run calibrate-feedback` + spot checks.
 
-### 1.3 — Make confidence mean certainty, not volume ⬜
+### 1.3 — Make confidence mean certainty, not volume ✅ (`a5e0ada`)
 **Problem:** `confidence = min(1, count / CONFIDENCE_FULL_AT)` — pure function of observation *count*. Pins to 100% after 5 observations regardless of how contradictory the reads were, and that confidence then drives graduated-prompt support-*stripping*. A student who reached "secure" via 5 over-generous reads is treated as certainly-secure and has support removed.
 **Fix:** Blend count with **agreement** — track the variance of recent observations (the `skill_observations` log has per-obs levels) and reduce confidence when reads disagree. Cap the volume component below 1.0 so it can't peg on count alone.
 **Files:** `lib/skill-profile.ts` (confidence calc); reads `skill_observations`.
@@ -96,7 +98,7 @@ Decided against: the skill store stays purely developmental and model-derived. T
 **The tension (why this isn't just "build it"):** the skill store is deliberately DEVELOPMENTAL, not marks. A mark reflects performance on *one task* including its difficulty and cohort; a skill level is a longitudinal developmental read. A low mark on a hard task doesn't mean the student's skill is low — so naïvely folding marks into the store could INTRODUCE noise rather than remove it, and it partially re-introduces mark influence into a store that exists precisely to be mark-free. Two viable stances:
   - **Conservative (recommended):** on a large mark-vs-model disagreement, only LOWER CONFIDENCE on the affected dimensions (don't move the level) — "the teacher and the model disagree, so we're less sure." Safe regardless of the difficulty confound.
   - **Aggressive:** nudge the rolled-up level toward a mark-implied level. More corrective, but risks the difficulty confound distorting the developmental read.
-  Also needs a mark%→level mapping choice. **Decision for Rob:** do it at all? and if so, conservative or aggressive?
+  Also needs a mark%→level mapping choice. **Decision made (2026-07-03): don't do it** — the skill store stays purely developmental and mark-free; the difficulty confound makes folding marks in more likely to add noise than remove it. Retained here as the rationale of record.
 **Problem:** The teacher's awarded grade — the only ground-truth signal in the system — never touches the skill store. `submission-grade.ts` writes no skill signal. The store is a closed loop of model self-assessment that can drift arbitrarily from the mark the teacher gave the same work.
 **Fix:** On grade write, fold a coarse reconciling signal into the profile: when the awarded mark is well below (or above) the model's implied level for that submission, nudge the relevant dimensions' level/confidence toward the mark. Keep it coarse (marks aren't per-dimension) — a gentle anchor, not a rewrite.
 **Files:** `api/submission-grade.ts`, `lib/skill-profile.ts` (a `reconcileWithMark` helper).
@@ -104,37 +106,37 @@ Decided against: the skill store stays purely developmental and model-derived. T
 
 ---
 
-## Phase 2 — Differentiation correctness
+## Phase 2 — Differentiation correctness  ✅ DONE + DEPLOYED 2026-07-03 (2.5 deferred)
 
-**Status 2026-07-03:** 2.1 ✅ (`8840fbd`), 2.2/2.3/2.4 ✅ (`a4d3dc4`) — built, typecheck clean, prompt/regex unit-verified, NOT yet deployed. **2.5 deferred (polish).**
+**Status 2026-07-03:** 2.1 ✅ (`8840fbd`), 2.2/2.3/2.4 ✅ (`a4d3dc4`) — built, typecheck clean, prompt/regex unit-verified, **deployed**. **2.5 deferred (polish, not shipped).**
 
 Fixes the maths re-skin path (latent — no maths skill data in the pilot yet, but broken before it's used) and turns "confidence-aware" from prompt aspiration into behaviour.
 
-### 2.1 — Thread the re-skinned question through `submit-for-marking` ⬜
+### 2.1 — Thread the re-skinned question through `submit-for-marking` ✅ (`8840fbd`)
 **Problem (BUG 1 + BUG 2):** Lesson-Differentiator tasks are always quick tasks, which submit via `submit-for-marking` — NOT `generate-maths-feedback`. The re-skin-aware handling ("evaluate against the version they actually answered") lives only in the unreachable path. So `submit-for-marking` (a) stores `submission.question = task.question` (the original) and (b) feeds the *original* question + the student's *re-skinned* working to the Haiku skill read. Result: the teacher marks against a question the student didn't answer, and the skill read judges working against the wrong numbers → systematic under-read → a self-reinforcing "push it easier" corruption loop.
 **Fix:** In `submit-for-marking`, for a `lesson_builder` maths task, look up the locked `task_activities.activity.question` for the student and use it as both the stored `submission.question` and the `generateInsightsSignals` question. Render `activity.question` in the teacher's maths marking "support given" block.
 **Files:** `api/submit-for-marking.ts`, `public/mark-submission-maths.html`.
 **Effort:** M · **Deploy:** API + frontend, no migration.
 
-### 2.2 — Add a server-side confidence floor to differentiation ⬜
+### 2.2 — Add a server-side confidence floor to differentiation ✅ (`a4d3dc4`)
 **Problem:** `generate-activity.ts` differentiates (and **locks**) off `observation_count > 0` — a single observation. Combined with the unclamped first-observation (0.4), an outlier first read (a hard question, an OCR glitch) can peg a student's differentiation and lock it. "Confidence-aware" (rule 4) is a soft instruction to the model with nothing enforcing it.
 **Fix:** Require `observation_count >= 2` (or a minimum rollup confidence) before differentiating/locking; below that, deliver the main activity (don't lock, so it re-evaluates later). Pairs naturally with 0.4 (first-obs seed) and 1.3 (confidence-as-agreement).
 **Files:** `api/generate-activity.ts` (the `rows.filter(... observation_count > 0)` gate).
 **Effort:** S · **Deploy:** API, no migration.
 
-### 2.3 — Add a tone backstop + empty-activity guard ⬜
+### 2.3 — Add a tone backstop + empty-activity guard ✅ (`a4d3dc4`)
 **Problem:** `student_focus` is rendered raw to the student; the writing path has no verifier and the maths verifier checks correctness only, not tone. A single deficit-framed sentence ("because your evidence is weak…") would reach the student with zero guardrail. Separately, an all-empty activity still renders a labelled "Your focus" box with nothing in it.
 **Fix:** A lightweight check that rejects/rewrites a `student_focus` containing deficit markers (level/band words, "because you", "weak", "struggle") before display; and if all support fields are empty, store `is_differentiated:false` (deliver the main activity, no empty banner).
 **Files:** `api/generate-activity.ts`, optionally `prompts/lesson-builder-system.ts` (fold a tone check into the maths verifier).
 **Effort:** S–M · **Deploy:** API, no migration.
 
-### 2.4 — Feed the maths verifier the intended method ⬜
+### 2.4 — Feed the maths verifier the intended method ✅ (`a4d3dc4`)
 **Problem:** The re-skin verifier sees only the two questions, not the intended method / `worked_solution`. A numbers-only re-skin that turns a factorisable quadratic into a non-factorising one can still pass "solvable" + "same method (solve a quadratic)" while silently breaking the intended pedagogy (factorising practice).
 **Fix:** Pass the base question's `worked_solution` (when present) to the verifier so it judges *method preserved*, and tighten the `method_matches` guidance to reject factorable→non-factorable style drift.
 **Files:** `api/generate-activity.ts`, `prompts/lesson-builder-system.ts` (verifier prompt).
 **Effort:** S · **Deploy:** API, no migration.
 
-### 2.5 — Aggregate the signal note + task-relevant dimension selection ⬜ (polish)
+### 2.5 — Aggregate the signal note + task-relevant dimension selection ⏸ deferred (polish, not shipped)
 **Problem:** The differentiator replays only the single latest `signal` note per dimension (overwritten each observation), and may target the profile's globally-lowest dimension even when this specific question doesn't exercise it.
 **Fix:** Summarise recent notes from `skill_observations`; nudge the prompt to prefer a dimension the current question actually exercises.
 **Files:** `lib/skill-profile.ts` (read), `prompts/lesson-builder-system.ts`.
@@ -142,37 +144,37 @@ Fixes the maths re-skin path (latent — no maths skill data in the pilot yet, b
 
 ---
 
-## Phase 3 — Insights hardening
+## Phase 3 — Insights hardening  ✅ DONE + DEPLOYED 2026-07-03
 
-**Status 2026-07-03:** ALL of Phase 3 ✅. 3.1 (`da797de`), 3.2 (`af08b75`), 3.4 + 3.5 caveats + 3.3 faculty-floor (`3d84022`), and the previously-deferred 3.3 skill-matrix anchor + 3.5 fingerprint-content fold now done (`b803daf`).
+**Status 2026-07-03:** ALL of Phase 3 ✅ and **deployed**. 3.1 (`da797de`), 3.2 (`af08b75`), 3.4 + 3.5 caveats + 3.3 faculty-floor (`3d84022`), and the previously-deferred 3.3 skill-matrix anchor + 3.5 fingerprint-content fold now done (`b803daf`).
 
 De-risk the surfaces a skeptical HOD/principal would attack (beyond 0.1).
 
-### 3.1 — De-risk the decile cards ⬜
+### 3.1 — De-risk the decile cards ✅ (`da797de`)
 **Problem:** Force "exactly 3 dominant patterns" + a `prevalence_note` (fabricated prevalence the model was never given, self-contradicting "no numeric claims" alongside "half of the cohort") from as few as 3–6 submissions; and they don't get the Haiku/Sonnet provenance tags `common_gaps` got.
 **Fix:** Raise the graded floor so the slice is ≥6–8; let the tool return 1–3 patterns (`minItems:1`, not "exactly 3"); replace `prevalence_note` free-text with a bounded enum tied to the sample ("in most of the reviewed sample" / "in several"); add the same source-tagging `common_gaps` uses.
 **Files:** `api/insights-card-generate.ts` (`buildImprovementsPrompt`, floor), `lib/feedback-tools.ts` (`BOTTOM_DECILE_TOOL`/`TOP_DECILE_TOOL`).
 **Effort:** M · **Deploy:** API, no migration.
 
-### 3.2 — Smooth/floor the growth + movement cards ⬜
+### 3.2 — Smooth/floor the growth + movement cards ✅ (`af08b75`)
 **Problem:** They diff **raw single-submission observations** (not the EWMA), so with `MOVE_THRESHOLD = 0.25` almost any wobble reads as "improved," and a headline mover or a per-student "slipped" flag can rest on 2 data points. The per-student trajectory's `current_label` (latest raw obs) can also disagree with the anchored LLM card (smoothed rollup) on the same page.
 **Fix:** Diff the smoothed values (EWMA endpoints) or require ≥3 observations per student before a delta counts; raise `MOVE_THRESHOLD` to ~0.5 for headline movers and the "slipped" flag. Reconcile the trajectory's current-level label with the rollup. Keep the honest UI provenance.
 **Files:** `lib/skill-history.ts` (`computeSkillGrowth`, `computeStudentSkillJourney`, thresholds).
 **Effort:** M · **Deploy:** API, no migration. Unit-test.
 
-### 3.3 — Anchor the leadership synthesis ⬜
+### 3.3 — Anchor the leadership synthesis ✅ (`3d84022` faculty-floor + `b803daf` skill-matrix anchor)
 **Problem:** It's a rollup-of-rollups — two LLM hops (per-task `class_feedback` → school synthesis) with no deterministic anchor, in front of the most senior audience. And a single-task faculty gets a full "faculty pattern" treatment.
 **Fix:** Feed it the deterministic cohort skill matrix (as the cohort cards now get via R3) so at least one claim rests on numbers; raise the faculty-inclusion floor above one task, or force an explicit per-faculty n and caveat.
 **Files:** `api/insights-synthesis.ts`, `lib/feedback-tools.ts` (`SCHOOL_INSIGHTS_TOOL`).
 **Effort:** M · **Deploy:** API, no migration.
 
-### 3.4 — Surface confidence in the cohort skill block (anti over-anchoring) ⬜
+### 3.4 — Surface confidence in the cohort skill block (anti over-anchoring) ✅ (`3d84022`)
 **Problem:** `formatCohortSkillMatrix` (fed to `common_gaps`) hides confidence, while telling the model "do NOT surface a gap the distribution contradicts" — so a *thin* distribution can steamroll a real prose gap. The student block already includes confidence; the cohort one should too.
 **Fix:** Add `avg_confidence` / thin-evidence counts per dimension to `formatCohortSkillMatrix`, and soften the "do not contradict" instruction when the distribution is thin.
 **Files:** `lib/skill-prompt.ts`.
 **Effort:** S · **Deploy:** API, no migration.
 
-### 3.5 — Fingerprint feedback/skill content; smaller caveats ⬜
+### 3.5 — Fingerprint feedback/skill content; smaller caveats ✅ (`3d84022` caveats + `b803daf` fingerprint fold, v3→v4)
 **Problem:** The cohort-card cache fingerprint hashes ids/marks/timestamps but **not feedback content or skill data** — a same-mark feedback or skill regeneration won't refresh a cohort card. Plus: `class_profile_summary` describes "the cohort" from whoever happens to have a cached profile (a non-random subsample) with no representativeness caveat; the profile privacy doc overstates the guarantee (forwards `teacher_comment` verbatim).
 **Fix:** Fold a feedback/skill signature into `cohortFingerprint`. Add a representativeness caveat to the `class_profile_summary` prompt. Either tighten the profile privacy wording or scan/strip `teacher_comment`.
 **Files:** `lib/insights-filters.ts`, `api/insights-card-generate.ts`, `lib/student-profile.ts`.
@@ -180,17 +182,17 @@ De-risk the surfaces a skeptical HOD/principal would attack (beyond 0.1).
 
 ---
 
-## Phase 4 — Taxonomy refinement (reduce noise at source)  ✅ BUILT 2026-07-03 (`315d9d6`)
+## Phase 4 — Taxonomy refinement (reduce noise at source)  ✅ DONE + DEPLOYED 2026-07-03 (`315d9d6`)
 
 4.1 disambiguators added to the confusable dimension guidance (no key change / no version bump); 4.2 handled as a framing fix — spine rollup is already per-family, so the header + evidence blurb now state the cross-family non-comparability honestly rather than remapping M2 (churn for no gain).
 
-### 4.1 — Operationalise confusable dimension boundaries ⬜
+### 4.1 — Operationalise confusable dimension boundaries ✅ (`315d9d6`)
 **Problem:** W4 "Use of evidence" vs W5 "Integration of evidence"; W6 vs W7 (overlap on "flow"); M3 "Reasoning" vs M6 "Interpretation" (both "why", both roll up to `reasoning`); M4 "Notation" vs M5 "Communication of working". Good prose guidance, but no operational boundary — an LLM (especially Haiku) smears evidence across the pair, adding noise to two rows.
 **Fix:** Add one-line "rate X not Y when…" disambiguators to each confusable dimension's `guidance` string. No taxonomy-version bump needed (guidance text, not keys).
 **Files:** `data/skill-taxonomy.ts`.
 **Effort:** S · **Deploy:** API, no migration.
 
-### 4.2 — Reconsider the maths `evidence` spine mapping ⬜
+### 4.2 — Reconsider the maths `evidence` spine mapping ✅ (`315d9d6`, framing fix — no key/version change)
 **Problem:** The spine promises a cross-subject "whole-student view," but writing `evidence` = W4/W5 (selecting/integrating evidence) while maths `evidence` = M2 **Procedural accuracy** — apples to oranges. A student's maths "Evidence & Support" score is really just arithmetic accuracy, so the cross-subject spine rollup is misleading.
 **Fix:** Either remap M2 to a more defensible spine, add a maths dimension under `evidence`, or explicitly scope the spine rollup as within-family only (don't compare maths-evidence to writing-evidence). Decide deliberately — this touches the `TAXONOMY_VERSION` contract if keys/spine change.
 **Files:** `data/skill-taxonomy.ts`, `lib/skill-matrix.ts` (spine rollup rendering).
@@ -199,6 +201,8 @@ De-risk the surfaces a skeptical HOD/principal would attack (beyond 0.1).
 ---
 
 ## Suggested sequencing
+
+> Historical — this was the planned order; **all of it shipped on 2026-07-03** in roughly this sequence, except 1.4 (won't do) and 2.5 (deferred).
 
 | Order | Items | Why |
 |---|---|---|
@@ -213,4 +217,4 @@ Each change gets: a focused implementation, a unit test where there's math (0.3,
 
 ## Verification note
 
-None of the calibration changes can be fully validated by typecheck or unit tests — they change how a model rates work, which only shows up on real submissions. The right validation loop: make the change → run it on a handful of real, teacher-marked submissions → compare the tag against the teacher's judgment. Phase 1.4 (teacher-mark reconciliation) is partly *building* that loop into the product.
+None of the calibration changes can be fully validated by typecheck or unit tests — they change how a model rates work, which only shows up on real submissions. The right validation loop: make the change → run it on a handful of real, teacher-marked submissions → compare the tag against the teacher's judgment. (Phase 1.4, which would have built that loop into the product, was deliberately not done — the store stays mark-free — so this remains a manual calibration check Rob runs on real marked work.)
