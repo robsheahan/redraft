@@ -2106,11 +2106,18 @@
     }
 
     function renderListedItems(c) {
-      const items = c.gaps || c.strengths || [];
+      // Guard against a malformed card where gaps/strengths isn't an array
+      // (would otherwise throw "items.forEach is not a function").
+      const items = Array.isArray(c && c.gaps) ? c.gaps
+                  : Array.isArray(c && c.strengths) ? c.strengths
+                  : [];
       let html = '<ul class="pts">';
       items.forEach(p => {
-        html += '<li><div><div class="pt-head">' + e(p.headline) + '</div>'
-          + '<div class="pt-detail">' + e(p.detail) + '</div>'
+        if (!p) return;
+        const headline = (typeof p === 'string') ? p : (p.headline || '');
+        const detail = (typeof p === 'string') ? '' : (p.detail || '');
+        html += '<li><div><div class="pt-head">' + e(headline) + '</div>'
+          + (detail ? '<div class="pt-detail">' + e(detail) + '</div>' : '')
           + (p.faculties_involved && p.faculties_involved.length
               ? '<div class="pt-meta">' + e(p.faculties_involved.join(' · ')) + '</div>'
               : '')
