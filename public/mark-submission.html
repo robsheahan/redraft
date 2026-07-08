@@ -489,11 +489,12 @@
 
       // Figure out whether there's a next unmarked submission to jump to.
       // Drives whether "Save and next" appears alongside the regular Save.
+      // Look FORWARD only — on the last submission there's nothing next, so the
+      // button disappears (no wrap-around to earlier unmarked ones).
       const allSubs = window.__allSubmissions || [];
       const currentIdx = allSubs.findIndex(s => s.id === submission.id);
       const nextUnmarked = currentIdx >= 0
-        ? allSubs.slice(currentIdx + 1).find(s => !s.graded_at)
-            || allSubs.slice(0, currentIdx).find(s => !s.graded_at)
+        ? (allSubs.slice(currentIdx + 1).find(s => !s.graded_at) || null)
         : null;
 
       html += '<div class="save-bar">';
@@ -606,8 +607,9 @@
 
       const allSubs = window.__allSubmissions || [];
       const currentIdx = allSubs.findIndex(s => s.id === submission.id);
+      // Forward only — no "Save and next" on the last submission.
       const nextUnmarked = currentIdx >= 0
-        ? (allSubs.slice(currentIdx + 1).find(s => !s.graded_at) || allSubs.slice(0, currentIdx).find(s => !s.graded_at))
+        ? (allSubs.slice(currentIdx + 1).find(s => !s.graded_at) || null)
         : null;
       html += '<div class="save-bar">';
       html += '<button type="button" class="btn btn-primary" id="saveGradeBtn" onclick="saveGrade()">Save grade</button>';
