@@ -489,9 +489,11 @@
 
       // Figure out whether there's a next unmarked submission to jump to.
       // Drives whether "Save and next" appears alongside the regular Save.
-      // Look FORWARD only — on the last submission there's nothing next, so the
-      // button disappears (no wrap-around to earlier unmarked ones).
-      const allSubs = window.__allSubmissions || [];
+      // Only markable rows count (submitted for marking / graded, one per
+      // student) — feedback drafts aren't marked, so including them would make
+      // "Save and next" jump between one student's drafts. Look FORWARD only, so
+      // on the last submission there's nothing next and the button disappears.
+      const allSubs = (window.__allSubmissions || []).filter(s => s.submitted_for_marking || s.graded_at);
       const currentIdx = allSubs.findIndex(s => s.id === submission.id);
       const nextUnmarked = currentIdx >= 0
         ? (allSubs.slice(currentIdx + 1).find(s => !s.graded_at) || null)
@@ -605,9 +607,10 @@
       html += '<div class="card"><h3>Overall comment</h3>';
       html += '<textarea class="comment-area" id="teacherComment" placeholder="Write your overall feedback for this exam..."></textarea></div>';
 
-      const allSubs = window.__allSubmissions || [];
+      // Markable rows only (submitted for marking / graded), forward only — so
+      // no "Save and next" on the last submission or between a student's drafts.
+      const allSubs = (window.__allSubmissions || []).filter(s => s.submitted_for_marking || s.graded_at);
       const currentIdx = allSubs.findIndex(s => s.id === submission.id);
-      // Forward only — no "Save and next" on the last submission.
       const nextUnmarked = currentIdx >= 0
         ? (allSubs.slice(currentIdx + 1).find(s => !s.graded_at) || null)
         : null;
