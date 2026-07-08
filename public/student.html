@@ -530,6 +530,12 @@
       box-shadow: 0 2px 8px rgba(237,118,21,0.10), 0 0 0 1px rgba(237,118,21,0.10);
     }
     .task-row.is-assessment:hover { box-shadow: 0 6px 18px rgba(237,118,21,0.18); }
+    /* Quick tasks get a subtle grey accent so they read as lightweight. */
+    .task-row.is-quick {
+      border-left: 4px solid #9ca3af;
+      box-shadow: 0 2px 8px rgba(107,114,128,0.08), 0 0 0 1px rgba(107,114,128,0.10);
+    }
+    .task-row.is-quick:hover { box-shadow: 0 6px 18px rgba(107,114,128,0.15); }
     .task-row-title { font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 2px; }
     .task-row-meta { font-size: 12px; color: #9ca3af; }
     /* Draft progress dots */
@@ -887,7 +893,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
           } else if (t.my_submitted_for_marking) {
             statusPill = '<span class="task-status-pill pending">Pending</span>';
           }
-          const rowCls = 'task-row' + (isQuickTask ? '' : ' is-assessment');
+          const rowCls = 'task-row' + (isQuickTask ? ' is-quick' : ' is-assessment');
           // Once a feedback task has a submission, clicking the row goes straight
           // to the feedback page (not the blank task screen). openFeedback
           // preventDefaults; the submit.html href stays as a no-JS fallback.
