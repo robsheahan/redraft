@@ -199,12 +199,14 @@ async function handleGet(req: VercelRequest, res: VercelResponse) {
 }
 
 async function listForUser(res: VercelResponse, userId: string, supabase: any) {
-  const { data: owned, error: ownedErr } = await supabase
-    .from('classes').select('*').eq('teacher_id', userId).order('created_at', { ascending: false });
-  if (ownedErr) throw ownedErr;
-
-  const { data: memberships } = await supabase
-    .from('class_members').select('class_id, joined_at').eq('student_id', userId);
+  // Owned classes + memberships are independent — fetch in parallel.
+  const [ownedRes, membershipsRes] = await Promise.all([
+    supabase.from('classes').select('*').eq('teacher_id', userId).order('created_at', { ascending: false }),
+    supabase.from('class_members').select('class_id, joined_at').eq('student_id', userId),
+  ]);
+  if (ownedRes.error) throw ownedRes.error;
+  const owned = ownedRes.data;
+  const memberships = membershipsRes.data;
   const memberIds = (memberships || []).map((m: any) => m.class_id);
 
   let joined: any[] = [];
@@ -219,12 +221,16 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
   const memberCountMap: Record<string, number> = {};
   let allTasksByClass: Record<string, any[]> = {};
   if (allClassIds.length > 0) {
-    const { data: allTasks } = await supabase
-      .from('tasks')
-      .select('id, class_id, title, question, task_type, task_mode, completion_only, total_marks, due_date, published_at, created_at')
-      .in('class_id', allClassIds)
-      .order('created_at', { ascending: false });
-    (allTasks || []).forEach((t: any) => {
+    // Tasks + member counts are independent — fetch in parallel.
+    const [tasksRes, membersRes] = await Promise.all([
+      supabase
+        .from('tasks')
+        .select('id, class_id, title, question, task_type, task_mode, completion_only, total_marks, due_date, published_at, created_at')
+        .in('class_id', allClassIds)
+        .order('created_at', { ascending: false }),
+      supabase.from('class_members').select('class_id').in('class_id', allClassIds),
+    ]);
+    (tasksRes.data || []).forEach((t: any) => {
       const agg = taskCountMap[t.class_id] || { total: 0, published: 0 };
       agg.total++;
       if (t.published_at) agg.published++;
@@ -232,9 +238,7 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
       if (!allTasksByClass[t.class_id]) allTasksByClass[t.class_id] = [];
       allTasksByClass[t.class_id].push(t);
     });
-    const { data: allMembers } = await supabase
-      .from('class_members').select('class_id').in('class_id', allClassIds);
-    (allMembers || []).forEach((m: any) => {
+    (membersRes.data || []).forEach((m: any) => {
       memberCountMap[m.class_id] = (memberCountMap[m.class_id] || 0) + 1;
     });
   }
@@ -247,11 +251,42 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
   let myStateByTask: Record<string, { graded_at: string | null; total_mark: number | null; submitted_for_marking: boolean }> = {};
   const studentTaskIds: string[] = [];
   Object.values(allTasksByClass).forEach(ts => ts.forEach((t: any) => { if (t.published_at) studentTaskIds.push(t.id); }));
+
+  // The teacher "to mark" scope — needed before the parallel fetch below.
+  const toMarkByClass: Record<string, number> = {};
+  const toMarkTasksByClass: Record<string, Set<string>> = {};
+  const ownedTaskToClass: Record<string, string> = {};
+  const ownedTaskIds: string[] = [];
+  (owned || []).forEach((c: any) => {
+    (allTasksByClass[c.id] || []).forEach((t: any) => {
+      if (t.published_at) { ownedTaskIds.push(t.id); ownedTaskToClass[t.id] = c.id; }
+    });
+  });
+  const joinedVisible = joined.filter(c => !c.archived_at);
+  const joinedTeacherIds = [...new Set(joinedVisible.map((c: any) => c.teacher_id).filter(Boolean))] as string[];
+
+  // My submissions, pending-marking rows, and teacher names are independent —
+  // fetch all three in parallel.
+  const [mySubsRes, pendingRes, teacherInfo] = await Promise.all([
+    studentTaskIds.length > 0
+      ? supabase
+        .from('submissions')
+        .select('task_id, graded_at, total_mark, submitted_for_marking')
+        .eq('student_id', userId).in('task_id', studentTaskIds)
+      : Promise.resolve({ data: [] as any[] }),
+    ownedTaskIds.length > 0
+      ? supabase
+        .from('submissions')
+        .select('task_id, student_id')
+        .in('task_id', ownedTaskIds)
+        .eq('submitted_for_marking', true)
+        .is('graded_at', null)
+      : Promise.resolve({ data: [] as any[] }),
+    joinedTeacherIds.length > 0 ? getUserInfoBatch(supabase, joinedTeacherIds) : Promise.resolve({} as Record<string, any>),
+  ]);
+
   if (studentTaskIds.length > 0) {
-    const { data: subs } = await supabase
-      .from('submissions')
-      .select('task_id, graded_at, total_mark, submitted_for_marking')
-      .eq('student_id', userId).in('task_id', studentTaskIds);
+    const subs = mySubsRes.data;
     (subs || []).forEach((s: any) => {
       if (!s.task_id) return;
       myCounts[s.task_id] = (myCounts[s.task_id] || 0) + 1;
@@ -270,22 +305,8 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
   // Teacher: per-class "to mark" — submissions submitted for marking but not yet
   // graded — so the dashboard can flag classes with new submissions. Also track
   // which task(s) they're for, so a single-task class can deep-link to it.
-  const toMarkByClass: Record<string, number> = {};
-  const toMarkTasksByClass: Record<string, Set<string>> = {};
-  const ownedTaskToClass: Record<string, string> = {};
-  const ownedTaskIds: string[] = [];
-  (owned || []).forEach((c: any) => {
-    (allTasksByClass[c.id] || []).forEach((t: any) => {
-      if (t.published_at) { ownedTaskIds.push(t.id); ownedTaskToClass[t.id] = c.id; }
-    });
-  });
   if (ownedTaskIds.length > 0) {
-    const { data: pending } = await supabase
-      .from('submissions')
-      .select('task_id, student_id')
-      .in('task_id', ownedTaskIds)
-      .eq('submitted_for_marking', true)
-      .is('graded_at', null);
+    const pending = pendingRes.data;
     const seen = new Set<string>();  // dedupe to distinct (task, student)
     (pending || []).forEach((s: any) => {
       if (!s.task_id || !s.student_id) return;
@@ -322,9 +343,6 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
     };
   };
 
-  const joinedVisible = joined.filter(c => !c.archived_at);
-  const teacherIds = [...new Set(joinedVisible.map((c: any) => c.teacher_id).filter(Boolean))] as string[];
-  const teacherInfo = teacherIds.length ? await getUserInfoBatch(supabase, teacherIds) : {};
   const joinedOut: any[] = joinedVisible.map((c: any) => {
     const tasks = (allTasksByClass[c.id] || [])
       .filter((t: any) => t.published_at)

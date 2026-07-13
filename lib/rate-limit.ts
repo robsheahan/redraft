@@ -48,15 +48,37 @@ export async function checkAndLogRateLimit(
   const oneHourAgo = new Date(now - 60 * 60 * 1000).toISOString();
   const oneDayAgo = new Date(now - 24 * 60 * 60 * 1000).toISOString();
 
-  // 1. Per-user hourly check (fail-closed)
-  if (userId) {
-    const { count, error } = await supabase
+  // The three gate counts are independent reads — run them in parallel (one
+  // round trip instead of up to three), then evaluate in priority order so
+  // messages and fail-open/closed behaviour are unchanged.
+  const [userHourRes, userDayRes, globalRes] = await Promise.all([
+    userId
+      ? supabase
+        .from('api_call_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('endpoint', config.endpoint)
+        .gte('created_at', oneHourAgo)
+      : Promise.resolve(null),
+    userId && config.perUserPerDay !== undefined
+      ? supabase
+        .from('api_call_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('endpoint', config.endpoint)
+        .gte('created_at', oneDayAgo)
+      : Promise.resolve(null),
+    supabase
       .from('api_call_log')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
       .eq('endpoint', config.endpoint)
-      .gte('created_at', oneHourAgo);
+      .gte('created_at', oneDayAgo)
+      .then(r => r, (e: any) => ({ count: null, error: e } as any)),
+  ]);
 
+  // 1. Per-user hourly check (fail-closed)
+  if (userHourRes) {
+    const { count, error } = userHourRes;
     if (error) {
       console.error('[rate-limit] per-user check failed, rejecting request:', error.message);
       return {
@@ -72,43 +94,33 @@ export async function checkAndLogRateLimit(
         retryAfterSeconds: 60 * 60,
       };
     }
+  }
 
-    // 1b. Per-user daily check (fail-closed). Only when caller asked for it
-    //     — most endpoints rely on the per-hour cap alone.
-    if (config.perUserPerDay !== undefined) {
-      const { count: dayCount, error: dayError } = await supabase
-        .from('api_call_log')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .eq('endpoint', config.endpoint)
-        .gte('created_at', oneDayAgo);
+  // 1b. Per-user daily check (fail-closed). Only when caller asked for it
+  //     — most endpoints rely on the per-hour cap alone.
+  if (userDayRes) {
+    const { count: dayCount, error: dayError } = userDayRes;
+    if (dayError) {
+      console.error('[rate-limit] per-user-per-day check failed, rejecting request:', dayError.message);
+      return {
+        ok: false,
+        reason: "We couldn't verify your usage quota right now. Please try again in a minute.",
+      };
+    }
 
-      if (dayError) {
-        console.error('[rate-limit] per-user-per-day check failed, rejecting request:', dayError.message);
-        return {
-          ok: false,
-          reason: "We couldn't verify your usage quota right now. Please try again in a minute.",
-        };
-      }
-
-      if ((dayCount ?? 0) >= config.perUserPerDay) {
-        return {
-          ok: false,
-          reason: config.perUserPerDayMessage
-            || `You've reached your daily limit of ${config.perUserPerDay} requests. Please try again tomorrow.`,
-          retryAfterSeconds: 60 * 60 * 12,
-        };
-      }
+    if ((dayCount ?? 0) >= config.perUserPerDay!) {
+      return {
+        ok: false,
+        reason: config.perUserPerDayMessage
+          || `You've reached your daily limit of ${config.perUserPerDay} requests. Please try again tomorrow.`,
+        retryAfterSeconds: 60 * 60 * 12,
+      };
     }
   }
 
   // 2. Global daily check (fail-open)
   try {
-    const { count, error } = await supabase
-      .from('api_call_log')
-      .select('id', { count: 'exact', head: true })
-      .eq('endpoint', config.endpoint)
-      .gte('created_at', oneDayAgo);
+    const { count, error } = globalRes as { count: number | null; error: any };
 
     if (error) {
       console.warn('[rate-limit] global check failed, continuing:', error.message);

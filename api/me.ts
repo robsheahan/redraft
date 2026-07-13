@@ -93,40 +93,48 @@ async function returnResults(_req: VercelRequest, res: VercelResponse, userId: s
   const classIds = (memberRows || []).map(r => r.class_id);
   if (classIds.length === 0) return res.status(200).json({ classes: [] });
 
-  const { data: classes, error: clsErr } = await supabase
-    .from('classes')
-    .select('id, name, course, teacher_id')
-    .in('id', classIds)
-    .order('name', { ascending: true });
-  if (clsErr) return res.status(500).json({ error: clsErr.message });
+  // Classes + tasks are both keyed by classIds — fetch in parallel.
+  const [classesRes, tasksRes] = await Promise.all([
+    supabase
+      .from('classes')
+      .select('id, name, course, teacher_id')
+      .in('id', classIds)
+      .order('name', { ascending: true }),
+    supabase
+      .from('tasks')
+      .select('id, class_id, title, question, course, total_marks, due_date, published_at, criteria_structured, criteria_text, hide_criteria_from_students, subject_type, marking_guideline')
+      .in('class_id', classIds)
+      .not('published_at', 'is', null)
+      .order('due_date', { ascending: true }),
+  ]);
+  if (classesRes.error) return res.status(500).json({ error: classesRes.error.message });
+  if (tasksRes.error) return res.status(500).json({ error: tasksRes.error.message });
+  const classes = classesRes.data;
+  const tasks = tasksRes.data;
 
   const teacherIds = [...new Set((classes || []).map(c => c.teacher_id).filter(Boolean))] as string[];
-  const teacherNameById: Record<string, string> = {};
-  if (teacherIds.length > 0) {
-    const { getUserInfoBatch } = await import('../lib/user-names.js');
-    const info = await getUserInfoBatch(supabase, teacherIds);
-    Object.entries(info).forEach(([id, v]) => { teacherNameById[id] = v?.name || ''; });
-  }
-
-  const { data: tasks, error: tasksErr } = await supabase
-    .from('tasks')
-    .select('id, class_id, title, question, course, total_marks, due_date, published_at, criteria_structured, criteria_text, hide_criteria_from_students, subject_type, marking_guideline')
-    .in('class_id', classIds)
-    .not('published_at', 'is', null)
-    .order('due_date', { ascending: true });
-  if (tasksErr) return res.status(500).json({ error: tasksErr.message });
-
   const taskIds = (tasks || []).map(t => t.id);
+
+  // Teacher names + my submissions are independent — fetch in parallel.
+  const { getUserInfoBatch } = await import('../lib/user-names.js');
+  const [teacherInfo, subsRes] = await Promise.all([
+    teacherIds.length > 0 ? getUserInfoBatch(supabase, teacherIds) : Promise.resolve({} as Record<string, any>),
+    taskIds.length > 0
+      ? supabase
+        .from('submissions')
+        .select('id, task_id, draft_version, created_at, total_mark, criterion_marks, graded_at, teacher_comment, submitted_for_marking')
+        .eq('student_id', userId)
+        .in('task_id', taskIds)
+        .order('draft_version', { ascending: false })
+      : Promise.resolve({ data: [] as any[], error: null }),
+  ]);
+  const teacherNameById: Record<string, string> = {};
+  Object.entries(teacherInfo).forEach(([id, v]: [string, any]) => { teacherNameById[id] = v?.name || ''; });
+
   let submissionsByTask: Record<string, any> = {};
   if (taskIds.length > 0) {
-    const { data: subs, error: subsErr } = await supabase
-      .from('submissions')
-      .select('id, task_id, draft_version, created_at, total_mark, criterion_marks, graded_at, teacher_comment, submitted_for_marking')
-      .eq('student_id', userId)
-      .in('task_id', taskIds)
-      .order('draft_version', { ascending: false });
-    if (subsErr) return res.status(500).json({ error: subsErr.message });
-    (subs || []).forEach(s => {
+    if (subsRes.error) return res.status(500).json({ error: subsRes.error.message });
+    (subsRes.data || []).forEach((s: any) => {
       // Preference order for "the submission to display": graded > submitted-for-marking > latest.
       const existing = submissionsByTask[s.task_id];
       if (!existing) {
