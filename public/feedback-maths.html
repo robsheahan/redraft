@@ -150,15 +150,49 @@
       const taskRaw = sessionStorage.getItem('proofready_maths_task');
       const urlTaskId = new URLSearchParams(window.location.search).get('task');
 
+      // The URL param wins over a stored handoff for a different task — a
+      // stale handoff must not shadow the task the student just clicked.
+      let storedParsed = null;
       if (fbRaw) {
-        const parsed = JSON.parse(fbRaw);
-        const task = taskRaw ? JSON.parse(taskRaw) : {};
+        try { storedParsed = JSON.parse(fbRaw); } catch { storedParsed = null; }
+      }
+      if (storedParsed && urlTaskId) {
+        let storedTask = {};
+        try { storedTask = taskRaw ? JSON.parse(taskRaw) : {}; } catch {}
+        const storedTid = storedTask.task_id || storedParsed.meta?.task_id || null;
+        if (storedTid !== urlTaskId) storedParsed = null;
+      }
+      if (fbRaw && !storedParsed) {
+        // Unparseable or belongs to a different task — clear the stale keys so
+        // they can't hijack a later visit (feedback.html redirects here
+        // whenever this key exists).
+        try {
+          sessionStorage.removeItem('proofready_maths_feedback');
+          sessionStorage.removeItem('proofready_maths_task');
+        } catch {}
+      }
+
+      if (storedParsed) {
+        const parsed = storedParsed;
+        let task = {};
+        try { task = taskRaw ? JSON.parse(taskRaw) : {}; } catch {}
         // Submit path → fresh feedback, never graded yet. If the task has
         // since been graded (e.g. the student opens this from a stored
         // sessionStorage long after submitting), pull the latest grade via
         // the task-drafts resource so the marked tab + reveal show up.
         let grade = null;
         const tid = task.task_id || parsed.meta?.task_id;
+        // Consume the handoff: pin the task into the URL (so refresh
+        // self-loads) and clear the keys so they can't hijack a later visit —
+        // a lingering maths handoff used to bounce even essay feedback pages
+        // here via feedback.html's redirect check.
+        if (tid) {
+          try {
+            if (!urlTaskId) history.replaceState(null, '', 'feedback-maths.html?task=' + encodeURIComponent(tid));
+            sessionStorage.removeItem('proofready_maths_feedback');
+            sessionStorage.removeItem('proofready_maths_task');
+          } catch {}
+        }
         if (tid) {
           try {
             const dr = await authFetch('/api/me?resource=task-drafts&task_id=' + encodeURIComponent(tid));

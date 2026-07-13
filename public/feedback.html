@@ -592,15 +592,20 @@
     const feedbackData = sessionStorage.getItem('proofready_feedback');
     // Redirect to feedback-maths.html if we landed on the wrong page:
     //   (a) a maths submission set sessionStorage proofready_maths_feedback
+    //       (fresh handoff only — no ?task in the URL)
     //   (b) the URL points to a maths task (?task=<id>)
+    // When a ?task param is present it wins: the probe decides by the task's
+    // actual subject_type, so a stale maths handoff from an earlier task can't
+    // hijack an essay-task visit.
     (function mathsRedirectCheck() {
       try {
-        if (sessionStorage.getItem('proofready_maths_feedback')) {
-          var qs = window.location.search || '';
-          window.location.href = 'feedback-maths.html' + qs;
+        var taskParam = new URLSearchParams(window.location.search).get('task');
+        // A fresh essay handoff (proofready_feedback) also wins — a leftover
+        // maths key from an earlier task must not bounce it away.
+        if (!taskParam && !feedbackData && sessionStorage.getItem('proofready_maths_feedback')) {
+          window.location.href = 'feedback-maths.html';
           return;
         }
-        var taskParam = new URLSearchParams(window.location.search).get('task');
         if (taskParam) {
           // Cheap probe — read the task and decide.
           authFetch('/api/task?id=' + encodeURIComponent(taskParam))
@@ -685,12 +690,27 @@
     // Active view, preserved across switchDraft calls (referenced by renderFeedback)
     var activeView = 'feedback';
 
-    if (!feedbackData) {
-      // No sessionStorage handoff. If we arrived at feedback.html?task=<id>
+    // The URL param is the source of truth when both are present: a stale
+    // handoff left over from viewing another task's feedback in this tab must
+    // not shadow the task the student just clicked.
+    var urlTaskParam = new URLSearchParams(window.location.search).get('task');
+    var storedHandoff = null;
+    if (feedbackData) {
+      try { storedHandoff = JSON.parse(feedbackData); } catch { storedHandoff = null; }
+      var storedTaskId = storedHandoff && storedHandoff.meta ? (storedHandoff.meta.task_id || null) : null;
+      if (storedHandoff && urlTaskParam && storedTaskId !== urlTaskParam) storedHandoff = null;
+      if (!storedHandoff) {
+        // Unparseable or belongs to a different task — clear it so it can't
+        // shadow a later visit either.
+        try { sessionStorage.removeItem('proofready_feedback'); sessionStorage.removeItem('proofready_task'); } catch {}
+      }
+    }
+
+    if (!storedHandoff) {
+      // No usable sessionStorage handoff. If we arrived at feedback.html?task=<id>
       // (e.g. a task-row link), self-load the latest submission for that task.
-      var selfTaskId = new URLSearchParams(window.location.search).get('task');
-      if (selfTaskId) {
-        selfLoadFromTask(selfTaskId);
+      if (urlTaskParam) {
+        selfLoadFromTask(urlTaskParam);
       } else {
         container.innerHTML = `
           <div class="empty-state">
@@ -700,7 +720,7 @@
           </div>`;
       }
     } else {
-      const parsed = JSON.parse(feedbackData);
+      const parsed = storedHandoff;
       currentMeta = parsed.meta;
       currentTask = taskData ? JSON.parse(taskData) : {};
       const fb = parsed.feedback;
@@ -712,6 +732,14 @@
       // we can render the marked tab regardless of which page handed us off.
       const taskId = currentTask.task_id || meta.task_id;
       if (taskId) {
+        // Consume the handoff: pin the task into the URL (so refresh self-loads)
+        // and clear the keys so a later visit for a different task in this tab
+        // can't pick up this feedback.
+        try {
+          if (!urlTaskParam) history.replaceState(null, '', 'feedback.html?task=' + encodeURIComponent(taskId));
+          sessionStorage.removeItem('proofready_feedback');
+          sessionStorage.removeItem('proofready_task');
+        } catch {}
         renderFeedback(fb, meta, null, meta.draftVersion || 1, draftText);  // initial paint
         Promise.all([
           authFetch('/api/me?resource=task-drafts&task_id=' + encodeURIComponent(taskId)).then(r => r.ok ? r.json() : { drafts: [] }).catch(() => ({ drafts: [] })),

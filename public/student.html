@@ -1005,6 +1005,14 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
     }
 
     function openSubmissionInFeedback(latest) {
+      // Maths feedback has its own page + renderer — routing it through the
+      // essay handoff renders the wrong shape (and its "Get feedback" button
+      // would post maths working to the essay endpoint).
+      const fbKind = latest.feedback && latest.feedback.kind;
+      if ((fbKind === 'maths' || fbKind === 'maths_multipart') && latest.task_id) {
+        window.location.href = 'feedback-maths.html?task=' + encodeURIComponent(latest.task_id);
+        return;
+      }
       const prevVerbs = ['compare and contrast','critically analyse','critically evaluate','account for','analyse','analyze','appreciate','apply','assess','calculate','clarify','classify','compare','construct','contrast','deduce','demonstrate','describe','discuss','distinguish','evaluate','examine','explain','extract','extrapolate','identify','interpret','investigate','justify','outline','predict','propose','recommend','recount'];
       const qLow = (latest.question || '').toLowerCase();
       const detectedVerb = prevVerbs.find(function(v) { return qLow.indexOf(v) !== -1; }) || '';
@@ -1081,30 +1089,7 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
             const date = new Date(latest.created_at).toLocaleDateString();
             const badgeHtml = count > 1 ? '<span class="draft-badge">' + count + ' drafts</span>' : '';
             card.innerHTML = '<div><h4>' + escapeHtml(label.substring(0, 60) + (label.length > 60 ? '...' : '')) + ' ' + badgeHtml + '</h4><p>' + date + '</p></div><span class="prev-card-arrow">›</span>';
-            card.onclick = () => {
-              const prevVerbs = ['compare and contrast','critically analyse','critically evaluate','account for','analyse','analyze','appreciate','apply','assess','calculate','clarify','classify','compare','construct','contrast','deduce','demonstrate','describe','discuss','distinguish','evaluate','examine','explain','extract','extrapolate','identify','interpret','investigate','justify','outline','predict','propose','recommend','recount'];
-              const qLow = (latest.question || '').toLowerCase();
-              const detectedVerb = prevVerbs.find(v => qLow.includes(v)) || '';
-              sessionStorage.setItem('proofready_feedback', JSON.stringify({
-                feedback: latest.feedback,
-                draft_text: latest.draft_text || '',
-                meta: {
-                  taskVerb: detectedVerb,
-                  question: latest.question,
-                  course: latest.course,
-                  title: latest.task_title || null,
-                  task_id: latest.task_id || null,
-                  draftVersion: latest.draft_version || 1,
-                }
-              }));
-              sessionStorage.setItem('proofready_task', JSON.stringify({
-                task_id: latest.task_id || null,
-                title: latest.task_title || null,
-                question: latest.question,
-                course: latest.course,
-              }));
-              window.location.href = 'feedback.html';
-            };
+            card.onclick = () => { openSubmissionInFeedback(latest); };
             group.appendChild(card);
           });
           list.appendChild(group);
