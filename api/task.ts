@@ -467,8 +467,11 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   // Enforce the lock uniformly: once a student has started, drop any change to a
   // field they answer against — only title / due date / notes survive. The edit
   // UI already shows those fields read-only, so this is the server-side backstop.
+  // published_at stays editable: publish state isn't content students answer
+  // against, and a teacher must be able to pull a task even after a student
+  // has an autosaved draft.
   if (started) {
-    const ALLOWED_AFTER_START = new Set(['title', 'due_date', 'notes']);
+    const ALLOWED_AFTER_START = new Set(['title', 'due_date', 'notes', 'published_at']);
     Object.keys(patch).forEach((k) => { if (!ALLOWED_AFTER_START.has(k)) delete patch[k]; });
   }
 
