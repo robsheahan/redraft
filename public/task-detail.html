@@ -1268,7 +1268,7 @@
     async function copyTaskShareLink() {
       if (!currentTask || !currentTask.id) return;
       const btn = document.getElementById('shareLinkBtn');
-      const url = window.location.origin + '/submit.html?task_id=' + encodeURIComponent(currentTask.id);
+      const url = window.location.origin + '/submit.html?task=' + encodeURIComponent(currentTask.id);
       const restore = btn ? btn.textContent : '';
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {

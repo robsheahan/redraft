@@ -241,7 +241,10 @@
       try {
         const user = await requireAuth();
         if (!user) return;
-        const taskId = new URLSearchParams(window.location.search).get('task');
+        // Accept both ?task= and ?task_id= — teacher share links and LTI
+        // launches have historically used either form.
+        const params = new URLSearchParams(window.location.search);
+        const taskId = params.get('task') || params.get('task_id');
         if (!taskId) { container.innerHTML = '<div class="empty">No task selected.</div>'; return; }
 
         // Load task and prior drafts in parallel

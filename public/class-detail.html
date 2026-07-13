@@ -343,7 +343,7 @@
     });
 
     async function shareTaskLink(id, btn) {
-      var url = window.location.origin + '/submit.html?task_id=' + encodeURIComponent(id);
+      var url = window.location.origin + '/submit.html?task=' + encodeURIComponent(id);
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(url);
