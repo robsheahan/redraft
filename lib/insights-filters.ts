@@ -1,3 +1,6 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { getUserInfoBatch } from './user-names.js';
+
 /**
  * Filter parsing + application for the leadership insights dashboard.
  *
@@ -233,4 +236,25 @@ export function userIdsForYearLevel(
     if (lvl === yearLevel) out.add(u.id);
   }
   return out;
+}
+
+/**
+ * Filter a set of user ids down to those at the given year level, resolving
+ * graduation_year via getUserInfoBatch (RPC-backed) — so callers pass only
+ * the ids actually in play (submission authors, class members) instead of
+ * scanning every platform user.
+ */
+export async function filterIdsByYearLevel(
+  supabase: SupabaseClient,
+  ids: string[],
+  yearLevel: number,
+  now: Date = new Date(),
+): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const info = await getUserInfoBatch(supabase, ids);
+  return ids.filter(id => {
+    const gy = info[id]?.graduation_year;
+    const lvl = yearLevelFromGraduationYear(gy != null ? parseInt(gy, 10) : null, now);
+    return lvl === yearLevel;
+  });
 }

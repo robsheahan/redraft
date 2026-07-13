@@ -4,8 +4,8 @@ import { withHandler } from '../lib/with-handler.js';
 import {
   getSchoolTeacherIds,
   resolveInsightsAccess,
-  listAllAuthUsers,
 } from '../lib/schools.js';
+import { getUserInfoBatch } from '../lib/user-names.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 import { fetchAllRows } from '../lib/db-page.js';
 import { computeSkillMatrix } from '../lib/skill-matrix.js';
@@ -16,7 +16,7 @@ import {
   parseFiltersFromQuery,
   applyFacultyScope,
   getTimeWindowCutoff,
-  userIdsForYearLevel,
+  filterIdsByYearLevel,
   isFilterActive,
   scopeKeyForFilters,
 } from '../lib/insights-filters.js';
@@ -84,10 +84,6 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
   const filters = applyFacultyScope(rawFilters, restrictedFaculties);
   const filtersDenied = !!filters._denied;
 
-  // Share the listUsers fetch across helpers — same pattern as admin-stats.
-  // Paginate through Supabase's 1000/page cap so we don't silently truncate.
-  const allUsers = await listAllAuthUsers(supabase);
-
   // Teacher tier sees only their own classes (regardless of school context).
   // Leader/admin tiers see every teacher at the school. A teacher passing a
   // ?class_id= they don't own falls out naturally — the classes query is
@@ -95,15 +91,12 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
   // rows downstream.
   const teacherIds = callerRole === 'teacher'
     ? [user.id]
-    : await getSchoolTeacherIds(supabase, schoolId, allUsers as any);
+    : await getSchoolTeacherIds(supabase, schoolId);
 
-  const userInfo: Record<string, { name: string; email: string }> = {};
-  (allUsers as any[]).forEach(u => {
-    userInfo[u.id] = {
-      name: u.user_metadata?.display_name || u.user_metadata?.full_name || u.user_metadata?.name || u.email || 'Unknown',
-      email: u.email || '',
-    };
-  });
+  // Names are only rendered for teachers on this endpoint — fetch just those
+  // (RPC-backed) instead of listing every platform user.
+  const userInfo: Record<string, { name: string; email: string }> =
+    await getUserInfoBatch(supabase, teacherIds);
 
   // Don't short-circuit on empty teachers — the main flow handles empty
   // arrays cleanly and returns a fully-formed response (with filter
@@ -185,10 +178,12 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
   const inFacultyScope = (faculty: string) => !allowed || allowed.has(faculty);
 
   // year_level filter is applied at submission scope (since each task can
-  // host submissions from students in different years).
+  // host submissions from students in different years). Resolve it against
+  // the students actually present in the in-scope submissions.
   let allowedStudentIds: Set<string> | null = null;
   if (filters.year_level != null) {
-    allowedStudentIds = userIdsForYearLevel(allUsers as any, filters.year_level);
+    const subStudentIds = [...new Set(rawSubs.map((s: any) => s.student_id).filter(Boolean))] as string[];
+    allowedStudentIds = new Set(await filterIdsByYearLevel(supabase, subStudentIds, filters.year_level));
   }
 
   function passesFilters(task: any): boolean {
@@ -322,7 +317,11 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
           .order('class_id').order('student_id')
           .range(from, to));
       let cohortStudentIds = [...new Set((memberRows || []).map((m: any) => m.student_id).filter(Boolean))] as string[];
-      if (allowedStudentIds) cohortStudentIds = cohortStudentIds.filter(id => allowedStudentIds!.has(id));
+      // allowedStudentIds only covers submission authors — class members who
+      // haven't submitted still need their year level resolved directly.
+      if (filters.year_level != null) {
+        cohortStudentIds = await filterIdsByYearLevel(supabase, cohortStudentIds, filters.year_level);
+      }
       if (cohortStudentIds.length > 0) {
         const skillRows = await fetchAllRows((from, to) =>
           supabase.from('student_skill_profile')

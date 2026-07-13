@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getUserInfoBatch, getUsersByEmailDomain } from './user-names.js';
 
 /**
  * Helpers for resolving school identity for the leadership insights
@@ -175,6 +176,24 @@ async function getSchoolUserRoles(
   const domains = [school?.primary_domain, ...(school?.secondary_domains || [])]
     .filter((d): d is string => !!d)
     .map(d => d.toLowerCase());
+
+  // RPC-first: resolve domain matches + roles with two indexed queries scoped
+  // to this school, instead of paging the entire platform's auth users. Falls
+  // back to the old listUsers sweep until the migration has run (or when a
+  // caller hands us a preloaded user list, e.g. admin-stats).
+  if (!preloadedUsers) {
+    const domainUsers = domains.length > 0 ? await getUsersByEmailDomain(supabase, domains) : [];
+    if (domainUsers !== null) {
+      const out: Record<string, string | null> = {};
+      domainUsers.forEach(u => { ids.add(u.id); out[u.id] = u.role; });
+      const remaining = [...ids].filter(id => !(id in out));
+      if (remaining.length > 0) {
+        const info = await getUserInfoBatch(supabase, remaining);
+        remaining.forEach(id => { out[id] = info[id]?.role ?? null; });
+      }
+      return out;
+    }
+  }
 
   let allUsers = preloadedUsers;
   if (!allUsers) {

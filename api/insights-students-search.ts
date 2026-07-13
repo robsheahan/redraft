@@ -4,8 +4,8 @@ import { withHandler } from '../lib/with-handler.js';
 import {
   resolveInsightsAccess,
   getInScopeStudentIds,
-  listAllAuthUsers,
 } from '../lib/schools.js';
+import { getUserInfoBatch } from '../lib/user-names.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 import { yearLevelFromGraduationYear } from '../lib/insights-filters.js';
 
@@ -51,14 +51,12 @@ export default withHandler({ methods: ['GET'], label: 'insights-students-search'
   ));
   if (inScope.size === 0) return res.status(200).json({ rows: [] });
 
-  // Substring match on the user's metadata. listUsers is paginated so we
-  // already pay that cost elsewhere — reuse the cached fetch pattern.
-  const allUsers = await listAllAuthUsers(supabase);
-  const candidates: Array<{ user: any; surnameStarts: boolean }> = [];
-  for (const u of allUsers) {
-    if (!inScope.has(u.id)) continue;
-    const meta = u.user_metadata || {};
-    const display = String(meta.display_name || meta.full_name || meta.name || '').trim();
+  // Substring match over the in-scope students only (RPC-backed batched
+  // lookup) — previously this listed every platform user and filtered.
+  const info = await getUserInfoBatch(supabase, [...inScope]);
+  const candidates: Array<{ user: { id: string; name: string; email: string; graduation_year: string | null }; surnameStarts: boolean }> = [];
+  for (const [id, u] of Object.entries(info)) {
+    const display = String(u.name || '').trim();
     const email = String(u.email || '');
     const blob = (display + ' ' + email).toLowerCase();
     if (!blob.includes(q)) continue;
@@ -67,13 +65,11 @@ export default withHandler({ methods: ['GET'], label: 'insights-students-search'
     const tokens = display.split(/\s+/).filter(Boolean);
     const surname = (tokens[tokens.length - 1] || '').toLowerCase();
     const surnameStarts = surname.startsWith(q);
-    candidates.push({ user: u, surnameStarts });
+    candidates.push({ user: { id, name: display, email, graduation_year: u.graduation_year }, surnameStarts });
   }
   candidates.sort((a, b) => {
     if (a.surnameStarts !== b.surnameStarts) return a.surnameStarts ? -1 : 1;
-    const an = (a.user.user_metadata?.display_name || a.user.email || '').toLowerCase();
-    const bn = (b.user.user_metadata?.display_name || b.user.email || '').toLowerCase();
-    return an.localeCompare(bn);
+    return (a.user.name || a.user.email).toLowerCase().localeCompare((b.user.name || b.user.email).toLowerCase());
   });
 
   const top = candidates.slice(0, MAX_RESULTS);
@@ -99,9 +95,8 @@ export default withHandler({ methods: ['GET'], label: 'insights-students-search'
   });
 
   const rows: SearchResult[] = top.map(({ user: u }) => {
-    const meta = u.user_metadata || {};
-    const gy = meta.graduation_year;
-    const yl = yearLevelFromGraduationYear(typeof gy === 'string' ? parseInt(gy, 10) : gy);
+    const gy = u.graduation_year;
+    const yl = yearLevelFromGraduationYear(gy != null ? parseInt(gy, 10) : null);
     const classNames = classNamesByStudent[u.id] || [];
     const classSummary = classNames.length === 0
       ? ''
@@ -110,7 +105,7 @@ export default withHandler({ methods: ['GET'], label: 'insights-students-search'
         : classNames.slice(0, 2).join(', ') + ` +${classNames.length - 2}`;
     return {
       id: u.id,
-      display_name: meta.display_name || meta.full_name || meta.name || u.email || 'Unknown',
+      display_name: u.name || u.email || 'Unknown',
       email: u.email || '',
       year_level: yl,
       class_summary: classSummary,

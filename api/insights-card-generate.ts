@@ -3,13 +3,13 @@ import { createHash } from 'node:crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import { getSupabase } from '../lib/auth.js';
 import { withHandler } from '../lib/with-handler.js';
-import { resolveInsightsAccess, getSchoolTeacherIds, listAllAuthUsers, getInScopeStudentIds, getInScopeClassIds } from '../lib/schools.js';
+import { resolveInsightsAccess, getSchoolTeacherIds, getInScopeStudentIds, getInScopeClassIds } from '../lib/schools.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import {
   parseFiltersFromQuery,
   applyFacultyScope,
-  userIdsForYearLevel,
+  filterIdsByYearLevel,
   getTimeWindowCutoff,
   scopeKeyForFilters,
   cohortFingerprint,
@@ -432,10 +432,9 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
   const rateSubject = schoolId || user.id;
 
   // Pull submissions in scope. Teacher tier sees only their own classes.
-  const allUsers = await listAllAuthUsers(supabase);
   const teacherIds = callerRole === 'teacher'
     ? [user.id]
-    : await getSchoolTeacherIds(supabase, schoolId, allUsers as any);
+    : await getSchoolTeacherIds(supabase, schoolId);
   if (teacherIds.length === 0) {
     return res.status(400).json({ error: 'No teachers in scope yet.' });
   }
@@ -478,7 +477,11 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
   });
 
   const allowedStudentIds = filters.year_level != null
-    ? userIdsForYearLevel(allUsers as any, filters.year_level)
+    ? new Set(await filterIdsByYearLevel(
+        supabase,
+        [...new Set((rawSubs || []).map((r: any) => r.student_id).filter(Boolean))] as string[],
+        filters.year_level,
+      ))
     : null;
 
   // A faculty-restricted leader (school_members.faculties[]) must never have

@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabase } from '../lib/auth.js';
 import { withHandler } from '../lib/with-handler.js';
-import { getSchoolTeacherIds, resolveInsightsAccess, listAllAuthUsers } from '../lib/schools.js';
+import { getSchoolTeacherIds, resolveInsightsAccess } from '../lib/schools.js';
 import { getUserInfoBatch } from '../lib/user-names.js';
 import { isGlobalAdmin } from '../lib/admin.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
@@ -9,7 +9,7 @@ import {
   parseFiltersFromQuery,
   getTimeWindowCutoff,
   applyFacultyScope,
-  userIdsForYearLevel,
+  filterIdsByYearLevel,
 } from '../lib/insights-filters.js';
 
 /**
@@ -76,13 +76,12 @@ export default withHandler({ methods: ['GET'], label: 'insights-detail' }, async
     return res.status(400).json({ error: 'marking_status must be marked / awaiting / unmarked' });
   }
 
-  const allUsers = await listAllAuthUsers(supabase);
   // Teacher tier sees only their own classes — same constraint as the
   // cards endpoint. ?class_id= they don't own falls out via the
   // teacher_id IN clause below.
   const teacherIds = callerRole === 'teacher'
     ? [user.id]
-    : await getSchoolTeacherIds(supabase, schoolId, allUsers as any);
+    : await getSchoolTeacherIds(supabase, schoolId);
   if (teacherIds.length === 0) return res.status(200).json({ rows: [] });
 
   // Build the canonical maps once.
@@ -145,18 +144,11 @@ export default withHandler({ methods: ['GET'], label: 'insights-detail' }, async
   const filteredClasses = Object.values(classMap).filter(classMatches) as any[];
   const filteredTasks = Object.values(taskMap).filter(taskMatches) as any[];
 
-  // Year-level filter applies at submission scope.
-  const allowedStudentIds = filters.year_level != null
-    ? userIdsForYearLevel(allUsers as any, filters.year_level)
-    : null;
-
-  const userLookup: Record<string, { name: string; email: string }> = {};
-  (allUsers as any[]).forEach(u => {
-    userLookup[u.id] = {
-      name: u.user_metadata?.display_name || u.user_metadata?.full_name || u.email || 'Unknown',
-      email: u.email || '',
-    };
-  });
+  // Teacher names cover the teachers/classes/tasks kinds; the submissions
+  // kind merges its student names in below (RPC-backed batched lookups
+  // instead of listing every platform user).
+  const userLookup: Record<string, { name: string; email: string }> =
+    await getUserInfoBatch(supabase, teacherIds);
 
   // -------- TEACHERS --------
   if (kind === 'teachers') {
@@ -266,6 +258,14 @@ export default withHandler({ methods: ['GET'], label: 'insights-detail' }, async
     if (cutoff) subQ = subQ.gte('created_at', cutoff.toISOString());
     const { data: subs } = await subQ;
 
+    // Year-level filter applies at submission scope — resolve it against the
+    // students actually present in these submissions.
+    let allowedStudentIds: Set<string> | null = null;
+    if (filters.year_level != null) {
+      const subStudentIds = [...new Set((subs || []).map(s => s.student_id).filter(Boolean))] as string[];
+      allowedStudentIds = new Set(await filterIdsByYearLevel(supabase, subStudentIds, filters.year_level));
+    }
+
     let filtered = (subs || []).filter(s => {
       if (allowedStudentIds && (!s.student_id || !allowedStudentIds.has(s.student_id))) return false;
       if (drillMarking === 'marked' && !s.graded_at) return false;
@@ -287,6 +287,10 @@ export default withHandler({ methods: ['GET'], label: 'insights-detail' }, async
     const TRUNCATE = 200;
     const truncated = filtered.length > TRUNCATE;
     if (truncated) filtered = filtered.slice(0, TRUNCATE);
+
+    // Student names for the visible rows only.
+    const rowStudentIds = [...new Set(filtered.map(s => s.student_id).filter(Boolean))] as string[];
+    Object.assign(userLookup, await getUserInfoBatch(supabase, rowStudentIds));
 
     const rows = filtered.map(s => {
       const t = taskMap[s.task_id] || {};
