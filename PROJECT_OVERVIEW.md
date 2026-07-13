@@ -12,7 +12,7 @@ Concretely: no mark/band predictions, no content rewriting, marker-voice prompts
 
 ## Stack
 
-- **Hosting:** Vercel (Pro plan, 300s function timeout). Production routes `/api/*` through `api.proofready.app` (Cloudflare DNS-only — bypasses Cloudflare's 100s edge proxy timeout).
+- **Hosting:** Vercel (Pro plan, 300s function timeout), functions pinned to **Sydney** (`"regions": ["syd1"]` in vercel.json — same region as Supabase; the default was US East, which put ~200ms of Pacific round-trip inside every DB query). Production routes `/api/*` through `api.proofready.app` (Cloudflare DNS-only — bypasses Cloudflare's 100s edge proxy timeout).
 - **Frontend:** Vanilla JS + HTML in `public/`. No framework, no build step. Supabase JS SDK loaded from CDN.
 - **Backend:** TypeScript serverless handlers in `api/` using `@vercel/node`.
 - **Database / auth:** Supabase (Sydney region, project ref `jcxcbqsxshlwwvxlyyfd`). NOT to be confused with Citrafort's separate Supabase project (`kjueriejebawtccuqxid`) — different app.
@@ -188,7 +188,9 @@ Endpoints (exposed at `/lti/*` via the `vercel.json` rewrite):
 - `/lti/launch` — main launch handler. Verifies platform id_token against Canvas JWKS, validates nonce, provisions user + class, kicks off async NRPS roster sync for teacher launches, redirects to magic-link session URL.
 - `/lti/deep-link` — deep linking picker session info + signed response
 
-Supports: OIDC initiation, resource link launch, deep linking, NRPS roster sync, AGS grade passback (completion + final mark). Issuer in config = `https://canvas.instructure.com` (generic Canvas Cloud value, not the school's hostname). JWKS/auth/token endpoints point to `sso.canvaslms.com`. Self-hosted Canvas instances would use the school's own domain.
+Supports: OIDC initiation, resource link launch, deep linking, NRPS roster sync, AGS grade passback (completion + final mark).
+
+**Deep-link → task resolution:** Canvas mints its own resource_link id for a deep-linked assignment, so the join key is `custom.proofready_task_id` (set in the DeepLinkingResponse content item, echoed by Canvas on every launch). The **first launch** of the assignment resolves the task via the custom claim (verified against platform + mapped class), then self-heals `tasks.lti_resource_link_id` + the AGS line-item URLs; later launches match on the resource_link id directly. Deep linking clears the task's AGS URLs (re-linking must not post grades to the old assignment's column until the new one is launched once). Deep-linked line items are created worth `total_marks`. Student launches route maths tasks to `submit-maths.html`. A second teacher launching a course already linked to a colleague's class lands on `lti-class-owned.html` (first-launcher-wins; co-teaching not yet supported) instead of a 403. Issuer in config = `https://canvas.instructure.com` (generic Canvas Cloud value, not the school's hostname). JWKS/auth/token endpoints point to `sso.canvaslms.com`. Self-hosted Canvas instances would use the school's own domain.
 
 Env: `LTI_PRIVATE_KEY` (RSA-2048 PEM, PKCS#8), `LTI_KEY_ID` (UUID kid), `SITE_ORIGIN`.
 
@@ -273,7 +275,7 @@ Rate limit: 5/hr per user per card kind for cohort; 8/hr per student per kind on
 - `POST /api/generate-criteria` — AI-generate marking criteria for a task (teacher).
 - `POST /api/generate-class-feedback` — Teacher-only synthesis across a class's submissions for one task. Persists to `tasks.class_feedback`.
 - `GET /api/task` / `POST` / `PUT` / `DELETE` — Task CRUD. Class teacher only.
-- `GET /api/task-submissions` — All submissions for one task, enriched with student names. Teacher only.
+- `GET /api/task-submissions` — All submissions for one task, enriched with student names. Teacher only. `?light=1` (used by the task-detail list) omits the heavyweight `feedback` + `skill_assessment` jsonb; the marking screens fetch full rows.
 - `GET /api/task-csv` — CSV export of submissions for a task.
 - `GET /api/class` / `POST` — Class CRUD + join-by-code.
 - `GET /api/me` — Current user's profile + role + classes. Subpaths: `?resource=submissions`, `?resource=task-drafts&task_id=…`, `?resource=results`.
@@ -342,7 +344,7 @@ LTI: `api/lti/*` — `jwks.ts`, `login.ts`, `launch.ts`, `deep-link.ts`
 - `rate-limit.ts` — per-user-per-hour + global-per-day caps, logs to `api_call_log`
 - `sentry.ts` — Sentry init + `captureError`
 - `task-verbs.ts` — NESA directive verb extraction from a question string
-- `user-names.ts` — `getUserInfoBatch()` with 30s cache
+- `user-names.ts` — `getUserInfoBatch()` / `getUsersByEmailDomain()`: RPC-first (`get_user_info` / `get_users_by_email_domain` SQL functions, `scripts/user-info-rpc-migration.sql`) with a listUsers-sweep fallback until the migration runs. Replaced the old page-through-every-auth-user pattern that made every hot page slower with every platform signup
 - `feedback-tools.ts` — Tool schemas for all Claude tool-call endpoints (holistic, criteria, inline, rubric parse, class feedback, school insights, the Tier-A cohort cards incl. the combined `COHORT_PATTERNS_TOOL`, the student-scope cards, the insights-signals Haiku tool, the class_profile_summary tool, and the Lesson Differentiator `DIFFERENTIATED_ACTIVITY_TOOL` + `DIFFERENTIATED_MATHS_ACTIVITY_TOOL`)
 - `anthropic-tool-call.ts` — `callTool<T>()` wrapper
 - `insights-filters.ts` — Filter parsing, faculty-scope clamping, year-level helpers, `getTimeWindowCutoff()`
@@ -383,7 +385,7 @@ Account: `profile.html`
 Shared JS: `js/app.js` (Supabase client, `authFetch`, `requireAuth`, `apiUrl`, Sentry init), `js/rubric.js` (rubric parser/renderer — pipe-table, band-style, criterion-list, letter-band, multi-part HSC, flattened-table; modes `display` / `mark-entry` / `graded`), `js/nesa-courses.js` (course autocomplete), `js/contact-modal.js`, `js/attachments.js` (`Attachments.createAttachmentUploader` + `renderAttachmentList` — file upload widget + read-only signed-URL list)
 
 ### `scripts/`
-- SQL migrations: `classes-migration.sql`, `class-feedback-migration.sql`, `rls-policies.sql`, `scale-indexes.sql`, `lti-migration.sql`, `typed-response-only-migration.sql`, `teacher-marking-migration.sql`, `submit-for-marking-migration.sql`, `insights-cards-cache.sql`, `task-modes-migration.sql`, `student-profile-migration.sql`, `schools-migration.sql`, `schools-faculties.sql`, `maths-feedback-migration.sql`, `hide-criteria-from-students-migration.sql`, `teacher-insights-cards.sql`, `school-insights-cards-scope.sql` (adds scope_key + fingerprint), `student-profile-stale-migration.sql` (adds the `stale` flag), `skill-profile-migration.sql` (adds `submissions.skill_assessment` + `student_skill_profile`), `own-task-fields-migration.sql` (`submissions.own_task_*`), `lesson-builder-migration.sql` (`tasks.lesson_builder` + `task_activities`), `attachments-migration.sql` (private `attachments` Storage bucket + `tasks.teacher_attachments` + `submissions.student_attachments`), `exam-time-limit-migration.sql` (`tasks.time_limit_minutes`), `exam-over-time-migration.sql` (`submissions.over_time_cutoff_index`), `resources-bucket-migration.sql` (public `resources` Storage bucket for admin presentation assets), `student-attachments-toggle-migration.sql` (`tasks.allow_student_attachments`), `skill-observations-migration.sql` (`skill_observations` history log for the skill-growth card), `skill-profile-atomic-migration.sql` (optional atomic rollup fold — audit P1-10, not yet wired)
+- SQL migrations: `classes-migration.sql`, `class-feedback-migration.sql`, `rls-policies.sql`, `scale-indexes.sql`, `lti-migration.sql`, `typed-response-only-migration.sql`, `teacher-marking-migration.sql`, `submit-for-marking-migration.sql`, `insights-cards-cache.sql`, `task-modes-migration.sql`, `student-profile-migration.sql`, `schools-migration.sql`, `schools-faculties.sql`, `maths-feedback-migration.sql`, `hide-criteria-from-students-migration.sql`, `teacher-insights-cards.sql`, `school-insights-cards-scope.sql` (adds scope_key + fingerprint), `student-profile-stale-migration.sql` (adds the `stale` flag), `skill-profile-migration.sql` (adds `submissions.skill_assessment` + `student_skill_profile`), `own-task-fields-migration.sql` (`submissions.own_task_*`), `lesson-builder-migration.sql` (`tasks.lesson_builder` + `task_activities`), `attachments-migration.sql` (private `attachments` Storage bucket + `tasks.teacher_attachments` + `submissions.student_attachments`), `exam-time-limit-migration.sql` (`tasks.time_limit_minutes`), `exam-over-time-migration.sql` (`submissions.over_time_cutoff_index`), `resources-bucket-migration.sql` (public `resources` Storage bucket for admin presentation assets), `student-attachments-toggle-migration.sql` (`tasks.allow_student_attachments`), `skill-observations-migration.sql` (`skill_observations` history log for the skill-growth card), `skill-profile-atomic-migration.sql` (optional atomic rollup fold — audit P1-10, not yet wired), `user-info-rpc-migration.sql` (id-scoped auth-user lookup RPCs — the listUsers replacement), `api-call-log-maintenance.sql` (rate-limit index + hourly pg_cron prune of >30d rows)
 - One-offs: `backfill-inline-suggestions.ts`, `backfill-skill-observations.ts` (populate `skill_observations` from existing `skill_assessment`; `npm run backfill-skill-observations`), `scrape-nesa-feedback.ts`, `generate-lti-keypair.ts`, `diagnose-pcs-search.ts`
 - Smoke tests: `lti-smoke-test.ts`, `insights-teacher-smoke-test.ts`, `insights-student-smoke-test.ts`
 
@@ -440,6 +442,8 @@ Shared JS: `js/app.js` (Supabase client, `authFetch`, `requireAuth`, `apiUrl`, S
 - **Teachers without a school context** (no LTI, no email-domain match, no `school_members` row) still get insights. Their `schoolId` resolves empty; class-scope works, but they don't share a cohort with anyone.
 - **Lesson Differentiator maths re-skins are auto-generated** — the highest-risk surface. Sanity-check difficulty + solvability before trusting them; the lever is `buildMathsActivitySystemPrompt` in `prompts/lesson-builder-system.ts`, and the conservative dial is numbers-only (drop the ±1-step allowance). Maths tasks *with* a marking guideline fall back to support-layer so the guideline still matches.
 - **Vercel git auto-deploy has been intermittently missing pushes.** If a change doesn't appear after `git push`, run `vercel --prod` (the reliable fallback) and re-verify.
+- **me?resource=submissions no longer carries `draft_text`/`feedback` for class-task rows** (payload grew with the student's whole history). The dashboard routes class-task rows to `feedback.html?task=<id>` (self-load; the subject probe redirects maths). Own-task rows still carry both (no server-side task to self-load from).
+- **Feedback sessionStorage handoffs are consume-once.** `proofready_feedback` / `proofready_maths_feedback` are cleared after render (the task id is pinned into the URL via replaceState so refresh self-loads), and a `?task=` URL param always wins over a mismatched stored handoff.
 
 ## Sister projects (different Supabase, different repos)
 
