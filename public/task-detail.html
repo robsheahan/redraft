@@ -548,7 +548,8 @@
       if (!user) return;
 
       const params = new URLSearchParams(window.location.search);
-      const id = params.get('id');
+      // Accept ?id= (canonical) and the ?task_id= form older links used.
+      const id = params.get('id') || params.get('task_id');
       const container = document.getElementById('content');
 
       if (!id) {

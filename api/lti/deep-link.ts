@@ -118,10 +118,15 @@ async function submitDeepLink(req: VercelRequest, res: VercelResponse) {
     // Canvas when the teacher confirms the picker — the first launch of the
     // assignment resolves it via custom.proofready_task_id and self-heals
     // lti_resource_link_id + the AGS line-item URLs (see api/lti/launch.ts).
+    // The AGS URLs are cleared too: when a task is RE-deep-linked, a grade
+    // posted before the new assignment's first launch must be a no-op rather
+    // than land in the OLD assignment's gradebook column.
     await supabase.from('tasks')
       .update({
         lti_platform_id: platform.id,
         lti_resource_link_id: null,
+        lti_line_item_url: null,
+        lti_ags_lineitems_url: null,
       })
       .eq('id', task.id);
 

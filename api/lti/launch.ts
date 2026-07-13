@@ -352,13 +352,13 @@ function buildTarget(opts: {
   if (opts.task) {
     const studentPage = opts.task.subject_type === 'maths' ? 'submit-maths.html' : 'submit.html';
     return opts.isTeacher
-      ? `/task-detail.html?task_id=${opts.task.id}`
+      ? `/task-detail.html?id=${opts.task.id}`
       : `/${studentPage}?task=${opts.task.id}`;
   }
   if (opts.classId) {
     return opts.isTeacher
-      ? `/class-detail.html?class_id=${opts.classId}`
-      : `/class-view.html?class_id=${opts.classId}`;
+      ? `/class-detail.html?id=${opts.classId}`
+      : `/class-view.html?id=${opts.classId}`;
   }
   if (opts.studentAwaitingTeacherSetup) return '/lti-not-ready.html';
   return opts.isTeacher ? '/teacher.html' : '/student.html';

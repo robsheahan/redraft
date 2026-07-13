@@ -11,14 +11,18 @@
 create index if not exists api_call_log_endpoint_created_idx
   on public.api_call_log (endpoint, created_at desc);
 
--- Prune: nothing reads rows older than 24 hours (the widest rate-limit
--- window); keep 48h for margin/debugging. pg_cron ships with Supabase.
+-- Prune: the rate limiter reads at most 24 hours back. The admin dashboard
+-- (api/admin-stats.ts) also reads this table for its insights-usage panel —
+-- its "last 7 days" numbers need 7 days of rows, and its "all-time" totals
+-- become a rolling 30-day window once this runs (acceptable for an internal
+-- ops panel; revisit if a true all-time counter is ever needed).
+-- pg_cron ships with Supabase.
 create extension if not exists pg_cron;
 
 select cron.schedule(
   'prune-api-call-log',
   '17 * * * *', -- hourly, on the :17 to avoid the top-of-hour rush
-  $$delete from public.api_call_log where created_at < now() - interval '48 hours'$$
+  $$delete from public.api_call_log where created_at < now() - interval '30 days'$$
 );
 
 -- To verify: select * from cron.job;

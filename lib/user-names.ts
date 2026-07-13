@@ -74,7 +74,11 @@ async function fetchViaRpc(
     if (rpcAvailable !== false) {
       console.warn('[user-names] get_user_info RPC unavailable, falling back to listUsers:', error.message);
     }
-    rpcAvailable = false;
+    // Pin the fallback only when the function genuinely doesn't exist
+    // (migration not run yet) — a transient error should retry the RPC on
+    // the next call rather than downgrade this lambda for its lifetime.
+    const code = (error as any).code;
+    if (code === 'PGRST202' || code === '42883') rpcAvailable = false;
     return null;
   }
   rpcAvailable = true;

@@ -176,7 +176,8 @@
       const user = await requireAuth();
       if (!user) return;
       const params = new URLSearchParams(window.location.search);
-      const id = params.get('id');
+      // Accept ?id= (canonical) and the ?class_id= form older links used.
+      const id = params.get('id') || params.get('class_id');
       const container = document.getElementById('content');
       if (!id) { container.innerHTML = '<div class="error-msg">No class id.</div>'; return; }
 

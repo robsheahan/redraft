@@ -78,7 +78,9 @@
     (async () => {
       const user = await requireAuth();
       if (!user) return;
-      const id = new URLSearchParams(window.location.search).get('id');
+      // Accept ?id= (canonical) and the ?class_id= form older links used.
+      const cvParams = new URLSearchParams(window.location.search);
+      const id = cvParams.get('id') || cvParams.get('class_id');
       const container = document.getElementById('content');
       if (!id) { container.innerHTML = '<div class="empty">No class id.</div>'; return; }
 
