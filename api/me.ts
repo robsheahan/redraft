@@ -28,12 +28,33 @@ async function returnSubmissions(_req: VercelRequest, res: VercelResponse, userI
 
   // Explicit column list: skill_assessment (the per-dimension developmental
   // read) must never reach students — mirror returnTaskDrafts below.
+  // draft_text + feedback are deliberately NOT selected: this is the
+  // dashboard list view and those blobs grow with the student's entire
+  // history. Class-task rows self-load feedback via feedback.html?task=<id>;
+  // own-task rows (no task to self-load from) get theirs merged in below.
   const { data, error } = await supabase
     .from('submissions')
-    .select('id, task_id, own_task_id, own_task_title, own_task_class_id, draft_text, feedback, draft_version, created_at, question, course, criterion_marks, total_mark, teacher_comment, teacher_annotations, graded_at, graded_by, submitted_for_marking, working_lines, part_working, input_mode, student_attachments, answers, question_marks')
+    .select('id, task_id, own_task_id, own_task_title, own_task_class_id, draft_version, created_at, question, course, criterion_marks, total_mark, teacher_comment, teacher_annotations, graded_at, graded_by, submitted_for_marking, working_lines, part_working, input_mode, student_attachments, answers, question_marks')
     .eq('student_id', userId)
     .order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
+
+  // Own tasks have no server-side task row, so the student dashboard hands
+  // their feedback to feedback.html via sessionStorage — fetch the blobs for
+  // just those rows (bounded by the own-task daily caps, so always small).
+  const ownRowIds = (data || []).filter(s => !s.task_id).map(s => s.id);
+  if (ownRowIds.length > 0) {
+    const { data: ownBlobs } = await supabase
+      .from('submissions')
+      .select('id, draft_text, feedback')
+      .in('id', ownRowIds);
+    const blobById: Record<string, { draft_text: string | null; feedback: any }> = {};
+    (ownBlobs || []).forEach(b => { blobById[b.id] = b; });
+    (data || []).forEach((s: any) => {
+      const b = blobById[s.id];
+      if (b) { s.draft_text = b.draft_text; s.feedback = b.feedback; }
+    });
+  }
 
   const taskIds = [...new Set((data || []).map(s => s.task_id).filter(Boolean))] as string[];
   const taskMap: Record<string, { title: string | null; class_id: string | null; course: string | null }> = {};

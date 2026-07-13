@@ -1005,14 +1005,15 @@ Criteria 3: Analysis and critical thinking (2-4 marks)"></textarea>
     }
 
     function openSubmissionInFeedback(latest) {
-      // Maths feedback has its own page + renderer — routing it through the
-      // essay handoff renders the wrong shape (and its "Get feedback" button
-      // would post maths working to the essay endpoint).
-      const fbKind = latest.feedback && latest.feedback.kind;
-      if ((fbKind === 'maths' || fbKind === 'maths_multipart') && latest.task_id) {
-        window.location.href = 'feedback-maths.html?task=' + encodeURIComponent(latest.task_id);
+      // Class-task rows self-load on the feedback page from the task id (the
+      // dashboard list no longer carries the feedback blobs) — and the
+      // feedback page's subject probe routes maths tasks to feedback-maths.
+      if (latest.task_id) {
+        window.location.href = 'feedback.html?task=' + encodeURIComponent(latest.task_id);
         return;
       }
+      // Own tasks (no server-side task row) hand off via sessionStorage —
+      // their rows keep draft_text + feedback in the list payload.
       const prevVerbs = ['compare and contrast','critically analyse','critically evaluate','account for','analyse','analyze','appreciate','apply','assess','calculate','clarify','classify','compare','construct','contrast','deduce','demonstrate','describe','discuss','distinguish','evaluate','examine','explain','extract','extrapolate','identify','interpret','investigate','justify','outline','predict','propose','recommend','recount'];
       const qLow = (latest.question || '').toLowerCase();
       const detectedVerb = prevVerbs.find(function(v) { return qLow.indexOf(v) !== -1; }) || '';

@@ -557,7 +557,7 @@
       }
 
       try {
-        const res = await authFetch('/api/task-submissions?task_id=' + encodeURIComponent(id));
+        const res = await authFetch('/api/task-submissions?task_id=' + encodeURIComponent(id) + '&light=1');
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           container.innerHTML = '<div class="error-msg">' + e(err.error || 'Could not load task.') +

@@ -117,7 +117,7 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
   const { data: rawTasks } = classIds.length > 0
     ? await supabase
       .from('tasks')
-      .select('id, title, class_id, course, total_marks, published_at, created_at, class_feedback_count, task_mode')
+      .select('id, title, class_id, course, subject_type, total_marks, published_at, created_at, class_feedback_count, task_mode')
       .in('class_id', classIds)
     : { data: [] as any[] };
 
@@ -127,16 +127,38 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
   if (taskIds.length > 0) {
     // Paginate — a school with >1000 in-window submissions would otherwise get an
     // arbitrary, unordered 1000-row subset (wrong card stats, flapping fingerprint).
+    // `feedback` is deliberately not selected here — the whole in-scope corpus of
+    // three-pass jsonb blobs would ship on every dashboard load. The only card
+    // that reads it (maths errors by category) gets a targeted fetch below.
     rawSubs = await fetchAllRows((from, to) => {
       let q = supabase
         .from('submissions')
-        .select('id, task_id, student_id, draft_version, graded_at, total_mark, criterion_marks, feedback, created_at, submitted_for_marking')
+        .select('id, task_id, student_id, draft_version, graded_at, total_mark, criterion_marks, created_at, submitted_for_marking')
         .in('task_id', taskIds)
         .order('id')
         .range(from, to);
       if (subsCutoff) q = q.gte('created_at', subsCutoff.toISOString());
       return q;
     });
+
+    // Maths errors by category needs the per-line diagnostic annotations —
+    // fetch feedback for submissions on maths tasks only and attach.
+    const mathsTaskIds = (rawTasks || []).filter((t: any) => t.subject_type === 'maths').map((t: any) => t.id);
+    if (mathsTaskIds.length > 0) {
+      const mathsRows = await fetchAllRows((from, to) => {
+        let q = supabase
+          .from('submissions')
+          .select('id, feedback')
+          .in('task_id', mathsTaskIds)
+          .order('id')
+          .range(from, to);
+        if (subsCutoff) q = q.gte('created_at', subsCutoff.toISOString());
+        return q;
+      });
+      const fbById: Record<string, any> = {};
+      (mathsRows || []).forEach((r: any) => { if (r.feedback) fbById[r.id] = r.feedback; });
+      rawSubs.forEach((s: any) => { const f = fbById[s.id]; if (f) s.feedback = f; });
+    }
   }
 
   // Tag classes + tasks with faculty (from course → NESA discipline).

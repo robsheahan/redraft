@@ -16,9 +16,27 @@ export default withHandler({ methods: ['GET'], label: 'task-submissions' }, asyn
   const teacherId = (task.classes as any)?.teacher_id;
   if (teacherId !== user!.id) return res.status(403).json({ error: 'Not authorised.' });
 
-  const { data: submissions, error } = await supabase
-    .from('submissions').select('*').eq('task_id', taskId).order('created_at', { ascending: false });
+  // ?light=1 (the task-detail list view) omits the heavyweight jsonb columns —
+  // `feedback` (the full three-pass payload per draft) grows with every
+  // submission and the list never renders it. The marking screens fetch the
+  // full rows. Keep this column list in sync with the submissions schema.
+  const light = req.query.light === '1';
+  const LIGHT_COLUMNS = [
+    'id', 'student_id', 'task_id', 'question', 'course', 'draft_text',
+    'working_lines', 'part_working', 'input_mode', 'draft_version', 'created_at',
+    'own_task_id', 'own_task_title', 'own_task_class_id',
+    'keystroke_count', 'paste_attempts_blocked', 'typing_session_count',
+    'total_typing_time_ms', 'time_to_first_keystroke_ms',
+    'criterion_marks', 'total_mark', 'teacher_comment', 'teacher_annotations',
+    'completion_status', 'graded_at', 'graded_by', 'submitted_for_marking',
+    'student_attachments', 'over_time_cutoff_index', 'answers', 'question_marks',
+  ].join(', ');
+  const { data, error } = await supabase
+    .from('submissions').select(light ? LIGHT_COLUMNS : '*')
+    .eq('task_id', taskId).order('created_at', { ascending: false });
   if (error) throw error;
+  // The dynamic column list defeats supabase-js's literal-type inference.
+  const submissions = (data || []) as any[];
 
   // Lesson Builder: gather per-student differentiated activities + the full
   // enrolled list (so the teacher also sees students who haven't opened yet).
