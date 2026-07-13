@@ -72,7 +72,7 @@ async function submitDeepLink(req: VercelRequest, res: VercelResponse) {
     }
 
     const { data: task } = await supabase
-      .from('tasks').select('id, title, class_id')
+      .from('tasks').select('id, title, class_id, total_marks')
       .eq('id', taskId).maybeSingle();
     if (!task) return res.status(404).json({ error: 'Task not found' });
     if (task.class_id !== session.class_id) {
@@ -96,7 +96,10 @@ async function submitDeepLink(req: VercelRequest, res: VercelResponse) {
     };
     if (acceptLineItem) {
       contentItem.lineItem = {
-        scoreMaximum: 1,
+        // Canvas creates the assignment worth this many points — use the task's
+        // real total so a 15/20 doesn't post as 0.75/1. Completion-only tasks
+        // have no total_marks and stay worth 1.
+        scoreMaximum: (typeof task.total_marks === 'number' && task.total_marks > 0) ? task.total_marks : 1,
         label: task.title,
         resourceId: resourceLinkId,
       };
@@ -111,10 +114,14 @@ async function submitDeepLink(req: VercelRequest, res: VercelResponse) {
       dataClaim: data,
     });
 
+    // Only the platform id is known now. The resource_link id is minted by
+    // Canvas when the teacher confirms the picker — the first launch of the
+    // assignment resolves it via custom.proofready_task_id and self-heals
+    // lti_resource_link_id + the AGS line-item URLs (see api/lti/launch.ts).
     await supabase.from('tasks')
       .update({
         lti_platform_id: platform.id,
-        lti_resource_link_id: resourceLinkId,
+        lti_resource_link_id: null,
       })
       .eq('id', task.id);
 

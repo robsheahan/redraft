@@ -141,6 +141,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           teacherId: userResult.userId,
         });
         classId = provision.classId;
+        // First-launcher-wins: the course's ProofReady class belongs to whoever
+        // launched first. A colleague deep-linking into it would otherwise hit
+        // a bare 403 — send them to a page that explains instead.
+        if (!provision.isNew && await classOwnedByOther(classId, userResult.userId)) {
+          const loginUrl = await generateLoginUrl(email, `${SITE_ORIGIN}/lti-class-owned.html`);
+          return res.redirect(302, loginUrl);
+        }
       }
 
       const dlToken = await persistDeepLinkContext({
@@ -167,6 +174,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           teacherId: userResult.userId,
         });
         classId = provision.classId;
+        // First-launcher-wins: a second teacher launching the same course isn't
+        // the class owner and would 403 on class-detail. Land them on a page
+        // that explains (co-teaching isn't supported yet) instead of an error.
+        if (!provision.isNew && await classOwnedByOther(classId, userResult.userId)) {
+          const loginUrl = await generateLoginUrl(email, `${SITE_ORIGIN}/lti-class-owned.html`);
+          return res.redirect(302, loginUrl);
+        }
         const nrps = payload[CLAIM_NRPS] as { context_memberships_url?: string } | undefined;
         if (nrps?.context_memberships_url) {
           // waitUntil keeps the function alive past the redirect — a plain
@@ -197,15 +211,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const ags = payload[CLAIM_AGS] as { lineitems?: string; lineitem?: string } | undefined;
-    const linkedTaskId = await findOrLinkTask({
+    const custom = payload[CLAIM_CUSTOM] as Record<string, string> | undefined;
+    const linkedTask = await findOrLinkTask({
       platformId: platform.id,
       resourceLinkId: resourceLink?.id,
+      customTaskId: custom?.proofready_task_id,
       classId,
       agsLineItem: ags?.lineitem,
       agsLineItems: ags?.lineitems,
     });
 
-    const target = buildTarget({ isTeacher, classId, taskId: linkedTaskId, studentAwaitingTeacherSetup });
+    const target = buildTarget({ isTeacher, classId, task: linkedTask, studentAwaitingTeacherSetup });
     const loginUrl = await generateLoginUrl(email, `${SITE_ORIGIN}${target}`);
     res.redirect(302, loginUrl);
   } catch (err) {
@@ -230,6 +246,14 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// True when the class exists and belongs to a different teacher. Fails open
+// (false) on a read error so a transient DB hiccup can't lock the owner out.
+async function classOwnedByOther(classId: string, userId: string): Promise<boolean> {
+  const supabase = getSupabase();
+  const { data } = await supabase.from('classes').select('teacher_id').eq('id', classId).maybeSingle();
+  return !!data?.teacher_id && data.teacher_id !== userId;
+}
+
 async function persistDeepLinkContext(opts: {
   platformId: string;
   userId: string;
@@ -249,19 +273,25 @@ async function persistDeepLinkContext(opts: {
   return token;
 }
 
+interface LinkedTask {
+  id: string;
+  subject_type?: string | null;
+}
+
 async function findOrLinkTask(opts: {
   platformId: string;
   resourceLinkId?: string;
+  customTaskId?: string;
   classId: string | null;
   agsLineItem?: string;
   agsLineItems?: string;
-}): Promise<string | null> {
+}): Promise<LinkedTask | null> {
   if (!opts.resourceLinkId) return null;
   const supabase = getSupabase();
 
   const { data: existing } = await supabase
     .from('tasks')
-    .select('id')
+    .select('id, subject_type')
     .eq('lti_platform_id', opts.platformId)
     .eq('lti_resource_link_id', opts.resourceLinkId)
     .maybeSingle();
@@ -271,7 +301,44 @@ async function findOrLinkTask(opts: {
         .update({ lti_line_item_url: opts.agsLineItem, lti_ags_lineitems_url: opts.agsLineItems })
         .eq('id', existing.id);
     }
-    return existing.id as string;
+    return existing as LinkedTask;
+  }
+
+  // First launch of a deep-linked assignment. At deep-link time we don't know
+  // the resource_link id Canvas will mint for the assignment — the join key we
+  // control is the custom claim (custom.proofready_task_id), which Canvas echoes
+  // back on every launch of that content item. Resolve via the custom claim once,
+  // verify the task really belongs to this platform + course, then self-heal the
+  // task with the actual resource_link id + AGS line-item URLs so subsequent
+  // launches take the fast path above and grade passback has its endpoint.
+  if (opts.customTaskId && opts.classId) {
+    const { data: task } = await supabase
+      .from('tasks')
+      .select('id, class_id, lti_platform_id, subject_type')
+      .eq('id', opts.customTaskId)
+      .maybeSingle();
+    if (
+      task?.id &&
+      task.lti_platform_id === opts.platformId &&
+      task.class_id === opts.classId
+    ) {
+      const { error } = await supabase.from('tasks')
+        .update({
+          lti_resource_link_id: opts.resourceLinkId,
+          lti_line_item_url: opts.agsLineItem ?? null,
+          lti_ags_lineitems_url: opts.agsLineItems ?? null,
+        })
+        .eq('id', task.id);
+      if (error) {
+        captureError(new Error(`lti task self-heal failed: ${error.message}`), { task: task.id });
+      } else {
+        console.log('[lti] linked deep-linked task to resource link', { task: task.id });
+      }
+      return task as LinkedTask;
+    }
+    console.warn('[lti] custom proofready_task_id did not verify against platform/class', {
+      task: opts.customTaskId, platform: opts.platformId, class: opts.classId,
+    });
   }
   return null;
 }
@@ -279,13 +346,14 @@ async function findOrLinkTask(opts: {
 function buildTarget(opts: {
   isTeacher: boolean;
   classId: string | null;
-  taskId: string | null;
+  task: LinkedTask | null;
   studentAwaitingTeacherSetup?: boolean;
 }): string {
-  if (opts.taskId) {
+  if (opts.task) {
+    const studentPage = opts.task.subject_type === 'maths' ? 'submit-maths.html' : 'submit.html';
     return opts.isTeacher
-      ? `/task-detail.html?task_id=${opts.taskId}`
-      : `/submit.html?task_id=${opts.taskId}`;
+      ? `/task-detail.html?task_id=${opts.task.id}`
+      : `/${studentPage}?task=${opts.task.id}`;
   }
   if (opts.classId) {
     return opts.isTeacher
