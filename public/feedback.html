@@ -1358,6 +1358,9 @@
         if (pr.summary) {
           html += '<div class="section top-priority"><div class="section-title">Top priority</div><p class="summary-text">' + e(pr.summary) + '</p></div>';
         }
+        if (marks >= 3 && qfb.task_verb_check && qfb.task_verb_check.summary) {
+          html += '<div class="section"><div class="section-title">Answering the question</div><p class="section-text">' + e(qfb.task_verb_check.summary) + '</p></div>';
+        }
         var impr = qfb.improvements || {};
         if (Array.isArray(impr.summary) && impr.summary.length) {
           html += '<div class="section improvements"><div class="section-title">Things to improve</div><ul class="summary-list">';
