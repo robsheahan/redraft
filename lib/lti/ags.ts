@@ -40,22 +40,12 @@ export async function postCompletionScore(opts: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/vnd.ims.lis.v1.score+json',
     },
-    body: JSON.stringify({
-      userId: opts.canvasUserId,
-      ...(hasScore
-        ? {
-            scoreGiven: opts.scoreGiven,
-            scoreMaximum: opts.scoreMaximum,
-            activityProgress: 'Completed',
-            gradingProgress: 'FullyGraded',
-          }
-        : {
-            activityProgress: 'Submitted',
-            gradingProgress: 'Pending',
-          }),
-      timestamp: new Date().toISOString(),
-      ...(opts.comment ? { comment: opts.comment } : {}),
-    }),
+    body: JSON.stringify(buildAgsScorePayload({
+      canvasUserId: opts.canvasUserId,
+      scoreGiven: opts.scoreGiven,
+      scoreMaximum: opts.scoreMaximum,
+      comment: opts.comment,
+    })),
   });
   if (!res.ok) throw new Error(`AGS score post failed: ${res.status} ${await res.text()}`);
 }
@@ -66,12 +56,41 @@ export async function postCompletionScore(opts: {
  * (`.../lineitem?type_id=123`) — naive `${url}/scores` would produce
  * `...?type_id=123/scores`. Insert `/scores` before the query string.
  */
-function buildScoresUrl(lineItemUrl: string): string {
+export function buildScoresUrl(lineItemUrl: string): string {
   const queryIndex = lineItemUrl.indexOf('?');
   if (queryIndex === -1) return `${lineItemUrl}/scores`;
   const path = lineItemUrl.slice(0, queryIndex);
   const query = lineItemUrl.slice(queryIndex);
   return `${path}/scores${query}`;
+}
+
+export function buildAgsScorePayload(opts: {
+  canvasUserId: string;
+  scoreGiven?: number;
+  scoreMaximum?: number;
+  comment?: string;
+  timestamp?: string;
+}): Record<string, unknown> {
+  const hasScore = opts.scoreGiven !== undefined && opts.scoreGiven !== null;
+  if (hasScore && (opts.scoreMaximum === undefined || opts.scoreMaximum === null)) {
+    throw new Error('AGS score post: scoreGiven supplied without scoreMaximum');
+  }
+  return {
+    userId: opts.canvasUserId,
+    ...(hasScore
+      ? {
+          scoreGiven: opts.scoreGiven,
+          scoreMaximum: opts.scoreMaximum,
+          activityProgress: 'Completed',
+          gradingProgress: 'FullyGraded',
+        }
+      : {
+          activityProgress: 'Submitted',
+          gradingProgress: 'Pending',
+        }),
+    timestamp: opts.timestamp ?? new Date().toISOString(),
+    ...(opts.comment ? { comment: opts.comment } : {}),
+  };
 }
 
 export async function postCompletionIfLinked(opts: {

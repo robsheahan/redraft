@@ -803,6 +803,11 @@
 
   <script>
     function cancelTask() {
+      const returnTo = safeReturnTo(new URLSearchParams(window.location.search).get('return_to'));
+      if (returnTo) {
+        window.location.href = returnTo;
+        return;
+      }
       if (currentClassId) {
         window.location.href = 'class-detail.html?id=' + encodeURIComponent(currentClassId);
       } else {
@@ -1722,6 +1727,22 @@
   <script src="/js/task-meta.js"></script>
   <script src="/js/attachments.js"></script>
   <script>
+    // A Canvas deep-link session may send the teacher here to create a task.
+    // Only permit the exact same-origin picker path as a return destination so
+    // this parameter can never become an open redirect.
+    function safeReturnTo(value) {
+      if (!value) return null;
+      try {
+        const url = new URL(value, window.location.origin);
+        if (url.origin !== window.location.origin) return null;
+        if (url.pathname !== '/lti-deep-link.html') return null;
+        if (!url.searchParams.get('token')) return null;
+        return url.pathname + url.search;
+      } catch (_) {
+        return null;
+      }
+    }
+
     (async () => {
       const user = await requireAuth('teacher');
       if (!user) return;

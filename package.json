@@ -14,7 +14,8 @@
     "backfill-inline": "npx tsx scripts/backfill-inline-suggestions.ts",
     "backfill-skill-observations": "npx tsx scripts/backfill-skill-observations.ts",
     "generate-lti-keypair": "npx tsx scripts/generate-lti-keypair.ts",
-    "lti-smoke-test": "npx tsx scripts/lti-smoke-test.ts"
+    "lti-smoke-test": "npx tsx scripts/lti-smoke-test.ts",
+    "test-lti-core": "node --import tsx test/lti-core.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",

@@ -147,13 +147,30 @@ section('5. class_members in PCS-owned classes');
 const classIds = activeClasses.map(c => c.id);
 let memberCount = 0;
 let distinctStudents = 0;
+let members: Array<{ student_id: string; class_id: string }> = [];
 if (classIds.length > 0) {
-  const { data: members } = await sb.from('class_members').select('student_id, class_id').in('class_id', classIds);
+  const { data } = await sb.from('class_members').select('student_id, class_id').in('class_id', classIds);
+  members = (data || []) as Array<{ student_id: string; class_id: string }>;
   memberCount = members?.length || 0;
   distinctStudents = new Set((members || []).map(m => m.student_id)).size;
 }
 line('class_members rows', memberCount);
 line('distinct student_ids', distinctStudents);
+if (classRows.length > 0) {
+  console.log('\n  membership by mapped Canvas course:');
+  for (const mapping of (courseMaps || [])) {
+    const klass = classRows.find(c => c.id === mapping.class_id);
+    const count = members.filter(m => m.class_id === mapping.class_id).length;
+    console.log(`    ${String(count).padStart(3)} students  canvas_course=${mapping.canvas_course_id}  class="${klass?.name || mapping.class_id}"`);
+  }
+}
+
+const memberUserIds = new Set(members.map(m => m.student_id));
+const mappedStudentIds = new Set(mappedUsers
+  .filter(u => (u.user_metadata?.role || null) === 'student')
+  .map(u => u.id));
+const mappedOutsideCurrentClasses = [...mappedStudentIds].filter(id => !memberUserIds.has(id));
+line('mapped students outside current classes', mappedOutsideCurrentClasses.length);
 
 // 6. Submissions in those classes
 section('6. Submissions in PCS-owned classes');
@@ -183,6 +200,11 @@ if (mappedUsers.length === 0) {
 } else if (memberCount === 0) {
   console.log('  Classes exist but class_members is empty. NRPS roster sync either hasn\'t run or skipped everyone');
   console.log('  for missing emails. Check Canvas dev-key privacy level = "public".');
+} else if (mappedOutsideCurrentClasses.length > 0) {
+  console.log(`  PARTIAL ROSTER WARNING: ${mappedOutsideCurrentClasses.length} mapped students are not enrolled in any current PCS class.`);
+  console.log('  This is consistent with historical roster syncs being interrupted after account mapping but before class enrolment.');
+  console.log('  Have each owning teacher launch ProofReady from Canvas course navigation again, wait briefly, then rerun this diagnostic.');
+  console.log('  The current waitUntil-based sync is idempotent and should attach existing mapped students without duplicating accounts.');
 } else {
   console.log(`  Looks healthy: ${classIds.length} active classes, ${distinctStudents} students in scope.`);
   console.log('  Search should return these students. If it still doesn\'t, log the API response in DevTools.');

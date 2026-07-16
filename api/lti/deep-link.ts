@@ -4,6 +4,7 @@ import { verifyAuth, getSupabase } from '../../lib/auth.js';
 import { signDeepLinkingResponse } from '../../lib/lti/jwt.js';
 import { getPlatformById } from '../../lib/lti/config.js';
 import { captureError } from '../../lib/sentry.js';
+import { buildDeepLinkContentItem } from '../../lib/lti/deep-link-content.js';
 
 const SITE_ORIGIN = process.env.SITE_ORIGIN || 'https://proofready.app';
 
@@ -87,23 +88,9 @@ async function submitDeepLink(req: VercelRequest, res: VercelResponse) {
     const data = settings.data as string | undefined;
     const acceptLineItem = (settings.accept_lineitem === true);
 
-    const resourceLinkId = task.id;
-    const contentItem: Record<string, unknown> = {
-      type: 'ltiResourceLink',
-      url: 'https://api.proofready.app/lti/launch',
-      title: task.title,
-      custom: { proofready_task_id: task.id },
-    };
-    if (acceptLineItem) {
-      contentItem.lineItem = {
-        // Canvas creates the assignment worth this many points — use the task's
-        // real total so a 15/20 doesn't post as 0.75/1. Completion-only tasks
-        // have no total_marks and stay worth 1.
-        scoreMaximum: (typeof task.total_marks === 'number' && task.total_marks > 0) ? task.total_marks : 1,
-        label: task.title,
-        resourceId: resourceLinkId,
-      };
-    }
+    // Canvas creates the assignment at the task's real points value. Tasks
+    // without a numeric total use a one-point completion line item.
+    const contentItem = buildDeepLinkContentItem(task, acceptLineItem);
 
     const responseJwt = await signDeepLinkingResponse({
       issuer: platform.client_id,

@@ -131,8 +131,8 @@
   <h2>Privacy, data &amp; continuity</h2>
 
   <div class="qa">
-    <div class="q">Where does student data go? Is Anthropic training on student writing?</div>
-    <div class="a"><strong>No.</strong> Anthropic's API policy excludes API inputs and outputs from model training. Drafts are sent over encrypted connections, processed for the time it takes to generate feedback, and then stored only in our Supabase Sydney-region database for review. Full sub-processor list, locations, and breach-notification process at <a href="https://proofready.app/compliance.html">proofready.app/compliance</a>.</div>
+    <div class="q">Where does student data go? Is it used to train AI models?</div>
+    <div class="a"><strong>No.</strong> OpenAI is the primary AI provider, with Anthropic used for specialist maths verification and controlled fallback paths. Their API inputs and outputs are not used for model training by default. ProofReady sends OpenAI student-data requests with storage disabled; limited abuse-monitoring retention may still apply under provider terms. Drafts and feedback are stored for school review in our Supabase Sydney-region database. Full sub-processor list, locations, and breach-notification process at <a href="https://proofready.app/compliance.html">proofready.app/compliance</a>.</div>
   </div>
 
   <div class="qa">

@@ -139,7 +139,7 @@ The configuration above sets `"privacy_level": "public"`, which means each LTI l
 ## Security & data handling
 
 - **Data location:** Australian Supabase region (Sydney).
-- **AI processing:** Anthropic (Claude). Anthropic's API policy excludes API inputs and outputs from model training.
+- **AI processing:** OpenAI is the primary provider for feedback during the pilot, with Anthropic retained for specialist maths verification and controlled fallback paths. API calls are configured not to use student work for model training; OpenAI requests containing student data use `store: false`.
 - **Encryption:** TLS in transit, encrypted at rest in Supabase.
 - **Data retention:** Drafts and feedback retained for the duration of the pilot, then exportable/deletable on request.
 - **Privacy compliance:** Privacy Act 1988 / APPs aligned. Full pack at https://proofready.app/compliance.html.

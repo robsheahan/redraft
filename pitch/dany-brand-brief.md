@@ -83,7 +83,7 @@ Three tiers: **Teacher** (own classes), **Leader** (school + faculty filter), **
 ## 9. Privacy & compliance (one-liners that should appear in every external doc)
 
 - Data hosted in **Australia** (Supabase Sydney region).
-- AI processing via **Anthropic Claude**. Anthropic excludes API inputs/outputs from model training.
+- AI processing via **OpenAI as the primary provider**, with Anthropic retained for specialist maths verification and controlled fallback. API inputs/outputs are not used for model training by default.
 - **TLS** in transit, encrypted at rest.
 - **Privacy Act 1988 / APP-aligned.** Full pack at `proofready.app/compliance.html`.
 - **No model training on student work.** Ever.

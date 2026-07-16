@@ -28,7 +28,8 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
   process.exit(1);
 }
 
-const { provisionUser } = await import('../lib/lti/user-provision.js');
+const { provisionUser, LtiAccountLinkRequiredError } = await import('../lib/lti/user-provision.js');
+const { createLinkRequest, readLinkRequest, consumeLinkRequest } = await import('../lib/lti/link.js');
 
 const sb = createClient(
   process.env.SUPABASE_URL,
@@ -114,18 +115,9 @@ async function main() {
     if (nonceRow) await sb.from('lti_nonces').delete().eq('nonce', capturedNonce);
   }
 
-  // 5. RPC: unknown email returns empty
-  const unknownEmail = `smoketest-nonexistent-${Date.now()}@proofready.test`;
-  try {
-    const { data, error } = await sb.rpc('lti_find_user_by_email', { p_email: unknownEmail });
-    const ok = !error && Array.isArray(data) && data.length === 0;
-    check('lti_find_user_by_email returns empty for unknown email', ok, error?.message);
-  } catch (err: any) {
-    check('lti_find_user_by_email returns empty for unknown email', false, err.message);
-  }
-
-  // 6 + 7. provisionUser email-lookup path: create test user, then verify provisionUser
-  // links to it rather than duplicating (regression test for the Adrian Kruse bug).
+  // 5–8. Existing emails must never auto-link from a Canvas assertion. Verify
+  // the current consent flow: provisioning refuses, a short-lived request is
+  // readable once, and consuming it is atomic/single-use.
   const testEmail = `smoketest-${Date.now()}@proofready.test`;
   const fakeCanvasId = `smoke-canvas-${Date.now()}`;
   let createdUserId: string | undefined;
@@ -138,28 +130,43 @@ async function main() {
     if (createErr || !created?.user) throw new Error(createErr?.message || 'createUser returned no user');
     createdUserId = created.user.id;
 
-    const { data: rpcData, error: rpcErr } = await sb.rpc('lti_find_user_by_email', { p_email: testEmail });
-    const rpcFinds = !rpcErr && Array.isArray(rpcData) && rpcData.length === 1 && rpcData[0].id === createdUserId;
-    check('lti_find_user_by_email finds the test user', rpcFinds, rpcErr?.message);
+    let refused = false;
+    try {
+      await provisionUser({
+        platformId: platform.id,
+        canvasUserId: fakeCanvasId,
+        email: testEmail,
+        displayName: 'Smoke Test',
+        role: 'student',
+      });
+    } catch (err) {
+      refused = err instanceof LtiAccountLinkRequiredError;
+    }
+    check('provisionUser refuses automatic linking for an existing email', refused);
 
-    const result = await provisionUser({
+    const { data: mappingRow } = await sb.from('lti_user_mappings').select('user_id')
+      .eq('platform_id', platform.id).eq('canvas_user_id', fakeCanvasId).maybeSingle();
+    check('No identity mapping is created without user consent', !mappingRow);
+
+    const linkToken = await createLinkRequest({
       platformId: platform.id,
       canvasUserId: fakeCanvasId,
       email: testEmail,
       displayName: 'Smoke Test',
       role: 'student',
     });
-    const linked = !result.isNew && result.userId === createdUserId;
-    check('provisionUser links existing account (no duplicate)', linked,
-      linked ? '' : `userId=${result.userId.slice(0, 8)}…, isNew=${result.isNew}`);
-
-    const { data: mappingRow } = await sb.from('lti_user_mappings').select('user_id')
-      .eq('platform_id', platform.id).eq('canvas_user_id', fakeCanvasId).maybeSingle();
-    check('lti_user_mappings row created and points to existing user',
-      !!mappingRow && mappingRow.user_id === createdUserId);
+    const pending = await readLinkRequest(linkToken);
+    check('Consent-based link request is readable while pending',
+      pending?.email === testEmail && pending?.canvas_user_id === fakeCanvasId);
+    const consumed = await consumeLinkRequest(linkToken);
+    const replayed = await consumeLinkRequest(linkToken);
+    check('Consent link request is atomic and single-use',
+      consumed?.email === testEmail && replayed === null);
   } catch (err: any) {
-    check('provisionUser email-lookup smoke test', false, err.message);
+    check('Consent-based account-link smoke test', false, err.message);
   } finally {
+    await sb.from('lti_link_requests').delete()
+      .eq('platform_id', platform.id).eq('canvas_user_id', fakeCanvasId);
     if (createdUserId) {
       await sb.from('lti_user_mappings').delete()
         .eq('platform_id', platform.id).eq('canvas_user_id', fakeCanvasId);

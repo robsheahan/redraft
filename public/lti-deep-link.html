@@ -91,7 +91,7 @@
         content.innerHTML = '<div class="card"><div class="empty">' +
           '<p>No tasks yet in this class.</p>' +
           (data.classId
-            ? '<p style="margin-top:10px"><a href="/new-task.html?class_id=' + data.classId + '">Create a task</a>, then come back here.</p>'
+            ? '<p style="margin-top:10px"><a href="/new-task.html?class=' + encodeURIComponent(data.classId) + '&return_to=' + encodeURIComponent('/lti-deep-link.html?token=' + token) + '">Create a task</a> and you\'ll return here automatically.</p>'
             : '<p style="margin-top:10px">This Canvas course is not yet linked to a ProofReady class.</p>') +
           '</div></div>';
         return;
