@@ -33,6 +33,31 @@ const MAX_TOTAL_CHARS = 50000; // summed across all answers — bounds cost
 
 interface SubmittedAnswer { text: string; selected_option_id: string }
 
+function normaliseAnswerText(value: unknown): string {
+  return typeof value === 'string' ? value.replace(/\r\n?/g, '\n').trim() : '';
+}
+
+/** Compare only student-authored answer content. Question snapshots and option
+ * text can change shape over time, but must not make an unchanged draft look new. */
+function answersMatchLatest(
+  questions: FeedbackQuestion[],
+  submitted: Map<string, SubmittedAnswer>,
+  previous: unknown,
+): boolean {
+  if (!Array.isArray(previous)) return false;
+  const prior = new Map<string, any>();
+  for (const answer of previous) {
+    if (answer && typeof answer.question_id === 'string') prior.set(answer.question_id, answer);
+  }
+  return questions.every((q) => {
+    const next = submitted.get(q.id);
+    const before = prior.get(q.id);
+    return q.type === 'multiple_choice'
+      ? (next?.selected_option_id || '') === (before?.selected_option_id || '')
+      : normaliseAnswerText(next?.text) === normaliseAnswerText(before?.text);
+  });
+}
+
 /** Map a client `answers` array to { question_id -> {text, selected_option_id} }.
  *  Text questions carry `text`; multiple-choice carry `selected_option_id`. */
 function sanitiseAnswers(input: any): Map<string, SubmittedAnswer> {
@@ -115,16 +140,6 @@ export default withHandler({ methods: ['POST'], label: 'generate-multi-feedback'
     return res.status(403).json({ error: reason });
   }
 
-  const rateLimit = await checkAndLogRateLimit(supabase, user.id, {
-    endpoint: 'generate-multi-feedback',
-    perUserPerHour: 10,
-    globalPerDay: 5000,
-  });
-  if (!rateLimit.ok) {
-    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
-    return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded.' });
-  }
-
   // Load task + verify it's a multi-question take-home assessment + membership.
   const { data: task } = await supabase.from('tasks').select('*').eq('id', task_id).maybeSingle();
   if (!task) return res.status(404).json({ error: 'Task not found.' });
@@ -144,7 +159,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-multi-feedback'
   // cap and spend Anthropic calls blind.
   const { data: priorSubs, error: priorErr } = await supabase
     .from('submissions')
-    .select('draft_version')
+    .select('draft_version, answers')
     .eq('student_id', user.id)
     .eq('task_id', task_id)
     .order('draft_version', { ascending: true });
@@ -171,9 +186,28 @@ export default withHandler({ methods: ['POST'], label: 'generate-multi-feedback'
   if (!questions.some((q) => wasAnswered(q))) {
     return res.status(400).json({ error: 'Answer at least one question before getting feedback.' });
   }
+  const latest = priorCount > 0 ? priorSubs![priorCount - 1] : null;
+  if (latest && answersMatchLatest(questions, submitted, latest.answers)) {
+    return res.status(409).json({
+      code: 'UNCHANGED_DRAFT',
+      error: 'Change at least one answer before getting new feedback. Your previous feedback is still available.',
+    });
+  }
   const totalChars = questions.reduce((n, q) => n + (submitted.get(q.id)?.text || '').length, 0);
   if (totalChars > MAX_TOTAL_CHARS) {
     return res.status(400).json({ error: 'Your answers are too long. Please shorten them and try again.' });
+  }
+
+  // Unchanged drafts are rejected above, before consuming a rate-limit entry or
+  // making any model calls.
+  const rateLimit = await checkAndLogRateLimit(supabase, user.id, {
+    endpoint: 'generate-multi-feedback',
+    perUserPerHour: 10,
+    globalPerDay: 5000,
+  });
+  if (!rateLimit.ok) {
+    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded.' });
   }
 
   // Shared per-submission context (built once; reused across questions).

@@ -71,6 +71,18 @@ function sanitisePartWorking(input: any): PartWorking[] {
     .filter((pw) => pw.part_id);
 }
 
+function sameWorking(next: unknown, previous: unknown): boolean {
+  return JSON.stringify(sanitiseLines(next)) === JSON.stringify(sanitiseLines(previous));
+}
+
+function samePartWorking(next: unknown, previous: unknown): boolean {
+  const contentOnly = (value: unknown) => sanitisePartWorking(value).map((part) => ({
+    part_id: part.part_id,
+    working_lines: part.working_lines,
+  }));
+  return JSON.stringify(contentOnly(next)) === JSON.stringify(contentOnly(previous));
+}
+
 function composePartQuestion(stem: string, part: { label: string; text: string }): string {
   const head = stem ? stem.trim() + '\n\n' : '';
   return `${head}${part.label} ${part.text}`.trim();
@@ -175,16 +187,6 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
     return res.status(403).json({ error: reason });
   }
 
-  const rateLimit = await checkAndLogRateLimit(supabase, user.id, {
-    endpoint: 'generate-maths-feedback',
-    perUserPerHour: 10,
-    globalPerDay: 5000,
-  });
-  if (!rateLimit.ok) {
-    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
-    return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded.' });
-  }
-
   // Load task + verify membership.
   const { data: task } = await supabase.from('tasks').select('*').eq('id', task_id).maybeSingle();
   if (!task) return res.status(404).json({ error: 'Task not found.' });
@@ -201,12 +203,16 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
   if (!membership) return res.status(403).json({ error: 'You are not a member of this task\'s class.' });
 
   // Draft version + prior-draft check.
-  const { data: priorSubs } = await supabase
+  const { data: priorSubs, error: priorErr } = await supabase
     .from('submissions')
-    .select('draft_version')
+    .select('draft_version, working_lines, part_working')
     .eq('student_id', user.id)
     .eq('task_id', task_id)
     .order('draft_version', { ascending: true });
+  if (priorErr) {
+    captureError(priorErr, { stage: 'prior-drafts-read-maths', task_id, user_id: user.id });
+    return res.status(500).json({ error: 'Could not check your draft history. Please try again.' });
+  }
   const priorCount = (priorSubs || []).length;
   if (priorCount >= MAX_DRAFTS) {
     return res.status(400).json({ error: `You've reached the maximum of ${MAX_DRAFTS} drafts for this task.` });
@@ -226,6 +232,27 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
 
   const authoredParts: MathsPart[] = Array.isArray(task.parts) ? task.parts : [];
   const isMultipart = authoredParts.length > 0;
+
+  const latest = priorCount > 0 ? priorSubs![priorCount - 1] : null;
+  const unchanged = latest && (isMultipart
+    ? samePartWorking(part_working, latest.part_working)
+    : sameWorking(working_lines, latest.working_lines));
+  if (unchanged) {
+    return res.status(409).json({
+      code: 'UNCHANGED_DRAFT',
+      error: 'Change your working before getting new feedback. Your previous feedback is still available.',
+    });
+  }
+
+  const rateLimit = await checkAndLogRateLimit(supabase, user.id, {
+    endpoint: 'generate-maths-feedback',
+    perUserPerHour: 10,
+    globalPerDay: 5000,
+  });
+  if (!rateLimit.ok) {
+    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded.' });
+  }
 
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });

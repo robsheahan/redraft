@@ -945,8 +945,33 @@
     function answersFromSubmission(sub) {
       if (!sub || !Array.isArray(sub.answers)) return null;
       var map = {};
-      sub.answers.forEach(function(a) { if (a && a.question_id) map[a.question_id] = (typeof a.text === 'string') ? a.text : ''; });
+      sub.answers.forEach(function(a) {
+        if (a && a.question_id) {
+          map[a.question_id] = a.type === 'multiple_choice'
+            ? (a.selected_option_id || '')
+            : ((typeof a.text === 'string') ? a.text : '');
+        }
+      });
       return map;
+    }
+
+    function normaliseDraftText(value) {
+      return String(value == null ? '' : value).replace(/\r\n?/g, '\n').trim();
+    }
+
+    function feedbackAnswersChanged(payload) {
+      if (!priorDrafts.length) return true;
+      var previous = priorDrafts[priorDrafts.length - 1];
+      var prior = {};
+      (Array.isArray(previous.answers) ? previous.answers : []).forEach(function(a) {
+        if (a && a.question_id) prior[a.question_id] = a;
+      });
+      return payload.some(function(a) {
+        var before = prior[a.question_id] || {};
+        return Object.prototype.hasOwnProperty.call(a, 'selected_option_id')
+          ? (a.selected_option_id || '') !== (before.selected_option_id || '')
+          : normaliseDraftText(a.text) !== normaliseDraftText(before.text);
+      });
     }
 
     function renderFeedbackAnswerBlocks() {
@@ -1084,6 +1109,10 @@
       if (submissionInFlight) return;
       var payload = collectFeedbackAnswers();
       if (!payload.some(feedbackAnswerHasContent)) { alert('Answer at least one question first.'); return; }
+      if (!feedbackAnswersChanged(payload)) {
+        alert('Change at least one answer before getting new feedback. You can use “View previous feedback” to read the feedback you already have.');
+        return;
+      }
 
       submissionInFlight = true;
       var card = document.getElementById('feedbackSubmitCard');
@@ -1623,6 +1652,10 @@
       const draft = document.getElementById('draftTextarea').value.trim();
       if (!draft) { alert('Write your draft first.'); return; }
       if (draft.length < 50) { alert('Your draft is too short for meaningful feedback — write at least a paragraph.'); return; }
+      if (priorDrafts.length && normaliseDraftText(draft) === normaliseDraftText(priorDrafts[priorDrafts.length - 1].draft_text)) {
+        alert('Change your draft before getting new feedback. You can use “View previous feedback” to read the feedback you already have.');
+        return;
+      }
 
       submissionInFlight = true;
       const btn = document.querySelector('.submit-btn');
