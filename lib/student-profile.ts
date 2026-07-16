@@ -32,7 +32,7 @@ type Tool = Anthropic.Messages.Tool;
 
 const MODEL = 'claude-sonnet-5';
 
-const PROFILE_TOOL: Tool = {
+export const PROFILE_TOOL: Tool = {
   name: 'synthesise_student_profile',
   description:
     'Synthesise a longitudinal academic profile from a student\'s history of submissions and feedback. Reads like a careful half-year report comment.',
@@ -320,9 +320,9 @@ function emptyProfile(): ProfileSynthesisResult {
 }
 
 async function callSynthesisLLM(subs: RawSubmission[], skillBlock?: string | null): Promise<ProfileSynthesisResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set');
-  const client = new Anthropic({ apiKey, maxRetries: 0 });
+  const client = process.env.ANTHROPIC_API_KEY
+    ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
+    : undefined;
 
   const system = `You are an experienced HSC marker writing a longitudinal academic profile for one student, based on the structured history of their submissions on ProofReady.
 

@@ -9,6 +9,7 @@
     "calibrate-feedback": "npx tsx test/calibrate-feedback.ts",
     "compare-providers": "npx tsx test/compare-providers.ts",
     "test-provider-routing": "node --import tsx test/smoke-provider-routing.ts",
+    "test-openai-live": "node --import tsx test/live-openai-coverage.ts",
     "test-inline": "npx tsx test/test-inline-suggestions.ts",
     "backfill-inline": "npx tsx scripts/backfill-inline-suggestions.ts",
     "backfill-skill-observations": "npx tsx scripts/backfill-skill-observations.ts",

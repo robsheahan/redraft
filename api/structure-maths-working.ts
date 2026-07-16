@@ -68,7 +68,9 @@ export default withHandler({ methods: ['POST'], label: 'structure-maths-working'
   const question = String(task.question || '').trim();
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
+    const client = process.env.ANTHROPIC_API_KEY
+      ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
+      : undefined;
     const result = await callTool<{ lines: Array<{ math: string }> }>({
       client,
       model: 'claude-haiku-4-5-20251001',

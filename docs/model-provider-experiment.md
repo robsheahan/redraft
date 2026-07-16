@@ -18,6 +18,7 @@ Routing is split by workload tier:
 ```text
 AI_PRIMARY_PROVIDER=anthropic   # anthropic | openai
 AI_FAST_PROVIDER=anthropic      # anthropic | openai
+AI_FALLBACK_PROVIDER=anthropic  # optional; load-bearing feedback only
 OPENAI_PRIMARY_MODEL=gpt-5.6-terra
 OPENAI_FAST_MODEL=gpt-5.4-nano
 ```
@@ -30,6 +31,12 @@ OPENAI_FAST_MODEL=gpt-5.4-nano
 The two tiers can be switched independently. For example, start by routing
 only fast/background calls to OpenAI while leaving student-facing feedback on
 Anthropic.
+
+`AI_FALLBACK_PROVIDER=anthropic` enables a narrow runtime fallback for the
+load-bearing holistic passes only. It runs after OpenAI exhausts retries for a
+retryable outage or malformed structured result. It does not run for auth,
+configuration, policy, content-filter, or explicit-refusal errors. Every
+fallback emits a `[provider-fallback]` warning with no student content.
 
 The OpenAI path uses the Responses API with `store: false`. Existing Anthropic
 tool schemas are sent as function schemas. They currently use non-strict
@@ -85,3 +92,6 @@ configured until that loop has its own cross-provider evaluation.
   tokens and cache usage.
 - Rollback is an environment-variable change: set the relevant provider back
   to `anthropic` and redeploy.
+- Runtime fallback and rollback are different: fallback protects an individual
+  load-bearing request; rollback changes the selected provider for subsequent
+  deployments.

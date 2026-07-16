@@ -290,7 +290,9 @@ export default withHandler({ methods: ['POST'], label: 'generate-feedback' }, as
   });
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
+    const client = process.env.ANTHROPIC_API_KEY
+      ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
+      : undefined;
 
     // Pass 2 prompt (independent — doesn't depend on Pass 1). Runs for both
     // band-style and per-criterion rubrics; the system prompt switches on
@@ -358,6 +360,7 @@ Assess this draft against each marking criterion above. Address every criterion 
         tool: HOLISTIC_FEEDBACK_TOOL,
         cacheSystem: true,
         label: 'feedback:holistic',
+        allowFallback: true,
         // Student-facing essentials. A truncation that cuts into these makes
         // Pass 1 fail (→ friendly 502, draft NOT consumed) rather than persist
         // gutted feedback. The trailing skill_assessment is intentionally not

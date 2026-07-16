@@ -92,9 +92,9 @@ export default withHandler({ methods: ['POST'], label: 'generate-marking-guideli
     workedSolution: typeof worked_solution === 'string' ? worked_solution.trim() : null,
   });
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'Server not configured.' });
-  const client = new Anthropic({ apiKey, maxRetries: 0 });
+  const client = process.env.ANTHROPIC_API_KEY
+    ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
+    : undefined;
 
   try {
     const result = await callText({

@@ -66,7 +66,7 @@ export interface QuestionFeedback {
 }
 
 export interface GenerateQuestionFeedbackOpts {
-  client: Anthropic;
+  client?: Anthropic;
   question: FeedbackQuestion;
   answerText: string;
   course: string | null;
@@ -142,6 +142,7 @@ export async function generateQuestionFeedback(opts: GenerateQuestionFeedbackOpt
         }),
         tool: SHORT_ANSWER_FEEDBACK_TOOL,
         label: 'multi:short',
+        allowFallback: true,
         requiredKeys: ['what_youve_done_well', 'improvements', 'top_priority'],
       });
       v = r.value || {};
@@ -210,6 +211,7 @@ Assess this draft against each marking criterion above. Address every criterion 
       tool: HOLISTIC_FEEDBACK_TOOL,
       cacheSystem: true,
       label: 'multi:holistic',
+      allowFallback: true,
       requiredKeys: ['what_youve_done_well', 'improvements', 'top_priority'],
     }),
     hasCriteria

@@ -134,7 +134,9 @@ export default withHandler({ methods: ['POST'], label: 'generate-activity' }, as
 
   let value: any;
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
+    const client = process.env.ANTHROPIC_API_KEY
+      ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
+      : undefined;
     const result = await callTool<any>({
       client,
       model: MODEL,
@@ -189,7 +191,9 @@ export default withHandler({ methods: ['POST'], label: 'generate-activity' }, as
     // three pass; any rejection or error degrades silently to the original
     // question. Overall pass is derived here, never trusted to a single field.
     try {
-      const verifyClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
+      const verifyClient = process.env.ANTHROPIC_API_KEY
+        ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
+        : undefined;
       const verdict = await callTool<any>({
         client: verifyClient,
         model: MODEL,

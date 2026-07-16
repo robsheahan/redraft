@@ -14,13 +14,14 @@
  *   pitch-meeting attempt.
  */
 
-import type Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
 export type AIProvider = 'anthropic' | 'openai';
 
 interface CallToolOptions {
-  client: Anthropic;
+  /** Optional injected Anthropic client (tests and the maths verifier). */
+  client?: Anthropic;
   model: string;
   max_tokens: number;
   temperature?: number;
@@ -56,10 +57,12 @@ interface CallToolOptions {
   provider?: AIProvider;
   /** Override the provider-specific model selected from the environment. */
   providerModel?: string;
+  /** Permit a retryable OpenAI failure to fall back to Anthropic. */
+  allowFallback?: boolean;
 }
 
 interface CallTextOptions {
-  client: Anthropic;
+  client?: Anthropic;
   model: string;
   max_tokens: number;
   system: string;
@@ -92,9 +95,22 @@ export interface ToolCallResult<T> {
 
 export async function callTool<T = unknown>(opts: CallToolOptions): Promise<ToolCallResult<T>> {
   const provider = resolveProvider(opts);
-  if (provider === 'openai') return callOpenAITool<T>(opts);
+  try {
+    return provider === 'openai'
+      ? await callOpenAITool<T>(opts)
+      : await callAnthropicTool<T>(opts);
+  } catch (err) {
+    if (!shouldFallbackToAnthropic(provider, opts.allowFallback, !!opts.client, err)) throw err;
+    console.warn(
+      `[provider-fallback] label=${opts.label || opts.tool.name} from=openai to=anthropic ` +
+      `reason=${safeErrorSummary(err)}`,
+    );
+    return callAnthropicTool<T>({ ...opts, provider: 'anthropic' });
+  }
+}
 
-  const { client, model, max_tokens, temperature, system, user, tool, retries = 3, cacheSystem, label, requiredKeys } = opts;
+async function callAnthropicTool<T = unknown>(opts: CallToolOptions): Promise<ToolCallResult<T>> {
+  const { client = getAnthropicClient(), model, max_tokens, temperature, system, user, tool, retries = 3, cacheSystem, label, requiredKeys } = opts;
   const totalAttempts = retries + 1;
   let lastErr: unknown;
 
@@ -189,19 +205,14 @@ export async function callText(opts: CallTextOptions): Promise<ToolCallResult<st
           max_output_tokens: opts.max_tokens,
           store: false,
         });
-        const usage: TokenUsage = {
-          input_tokens: resp.usage?.input_tokens ?? 0,
-          output_tokens: resp.usage?.output_tokens ?? 0,
-          cache_read_input_tokens: resp.usage?.input_tokens_details?.cached_tokens ?? 0,
-          cache_creation_input_tokens: resp.usage?.input_tokens_details?.cache_write_tokens ?? 0,
-        };
+        const usage = extractOpenAIUsage(resp);
         logUsage(opts.label || 'text', model, usage, 'openai');
         const value = resp.output_text.trim();
         if (!value) throw new Error('Model returned empty text output');
         return { value, attempts: attempt, stop_reason: resp.status ?? null, usage };
       }
 
-      const resp = await opts.client.messages.create({
+      const resp = await (opts.client ?? getAnthropicClient()).messages.create({
         model: opts.model,
         max_tokens: opts.max_tokens,
         system: opts.system,
@@ -225,6 +236,16 @@ export async function callText(opts: CallTextOptions): Promise<ToolCallResult<st
 }
 
 let openAIClient: OpenAI | null = null;
+let anthropicClient: Anthropic | null = null;
+
+function getAnthropicClient(): Anthropic {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set');
+  if (!anthropicClient) {
+    anthropicClient = new Anthropic({ apiKey, maxRetries: 0 });
+  }
+  return anthropicClient;
+}
 
 function getOpenAIClient(): OpenAI {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -299,16 +320,17 @@ async function callOpenAITool<T>(opts: CallToolOptions): Promise<ToolCallResult<
         store: false,
       });
 
-      const usage: TokenUsage = {
-        input_tokens: resp.usage?.input_tokens ?? 0,
-        output_tokens: resp.usage?.output_tokens ?? 0,
-        cache_read_input_tokens: resp.usage?.input_tokens_details?.cached_tokens ?? 0,
-        cache_creation_input_tokens: resp.usage?.input_tokens_details?.cache_write_tokens ?? 0,
-      };
+      const usage = extractOpenAIUsage(resp);
       logUsage(label || tool.name, model, usage, 'openai');
 
       const call = resp.output.find((item: any) => item.type === 'function_call' && item.name === tool.name) as any;
       if (!call) {
+        const refusal = resp.output
+          .flatMap((item: any) => Array.isArray(item.content) ? item.content : [])
+          .find((item: any) => item.type === 'refusal');
+        if (refusal) {
+          throw new Error(`OpenAI refusal: ${String(refusal.refusal || 'request refused').slice(0, 160)}`);
+        }
         throw new Error(`Model did not return a function_call for ${tool.name} (status=${resp.status})`);
       }
       const value = JSON.parse(call.arguments) as T;
@@ -349,6 +371,21 @@ function extractUsage(resp: any): TokenUsage {
   };
 }
 
+function extractOpenAIUsage(resp: any): TokenUsage {
+  const totalInput = resp?.usage?.input_tokens ?? 0;
+  const cached = resp?.usage?.input_tokens_details?.cached_tokens ?? 0;
+  const cacheWrite = resp?.usage?.input_tokens_details?.cache_write_tokens ?? 0;
+  return {
+    // OpenAI reports cached/written tokens as subsets of input_tokens, whereas
+    // Anthropic reports them in separate top-level buckets. Normalise to the
+    // Anthropic-style non-overlapping buckets used by ProofReady's logger.
+    input_tokens: Math.max(0, totalInput - cached - cacheWrite),
+    output_tokens: resp?.usage?.output_tokens ?? 0,
+    cache_read_input_tokens: cached,
+    cache_creation_input_tokens: cacheWrite,
+  };
+}
+
 /**
  * Structured usage line for cost observability (Vercel logs). Cache-hit rate
  * and per-call token counts are the inputs to the real cost picture; without
@@ -362,6 +399,28 @@ function logUsage(label: string, model: string, u: TokenUsage, provider: AIProvi
     `[usage] ${label} provider=${provider} model=${model} in=${u.input_tokens} out=${u.output_tokens} ` +
     `cache_read=${cached} cache_write=${u.cache_creation_input_tokens} cache_hit=${hitPct}%`,
   );
+}
+
+function shouldFallbackToAnthropic(
+  provider: AIProvider,
+  allowed: boolean | undefined,
+  hasInjectedClient: boolean,
+  err: unknown,
+): boolean {
+  if (provider !== 'openai' || !allowed) return false;
+  if (process.env.AI_FALLBACK_PROVIDER !== 'anthropic') return false;
+  if (!process.env.ANTHROPIC_API_KEY && !hasInjectedClient) return false;
+  const status = (err as any)?.status ?? (err as any)?.response?.status;
+  if (status === 400 || status === 401 || status === 403 || status === 404) return false;
+  const message = String((err as any)?.message || err || '');
+  if (/refusal|content.?filter|safety|policy/i.test(message)) return false;
+  return isTransient(err);
+}
+
+function safeErrorSummary(err: unknown): string {
+  const status = (err as any)?.status ?? (err as any)?.response?.status;
+  const message = String((err as any)?.message || err || 'unknown').replace(/\s+/g, ' ').slice(0, 180);
+  return `${status ? `status=${status} ` : ''}${message}`;
 }
 
 function isSoftOutputFailure(err: any): boolean {

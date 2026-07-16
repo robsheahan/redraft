@@ -59,9 +59,9 @@ export default withHandler({ methods: ['POST'], label: 'generate-criteria' }, as
     outcomes: Array.isArray(outcomes) ? outcomes.filter(o => typeof o === 'string' && o.trim()) : [],
   });
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'Server not configured.' });
-  const client = new Anthropic({ apiKey, maxRetries: 0 });
+  const client = process.env.ANTHROPIC_API_KEY
+    ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
+    : undefined;
 
   try {
     const result = await callText({

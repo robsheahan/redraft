@@ -266,6 +266,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-maths-feedback'
           system: systemC,
           user: buildMathsHolisticUserPrompt({ question: qArgs.question, workingLines: qArgs.workingLines, perLineDiagnostic: passB }),
           tool: MATHS_HOLISTIC_TOOL, cacheSystem: true, label: 'maths:holistic',
+          allowFallback: true,
           requiredKeys: ['what_youve_done_well', 'top_priority', 'improvements'],
         });
         holistic = passC.value;

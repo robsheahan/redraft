@@ -113,7 +113,9 @@ Top priority: ${cap(fieldText(f.top_priority), 600)}`).join('\n\n')}
 Synthesise the above into a class-level overview. Look for patterns — what comes up repeatedly? What are the common strengths and gaps? Be honest and specific.`;
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
+    const client = process.env.ANTHROPIC_API_KEY
+      ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
+      : undefined;
 
     const result = await callTool<Record<string, any>>({
       client,

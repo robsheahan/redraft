@@ -46,9 +46,9 @@ Rules:
 
 export async function parseRubricWithAI(rawText: string): Promise<StructuredRubric | null> {
   if (!rawText || !rawText.trim()) return null;
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
+  const client = process.env.ANTHROPIC_API_KEY
+    ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
+    : undefined;
 
   try {
     const result = await callTool<StructuredRubric>({
