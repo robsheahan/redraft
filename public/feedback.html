@@ -164,9 +164,9 @@
     .submit-doc-edit { display: block; width: 100%; box-sizing: border-box; min-height: 460px; background: #fff; border: 1px solid #ed7615; border-radius: 6px; padding: 20px 22px; margin-bottom: 16px; font-family: inherit; font-size: 15px; line-height: 1.7; color: #111827; resize: vertical; outline: none; box-shadow: 0 0 0 3px rgba(237,118,21,0.12); }
     .submit-panel-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
     /* Compact editing state: save status and Done editing share one centered row. */
-    .submit-panel.is-editing { padding: 11px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .submit-panel.is-editing { padding: 11px 14px; display: flex; align-items: center; justify-content: flex-start; gap: 12px; }
     .submit-panel.is-editing .fb-save-indicator { display: flex; align-items: center; min-height: 0; margin: 0; line-height: 1.2; text-align: left; }
-    .submit-panel.is-editing .submit-panel-actions { flex-wrap: nowrap; margin-left: auto; }
+    .submit-panel.is-editing .submit-panel-actions { order: -1; flex-wrap: nowrap; margin: 0; }
     .submit-panel.is-editing .btn-revise-secondary { padding: 8px 16px; line-height: 1.2; }
     /* Lightweight toast (paste blocked, etc.) */
     .fb-toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%); background: #1f2937; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13.5px; z-index: 9999; opacity: 0; transition: opacity 0.2s ease; pointer-events: none; max-width: 90%; text-align: center; }
