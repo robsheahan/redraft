@@ -494,7 +494,7 @@
           if (t.allow_student_attachments) html += '<div class="attach-block"><div id="studentAttachmentsMount"></div></div>';
           html += '<div class="submit-row">';
           if (isFeedbackTask) {
-            html += '<button class="submit-btn" onclick="submit()">Get feedback</button>';
+            html += '<button class="submit-btn" id="feedbackBtn" onclick="submit()">Get feedback</button>';
             html += '<button class="submit-final-btn" onclick="submitForMarking()">Submit for marking</button>';
           } else {
             html += '<button class="submit-btn" onclick="submitForMarking()" style="max-width:340px">Submit</button>';
@@ -818,7 +818,7 @@
 
       // Restore autosaved draft + telemetry
       loadAutosave(currentTask.id).then(function(data) {
-        if (!data) return;
+        if (!data) { updateFeedbackButton(); return; }
         if (data.draft_text) {
           el.value = data.draft_text;
           lastSavedText = data.draft_text;
@@ -844,6 +844,7 @@
           }
         }
         if (examStartedAt != null && examLimitMs()) startExamTimer();
+        updateFeedbackButton();
       });
 
       el.addEventListener('input', function() {
@@ -878,6 +879,7 @@
         }
         lastInputAt = now;
         scheduleAutosave();
+        updateFeedbackButton();
       });
 
       el.addEventListener('focus', function() {
@@ -915,6 +917,7 @@
 
       // Initial save indicator
       if (!savedAt) setSaveIndicator('idle');
+      updateFeedbackButton();
     }
 
     // ===== Multi-question in-class exam (marked_task with task.questions) =====
@@ -959,6 +962,17 @@
       return String(value == null ? '' : value).replace(/\r\n?/g, '\n').trim();
     }
 
+    function updateFeedbackButton() {
+      var btn = document.getElementById('feedbackBtn');
+      var textarea = document.getElementById('draftTextarea');
+      if (!btn || !textarea) return;
+      var previous = priorDrafts.length ? priorDrafts[priorDrafts.length - 1].draft_text : null;
+      var unchanged = previous != null && normaliseDraftText(textarea.value) === normaliseDraftText(previous);
+      btn.disabled = unchanged;
+      btn.textContent = unchanged ? 'Edit your draft to get new feedback' : 'Get feedback';
+      btn.title = unchanged ? 'Change your draft to request new feedback.' : '';
+    }
+
     function feedbackAnswersChanged(payload) {
       if (!priorDrafts.length) return true;
       var previous = priorDrafts[priorDrafts.length - 1];
@@ -972,6 +986,15 @@
           ? (a.selected_option_id || '') !== (before.selected_option_id || '')
           : normaliseDraftText(a.text) !== normaliseDraftText(before.text);
       });
+    }
+
+    function updateMultiFeedbackButton() {
+      var btn = document.getElementById('multiFeedbackBtn');
+      if (!btn) return;
+      var unchanged = priorDrafts.length > 0 && !feedbackAnswersChanged(collectFeedbackAnswers());
+      btn.disabled = unchanged;
+      btn.textContent = unchanged ? 'Edit your draft to get new feedback' : 'Get feedback';
+      btn.title = unchanged ? 'Change at least one answer to request new feedback.' : '';
     }
 
     function renderFeedbackAnswerBlocks() {
@@ -1012,7 +1035,7 @@
       html += '<div class="booklet-bar"><span></span><span class="save-indicator" id="saveIndicator"></span></div>';
       if (currentTask.allow_student_attachments) html += '<div class="attach-block"><div id="studentAttachmentsMount"></div></div>';
       html += '<div class="submit-row">';
-      html += '<button class="submit-btn" onclick="submitMulti()">Get feedback</button>';
+      html += '<button class="submit-btn" id="multiFeedbackBtn" onclick="submitMulti()">Get feedback</button>';
       html += '<button class="submit-final-btn" onclick="submitForMarking()">Submit for marking</button>';
       html += '</div>';
       html += '<div class="submit-final-hint">"Get feedback" gives you per-question feedback (counts toward your 3-draft cap). "Submit for marking" is your final — your teacher will mark it and you can\'t submit again.</div>';
@@ -1035,7 +1058,7 @@
       }
 
       loadAutosave(currentTask.id).then(function(data) {
-        if (!data) return;
+        if (!data) { updateMultiFeedbackButton(); return; }
         if (data.answers && typeof data.answers === 'object') {
           applyExamAnswers(data.answers);
           examLastSavedJSON = JSON.stringify(readExamAnswers());
@@ -1045,6 +1068,7 @@
         if (data.telemetry && typeof data.telemetry === 'object') {
           Object.keys(telemetry).forEach(function(k) { if (typeof data.telemetry[k] === 'number') telemetry[k] = data.telemetry[k]; });
         }
+        updateMultiFeedbackButton();
       });
 
       els.forEach(function(el) {
@@ -1059,6 +1083,7 @@
           if (lastInputAt) telemetry.total_typing_time_ms += Math.min(now - lastInputAt, 5000);
           lastInputAt = now;
           scheduleExamAutosave();
+          updateMultiFeedbackButton();
         });
         el.addEventListener('keydown', function(ev) {
           if (ev.key === 'Tab' && !ev.shiftKey) {
@@ -1088,9 +1113,11 @@
             telemetry.typing_session_count = Math.max(1, telemetry.typing_session_count);
           }
           scheduleExamAutosave();
+          updateMultiFeedbackButton();
         });
       });
       if (!savedAt) setSaveIndicator('idle');
+      updateMultiFeedbackButton();
     }
 
     function collectFeedbackAnswers() {
