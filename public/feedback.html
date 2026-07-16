@@ -1846,7 +1846,13 @@
       if (mqIsMulti) {
         var ans = readMqAnswers();
         sig = 'A:' + JSON.stringify(answersKeyMap(ans));
-        body = { task_id: tId, answers: ans, telemetry: fbTelemetry };
+        // draft-autosave requires a string snapshot alongside structured
+        // answers. Keep the structured array as truth; this flattened form
+        // preserves compatibility and enforces the endpoint's size bound.
+        var flatDraft = ans.map(function(a) {
+          return (typeof a.text === 'string' ? a.text : (a.selected_option_id || '')).trim();
+        }).join('\n\n');
+        body = { task_id: tId, draft_text: flatDraft, answers: ans, telemetry: fbTelemetry };
       } else {
         var edit = document.getElementById('submitDocEdit');
         if (!edit) return;
