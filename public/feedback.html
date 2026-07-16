@@ -1813,6 +1813,7 @@
         if (label) label.textContent = 'This is what you\'ll submit';
         btn.textContent = 'Edit';
       }
+      updateSingleFeedbackAction();
     }
 
     function normaliseFeedbackText(value) {
@@ -1822,10 +1823,23 @@
     function updateSingleFeedbackAction() {
       var btn = document.getElementById('submitAnotherBtn');
       var edit = document.getElementById('submitDocEdit');
-      if (!btn || !edit || mqIsMulti) return;
+      if (!edit || mqIsMulti) return;
+      var editBtn = document.getElementById('editDraftBtn');
+      var markingBtn = document.getElementById('submitMarkingBtn');
+      var view = document.getElementById('submitDocView');
+      var editing = !!view && view.style.display === 'none';
       var changed = normaliseFeedbackText(edit.value) !== normaliseFeedbackText(feedbackBaseDraftText);
-      btn.style.display = changed ? '' : 'none';
-      btn.disabled = !changed;
+      // Editing is a focused mode: autosave continues, while Done editing is
+      // the only available action. Submission choices return afterward.
+      if (editBtn) {
+        editBtn.style.display = '';
+        editBtn.textContent = editing ? 'Done editing' : 'Edit';
+      }
+      if (markingBtn) markingBtn.style.display = editing ? 'none' : '';
+      if (btn) {
+        btn.style.display = (!editing && changed) ? '' : 'none';
+        btn.disabled = !changed;
+      }
     }
 
     // Autosave the inline editor to draft_autosaves (restore-on-reopen source).
@@ -1903,16 +1917,22 @@
 
     function updateMqFeedbackAction() {
       var btn = document.getElementById('submitAnotherBtn');
-      if (!btn || !mqIsMulti) return;
+      if (!mqIsMulti) return;
       var editBtn = document.getElementById('editAnswersBtn');
+      var markingBtn = document.getElementById('submitMarkingBtn');
       var changed = JSON.stringify(canonicalMqAnswers(readMqAnswers())) !== JSON.stringify(canonicalMqAnswers(mqFeedbackBaseAnswers));
-      // Read-only, unchanged state has one clear revision action: Edit answers.
-      // Once the editor opens, that action gives way to the feedback action,
-      // which becomes enabled only after a real content change.
-      btn.style.display = (mqEditMode || changed) ? '' : 'none';
-      btn.disabled = !changed;
-      btn.textContent = changed ? 'Get feedback' : 'Make a change to get feedback';
-      if (editBtn) editBtn.style.display = mqEditMode ? 'none' : '';
+      // While editing, autosave continues and Done editing is the only action.
+      // Feedback/submission choices return once the student leaves edit mode.
+      if (btn) {
+        btn.style.display = (!mqEditMode && changed) ? '' : 'none';
+        btn.disabled = !changed;
+        btn.textContent = 'Get feedback';
+      }
+      if (editBtn) {
+        editBtn.style.display = '';
+        editBtn.textContent = mqEditMode ? 'Done editing' : 'Edit answers';
+      }
+      if (markingBtn) markingBtn.style.display = mqEditMode ? 'none' : '';
     }
 
     // Toggle multi-question answers between read-only and editable.
