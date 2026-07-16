@@ -767,6 +767,25 @@
       }
     }
 
+    function normaliseWorkingLines(lines) {
+      return (Array.isArray(lines) ? lines : []).map(l => ({ math: String(l && l.math || '').trim() })).filter(l => l.math);
+    }
+
+    function workingChanged(lines) {
+      if (!priorDrafts.length) return true;
+      const previous = priorDrafts[priorDrafts.length - 1];
+      return JSON.stringify(normaliseWorkingLines(lines)) !== JSON.stringify(normaliseWorkingLines(previous.working_lines));
+    }
+
+    function partWorkingChanged(parts) {
+      if (!priorDrafts.length) return true;
+      const content = value => (Array.isArray(value) ? value : []).map(p => ({
+        part_id: p && p.part_id || '',
+        working_lines: normaliseWorkingLines(p && p.working_lines),
+      })).filter(p => p.part_id);
+      return JSON.stringify(content(parts)) !== JSON.stringify(content(priorDrafts[priorDrafts.length - 1].part_working));
+    }
+
     function showConfirmation(lines) {
       const container = document.getElementById('content');
       // Build a confirmation card replacing the form.
@@ -844,12 +863,16 @@
     }
 
     async function postFinalFeedback(lines, inputMode) {
+      const isFeedback = (currentTask.task_mode || 'feedback_task') === 'feedback_task';
+      if (isFeedback && !workingChanged(lines)) {
+        alert('Change your working before getting new feedback. You can use “View previous feedback” to read the feedback you already have.');
+        return;
+      }
       const btn = document.getElementById('submitBtn');
       const overlay = document.getElementById('loadingOverlay');
       if (btn) { btn.disabled = true; btn.style.display = 'none'; }
       overlay.classList.add('visible');
 
-      const isFeedback = (currentTask.task_mode || 'feedback_task') === 'feedback_task';
       const bodyCommon = {
         task_id: currentTask.id,
         working_lines: lines,
@@ -1074,6 +1097,10 @@
       const pw = collectPartWorking();
       const total = pw.reduce((a, p) => a + p.working_lines.length, 0);
       if (total === 0) { showToast('Add some working before submitting.'); return; }
+      if (!partWorkingChanged(pw)) {
+        alert('Change your working before getting new feedback. You can use “View previous feedback” to read the feedback you already have.');
+        return;
+      }
       const btn = document.getElementById('submitBtn');
       const overlay = document.getElementById('loadingOverlay');
       if (btn) { btn.disabled = true; btn.style.display = 'none'; }

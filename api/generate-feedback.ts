@@ -67,23 +67,7 @@ export default withHandler({ methods: ['POST'], label: 'generate-feedback' }, as
     return res.status(400).json({ error: 'Your draft is too long. Please shorten it to under 30,000 characters.' });
   }
 
-  // Rate limit / spend protection: a per-user hourly cap plus a global
-  // daily cap.
-  //
-  // Own-task submissions use a separate endpoint key for the per-hour and global
-  // call limits. The per-DAY limit is enforced as "distinct tasks started today"
-  // further down (3 own tasks / 5 class tasks per student per day) — a count the
-  // blunt call-count limiter can't express now that own tasks are a 3-draft model.
   const isOwnTaskSubmission = !task_id;
-  const rateLimit = await checkAndLogRateLimit(getSupabase(), user?.id || null, {
-    endpoint: isOwnTaskSubmission ? 'generate-feedback-own' : 'generate-feedback',
-    perUserPerHour: 10,
-    globalPerDay: 5000,
-  });
-  if (!rateLimit.ok) {
-    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
-    return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded. Please try again later.' });
-  }
 
   // Resubmission handling: cap at 3 drafts per student per task
   const MAX_DRAFTS = 3;
@@ -206,6 +190,31 @@ export default withHandler({ methods: ['POST'], label: 'generate-feedback' }, as
         error: "You've started 3 of your own tasks today — that's the daily limit. You can still add more drafts to a task you've already started, or come back tomorrow.",
       });
     }
+  }
+
+
+  // Reject an unchanged resubmission before consuming a rate-limit entry or
+  // making model calls. Normalise line endings and outer whitespace because
+  // those are transport/editor differences, not meaningful revisions.
+  const latestDraft = priorDrafts.length > 0 ? priorDrafts[priorDrafts.length - 1].draft_text : null;
+  const normaliseDraft = (value: unknown) => String(value ?? '').replace(/\r\n?/g, '\n').trim();
+  if (latestDraft != null && normaliseDraft(latestDraft) === normaliseDraft(draftStr)) {
+    return res.status(409).json({
+      code: 'UNCHANGED_DRAFT',
+      error: 'Change your draft before getting new feedback. Your previous feedback is still available.',
+    });
+  }
+
+  // Rate limit / spend protection. This deliberately runs after draft-history
+  // validation so blocked duplicates cost neither credits nor a rate-limit use.
+  const rateLimit = await checkAndLogRateLimit(getSupabase(), user?.id || null, {
+    endpoint: isOwnTaskSubmission ? 'generate-feedback-own' : 'generate-feedback',
+    perUserPerHour: 10,
+    globalPerDay: 5000,
+  });
+  if (!rateLimit.ok) {
+    if (rateLimit.retryAfterSeconds) res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds));
+    return res.status(429).json({ error: rateLimit.reason || 'Rate limit exceeded. Please try again later.' });
   }
 
   // Own-task fields arrive from req.body, student-authored and unbounded. Cap
