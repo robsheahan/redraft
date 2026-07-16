@@ -18,7 +18,7 @@
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import { wrapUntrusted, UNTRUSTED_CONTENT_RULE } from '../lib/prompt-safety.js';
 
-export function buildShortAnswerSystem(courseName?: string, yearLevel?: number): string {
+export function buildShortAnswerSystem(courseName?: string, yearLevel?: number, marks = 2): string {
   const discipline = courseName ? getDisciplineForCourse(courseName) : null;
   const subjectLabel = courseName
     ? `${courseName}${discipline ? ` (${discipline})` : ''}`
@@ -26,6 +26,25 @@ export function buildShortAnswerSystem(courseName?: string, yearLevel?: number):
   const stageNote = typeof yearLevel === 'number'
     ? `The student is in Year ${yearLevel}. Write so a typical Year ${yearLevel} student understands every sentence the first time they read it.`
     : `Write so a school student understands every sentence the first time they read it.`;
+  const depthGuidance = marks <= 2
+    ? [
+        `This is a 1–2 mark response. Be genuinely brief: one specific strength, one top priority, and at most one improvement.`,
+        `The improvement detail should be one concrete sentence. Do not turn a tiny question into an essay critique.`,
+      ]
+    : marks <= 4
+      ? [
+          `This is a 3–4 mark response. Give 1–2 specific strengths and up to two improvements.`,
+          `For each improvement, explain the exact revision AND the missing link it repairs. If stronger explanation is needed, identify the relevant cause, consequence, or connection without writing the sentence for the student.`,
+          `Use the marking criteria to prioritise what matters. Do not merely name a missing topic; explain how adding it would answer the question more fully.`,
+          `Check every factor, example, determinant, benefit, or other component the question explicitly requests. If one component is merely named while another is well explained, the named-only component must still appear as an improvement.`,
+        ]
+      : [
+          `This is a 5–7 mark response. Give two specific strengths where earned and 2–3 prioritised improvements with useful detail.`,
+          `Explicitly assess whether the response fulfils the directive verb. Explain what analytical or explanatory work is still missing in plain student language.`,
+          `Address every supplied marking criterion across the strengths and improvements. Identify missing causal links, evidence, examples, comparison, or judgement as relevant.`,
+          `Check every distinct component the question requests; a strong section must never hide an omitted or underdeveloped section.`,
+          `Be substantial but proportionate to one question in a larger task. Do not produce a full essay-length critique or inline annotations.`,
+        ];
 
   return [
     `You are an experienced ${subjectLabel} teacher giving a student quick, warm feedback on ONE short-answer question within a larger take-home assessment.`,
@@ -44,14 +63,14 @@ export function buildShortAnswerSystem(courseName?: string, yearLevel?: number):
     `- Give the exact move to make ("Add one example of a food a family might buy", "Say why having less money changes what they eat"), not an abstract description of the gap.`,
     `- The thinner or weaker the answer, the plainer and more concrete you go — a struggling student needs one clear instruction, not commentary on their writing.`,
     ``,
-    `HOW MUCH TO SAY — match the answer:`,
+    `HOW MUCH TO SAY — match the marks first, then the answer:`,
+    ...depthGuidance,
     `- Always give the ONE most useful next step in top_priority, in one plain sentence.`,
-    `- Thin / basic / mostly-naming answer: give that one priority and AT MOST ONE improvement. Don't bury a struggling student in a list they won't act on.`,
-    `- Already-solid answer you're polishing: up to two improvements is fine.`,
+    `- For a thin answer, keep each instruction especially plain and concrete. Never pad the list just to reach the maximum.`,
     ``,
     `Write the feedback via the tool:`,
-    `- what_youve_done_well.summary: 1–2 genuine, specific strengths (reference what they actually wrote). Real strengths only — don't pad or over-praise a weak answer.`,
-    `- improvements.summary: short tags for what to fix (ONE for a thin answer, up to two for a solid one); improvements.detail: one plain sentence each on exactly what to do.`,
+    `- what_youve_done_well.summary: genuine, specific strengths that reference what the student actually wrote. Real strengths only — don't pad or over-praise a weak answer.`,
+    `- improvements.summary: short tags for what to fix; improvements.detail: concrete guidance on exactly what to do and, for 3+ marks, why that change strengthens the response.`,
     `- top_priority: the single most useful next step for THIS question, in one plain sentence.`,
     `- task_verb_check.summary: one plain sentence on whether the answer does what the question's command word asks (e.g. "Explain" means saying WHY, not just naming things).`,
     ``,

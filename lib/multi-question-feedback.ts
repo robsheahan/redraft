@@ -5,9 +5,10 @@
  * and the cross-question skill aggregation, with no DB access.
  *
  * Feedback depth scales to the question's marks (Rob's call, 2026-06):
- *   - SHORT-ANSWER  (marks < EXTENDED_RESPONSE_MIN_MARKS): one concise Haiku
- *     pass — warm, student-facing, no inline pen-marks. Mirrors how a teacher
- *     marks a short question.
+ *   - 1–2 marks: one genuinely brief pass.
+ *   - 3–4 marks: a developed pass with concrete, causal revision guidance.
+ *   - 5–7 marks: a substantial one-pass review covering the task verb and
+ *     supplied criteria without the cost/noise of full inline annotation.
  *   - EXTENDED      (marks ≥ threshold): the full Sonnet three-pass — holistic
  *     + criterion-by-criterion (only if the question carries criteria) + inline
  *     annotations anchored to that answer. Identical to the single-question
@@ -41,7 +42,13 @@ const SONNET = 'claude-sonnet-5';
  * cost. (A future refinement could also bump a long answer to "extended"
  * regardless of marks.)
  */
-export const EXTENDED_RESPONSE_MIN_MARKS = 7;
+export const EXTENDED_RESPONSE_MIN_MARKS = 8;
+
+export function shortAnswerMaxTokens(marks: number): number {
+  if (marks <= 2) return 900;
+  if (marks <= 4) return 1500;
+  return 2200;
+}
 
 /** Normalised, render-ready feedback for one question. `skill_assessment` is
  *  system-only and is stripped by the endpoint before this is stored/returned. */
@@ -132,8 +139,8 @@ export async function generateQuestionFeedback(opts: GenerateQuestionFeedbackOpt
       }>({
         client,
         model: SONNET,
-        max_tokens: 1200,
-        system: buildShortAnswerSystem(opts.course || undefined, opts.yearLevel || undefined),
+        max_tokens: shortAnswerMaxTokens(question.marks),
+        system: buildShortAnswerSystem(opts.course || undefined, opts.yearLevel || undefined, question.marks),
         user: buildShortAnswerUser({
           question: question.text,
           marks: question.marks,
