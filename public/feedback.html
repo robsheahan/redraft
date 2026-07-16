@@ -1392,10 +1392,10 @@
         var mqCanRevise = mqFeedbackDrafts.length < MAX_DRAFTS;
         var totalQ = order.length;
         html += '<div class="submit-panel" id="submitPanel">';
-        html += '<div class="submit-panel-title">Ready to submit?</div>';
-        html += '<div class="submit-panel-sub">If you\'re happy with your answers, submit them for marking — or click <strong>Edit answers</strong> to make changes'
+        html += '<div class="submit-panel-title" id="mqPanelTitle">Ready to submit?</div>';
+        html += '<div class="submit-panel-sub" id="mqPanelGuidance">If you\'re happy with your answers, submit them for marking — or click <strong>Edit answers</strong> to make changes'
               + (mqCanRevise ? ', then get feedback on your new draft.' : '. Your teacher marks this version, and you won\'t be able to get more feedback on this task.') + '</div>';
-        html += '<div class="submit-panel-label">You\'ve answered ' + answeredCount + ' of ' + totalQ + ' question' + (totalQ === 1 ? '' : 's') + '</div>';
+        html += '<div class="submit-panel-label" id="mqPanelAnswered">You\'ve answered ' + answeredCount + ' of ' + totalQ + ' question' + (totalQ === 1 ? '' : 's') + '</div>';
         html += '<div class="fb-save-indicator" id="fbSaveIndicator"></div>';
         html += '<div class="submit-panel-actions">';
         html += '<button type="button" class="btn-submit-marking" id="submitMarkingBtn" onclick="submitForMarking(\'' + backId + '\')">Submit for marking</button>';
@@ -1920,6 +1920,9 @@
       if (!mqIsMulti) return;
       var editBtn = document.getElementById('editAnswersBtn');
       var markingBtn = document.getElementById('submitMarkingBtn');
+      var title = document.getElementById('mqPanelTitle');
+      var guidance = document.getElementById('mqPanelGuidance');
+      var answered = document.getElementById('mqPanelAnswered');
       var changed = JSON.stringify(canonicalMqAnswers(readMqAnswers())) !== JSON.stringify(canonicalMqAnswers(mqFeedbackBaseAnswers));
       // While editing, autosave continues and Done editing is the only action.
       // Feedback/submission choices return once the student leaves edit mode.
@@ -1933,6 +1936,9 @@
         editBtn.textContent = mqEditMode ? 'Done editing' : 'Edit answers';
       }
       if (markingBtn) markingBtn.style.display = mqEditMode ? 'none' : '';
+      if (title) title.style.display = mqEditMode ? 'none' : '';
+      if (guidance) guidance.style.display = mqEditMode ? 'none' : '';
+      if (answered) answered.style.display = mqEditMode ? 'none' : '';
     }
 
     // Toggle multi-question answers between read-only and editable.
