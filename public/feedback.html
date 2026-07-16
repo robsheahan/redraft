@@ -676,6 +676,8 @@
     var fbGenInFlight = false;    // guard against double "Submit another draft"
     var mqIsMulti = false;        // true while the multi-question view is active (drives autosave shape)
     var mqEditMode = false;       // multi-question: whether the answers are currently editable
+    var mqFeedbackBaseAnswers = [];// answers that produced the feedback currently in view
+    var feedbackBaseDraftText = '';// single essay text that produced the current feedback
 
     var CATEGORY_LABELS = {
       strength: 'Strength',
@@ -1165,6 +1167,7 @@
       if (tId && viewingFeedbackDraft && !anyLocked && isLatestFb) {
         var latestSubText = feedbackDrafts.length ? (feedbackDrafts[feedbackDrafts.length - 1].draft_text || '') : draftText;
         var workingDraft = (pendingAutosave != null) ? pendingAutosave : latestSubText;
+        feedbackBaseDraftText = latestSubText;
         currentDraftText = workingDraft;
         var canRevise = draftsUsed < MAX_DRAFTS;
         html += '<div class="submit-panel" id="submitPanel">';
@@ -1179,7 +1182,7 @@
         html += '<div class="submit-panel-actions">';
         html += '<button type="button" class="btn-submit-marking" id="submitMarkingBtn" onclick="submitForMarking(\'' + tId + '\')">Submit for marking</button>';
         if (canRevise) {
-          html += '<button type="button" class="btn-revise-secondary" id="submitAnotherBtn" onclick="submitNewDraft(\'' + tId + '\')">Get feedback</button>';
+          html += '<button type="button" class="btn-revise-secondary" id="submitAnotherBtn" onclick="submitNewDraft(\'' + tId + '\')" style="display:none" disabled>Get feedback</button>';
         }
         html += '<button type="button" class="btn-revise-secondary" id="editDraftBtn" onclick="toggleEditDraft()">Edit</button>';
         html += '</div>';
@@ -1204,6 +1207,7 @@
       html += '<div class="footer">' + footerText + '</div>';
 
       container.innerHTML = html;
+      updateSingleFeedbackAction();
 
       if (window.Attachments && currentDraft && Array.isArray(currentDraft.student_attachments) && currentDraft.student_attachments.length) {
         Attachments.renderAttachmentList(document.getElementById('myAttachments'), {
@@ -1233,6 +1237,7 @@
       mqIsMulti = true;
       var baseAnswers = (currentDraft && Array.isArray(currentDraft.answers)) ? currentDraft.answers
                   : (Array.isArray(initialAnswers) ? initialAnswers : []);
+      mqFeedbackBaseAnswers = baseAnswers;
       // On the editable latest draft, prefer restored working answers (autosave).
       var answers = (mqEditable && Array.isArray(pendingAnswers) && pendingAnswers.length) ? pendingAnswers : baseAnswers;
       var ansByQid = {}; answers.forEach(function(a) { if (a && a.question_id) ansByQid[a.question_id] = a; });
@@ -1395,7 +1400,7 @@
         html += '<div class="submit-panel-actions">';
         html += '<button type="button" class="btn-submit-marking" id="submitMarkingBtn" onclick="submitForMarking(\'' + backId + '\')">Submit for marking</button>';
         if (mqCanRevise) {
-          html += '<button type="button" class="btn-revise-secondary" id="submitAnotherBtn" onclick="submitNewDraft(\'' + backId + '\')">Get feedback</button>';
+          html += '<button type="button" class="btn-revise-secondary" id="submitAnotherBtn" onclick="submitNewDraft(\'' + backId + '\')" style="display:none" disabled>Get feedback</button>';
         }
         html += '<button type="button" class="btn-revise-secondary" id="editAnswersBtn" onclick="toggleEditAnswers()">Edit answers</button>';
         html += '</div></div>';
@@ -1410,9 +1415,8 @@
         html += '</div>';
       }
 
-      html += '<div style="margin-top:18px"><a href="submit.html?task=' + encodeURIComponent(backId) + '" class="back-link">← Back to the task</a></div>';
-
       container.innerHTML = html;
+      updateMqFeedbackAction();
     }
 
     function renderTeacherMarkHtml(grade, task, anns, draftText) {
@@ -1776,6 +1780,7 @@
             // Keep the working draft in sync so navigating away and back (or a
             // re-render) preserves in-session edits, not just the saved snapshot.
             pendingAutosave = edit.value;
+            updateSingleFeedbackAction();
             fbScheduleAutosave();
           });
           edit.addEventListener('paste', function(ev) {
@@ -1799,6 +1804,7 @@
           });
         }
         edit.focus();
+        updateSingleFeedbackAction();
       } else {
         // Back to preview — regenerate the document view from the edited text.
         view.innerHTML = draftDocHtml(edit.value);
@@ -1807,6 +1813,19 @@
         if (label) label.textContent = 'This is what you\'ll submit';
         btn.textContent = 'Edit';
       }
+    }
+
+    function normaliseFeedbackText(value) {
+      return String(value == null ? '' : value).replace(/\r\n?/g, '\n').trim();
+    }
+
+    function updateSingleFeedbackAction() {
+      var btn = document.getElementById('submitAnotherBtn');
+      var edit = document.getElementById('submitDocEdit');
+      if (!btn || !edit || mqIsMulti) return;
+      var changed = normaliseFeedbackText(edit.value) !== normaliseFeedbackText(feedbackBaseDraftText);
+      btn.style.display = changed ? '' : 'none';
+      btn.disabled = !changed;
     }
 
     // Autosave the inline editor to draft_autosaves (restore-on-reopen source).
@@ -1863,6 +1882,33 @@
       });
     }
 
+    function canonicalMqAnswers(value) {
+      var byId = {};
+      (Array.isArray(value) ? value : []).forEach(function(a) {
+        if (!a || !a.question_id) return;
+        byId[a.question_id] = Object.prototype.hasOwnProperty.call(a, 'selected_option_id')
+          ? { selected_option_id: a.selected_option_id || '' }
+          : { text: normaliseFeedbackText(a.text) };
+      });
+      return ((currentTask && currentTask.questions) || []).map(function(q) {
+        return { question_id: q.id, answer: byId[q.id] || (q.type === 'multiple_choice' ? { selected_option_id: '' } : { text: '' }) };
+      });
+    }
+
+    function updateMqFeedbackAction() {
+      var btn = document.getElementById('submitAnotherBtn');
+      if (!btn || !mqIsMulti) return;
+      var editBtn = document.getElementById('editAnswersBtn');
+      var changed = JSON.stringify(canonicalMqAnswers(readMqAnswers())) !== JSON.stringify(canonicalMqAnswers(mqFeedbackBaseAnswers));
+      // Read-only, unchanged state has one clear revision action: Edit answers.
+      // Once the editor opens, that action gives way to the feedback action,
+      // which becomes enabled only after a real content change.
+      btn.style.display = (mqEditMode || changed) ? '' : 'none';
+      btn.disabled = !changed;
+      btn.textContent = changed ? 'Get feedback' : 'Make a change to get feedback';
+      if (editBtn) editBtn.style.display = mqEditMode ? 'none' : '';
+    }
+
     // Toggle multi-question answers between read-only and editable.
     function toggleEditAnswers() {
       var btn = document.getElementById('editAnswersBtn');
@@ -1882,6 +1928,7 @@
         if (fbAutosaveTimer) clearTimeout(fbAutosaveTimer);
         fbPushAutosave();
       }
+      updateMqFeedbackAction();
     }
 
     // Wire telemetry + paste blocking + autosave onto the answer editors (once).
@@ -1901,6 +1948,7 @@
           fbLastInputAt = now;
           pendingAnswers = readMqAnswers();
           fbScheduleAutosave();
+          updateMqFeedbackAction();
         });
         ta.addEventListener('paste', function(ev) {
           fbTelemetry.paste_attempts_blocked += 1;
@@ -1922,6 +1970,7 @@
           }
           pendingAnswers = readMqAnswers();
           fbScheduleAutosave();
+          updateMqFeedbackAction();
         });
       });
     }

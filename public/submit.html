@@ -281,6 +281,15 @@
           priorDrafts = Array.isArray(dd.drafts) ? dd.drafts : [];
         }
 
+        // Once formative feedback exists, feedback.html is the single revision
+        // workspace (read feedback → edit inline → request the next draft or
+        // submit for marking). Avoid presenting a second copy of the same form.
+        if ((currentTask.task_mode || 'feedback_task') === 'feedback_task'
+            && priorDrafts.some(function(d) { return d && d.feedback; })) {
+          window.location.replace('feedback.html?task=' + encodeURIComponent(taskId));
+          return;
+        }
+
         render();
 
         // Lesson Builder: fetch this student's differentiated support (generated
