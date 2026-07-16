@@ -211,7 +211,9 @@ export default withHandler({ methods: ['GET', 'POST'], label: 'insights-synthesi
   const userPrompt = buildUserPrompt(schoolName, taggedTasks, skillBlock);
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
+    const client = process.env.ANTHROPIC_API_KEY
+      ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
+      : undefined;
     const result = await callTool<Record<string, any>>({
       client,
       model: MODEL,

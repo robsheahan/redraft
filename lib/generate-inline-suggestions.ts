@@ -61,7 +61,7 @@ export interface GenerateInlineSuggestionsResult {
 const MAX_ANNOTATIONS = 20;
 
 export async function generateInlineSuggestions(
-  client: Anthropic,
+  client: Anthropic | undefined,
   input: GenerateInput,
 ): Promise<GenerateInlineSuggestionsResult> {
   const system = buildInlineSuggestionsSystemPrompt(input.courseName, input.discipline);

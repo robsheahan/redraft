@@ -186,7 +186,9 @@ export default withHandler({ methods: ['POST'], label: 'generate-multi-feedback'
   const readiness = await readSkillProfile(supabase, user.id, discipline || 'General');
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
+    const client = process.env.ANTHROPIC_API_KEY
+      ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
+      : undefined;
 
     const t0 = Date.now();
     // Collect per-question errors so an all-fail can report WHY (not just 502).

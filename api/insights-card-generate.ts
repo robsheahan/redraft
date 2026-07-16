@@ -673,7 +673,9 @@ export default withHandler({ methods: ['POST'], label: 'insights-card-generate' 
   // -- Anthropic call --
   let value: any;
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
+    const client = process.env.ANTHROPIC_API_KEY
+      ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
+      : undefined;
     const result = await callTool<Record<string, any>>({
       client,
       model: MODEL,
@@ -951,7 +953,9 @@ async function handleStudentKind(
   // -- Anthropic call --
   let value: any;
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
+    const client = process.env.ANTHROPIC_API_KEY
+      ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
+      : undefined;
     const result = await callTool<Record<string, any>>({
       client,
       model: MODEL,
@@ -1144,7 +1148,9 @@ async function handleClassProfileSummary(
   const userPrompt = `Below are ${profileLines.length} anonymised student profiles drawn from the cohort. Synthesise the class-level baseline.\n\n${profileLines.join('\n\n')}`;
 
   try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 });
+    const client = process.env.ANTHROPIC_API_KEY
+      ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 0 })
+      : undefined;
     const result = await callTool<Record<string, any>>({
       client,
       model: MODEL,

@@ -16,10 +16,11 @@ Concretely: no mark/band predictions, no content rewriting, marker-voice prompts
 - **Frontend:** Vanilla JS + HTML in `public/`. No framework, no build step. Supabase JS SDK loaded from CDN.
 - **Backend:** TypeScript serverless handlers in `api/` using `@vercel/node`.
 - **Database / auth:** Supabase (Sydney region, project ref `jcxcbqsxshlwwvxlyyfd`). NOT to be confused with Citrafort's separate Supabase project (`kjueriejebawtccuqxid`) — different app.
-- **AI:** Anthropic via `@anthropic-ai/sdk`. Claude Sonnet 5 for student-facing feedback (essay three-pass + maths two-pass), insights cards, and longitudinal profile synthesis; Claude Haiku 4.5 for the silent insights-signals pass on marked/quick tasks (~$0.004 per call) and the maths freeform/talk-through structuring pass. All endpoints use tool-call schemas for structured output via `lib/anthropic-tool-call.ts` (`callTool`). **Prompt caching** (`cacheSystem` flag on `callTool`) caches the large static system prompts as `cache_control: ephemeral` blocks — a classroom burst on one task pays one cache write then ~10× cheaper reads. `callTool` logs per-call token usage (`[usage] …` incl. cache hit-rate) for cost visibility.
+- **AI:** OpenAI is the production default during the pilot: GPT-5.6 Terra for student-facing feedback, insights, profiles and differentiation; GPT-5.4 nano for silent signals and lightweight structuring. Anthropic remains configured as a controlled fallback for load-bearing feedback and still owns the specialist multi-turn maths equivalence verifier. Provider-neutral structured calls live in `lib/anthropic-tool-call.ts` (`callTool`); plain-text authoring uses `callText`. Both providers log normalised token/cache usage, and OpenAI calls set `store:false` for student data.
 - **Provider experiment:** `callTool` and `callText` can route primary and fast
   workloads independently to Anthropic or OpenAI via environment variables.
-  Anthropic remains the default. See
+  Code defaults remain Anthropic for safe setup, while production environment
+  variables select OpenAI. See
   [`docs/model-provider-experiment.md`](docs/model-provider-experiment.md) for
   configuration, the blind calibration harness, and the current maths-verifier
   boundary.
