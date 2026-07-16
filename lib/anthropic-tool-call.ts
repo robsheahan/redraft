@@ -15,6 +15,9 @@
  */
 
 import type Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
+
+export type AIProvider = 'anthropic' | 'openai';
 
 interface CallToolOptions {
   client: Anthropic;
@@ -49,6 +52,22 @@ interface CallToolOptions {
    * schema so truncation drops them first) should NOT be listed here.
    */
   requiredKeys?: string[];
+  /** Override environment-based provider routing (primarily for evaluations). */
+  provider?: AIProvider;
+  /** Override the provider-specific model selected from the environment. */
+  providerModel?: string;
+}
+
+interface CallTextOptions {
+  client: Anthropic;
+  model: string;
+  max_tokens: number;
+  system: string;
+  user: string;
+  retries?: number;
+  label?: string;
+  provider?: AIProvider;
+  providerModel?: string;
 }
 
 function isEmptyValue(v: unknown): boolean {
@@ -72,6 +91,9 @@ export interface ToolCallResult<T> {
 }
 
 export async function callTool<T = unknown>(opts: CallToolOptions): Promise<ToolCallResult<T>> {
+  const provider = resolveProvider(opts);
+  if (provider === 'openai') return callOpenAITool<T>(opts);
+
   const { client, model, max_tokens, temperature, system, user, tool, retries = 3, cacheSystem, label, requiredKeys } = opts;
   const totalAttempts = retries + 1;
   let lastErr: unknown;
@@ -118,7 +140,11 @@ export async function callTool<T = unknown>(opts: CallToolOptions): Promise<Tool
         const missing = requiredKeys.filter((k) => isEmptyValue((value as any)?.[k]));
         if (missing.length) {
           const trunc = stopReason === 'max_tokens' ? ' (output truncated at max_tokens)' : '';
-          throw new Error(`Tool ${tool.name} returned incomplete output${trunc}; missing: ${missing.join(', ')}`);
+          const returned = value && typeof value === 'object' ? Object.keys(value as any).join(', ') : typeof value;
+          throw new Error(
+            `Tool ${tool.name} returned incomplete output${trunc}; missing: ${missing.join(', ')}; ` +
+            `stop_reason=${stopReason || 'unknown'}; returned_keys=[${returned}]`,
+          );
         }
       }
 
@@ -145,6 +171,174 @@ export async function callTool<T = unknown>(opts: CallToolOptions): Promise<Tool
   throw lastErr;
 }
 
+/** Provider-routed plain-text generation for the few authoring endpoints that
+ * intentionally do not use a structured tool schema. */
+export async function callText(opts: CallTextOptions): Promise<ToolCallResult<string>> {
+  const provider = resolveProvider(opts);
+  const totalAttempts = (opts.retries ?? 3) + 1;
+  let lastErr: unknown;
+
+  for (let attempt = 1; attempt <= totalAttempts; attempt++) {
+    try {
+      if (provider === 'openai') {
+        const model = resolveOpenAIModel(opts);
+        const resp = await getOpenAIClient().responses.create({
+          model,
+          instructions: opts.system,
+          input: opts.user,
+          max_output_tokens: opts.max_tokens,
+          store: false,
+        });
+        const usage: TokenUsage = {
+          input_tokens: resp.usage?.input_tokens ?? 0,
+          output_tokens: resp.usage?.output_tokens ?? 0,
+          cache_read_input_tokens: resp.usage?.input_tokens_details?.cached_tokens ?? 0,
+          cache_creation_input_tokens: resp.usage?.input_tokens_details?.cache_write_tokens ?? 0,
+        };
+        logUsage(opts.label || 'text', model, usage, 'openai');
+        const value = resp.output_text.trim();
+        if (!value) throw new Error('Model returned empty text output');
+        return { value, attempts: attempt, stop_reason: resp.status ?? null, usage };
+      }
+
+      const resp = await opts.client.messages.create({
+        model: opts.model,
+        max_tokens: opts.max_tokens,
+        system: opts.system,
+        messages: [{ role: 'user', content: opts.user }],
+      });
+      const usage = extractUsage(resp);
+      logUsage(opts.label || 'text', opts.model, usage);
+      const block = resp.content.find((item) => item.type === 'text');
+      const value = block?.type === 'text' ? block.text.trim() : '';
+      if (!value) throw new Error('Model returned empty text output');
+      return { value, attempts: attempt, stop_reason: (resp as any).stop_reason ?? null, usage };
+    } catch (err: any) {
+      lastErr = err;
+      if (attempt >= totalAttempts || !isTransient(err)) break;
+      const base = 1000 * 2 ** (attempt - 1);
+      const jitter = Math.floor(Math.random() * 500);
+      await new Promise((resolve) => setTimeout(resolve, base + jitter));
+    }
+  }
+  throw lastErr;
+}
+
+let openAIClient: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error('OPENAI_API_KEY is not set');
+  if (!openAIClient) openAIClient = new OpenAI({ apiKey, maxRetries: 0 });
+  return openAIClient;
+}
+
+function isFastWorkload(model: string): boolean {
+  return /haiku|mini|nano/i.test(model);
+}
+
+function resolveProvider(opts: Pick<CallToolOptions, 'provider' | 'model'>): AIProvider {
+  if (opts.provider) return opts.provider;
+  const tierKey = isFastWorkload(opts.model) ? 'AI_FAST_PROVIDER' : 'AI_PRIMARY_PROVIDER';
+  const configured = process.env[tierKey] || process.env.AI_PROVIDER || 'anthropic';
+  if (configured !== 'anthropic' && configured !== 'openai') {
+    throw new Error(`${tierKey} must be "anthropic" or "openai"`);
+  }
+  return configured;
+}
+
+function resolveOpenAIModel(opts: Pick<CallToolOptions, 'model' | 'providerModel'>): string {
+  if (opts.providerModel) return opts.providerModel;
+  return isFastWorkload(opts.model)
+    ? process.env.OPENAI_FAST_MODEL || 'gpt-5.4-nano'
+    : process.env.OPENAI_PRIMARY_MODEL || 'gpt-5.6-terra';
+}
+
+function openAIUserContent(user: CallToolOptions['user']): any {
+  if (typeof user === 'string') return user;
+  return user.map((block: any) => {
+    if (block.type === 'text') return { type: 'input_text', text: block.text };
+    if (block.type === 'image' && block.source?.type === 'base64') {
+      return {
+        type: 'input_image',
+        detail: 'auto',
+        image_url: `data:${block.source.media_type};base64,${block.source.data}`,
+      };
+    }
+    throw new Error(`Unsupported OpenAI input block: ${String(block.type)}`);
+  });
+}
+
+async function callOpenAITool<T>(opts: CallToolOptions): Promise<ToolCallResult<T>> {
+  const { max_tokens, system, user, tool, retries = 3, label, requiredKeys } = opts;
+  const model = resolveOpenAIModel(opts);
+  const totalAttempts = retries + 1;
+  let lastErr: unknown;
+  let softFailureRetried = false;
+
+  for (let attempt = 1; attempt <= totalAttempts; attempt++) {
+    try {
+      const resp = await getOpenAIClient().responses.create({
+        model,
+        instructions: system,
+        input: [{ role: 'user', content: openAIUserContent(user) }],
+        max_output_tokens: max_tokens,
+        tools: [{
+          type: 'function',
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.input_schema as Record<string, unknown>,
+          // Existing schemas intentionally contain optional fields. Non-strict
+          // calling preserves them; required-key validation remains the final
+          // persistence guard.
+          strict: false,
+        }],
+        tool_choice: { type: 'function', name: tool.name },
+        // Calls are independent and contain student work. Do not retain
+        // response state server-side.
+        store: false,
+      });
+
+      const usage: TokenUsage = {
+        input_tokens: resp.usage?.input_tokens ?? 0,
+        output_tokens: resp.usage?.output_tokens ?? 0,
+        cache_read_input_tokens: resp.usage?.input_tokens_details?.cached_tokens ?? 0,
+        cache_creation_input_tokens: resp.usage?.input_tokens_details?.cache_write_tokens ?? 0,
+      };
+      logUsage(label || tool.name, model, usage, 'openai');
+
+      const call = resp.output.find((item: any) => item.type === 'function_call' && item.name === tool.name) as any;
+      if (!call) {
+        throw new Error(`Model did not return a function_call for ${tool.name} (status=${resp.status})`);
+      }
+      const value = JSON.parse(call.arguments) as T;
+      if (requiredKeys?.length) {
+        const missing = requiredKeys.filter((key) => isEmptyValue((value as any)?.[key]));
+        if (missing.length) {
+          const returned = value && typeof value === 'object' ? Object.keys(value as any).join(', ') : typeof value;
+          throw new Error(
+            `Tool ${tool.name} returned incomplete output; missing: ${missing.join(', ')}; ` +
+            `status=${resp.status || 'unknown'}; returned_keys=[${returned}]`,
+          );
+        }
+      }
+
+      return { value, attempts: attempt, stop_reason: resp.status ?? null, usage };
+    } catch (err: any) {
+      lastErr = err;
+      if (attempt >= totalAttempts || !isTransient(err)) break;
+      if (isSoftOutputFailure(err)) {
+        if (softFailureRetried) break;
+        softFailureRetried = true;
+      }
+      const base = 1000 * 2 ** (attempt - 1);
+      const jitter = Math.floor(Math.random() * 500);
+      await new Promise((resolve) => setTimeout(resolve, base + jitter));
+    }
+  }
+  throw lastErr;
+}
+
 function extractUsage(resp: any): TokenUsage {
   const u = resp?.usage || {};
   return {
@@ -160,18 +354,18 @@ function extractUsage(resp: any): TokenUsage {
  * and per-call token counts are the inputs to the real cost picture; without
  * this the only signal is the monthly Anthropic bill.
  */
-function logUsage(label: string, model: string, u: TokenUsage): void {
+function logUsage(label: string, model: string, u: TokenUsage, provider: AIProvider = 'anthropic'): void {
   const cached = u.cache_read_input_tokens;
   const total = u.input_tokens + cached + u.cache_creation_input_tokens;
   const hitPct = total > 0 ? Math.round((cached / total) * 100) : 0;
   console.log(
-    `[usage] ${label} model=${model} in=${u.input_tokens} out=${u.output_tokens} ` +
+    `[usage] ${label} provider=${provider} model=${model} in=${u.input_tokens} out=${u.output_tokens} ` +
     `cache_read=${cached} cache_write=${u.cache_creation_input_tokens} cache_hit=${hitPct}%`,
   );
 }
 
 function isSoftOutputFailure(err: any): boolean {
-  return /did not return a tool_use|incomplete output/i.test(String(err?.message || err || ''));
+  return /did not return a (tool_use|function_call)|incomplete output|empty text output|JSON/i.test(String(err?.message || err || ''));
 }
 
 function isTransient(err: any): boolean {
@@ -179,5 +373,5 @@ function isTransient(err: any): boolean {
   if (status === 429) return true;
   if (typeof status === 'number' && status >= 500 && status <= 599) return true;
   const msg = String(err?.message || err || '');
-  return /timeout|network|ETIMEDOUT|ECONN|fetch failed|tool_use|did not return|incomplete output|overloaded|rate.?limit/i.test(msg);
+  return /timeout|network|ETIMEDOUT|ECONN|fetch failed|tool_use|function_call|did not return|incomplete output|empty text output|JSON|overloaded|rate.?limit/i.test(msg);
 }

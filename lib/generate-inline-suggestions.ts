@@ -85,10 +85,10 @@ export async function generateInlineSuggestions(
       cacheSystem: true,
       label: 'feedback:inline',
     });
-    console.log('[inline-suggestions] Anthropic OK in', (Date.now() - t0) + 'ms', 'attempts=', toolResult.attempts, 'stop_reason=', toolResult.stop_reason);
+    console.log('[inline-suggestions] provider call OK in', (Date.now() - t0) + 'ms', 'attempts=', toolResult.attempts, 'stop_reason=', toolResult.stop_reason);
   } catch (err: any) {
     const message = err?.message || 'unknown error';
-    console.warn('[inline-suggestions] Claude call failed after retries:', message);
+    console.warn('[inline-suggestions] provider call failed after retries:', message);
     return { ok: false, annotations: [], error: message };
   }
 

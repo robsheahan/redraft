@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { callText } from '../lib/anthropic-tool-call.js';
 import { getSupabase, authoritativeRole } from '../lib/auth.js';
 import { checkAndLogRateLimit } from '../lib/rate-limit.js';
 import { captureError } from '../lib/sentry.js';
@@ -63,14 +64,15 @@ export default withHandler({ methods: ['POST'], label: 'generate-criteria' }, as
   const client = new Anthropic({ apiKey, maxRetries: 0 });
 
   try {
-    const resp = await client.messages.create({
+    const result = await callText({
+      client,
       model: MODEL,
       max_tokens: 1500,
       system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
+      user: userPrompt,
+      label: 'criteria:generate',
     });
-    const block = resp.content.find(b => b.type === 'text');
-    const text = block && block.type === 'text' ? block.text.trim() : '';
+    const text = result.value;
     if (!text) return res.status(500).json({ error: 'No criteria returned.' });
 
     return res.status(200).json({ criteria_text: text });
