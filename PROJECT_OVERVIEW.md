@@ -17,6 +17,12 @@ Concretely: no mark/band predictions, no content rewriting, marker-voice prompts
 - **Backend:** TypeScript serverless handlers in `api/` using `@vercel/node`.
 - **Database / auth:** Supabase (Sydney region, project ref `jcxcbqsxshlwwvxlyyfd`). NOT to be confused with Citrafort's separate Supabase project (`kjueriejebawtccuqxid`) — different app.
 - **AI:** Anthropic via `@anthropic-ai/sdk`. Claude Sonnet 5 for student-facing feedback (essay three-pass + maths two-pass), insights cards, and longitudinal profile synthesis; Claude Haiku 4.5 for the silent insights-signals pass on marked/quick tasks (~$0.004 per call) and the maths freeform/talk-through structuring pass. All endpoints use tool-call schemas for structured output via `lib/anthropic-tool-call.ts` (`callTool`). **Prompt caching** (`cacheSystem` flag on `callTool`) caches the large static system prompts as `cache_control: ephemeral` blocks — a classroom burst on one task pays one cache write then ~10× cheaper reads. `callTool` logs per-call token usage (`[usage] …` incl. cache hit-rate) for cost visibility.
+- **Provider experiment:** `callTool` and `callText` can route primary and fast
+  workloads independently to Anthropic or OpenAI via environment variables.
+  Anthropic remains the default. See
+  [`docs/model-provider-experiment.md`](docs/model-provider-experiment.md) for
+  configuration, the blind calibration harness, and the current maths-verifier
+  boundary.
 - **Email:** Resend (outbound, custom proofready.app domain) for contact + **password-reset** mail (reset uses `admin.generateLink` + Resend, not Supabase's rate-limited default email). Cloudflare Email Routing for inbound `help@`.
 - **File storage:** Supabase Storage, one **private** bucket `attachments`. Teachers attach photos/PDFs to a task; students may attach them to a submission **only when the task's `allow_student_attachments` toggle is on** (default off). Nothing is done with the files — stored and shown only. `api/attachment.ts` mints signed upload URLs (client uploads direct to Storage, bypassing the function-body limit) and short-lived signed download URLs after authorising the caller; the bucket has no Storage RLS (service role reads, signed-upload tokens write). Limits: images + PDF, ≤10MB each, ≤5 files.
 - **Auth providers:** Supabase email/password + Google OAuth + Canvas LTI 1.3 launch.
