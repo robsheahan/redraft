@@ -276,16 +276,9 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
   }).select('*').single();
 
   if (error) return res.status(500).json({ error: error.message });
-  let canvasSync = null;
-  if (data.published_at) {
-    try {
-      canvasSync = await syncTaskToCanvas(data.id);
-    } catch (err) {
-      captureError(err, { stage: 'canvas-task-create', task_id: data.id });
-      canvasSync = { synced: false, reason: 'Canvas assignment creation failed' };
-    }
-  }
-  return res.status(200).json({ task: data, canvas_sync: canvasSync });
+  // Canvas assignment creation is deliberately opt-in. Publishing a formative
+  // ProofReady task must not silently add a column to the teacher's markbook.
+  return res.status(200).json({ task: data });
 }
 
 async function handleUpdate(req: VercelRequest, res: VercelResponse) {
@@ -488,10 +481,12 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
   if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'Nothing to update.' });
 
   const { data: updated, error } = await supabase.from('tasks').update(patch).eq('id', id)
-    .select('id, published_at').single();
+    .select('id, published_at, lti_line_item_url').single();
   if (error) return res.status(500).json({ error: error.message });
   let canvasSync = null;
-  if (updated?.published_at) {
+  // Once a teacher has explicitly created the Canvas assignment, keep its
+  // title, marks and due date current. Unsynced tasks remain ProofReady-only.
+  if (updated?.published_at && updated.lti_line_item_url) {
     try {
       canvasSync = await syncTaskToCanvas(id);
     } catch (err) {

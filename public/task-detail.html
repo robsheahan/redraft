@@ -600,7 +600,7 @@
         html += '</div><div style="display:flex;gap:8px;align-items:center">';
         if (isPublished) {
           if (task.canvas_course_linked && !task.lti_line_item_url) {
-            html += '<button class="btn-edit" id="canvasSyncBtn" onclick="syncToCanvas()">Sync to Canvas</button>';
+            html += '<button class="btn-edit" id="canvasSyncBtn" onclick="syncToCanvas()" title="Creates a Canvas assignment, markbook column and student To Do item">Sync with Canvas Assignments</button>';
           }
           html += '<button class="btn-edit" id="shareLinkBtn" onclick="copyTaskShareLink()" title="Copy a link to send to students in this class">Share link</button>';
           html += '<button class="btn-edit" onclick="togglePublish(false)">Unpublish</button>';
@@ -1371,14 +1371,12 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to toggle publish state');
-        if (publish && data.canvas_sync && !data.canvas_sync.synced && data.canvas_sync.reason === 'class has no Canvas assignment service context') {
-          alert('Published in ProofReady. To add it to Canvas, open ProofReady once from this Canvas course, then use “Sync to Canvas” here.');
-        }
         location.reload();
       } catch (err) { alert(err.message); }
     }
 
     async function syncToCanvas() {
+      if (!confirm('Create this task in Canvas Assignments? This adds a Canvas markbook column and student To Do item.')) return;
       const btn = document.getElementById('canvasSyncBtn');
       if (btn) { btn.disabled = true; btn.textContent = 'Syncing…'; }
       try {
@@ -1390,7 +1388,7 @@
         location.reload();
       } catch (err) {
         alert(err.message);
-        if (btn) { btn.disabled = false; btn.textContent = 'Sync to Canvas'; }
+        if (btn) { btn.disabled = false; btn.textContent = 'Sync with Canvas Assignments'; }
       }
     }
 
