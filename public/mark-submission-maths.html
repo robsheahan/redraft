@@ -216,6 +216,9 @@
       html += '<span class="student-name">' + e(studentName) + '</span>';
       const _nfLabel = task && (task.task_mode === 'quick_task' || task.task_mode === 'marked_task');
       html += '<span class="draft-info">' + (_nfLabel ? 'Submission' : ('Draft ' + e(String(submission.draft_version || 1)))) + '</span>';
+      if (!_nfLabel) {
+        html += '<a href="teacher-feedback.html?task_id=' + encodeURIComponent(task.id) + '&student_id=' + encodeURIComponent(submission.student_id) + '" style="margin-left:auto;color:#ed7615;font-weight:600;text-decoration:none">View draft &amp; feedback history</a>';
+      }
       html += lateBadge(submission, task);
       if (submission.graded_at) html += '<span class="badge badge-marked">Already marked — editing</span>';
       html += '</div>';

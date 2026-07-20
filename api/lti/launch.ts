@@ -126,6 +126,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const context = payload[CLAIM_CONTEXT] as { id: string; title?: string } | undefined;
     const resourceLink = payload[CLAIM_RESOURCE_LINK] as { id: string } | undefined;
+    const ags = payload[CLAIM_AGS] as { lineitems?: string; lineitem?: string } | undefined;
 
     if (messageType === 'LtiDeepLinkingRequest') {
       const dlSettings = payload[CLAIM_DL_SETTINGS] as Record<string, unknown> | undefined;
@@ -141,6 +142,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           teacherId: userResult.userId,
         });
         classId = provision.classId;
+        await rememberCourseLineItems(platform.id, context.id, ags?.lineitems);
         // First-launcher-wins: the course's ProofReady class belongs to whoever
         // launched first. A colleague deep-linking into it would otherwise hit
         // a bare 403 — send them to a page that explains instead.
@@ -174,6 +176,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           teacherId: userResult.userId,
         });
         classId = provision.classId;
+        await rememberCourseLineItems(platform.id, context.id, ags?.lineitems);
         // First-launcher-wins: a second teacher launching the same course isn't
         // the class owner and would 403 on class-detail. Land them on a page
         // that explains (co-teaching isn't supported yet) instead of an error.
@@ -210,7 +213,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const ags = payload[CLAIM_AGS] as { lineitems?: string; lineitem?: string } | undefined;
     const custom = payload[CLAIM_CUSTOM] as Record<string, string> | undefined;
     const linkedTask = await findOrLinkTask({
       platformId: platform.id,
@@ -237,6 +239,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     captureError(err, { endpoint: 'lti/launch' });
     res.status(500).send('LTI launch error');
   }
+}
+
+async function rememberCourseLineItems(platformId: string, canvasCourseId: string, url?: string): Promise<void> {
+  if (!url) return;
+  const supabase = getSupabase();
+  const { error } = await supabase.from('lti_course_mappings')
+    .update({ lti_lineitems_url: url })
+    .eq('platform_id', platformId)
+    .eq('canvas_course_id', canvasCourseId);
+  if (error) captureError(error, { stage: 'lti-course-lineitems-save', platform: platformId });
 }
 
 // Mirrors the cases Supabase/GoTrue rejects: requires a single @, no whitespace,
@@ -288,6 +300,24 @@ async function findOrLinkTask(opts: {
 }): Promise<LinkedTask | null> {
   if (!opts.resourceLinkId) return null;
   const supabase = getSupabase();
+
+  // AGS-created Canvas assignments are known to ProofReady by their line-item
+  // URL before Canvas mints/returns the resource-link id on first launch.
+  if (opts.agsLineItem) {
+    const { data: byLineItem } = await supabase
+      .from('tasks')
+      .select('id, subject_type')
+      .eq('lti_platform_id', opts.platformId)
+      .eq('lti_line_item_url', opts.agsLineItem)
+      .maybeSingle();
+    if (byLineItem?.id) {
+      await supabase.from('tasks').update({
+        lti_resource_link_id: opts.resourceLinkId,
+        lti_ags_lineitems_url: opts.agsLineItems ?? null,
+      }).eq('id', byLineItem.id);
+      return byLineItem as LinkedTask;
+    }
+  }
 
   const { data: existing } = await supabase
     .from('tasks')

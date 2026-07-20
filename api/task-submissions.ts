@@ -31,9 +31,12 @@ export default withHandler({ methods: ['GET'], label: 'task-submissions' }, asyn
     'completion_status', 'graded_at', 'graded_by', 'submitted_for_marking',
     'student_attachments', 'over_time_cutoff_index', 'answers', 'question_marks',
   ].join(', ');
-  const { data, error } = await supabase
+  const studentId = String(req.query.student_id || '').trim();
+  let submissionsQuery = supabase
     .from('submissions').select(light ? LIGHT_COLUMNS : '*')
-    .eq('task_id', taskId).order('created_at', { ascending: false });
+    .eq('task_id', taskId);
+  if (studentId) submissionsQuery = submissionsQuery.eq('student_id', studentId);
+  const { data, error } = await submissionsQuery.order('created_at', { ascending: false });
   if (error) throw error;
   // The dynamic column list defeats supabase-js's literal-type inference.
   const submissions = (data || []) as any[];
@@ -85,6 +88,14 @@ export default withHandler({ methods: ['GET'], label: 'task-submissions' }, asyn
   // teacher stats strip; distinct from how many have submitted).
   const { count: classSize } = await supabase
     .from('class_members').select('student_id', { count: 'exact', head: true }).eq('class_id', task.class_id);
+
+  const { data: canvasCourse } = await supabase
+    .from('lti_course_mappings')
+    .select('lti_lineitems_url')
+    .eq('class_id', task.class_id)
+    .maybeSingle();
+  (task as any).canvas_course_linked = !!canvasCourse;
+  (task as any).canvas_assignment_ready = !!canvasCourse?.lti_lineitems_url;
 
   return res.status(200).json({ task, submissions: enriched, activities, started, classSize: classSize || 0 });
 });

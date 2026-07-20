@@ -4,6 +4,7 @@ dist/
 .vercel
 .env*.local
 .DS_Store
+supabase/.temp/
 
 # Walkthrough video — rendered output is large and regenerable from the
 # build_*.py scripts (source screenshots in demo-screenshots/ are kept).

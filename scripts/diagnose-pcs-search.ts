@@ -135,11 +135,12 @@ if (classRows.length > 0) {
 section('4. lti_course_mappings on PCS platform');
 const { data: courseMaps } = await sb
   .from('lti_course_mappings')
-  .select('canvas_course_id, class_id')
+  .select('canvas_course_id, class_id, lti_lineitems_url')
   .eq('platform_id', pcsPlatform.id);
 line('course mappings', courseMaps?.length || 0);
+line('outbound assignment-ready courses', (courseMaps || []).filter(m => !!m.lti_lineitems_url).length);
 for (const m of (courseMaps || []).slice(0, 8)) {
-  console.log(`    canvas_course=${m.canvas_course_id}  class=${(m.class_id || '').slice(0, 8)}…`);
+  console.log(`    canvas_course=${m.canvas_course_id}  class=${(m.class_id || '').slice(0, 8)}…  assignments=${m.lti_lineitems_url ? 'ready' : 'needs teacher relaunch'}`);
 }
 
 // 5. class_members for those classes

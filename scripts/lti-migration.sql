@@ -73,6 +73,12 @@ create table if not exists public.lti_course_mappings (
 create index if not exists lti_course_mappings_class_idx
   on public.lti_course_mappings (class_id);
 
+-- Course-level AGS endpoint captured from a teacher launch. This lets a task
+-- published in ProofReady create its Canvas assignment without an extra OAuth
+-- user token or a manual Canvas assignment-selection round trip.
+alter table public.lti_course_mappings
+  add column if not exists lti_lineitems_url text;
+
 -- =========================================================================
 -- 4b. Deep-linking sessions (short-lived state between launch and picker)
 -- =========================================================================

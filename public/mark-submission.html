@@ -403,6 +403,9 @@
       const noFeedbackTask = task.task_mode === 'quick_task' || task.task_mode === 'marked_task';
       const draftLabel = noFeedbackTask ? 'Submission' : ('Draft ' + e(String(submission.draft_version || 1)));
       html += '<span class="draft-info">' + draftLabel + '</span>';
+      if (!noFeedbackTask) {
+        html += '<a href="teacher-feedback.html?task_id=' + encodeURIComponent(task.id) + '&student_id=' + encodeURIComponent(submission.student_id) + '" style="margin-left:auto;color:#ed7615;font-weight:600;text-decoration:none">View draft &amp; feedback history</a>';
+      }
       html += lateBadge(submission, task);
       if (submission.graded_at) {
         html += '<span class="badge" style="background:#d1fae5;color:#065f46">Already marked — editing</span>';

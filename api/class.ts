@@ -3,6 +3,7 @@ import { getSupabase, verifyAuth } from '../lib/auth.js';
 import { createClient } from '@supabase/supabase-js';
 import { withHandler } from '../lib/with-handler.js';
 import { getUserInfoBatch } from '../lib/user-names.js';
+import { calculateDraftEngagement } from '../lib/draft-engagement.js';
 
 /**
  * Unified classes endpoint.
@@ -257,9 +258,14 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
   const toMarkTasksByClass: Record<string, Set<string>> = {};
   const ownedTaskToClass: Record<string, string> = {};
   const ownedTaskIds: string[] = [];
+  const ownedAssessmentTaskIds: string[] = [];
   (owned || []).forEach((c: any) => {
     (allTasksByClass[c.id] || []).forEach((t: any) => {
-      if (t.published_at) { ownedTaskIds.push(t.id); ownedTaskToClass[t.id] = c.id; }
+      if (t.published_at) {
+        ownedTaskIds.push(t.id);
+        ownedTaskToClass[t.id] = c.id;
+        if (t.task_mode === 'feedback_task') ownedAssessmentTaskIds.push(t.id);
+      }
     });
   });
   const joinedVisible = joined.filter(c => !c.archived_at);
@@ -267,7 +273,7 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
 
   // My submissions, pending-marking rows, and teacher names are independent —
   // fetch all three in parallel.
-  const [mySubsRes, pendingRes, teacherInfo] = await Promise.all([
+  const [mySubsRes, pendingRes, draftMetricsRes, teacherInfo] = await Promise.all([
     studentTaskIds.length > 0
       ? supabase
         .from('submissions')
@@ -281,6 +287,12 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
         .in('task_id', ownedTaskIds)
         .eq('submitted_for_marking', true)
         .is('graded_at', null)
+      : Promise.resolve({ data: [] as any[] }),
+    ownedAssessmentTaskIds.length > 0
+      ? supabase
+        .from('submissions')
+        .select('task_id, student_id, submitted_for_marking')
+        .in('task_id', ownedAssessmentTaskIds)
       : Promise.resolve({ data: [] as any[] }),
     joinedTeacherIds.length > 0 ? getUserInfoBatch(supabase, joinedTeacherIds) : Promise.resolve({} as Record<string, any>),
   ]);
@@ -319,6 +331,11 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
       (toMarkTasksByClass[cid] || (toMarkTasksByClass[cid] = new Set())).add(s.task_id);
     });
   }
+
+  // Formative-engagement metric: for each student/task that reached final
+  // submission, count the preceding feedback rows. Ongoing work is excluded so
+  // the average isn't artificially depressed by students who haven't finished.
+  const teacherMetrics = calculateDraftEngagement(draftMetricsRes.data || []);
 
   const decorate = (c: any) => {
     // Latest published task date for the class — used by the dashboards
@@ -367,6 +384,7 @@ async function listForUser(res: VercelResponse, userId: string, supabase: any) {
   return res.status(200).json({
     owned: (owned || []).map(decorate),
     joined: joinedOut,
+    teacher_metrics: teacherMetrics,
   });
 }
 

@@ -6,6 +6,7 @@ import { withHandler } from '../lib/with-handler.js';
 import { validateExamQuestions, studentTaskView, type ExamQuestion } from '../lib/exam-questions.js';
 import { validateFeedbackQuestions, type FeedbackQuestion } from '../lib/feedback-questions.js';
 import { validateMathsParts, studentPartsView, type MathsPart } from '../lib/maths-parts.js';
+import { syncTaskToCanvas } from '../lib/lti/line-items.js';
 
 /**
  * Task CRUD under the classes redesign.
@@ -275,7 +276,16 @@ async function handleCreate(req: VercelRequest, res: VercelResponse) {
   }).select('*').single();
 
   if (error) return res.status(500).json({ error: error.message });
-  return res.status(200).json({ task: data });
+  let canvasSync = null;
+  if (data.published_at) {
+    try {
+      canvasSync = await syncTaskToCanvas(data.id);
+    } catch (err) {
+      captureError(err, { stage: 'canvas-task-create', task_id: data.id });
+      canvasSync = { synced: false, reason: 'Canvas assignment creation failed' };
+    }
+  }
+  return res.status(200).json({ task: data, canvas_sync: canvasSync });
 }
 
 async function handleUpdate(req: VercelRequest, res: VercelResponse) {
@@ -477,9 +487,19 @@ async function handleUpdate(req: VercelRequest, res: VercelResponse) {
 
   if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'Nothing to update.' });
 
-  const { error } = await supabase.from('tasks').update(patch).eq('id', id);
+  const { data: updated, error } = await supabase.from('tasks').update(patch).eq('id', id)
+    .select('id, published_at').single();
   if (error) return res.status(500).json({ error: error.message });
-  return res.status(200).json({ ok: true });
+  let canvasSync = null;
+  if (updated?.published_at) {
+    try {
+      canvasSync = await syncTaskToCanvas(id);
+    } catch (err) {
+      captureError(err, { stage: 'canvas-task-update', task_id: id });
+      canvasSync = { synced: false, reason: 'Canvas assignment sync failed' };
+    }
+  }
+  return res.status(200).json({ ok: true, canvas_sync: canvasSync });
 }
 
 async function handleDelete(req: VercelRequest, res: VercelResponse) {
