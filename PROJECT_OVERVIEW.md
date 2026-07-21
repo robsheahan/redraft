@@ -8,7 +8,7 @@ A NESA-aligned formative-feedback tool for NSW student drafts, covering both wri
 - **Production:** Vercel, deployed from `main`. `/health` reports the deployed Git SHA.
 - **AI routing:** production primary and fast workloads are routed through OpenAI; Anthropic remains configured as a narrow load-bearing fallback and for the specialist multi-turn maths verifier. The routing layer, not endpoint code, chooses the provider.
 - **Canvas:** login, user/class provisioning, roster sync, task launch, deep linking and grade passback are live. ProofReady-to-Canvas assignment creation is **teacher opt-in** through “Sync with Canvas Assignments”; ordinary publishing remains ProofReady-only.
-- **Teacher visibility:** teachers can open every feedback draft a student received, see per-student feedback-draft counts, and see dashboard averages for drafts used before final submission.
+- **Teacher visibility:** teachers can open every feedback draft a student received, see per-student feedback-draft counts, and see cohort Insights metrics for drafts used before final submission.
 - **Important open compliance item:** Supabase currently reports the project region as **Northeast Asia (Tokyo)**. Existing copy that claims Australian/Sydney database hosting must not be relied upon until the hosting configuration and migration options are reviewed.
 
 ## Central design question
@@ -128,7 +128,7 @@ The silent fast-tier pass lives in `lib/insights-signals-feedback.ts`. It writes
 - `teacher-feedback.html` is the teacher-only longitudinal register for one student and task. It displays every saved draft, answer snapshot and full student-facing feedback payload, including overall guidance, criteria, task-verb feedback, strong-response guidance and inline comments.
 - Links to this register appear from task submissions and both marking screens. Authorization is enforced by `/api/task-submissions`: the caller must own the task's class, even when filtering by `student_id`.
 - Each submitted student row shows how many formative feedback drafts preceded the final submission.
-- The teacher dashboard reports the average feedback drafts used before final submission and the percentage of completed assessments submitted without feedback. Ongoing tasks are excluded so unfinished work does not depress the metric.
+- The cohort Insights page reports the average feedback drafts used before final submission and the percentage of completed assessments submitted without feedback. Metrics respect the active class/faculty/course/year/time scope; ongoing tasks are excluded so unfinished work does not depress the metric.
 
 ### Own tasks (student self-created)
 Students can also create their own practice task from `student.html` ("Enter my own task"): a required **title**, an optional **class** tag (private to them — sorting only), course, question, criteria, then a draft. These run the same `/api/generate-feedback` path with no `task_id` (a client-generated `own_task_id` instead), so they get the full three-pass feedback. Re-openable **3-draft model** grouped by `own_task_id`; "Your own tasks" cards show class/course + X/3 drafts and re-open prefilled. **Daily caps are by distinct tasks *started*** (draft-1 rows in the last 24h): **3 own tasks + 5 class tasks per student per day** (drafts 2–3 of an already-started task don't count), plus 10/hr per user + 5000/day global. Own-task submissions feed the skill database + longitudinal profile like any other, labelled "(own task)" in the synthesis.

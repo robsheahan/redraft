@@ -76,10 +76,6 @@
     }
 
     .tasks-grid { display: flex; flex-direction: column; gap: 10px; }
-    .metric-strip { display:flex;gap:12px;flex-wrap:wrap;margin:-12px 0 28px; }
-    .metric-card { background:#fff;border:1px solid #eee6db;border-radius:10px;padding:13px 17px;min-width:190px; }
-    .metric-value { font-size:22px;font-weight:800;color:#111827; }
-    .metric-label { font-size:12px;color:#6b7280;margin-top:1px; }
     .course-group { margin-bottom: 28px; }
     .course-group:last-child { margin-bottom: 0; }
     .course-heading {
@@ -207,7 +203,6 @@
 
       const active = owned.filter(c => !c.archived_at);
       const archived = owned.filter(c => c.archived_at);
-      const metrics = data.teacher_metrics || {};
 
       function renderClassCard(c) {
         // New-submissions flag: clicking it opens the pending task (when one task
@@ -245,12 +240,6 @@
       }
 
       let html = '';
-      if (metrics.submitted_assessments > 0) {
-        html += '<div class="metric-strip">'
-          + '<div class="metric-card"><div class="metric-value">' + e(metrics.average_feedback_drafts) + '</div><div class="metric-label">Average feedback drafts before submission</div></div>'
-          + '<div class="metric-card"><div class="metric-value">' + e(metrics.no_feedback_percentage) + '%</div><div class="metric-label">Submitted without requesting feedback</div></div>'
-          + '</div>';
-      }
       if (active.length > 0) {
         html += '<div class="course-group">';
         html += '<div class="course-heading">Your classes</div>';

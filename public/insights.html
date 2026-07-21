@@ -165,6 +165,8 @@
     .card-h .card-h-sub { display: block; font-size: 11.5px; font-weight: 500; color: #9ca3af; margin-top: 2px; }
     .card-empty { padding: 22px 12px; text-align: center; color: #9ca3af; font-size: 13px; line-height: 1.5; flex: 1; display: flex; flex-direction: column; justify-content: center; }
     .card-empty strong { color: #6b7280; font-weight: 600; display: block; margin-bottom: 4px; }
+    .draft-engagement-value { font-size: 30px; font-weight: 800; color: #111827; letter-spacing: -0.6px; line-height: 1; margin: 4px 0 8px; }
+    .draft-engagement-note { font-size: 12.5px; color: #6b7280; line-height: 1.5; }
 
     /* Sparkline */
     .sparkline { width: 100%; height: 96px; overflow: visible; }
@@ -1849,6 +1851,22 @@
       return html;
     }
 
+    function renderDraftEngagementCards(metrics) {
+      if (!metrics || !metrics.submitted_assessments) return '';
+      const basis = metrics.submitted_assessments + ' submitted assessment'
+        + (metrics.submitted_assessments === 1 ? '' : 's') + ' in the current scope';
+      return '<div class="card card-span-6">'
+        + cardHeader('Average feedback drafts before submission', 'Formative draft use')
+        + '<div class="draft-engagement-value">' + e(metrics.average_feedback_drafts) + '</div>'
+        + '<div class="draft-engagement-note">' + e(basis) + '. Ongoing work is excluded.</div>'
+        + '</div>'
+        + '<div class="card card-span-6">'
+        + cardHeader('Submitted without requesting feedback', 'Formative feedback uptake')
+        + '<div class="draft-engagement-value">' + e(metrics.no_feedback_percentage) + '%</div>'
+        + '<div class="draft-engagement-note">' + e(basis) + '. Lower means more students used the feedback cycle.</div>'
+        + '</div>';
+    }
+
     function renderTeacherCardsGrid(cards) {
       const cd = cards.cards;
       const llm = cd.llm || {};
@@ -1856,6 +1874,8 @@
 
       // 0. Longitudinal class baseline (only when a class is selected)
       html += renderClassBaselinePanel();
+
+      html += renderDraftEngagementCards(cd.draft_engagement);
 
       // 1. Mark distribution
       html += '<div class="card card-span-12">'
@@ -1929,6 +1949,8 @@
       // 0. Longitudinal class baseline (only when a class is selected) — also
       // shown for leader/admin scopes when they've drilled into a single class.
       html += renderClassBaselinePanel();
+
+      html += renderDraftEngagementCards(cd.draft_engagement);
 
       // Activity sparkline — full width
       html += '<div class="card card-span-12">'

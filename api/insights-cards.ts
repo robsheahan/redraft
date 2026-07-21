@@ -11,6 +11,7 @@ import { fetchAllRows } from '../lib/db-page.js';
 import { computeSkillMatrix } from '../lib/skill-matrix.js';
 import { computeSkillGrowth } from '../lib/skill-history.js';
 import { captureError } from '../lib/sentry.js';
+import { calculateDraftEngagement } from '../lib/draft-engagement.js';
 import { getDisciplineForCourse } from '../data/nesa-courses.js';
 import {
   parseFiltersFromQuery,
@@ -246,6 +247,14 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
     submissions = submissions.filter(s => s.student_id && allowedStudentIds!.has(s.student_id));
   }
 
+  // Formative engagement belongs with cohort insights, not the navigation
+  // dashboard. Restrict it to feedback tasks in the active insights scope and
+  // only completed student/task attempts (the helper excludes ongoing work).
+  const feedbackTaskIds = new Set(tasks.filter(t => t.task_mode === 'feedback_task').map(t => t.id));
+  const draftEngagement = calculateDraftEngagement(
+    submissions.filter(s => feedbackTaskIds.has(s.task_id))
+  );
+
   // -- Card: Activity sparkline (last 12 weeks) --
   const activity = computeActivity(submissions);
 
@@ -457,6 +466,7 @@ export default withHandler({ methods: ['GET'], label: 'insights-cards' }, async 
     cards: {
       activity,
       engagement,
+      draft_engagement: draftEngagement,
       mark_distribution: markDistribution,
       mark_by_faculty: markByFaculty,
       marking,
